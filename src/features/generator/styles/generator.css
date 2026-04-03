@@ -1,0 +1,251 @@
+/* ── Generator feature styles ───────────────────────────────────────────────
+   Scoped to src/features/generator — import in GeneratorPage.tsx
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Top bar */
+.generator-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--bcvb-border);
+  background: var(--bcvb-white);
+  flex-wrap: wrap;
+}
+
+.generator-topbar__title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  flex: 1;
+  min-width: 120px;
+}
+
+/* Tool palette */
+.generator-tool-palette {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Court canvas */
+.generator-court-wrap {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--bcvb-border);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.generator-court-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+/* Meta card */
+.generator-meta-card {
+  background: var(--bcvb-white);
+  border: 1px solid var(--bcvb-border);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+/* Coaching points */
+.generator-coaching-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.generator-coaching-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bcvb-grey);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.generator-remove-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--bcvb-red);
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.generator-empty-hint {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 4px 0 0;
+}
+
+/* Export bar */
+.generator-export-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .generator-topbar {
+    padding: 10px 14px;
+  }
+}
+
+.bcvb-court-shell {
+  background: linear-gradient(180deg, #ffffff 0%, #faf8f5 100%);
+  border: 1px solid rgba(26, 26, 26, 0.08);
+  border-radius: 18px;
+  box-shadow: 0 10px 24px rgba(17, 17, 17, 0.08);
+  overflow: hidden;
+}
+
+.bcvb-court-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid rgba(26, 26, 26, 0.06);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.bcvb-court-header strong {
+  display: block;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #1a1a1a;
+}
+
+.bcvb-court-header span {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+.bcvb-court-svg-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(180deg, #f8f6f3 0%, #f3efe9 100%);
+  padding: 14px;
+}
+
+.bcvb-preview-svg {
+  width: 100%;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.bcvb-preview-svg svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.bcvb-preview-svg.half {
+  aspect-ratio: 14 / 15;
+}
+
+.bcvb-preview-svg.full {
+  aspect-ratio: 28 / 15;
+}
+
+/* ── Layout générateur V16 : redonner de la place au terrain ───────────── */
+
+.bcvb-builder-grid.v16 {
+  display: grid;
+  grid-template-columns: 320px minmax(560px, 1fr) 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+.bcvb-col-params,
+.bcvb-col-seance,
+.bcvb-col-court {
+  min-width: 0;
+}
+
+.bcvb-col-court {
+  width: 100%;
+}
+
+.bcvb-col-court > *,
+.bcvb-col-court .bcvb-court-shell,
+.bcvb-col-court .generator-court-wrap,
+.bcvb-col-court .bcvb-card {
+  width: 100%;
+}
+
+.bcvb-court-shell {
+  width: 100%;
+}
+
+.bcvb-court-svg-wrap {
+  width: 100%;
+  min-height: 760px;
+  padding: 16px;
+}
+
+.bcvb-court-svg-wrap.is-half {
+  aspect-ratio: 14 / 15;
+}
+
+.bcvb-court-svg-wrap.is-full {
+  aspect-ratio: 28 / 15;
+}
+
+.bcvb-court-svg {
+  width: 100%;
+  height: auto;
+  max-height: 78vh;
+  display: block;
+}
+
+/* Empêche les colonnes latérales d'écraser le centre */
+.bcvb-col-params .bcvb-panel,
+.bcvb-col-seance .bcvb-panel,
+.bcvb-col-params .bcvb-card,
+.bcvb-col-seance .bcvb-card {
+  width: 100%;
+}
+
+/* Responsive */
+@media (max-width: 1500px) {
+  .bcvb-builder-grid.v16 {
+    grid-template-columns: 290px minmax(480px, 1fr) 290px;
+    gap: 16px;
+  }
+
+  .bcvb-court-svg-wrap {
+    min-height: 680px;
+  }
+}
+
+@media (max-width: 1220px) {
+  .bcvb-builder-grid.v16 {
+    grid-template-columns: 1fr;
+  }
+
+  .bcvb-court-svg-wrap {
+    min-height: 0;
+  }
+
+  .bcvb-court-svg {
+    max-height: none;
+  }
+}

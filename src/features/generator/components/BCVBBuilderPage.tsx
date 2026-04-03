@@ -1,0 +1,1 @@
+export { GeneratorPage as BCVBBuilderPage } from "./GeneratorPage";
