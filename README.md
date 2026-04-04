@@ -8,21 +8,24 @@ Cette version part de la base actuelle `bcvb-generator` et ajoute :
 - une **navigation premium** pour le référentiel, le générateur, les séances, la bibliothèque et le club
 - une **zone administration** réservée aux profils admin / dirigeant
 
-## Comptes de démonstration intégrés
+## Authentification
 
-- `kevin@bcvb.local` / `BCVB2026!` → admin
-- `coach@bcvb.local` / `CoachBCVB!` → coach
-- `dirigeant@bcvb.local` / `DirigeantBCVB!` → dirigeant
+Cette version utilise une authentification **Supabase** avec gestion des rôles :
+
+- `admin`
+- `dirigeant`
+- `coach`
+- `member`
 
 ## Important
 
-Cette V2 utilise une **authentification locale de démonstration** pour te permettre de tester immédiatement l’interface.
+Cette V2 est branchée sur une **authentification Supabase**.
 
-Pour une vraie mise en production membres, la suite logique est de brancher :
+Pour fonctionner correctement, vérifie :
 
-- **Supabase Auth** ou **Firebase Auth**
-- une table de profils / rôles
-- une vraie protection des données côté backend
+- la configuration des variables d’environnement Supabase
+- la table `profiles` avec les rôles utilisateur
+- les politiques RLS côté Supabase
 
 ## Lancer le projet
 
