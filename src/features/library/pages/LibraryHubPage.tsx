@@ -16,7 +16,7 @@ const librarySections = [
   }
 ];
 
-export function LibraryHubPage() {
+export default function LibraryHubPage() {
   return (
     <div className="member-page-stack">
       <section className="page-intro-card">

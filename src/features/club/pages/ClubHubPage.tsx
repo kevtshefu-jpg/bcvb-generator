@@ -13,7 +13,7 @@ const clubBlocks = [
   }
 ];
 
-export function ClubHubPage() {
+export default function ClubHubPage() {
   return (
     <div className="member-page-stack">
       <section className="page-intro-card dark">

@@ -1,40 +1,32 @@
 import { useAuth } from "../../auth/context/AuthContext";
 
-export function AdminPage() {
-  const { availableDemoAccounts } = useAuth();
+export default function AdminPage() {
+  const { profile } = useAuth();
 
   return (
     <div className="member-page-stack">
       <section className="page-intro-card">
         <h2>Administration</h2>
         <p>
-          Vue de pilotage pour les accès, les rôles et la future connexion à une base membre réelle.
+          Vue de pilotage pour les accès, les rôles et la gestion des comptes Supabase.
         </p>
       </section>
 
       <section className="content-grid two">
         <article className="content-card">
-          <h3>Accès intégrés à cette V2</h3>
-          <div className="admin-table">
-            <div className="admin-table__head">
-              <span>Rôle</span>
-              <span>Email</span>
-              <span>Mot de passe</span>
-            </div>
-            {availableDemoAccounts.map((account) => (
-              <div key={account.email} className="admin-table__row">
-                <span>{account.role}</span>
-                <code>{account.email}</code>
-                <code>{account.password}</code>
-              </div>
-            ))}
+          <h3>Profil courant</h3>
+          <div className="admin-info">
+            <p><strong>Email:</strong> {profile?.email}</p>
+            <p><strong>Nom:</strong> {profile?.full_name || 'Non renseigné'}</p>
+            <p><strong>Rôle:</strong> {profile?.role}</p>
+            <p><strong>Statut:</strong> {profile?.is_active ? 'Actif' : 'Inactif'}</p>
           </div>
         </article>
 
         <article className="content-card accent">
           <h3>Pour passer en prod réelle</h3>
           <ol>
-            <li>Créer une base membre authentifiée.</li>
+            <li>Créer une base membre authentifiée via Supabase.</li>
             <li>Stocker les rôles dans une table profils.</li>
             <li>Protéger les routes côté front et les données côté backend.</li>
             <li>Connecter la bibliothèque et les séances à la base cloud.</li>

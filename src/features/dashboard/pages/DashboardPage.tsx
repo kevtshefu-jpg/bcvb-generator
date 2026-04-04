@@ -8,15 +8,15 @@ const priorities = [
   "Donner un accès différencié selon les besoins des membres."
 ];
 
-export function DashboardPage() {
-  const { user } = useAuth();
+export default function DashboardPage() {
+  const { profile } = useAuth();
 
   return (
     <div className="member-page-stack">
       <section className="premium-hero">
         <div>
           <div className="premium-hero__eyebrow">V2 premium</div>
-          <h2>Bonjour {user?.fullName}, ton site BCVB évolue en vraie plateforme membres.</h2>
+          <h2>Bonjour {profile?.full_name || 'Membre'}, ton site BCVB évolue en vraie plateforme membres.</h2>
           <p>
             Cette version repose sur ton générateur actuel, avec une couche club plus claire,
             une navigation métier et une porte d’entrée limitée aux membres autorisés.
@@ -36,7 +36,7 @@ export function DashboardPage() {
         <MetricCard label="Référentiel" value="Centralisé" hint="catégories, thèmes et situations" />
         <MetricCard label="Générateur" value="Actif" hint="diagrammes et fiches terrain" />
         <MetricCard label="Accès" value="Protégé" hint="connexion requise pour l’espace membre" />
-        <MetricCard label="Rôle courant" value={user?.role || "membre"} hint="vue adaptée au profil" />
+        <MetricCard label="Rôle courant" value={profile?.role || "membre"} hint="vue adaptée au profil" />
       </section>
 
       <section className="content-grid two">

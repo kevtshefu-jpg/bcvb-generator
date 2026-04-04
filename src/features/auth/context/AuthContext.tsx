@@ -1,88 +1,113 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { memberDirectory, sanitizeEmail, type MemberRecord, type MemberRole } from "../../../data/memberDirectory";
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
+import type { Session, User } from '@supabase/supabase-js'
+import { supabase } from '../../../lib/supabase'
 
-type AuthMember = Omit<MemberRecord, "password">;
-
-type AuthContextValue = {
-  user: AuthMember | null;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => { ok: boolean; message?: string };
-  logout: () => void;
-  hasRole: (roles: MemberRole[]) => boolean;
-  availableDemoAccounts: Array<Pick<MemberRecord, "email" | "password" | "role">>;
-};
-
-const AUTH_STORAGE_KEY = "bcvb.member.session.v2";
-
-const AuthContext = createContext<AuthContextValue | null>(null);
-
-function toPublicMember(member: MemberRecord): AuthMember {
-  const { password: _password, ...safeMember } = member;
-  return safeMember;
+export type Profile = {
+  id: string
+  email: string
+  full_name: string | null
+  role: 'admin' | 'dirigeant' | 'coach' | 'member'
+  is_active: boolean
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthMember | null>(null);
+type AuthContextType = {
+  user: User | null
+  session: Session | null
+  profile: Profile | null
+  loading: boolean
+  signIn: (email: string, password: string) => Promise<{ error: string | null }>
+  signOut: () => Promise<void>
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null)
+  const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  async function loadProfile(userId: string) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, email, full_name, role, is_active')
+      .eq('id', userId)
+      .single()
+
+    if (error) {
+      setProfile(null)
+      return
+    }
+
+    setProfile(data as Profile)
+  }
 
   useEffect(() => {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!raw) return;
+    let mounted = true
 
-    try {
-      const parsed = JSON.parse(raw) as AuthMember;
-      if (parsed?.email) {
-        setUser(parsed);
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!mounted) return
+
+      setSession(data.session)
+      setUser(data.session?.user ?? null)
+
+      if (data.session?.user) {
+        await loadProfile(data.session.user.id)
       }
-    } catch {
-      localStorage.removeItem(AUTH_STORAGE_KEY);
+
+      setLoading(false)
+    })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      setSession(newSession)
+      setUser(newSession?.user ?? null)
+
+      if (newSession?.user) {
+        await loadProfile(newSession.user.id)
+      } else {
+        setProfile(null)
+      }
+
+      setLoading(false)
+    })
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
     }
-  }, []);
+  }, [])
 
-  function login(email: string, password: string) {
-    const match = memberDirectory.find(
-      (member) =>
-        sanitizeEmail(member.email) === sanitizeEmail(email) && member.password === password
-    );
-
-    if (!match) {
-      return { ok: false, message: "Identifiants invalides. Vérifie l’adresse et le mot de passe." };
-    }
-
-    const safeMember = toPublicMember(match);
-    setUser(safeMember);
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(safeMember));
-    return { ok: true };
+  async function signIn(email: string, password: string) {
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    return { error: error ? error.message : null }
   }
 
-  function logout() {
-    setUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+  async function signOut() {
+    await supabase.auth.signOut()
   }
 
-  function hasRole(roles: MemberRole[]) {
-    if (!user) return false;
-    return roles.includes(user.role);
-  }
-
-  const value = useMemo<AuthContextValue>(
+  const value = useMemo(
     () => ({
       user,
-      isAuthenticated: Boolean(user),
-      login,
-      logout,
-      hasRole,
-      availableDemoAccounts: memberDirectory.map(({ email, password, role }) => ({ email, password, role }))
+      session,
+      profile,
+      loading,
+      signIn,
+      signOut,
     }),
-    [user]
-  );
+    [user, session, profile, loading]
+  )
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
+  const context = useContext(AuthContext)
   if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
+    throw new Error('useAuth must be used inside AuthProvider')
   }
-  return context;
+  return context
 }
