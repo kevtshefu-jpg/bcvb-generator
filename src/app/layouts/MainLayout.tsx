@@ -7,10 +7,10 @@ import "../../styles/referentiel.css";
 
 export function MainLayout() {
   return (
-    <div className="app-shell">
+    <div className="public-shell">
       <Sidebar />
-      <main className="app-main">
-        <div className="app-content">
+      <main className="public-main">
+        <div className="public-content">
           <Outlet />
         </div>
       </main>

@@ -5,57 +5,38 @@ const links = [
   { to: "/categories", label: "Catégories" },
   { to: "/themes", label: "Thèmes" },
   { to: "/situations", label: "Banque de situations" },
-  { to: "/generateur", label: "Générateur" }
+  { to: "/connexion", label: "Connexion membre" }
 ];
 
 export function Sidebar() {
   return (
-    <aside
-      style={{
-        background: "#111111",
-        color: "#ffffff",
-        padding: "24px 18px",
-        borderRight: "1px solid rgba(255,255,255,0.08)"
-      }}
-    >
-      <div style={{ marginBottom: 28 }}>
-        <div
-          style={{
-            width: 54,
-            height: 54,
-            borderRadius: 14,
-            background: "linear-gradient(180deg, #C8102E, #9B0B22)",
-            display: "grid",
-            placeItems: "center",
-            fontWeight: 900,
-            marginBottom: 12
-          }}
-        >
-          BCVB
-        </div>
-        <div style={{ fontWeight: 800, fontSize: "1.05rem" }}>Référentiel club</div>
-        <div style={{ color: "rgba(255,255,255,0.64)", fontSize: "0.9rem", marginTop: 6 }}>
-          Défendre Fort · Courir · Partager la balle
+    <aside className="public-sidebar">
+      <div className="public-sidebar__brand">
+        <img src="/logo_bcvb copie.png" alt="BCVB" className="public-sidebar__logo" />
+        <div>
+          <div className="public-sidebar__title">BCVB Platform</div>
+          <div className="public-sidebar__subtitle">Référentiel · Générateur · Espace membres</div>
         </div>
       </div>
 
-      <nav style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <nav className="public-sidebar__nav">
         {links.map((link) => (
           <NavLink
             key={link.to}
             to={link.to}
-            style={({ isActive }) => ({
-              padding: "12px 14px",
-              borderRadius: 12,
-              background: isActive ? "rgba(200,16,46,0.18)" : "transparent",
-              color: "#ffffff",
-              fontWeight: 700
-            })}
+            className={({ isActive }) =>
+              isActive ? "public-sidebar__link is-active" : "public-sidebar__link"
+            }
           >
             {link.label}
           </NavLink>
         ))}
       </nav>
+
+      <div className="public-sidebar__footer">
+        <div className="public-sidebar__quote">Défendre Fort · Courir · Partager la balle</div>
+        <div className="public-sidebar__note">Base publique + accès membre limité</div>
+      </div>
     </aside>
   );
 }
