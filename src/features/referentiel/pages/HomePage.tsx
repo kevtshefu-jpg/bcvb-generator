@@ -2,16 +2,20 @@ import { Link } from 'react-router-dom'
 
 export default function HomePage() {
   return (
-    <section className="page-intro-card" style={{ maxWidth: 760 }}>
-      <img src="/logo_bcvb copie.png" alt="BCVB" style={{ width: 92, height: 'auto', marginBottom: 12 }} />
-      <h1>BCVB Platform</h1>
-      <p>
-        Plateforme privee reservee aux membres autorises du club. Connectez-vous pour acceder au
-        dashboard et aux contenus internes.
-      </p>
-      <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
-        <Link to="/connexion" className="primary-button">Connexion membre</Link>
-        <a href="mailto:contact@bcvb.fr" className="secondary-button">Demander un acces</a>
+    <section className="home-hero">
+      <div className="home-hero__card">
+        <p className="home-hero__eyebrow">Basket Club Villefranche Beaujolais</p>
+        <h1 className="home-hero__title">Plateforme membres BCVB</h1>
+        <p className="home-hero__text">
+          Le référentiel, les situations, le générateur et les ressources club sont réservés aux membres
+          autorisés du BCVB.
+        </p>
+
+        <div className="home-hero__actions">
+          <Link to="/connexion" className="home-hero__primary">
+            Connexion membre
+          </Link>
+        </div>
       </div>
     </section>
   )
