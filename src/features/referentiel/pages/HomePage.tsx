@@ -1,4 +1,13 @@
+import { Link } from 'react-router-dom'
+import { useAuth } from '../../auth/context/AuthContext'
+
 export default function HomePage() {
+  const { user, profile } = useAuth()
+
+  const isConnected = Boolean(user)
+  const isAdmin = profile?.role === 'admin'
+  const isDirigeant = profile?.role === 'dirigeant'
+
   return (
     <section className="home-page">
       <div className="home-hero">
