@@ -1,6 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+
+function getDefaultPathByRole(role?: string | null) {
+  if (role === 'admin') return '/admin'
+  if (role === 'dirigeant') return '/club'
+  if (role === 'coach') return '/dashboard'
+  return '/dashboard'
+}
 
 export default function LoginPage() {
   const { signIn, user, profile, loading } = useAuth()
@@ -12,10 +19,16 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/dashboard'
+  const from = (location.state as { from?: { pathname?: string } })?.from?.pathname
+
+  useEffect(() => {
+    if (!loading && user && profile?.is_active) {
+      navigate(from || getDefaultPathByRole(profile?.role), { replace: true })
+    }
+  }, [loading, user, profile, navigate, from])
 
   if (!loading && user && profile?.is_active) {
-    return <Navigate to={from} replace />
+    return <Navigate to={from || getDefaultPathByRole(profile?.role)} replace />
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -30,8 +43,6 @@ export default function LoginPage() {
       setSubmitting(false)
       return
     }
-
-    navigate(from, { replace: true })
   }
 
   return (

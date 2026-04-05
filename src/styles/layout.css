@@ -84,6 +84,15 @@
   font-weight: 800;
 }
 
+.sidebar__logoImage {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 4px;
+}
+
 .sidebar__title {
   margin: 0;
   font-weight: 800;
@@ -276,4 +285,113 @@
   .public-shell {
     flex-direction: column;
   }
+}
+
+.sidebar__section {
+  display: grid;
+  gap: 8px;
+}
+
+.sidebar__sectionTitle {
+  margin: 0;
+  padding: 6px 10px 0;
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 800;
+}
+
+.sidebar__sectionLinks {
+  display: grid;
+  gap: 8px;
+}
+
+.access-denied {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+}
+
+.access-denied__card {
+  max-width: 760px;
+  padding: 36px;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+}
+
+.access-denied__eyebrow {
+  margin: 0 0 10px;
+  color: #c8102e;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+}
+
+.access-denied__title {
+  margin: 0 0 16px;
+  color: #111111;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.access-denied__text {
+  margin: 0 0 24px;
+  color: #555555;
+  line-height: 1.6;
+}
+
+.access-denied__actions {
+  display: flex;
+  gap: 12px;
+}
+
+.access-denied__primary {
+  display: inline-block;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: #c8102e;
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.admin-page__tableCard {
+  padding: 24px;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+.admin-page__tableHead {
+  margin-bottom: 16px;
+}
+
+.admin-page__tableWrap {
+  overflow-x: auto;
+}
+
+.admin-page__table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+
+.admin-page__table th,
+.admin-page__table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #ececec;
+  text-align: left;
+}
+
+.admin-page__table th {
+  color: #111111;
+  font-size: 0.92rem;
+}
+
+.admin-page__table td {
+  color: #555555;
 }

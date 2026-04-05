@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import AccessDeniedPage from '../../shared/pages/AccessDeniedPage'
 
 type RequireAuthProps = {
   allowedRoles?: Array<'admin' | 'dirigeant' | 'coach' | 'member'>
@@ -22,7 +23,7 @@ export default function RequireAuth({ allowedRoles }: RequireAuthProps) {
   }
 
   if (allowedRoles && !allowedRoles.includes(profile.role)) {
-    return <div style={{ padding: 24 }}>Accès refusé.</div>
+    return <AccessDeniedPage />
   }
 
   return <Outlet />

@@ -15,6 +15,7 @@ import { SituationsLibraryPage } from '../features/referentiel/pages/SituationsL
 import { SituationDetailPage } from '../features/referentiel/pages/SituationDetailPage'
 import { GeneratorPage } from '../features/generator/components/GeneratorPage'
 import { SessionBuilderPage } from '../features/sessions/components/SessionBuilderPage'
+import AccessDeniedPage from '../features/shared/pages/AccessDeniedPage'
 
 export const router = createBrowserRouter([
   {
@@ -23,6 +24,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <HomePage /> },
       { path: 'connexion', element: <LoginPage /> },
+      { path: 'acces-refuse', element: <AccessDeniedPage /> },
       {
         element: <RequireAuth />,
         children: [
