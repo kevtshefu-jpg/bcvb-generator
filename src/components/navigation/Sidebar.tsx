@@ -1,114 +1,122 @@
+
+
+
+
+
+
+
+
+
+
+
+
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../features/auth/context/AuthContext'
 
-type LinkItem = {
-  to: string
-  label: string
-}
-
-type Section = {
-  title: string
-  links: LinkItem[]
+function linkClass({ isActive }: { isActive: boolean }) {
+  return `sidebar__link${isActive ? ' sidebar__link--active' : ''}`
 }
 
 export function Sidebar() {
   const { user, profile } = useAuth()
 
-  if (!user || !profile?.is_active) {
-    return (
-      <aside className="sidebar">
-        <div className="sidebar__brand">
-          <img src="/logo_bcvb copie.png" alt="BCVB" className="sidebar__logoImage" />
-          <div>
-            <p className="sidebar__title">BCVB Platform</p>
-            <p className="sidebar__subtitle">Membres</p>
-          </div>
-        </div>
-
-        <nav className="sidebar__nav">
-          <NavLink to="/" end className={({ isActive }) => `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`}>
-            Accueil
-          </NavLink>
-          <NavLink to="/connexion" className={({ isActive }) => `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`}>
-            Connexion
-          </NavLink>
-        </nav>
-      </aside>
-    )
-  }
-
-  const sections: Section[] = [
-    {
-      title: 'Général',
-      links: [
-        { to: '/dashboard', label: 'Dashboard' },
-        { to: '/bibliotheque', label: 'Bibliothèque' },
-      ],
-    },
-  ]
-
-  if (profile.role === 'coach' || profile.role === 'admin') {
-    sections.push({
-      title: 'Référentiel',
-      links: [
-        { to: '/categories', label: 'Catégories' },
-        { to: '/themes', label: 'Thèmes' },
-        { to: '/situations', label: 'Situations' },
-      ],
-    })
-
-    sections.push({
-      title: 'Production',
-      links: [
-        { to: '/generateur', label: 'Générateur' },
-        { to: '/seances', label: 'Séances' },
-      ],
-    })
-  }
-
-  if (profile.role === 'dirigeant' || profile.role === 'admin') {
-    sections.push({
-      title: 'Structure',
-      links: [{ to: '/club', label: 'Club' }],
-    })
-  }
-
-  if (profile.role === 'admin') {
-    sections.push({
-      title: 'Pilotage',
-      links: [{ to: '/admin', label: 'Admin' }],
-    })
-  }
+  const isAdmin = profile?.role === 'admin'
+  const isDirigeant = profile?.role === 'dirigeant'
 
   return (
     <aside className="sidebar">
       <div className="sidebar__brand">
-        <img src="/logo_bcvb copie.png" alt="BCVB" className="sidebar__logoImage" />
+        <img
+          src="/logo-bcvb.png"
+          alt="Logo BCVB"
+          className="sidebar__logoImage"
+          onError={(e) => {
+            ;(e.currentTarget as HTMLImageElement).style.display = 'none'
+          }}
+        />
         <div>
-          <p className="sidebar__title">BCVB Platform</p>
-          <p className="sidebar__subtitle">Membres</p>
+          <h1 className="sidebar__title">BCVB Référentiel</h1>
+          <p className="sidebar__subtitle">Plateforme technique, pédagogique et terrain</p>
         </div>
       </div>
 
       <nav className="sidebar__nav">
-        {sections.map((section) => (
-          <div key={section.title} className="sidebar__section">
-            <p className="sidebar__sectionTitle">{section.title}</p>
-            <div className="sidebar__sectionLinks">
-              {section.links.map((link) => (
-                <NavLink
-                  key={link.to}
-                  to={link.to}
-                  end={link.to === '/'}
-                  className={({ isActive }) => `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`}
-                >
-                  {link.label}
+        <div className="sidebar__section">
+          <p className="sidebar__sectionTitle">Général</p>
+          <div className="sidebar__sectionLinks">
+            <NavLink to="/" end className={linkClass}>
+              Accueil
+            </NavLink>
+
+            {!user ? (
+              <NavLink to="/connexion" className={linkClass}>
+                Connexion
+              </NavLink>
+            ) : (
+              <>
+                <NavLink to="/dashboard" className={linkClass}>
+                  Tableau de bord
                 </NavLink>
-              ))}
-            </div>
+                <NavLink to="/bibliotheque" className={linkClass}>
+                  Bibliothèque
+                </NavLink>
+              </>
+            )}
           </div>
-        ))}
+        </div>
+
+        {user && (
+          <>
+            <div className="sidebar__section">
+              <p className="sidebar__sectionTitle">Référentiel</p>
+              <div className="sidebar__sectionLinks">
+                <NavLink to="/categories" className={linkClass}>
+                  Catégories
+                </NavLink>
+                <NavLink to="/themes" className={linkClass}>
+                  Thèmes
+                </NavLink>
+                <NavLink to="/situations" className={linkClass}>
+                  Situations
+                </NavLink>
+              </div>
+            </div>
+
+            <div className="sidebar__section">
+              <p className="sidebar__sectionTitle">Production</p>
+              <div className="sidebar__sectionLinks">
+                <NavLink to="/generateur" className={linkClass}>
+                  Générateur
+                </NavLink>
+                <NavLink to="/seances" className={linkClass}>
+                  Séances
+                </NavLink>
+              </div>
+            </div>
+
+            {(isAdmin || isDirigeant) && (
+              <div className="sidebar__section">
+                <p className="sidebar__sectionTitle">Pilotage</p>
+                <div className="sidebar__sectionLinks">
+                  <NavLink to="/club" className={linkClass}>
+                    Club
+                  </NavLink>
+                  {isAdmin && (
+                    <NavLink to="/admin" className={linkClass}>
+                      Administration
+                    </NavLink>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </nav>
+
+      <div className="sidebar__footer">
+        <p className="sidebar__footerTitle">Identité BCVB</p>
+        <p className="sidebar__footerText">Défendre fort • Courir • Partager la balle</p>
+      </div>
     </aside>
   )
 }
