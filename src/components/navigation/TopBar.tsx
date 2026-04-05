@@ -10,7 +10,7 @@ function formatRole(role?: string | null) {
 }
 
 export function TopBar() {
-  const { profile, signOut } = useAuth()
+  const { profile, user, signOut } = useAuth()
   const navigate = useNavigate()
 
   async function handleLogout() {
@@ -27,8 +27,12 @@ export function TopBar() {
 
       <div className="topbar__right">
         <div className="topbar__identity">
-          <span className="topbar__name">{profile?.full_name || profile?.email || 'Membre'}</span>
-          <span className="topbar__role">{formatRole(profile?.role)}</span>
+          <span className="topbar__name">
+            {profile?.full_name || profile?.email || user?.email || 'Membre'}
+          </span>
+          <span className="topbar__role">
+            {formatRole(profile?.role)}
+          </span>
         </div>
 
         <button className="topbar__logout" onClick={handleLogout}>

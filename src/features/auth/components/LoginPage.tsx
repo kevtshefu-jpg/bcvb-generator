@@ -23,12 +23,12 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user && profile?.is_active) {
-      navigate(from || getDefaultPathByRole(profile?.role), { replace: true })
+      navigate(from || getDefaultPathByRole(profile.role), { replace: true })
     }
   }, [loading, user, profile, navigate, from])
 
   if (!loading && user && profile?.is_active) {
-    return <Navigate to={from || getDefaultPathByRole(profile?.role)} replace />
+    return <Navigate to={from || getDefaultPathByRole(profile.role)} replace />
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -43,10 +43,12 @@ export default function LoginPage() {
       setSubmitting(false)
       return
     }
+
+    setSubmitting(false)
   }
 
   return (
-    <div style={{ maxWidth: 420, margin: '60px auto', padding: 24 }}>
+    <div style={{ maxWidth: 420, margin: '0 auto', padding: 24 }}>
       <h1>Connexion membre</h1>
       <p>Accès réservé aux membres autorisés du BCVB.</p>
 

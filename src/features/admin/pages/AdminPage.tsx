@@ -19,6 +19,9 @@ export default function AdminPage() {
 
   useEffect(() => {
     async function loadMembers() {
+      setLoading(true)
+      setError(null)
+
       const { data, error } = await supabase
         .from('profiles')
         .select('id, email, full_name, role, is_active, created_at')
@@ -26,6 +29,7 @@ export default function AdminPage() {
 
       if (error) {
         setError(error.message)
+        setMembers([])
         setLoading(false)
         return
       }
@@ -43,15 +47,16 @@ export default function AdminPage() {
         <p className="admin-page__eyebrow">Administration</p>
         <h2 className="admin-page__title">Gestion des membres</h2>
         <p className="admin-page__text">
-          Espace réservé aux administrateurs. Cette page centralise la lecture des profils membres BCVB.
+          Espace réservé aux administrateurs. Cette page centralise la lecture des profils membres,
+          le pilotage des accès et la structuration future de la plateforme BCVB.
         </p>
       </div>
 
       <div className="admin-page__grid">
         <article className="admin-page__card">
           <h3>Compte connecté</h3>
-          <p><strong>Email :</strong> {profile?.email}</p>
-          <p><strong>Rôle :</strong> {profile?.role}</p>
+          <p><strong>Email :</strong> {profile?.email || '—'}</p>
+          <p><strong>Rôle :</strong> {profile?.role || '—'}</p>
           <p><strong>Actif :</strong> {profile?.is_active ? 'Oui' : 'Non'}</p>
         </article>
 
