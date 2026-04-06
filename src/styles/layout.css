@@ -1,3 +1,45 @@
+[...existing code...]
+.role-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.role-dashboard-card {
+  display: block;
+  padding: 22px 24px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(17, 17, 17, 0.04);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+  text-decoration: none;
+  transition: 0.18s ease;
+  color: inherit;
+}
+
+.role-dashboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+}
+
+.role-dashboard-card h3 {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+  color: #111111;
+}
+
+.role-dashboard-card p,
+.v33-panel__text {
+  margin: 0;
+  color: #5d5d66;
+  line-height: 1.65;
+}
+
+@media (max-width: 1100px) {
+  .role-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
 .topbar--v33 {
   background:

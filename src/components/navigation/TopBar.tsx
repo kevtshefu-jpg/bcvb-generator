@@ -1,15 +1,6 @@
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../features/auth/context/AuthContext'
 
-function formatRole(role?: string | null) {
-  if (!role) return 'Membre'
-  if (role === 'admin') return 'Administrateur'
-  if (role === 'dirigeant') return 'Dirigeant'
-  if (role === 'coach') return 'Coach'
-  return 'Membre'
-}
+import { formatRole, getRoleHomeLabel } from '../../features/auth/utils/roles'
 
-export function TopBar() {
   const { profile, user, signOut } = useAuth()
   const navigate = useNavigate()
 
@@ -22,9 +13,9 @@ export function TopBar() {
     <header className="topbar topbar--v33">
       <div className="topbar__left">
         <p className="topbar__eyebrow">BCVB Référentiel</p>
-        <h1 className="topbar__title">Plateforme technique, pédagogique et terrain</h1>
+        <h1 className="topbar__title">{getRoleHomeLabel(profile?.role)}</h1>
         <p className="topbar__subtitle">
-          Une base commune pour structurer le jeu, la formation et les contenus du club.
+          Plateforme technique, pédagogique et terrain du BCVB.
         </p>
       </div>
 

@@ -3,11 +3,19 @@ import type { ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../../../lib/supabase'
 
+export type UserRole =
+  | 'admin'
+  | 'dirigeant'
+  | 'coach'
+  | 'joueur'
+  | 'parent'
+  | 'member'
+
 type Profile = {
   id: string
   email: string
   full_name: string | null
-  role: 'admin' | 'dirigeant' | 'coach' | 'member'
+  role: UserRole
   is_active: boolean
 }
 
@@ -18,7 +26,6 @@ type AuthContextType = {
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
-  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -30,85 +37,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   async function loadProfile(userId: string) {
-    console.log('[Auth] loadProfile start', userId)
-
     const { data, error } = await supabase
       .from('profiles')
       .select('id, email, full_name, role, is_active')
       .eq('id', userId)
-      .maybeSingle()
+      .single()
 
     if (error) {
-      console.error('[Auth] loadProfile error', error)
       setProfile(null)
       return
     }
 
-    if (!data) {
-      console.warn('[Auth] loadProfile no profile found')
-      setProfile(null)
-      return
-    }
-
-    console.log('[Auth] loadProfile success', data)
     setProfile(data as Profile)
   }
 
-  async function refreshProfile() {
-    const {
-      data: { session: currentSession },
-    } = await supabase.auth.getSession()
-
-    setSession(currentSession)
-    setUser(currentSession?.user ?? null)
-
-    if (currentSession?.user) {
-      await loadProfile(currentSession.user.id)
-    } else {
-      setProfile(null)
-    }
-  }
-
   useEffect(() => {
-    let active = true
+    let mounted = true
 
-    async function bootstrap() {
-      setLoading(true)
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!mounted) return
 
-      const {
-        data: { session: initialSession },
-        error,
-      } = await supabase.auth.getSession()
+      setSession(data.session)
+      setUser(data.session?.user ?? null)
 
-      if (!active) return
-
-      if (error) {
-        console.error('[Auth] getSession error', error)
+      if (data.session?.user) {
+        await loadProfile(data.session.user.id)
       }
 
-      setSession(initialSession)
-      setUser(initialSession?.user ?? null)
-
-      if (initialSession?.user) {
-        await loadProfile(initialSession.user.id)
-      } else {
-        setProfile(null)
-      }
-
-      if (!active) return
       setLoading(false)
-    }
-
-    bootstrap()
+    })
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      console.log('[Auth] onAuthStateChange', event, newSession?.user?.id)
-
-      if (!active) return
-
-      setLoading(true)
+    } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       setSession(newSession)
       setUser(newSession?.user ?? null)
 
@@ -118,38 +79,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(null)
       }
 
-      if (!active) return
       setLoading(false)
     })
 
     return () => {
-      active = false
+      mounted = false
       subscription.unsubscribe()
     }
   }, [])
 
   async function signIn(email: string, password: string) {
-    console.log('[Auth] signIn start', email)
-
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (error) {
-      console.error('[Auth] signIn error', error)
-      return { error: error.message }
-    }
-
-    console.log('[Auth] signIn success')
-
-    return { error: null }
+    return { error: error ? error.message : null }
   }
 
   async function signOut() {
-    console.log('[Auth] signOut start')
     await supabase.auth.signOut()
-    setSession(null)
-    setUser(null)
-    setProfile(null)
-    console.log('[Auth] signOut done')
   }
 
   const value = useMemo(
@@ -160,7 +105,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       signIn,
       signOut,
-      refreshProfile,
     }),
     [user, session, profile, loading]
   )
