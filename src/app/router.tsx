@@ -1,3 +1,4 @@
+import ClubPage from '../features/club/pages/ClubPage'
 import { createBrowserRouter } from 'react-router-dom'
 import { MainLayout } from './layouts/MainLayout'
 import RequireAuth from '../features/auth/components/RequireAuth'
@@ -55,6 +56,10 @@ export const router = createBrowserRouter([
           {
             path: 'situations/:situationId',
             element: <SituationDetailPage />,
+          },
+          {
+            path: 'club',
+            element: <ClubPage />,
           },
         ],
       },
