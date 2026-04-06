@@ -1,3 +1,25 @@
+/* Décoration avant le titre de section de la sidebar */
+.sidebar__sectionTitle::before {
+  content: '';
+  display: inline-block;
+  width: 18px;
+  height: 2px;
+  margin-right: 8px;
+  margin-bottom: 3px;
+  background: #c8102e;
+  border-radius: 999px;
+  vertical-align: middle;
+}
+/* Espacement des sections de la sidebar */
+.sidebar__section {
+  display: grid;
+  gap: 8px;
+}
+
+.sidebar__section + .sidebar__section {
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
 .role-dashboard-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -384,11 +406,12 @@
 .sidebar__sectionTitle {
   margin: 0;
   padding: 0 10px;
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
+  color: #f3c7cf;
+  opacity: 0.95;
 }
 
 .sidebar__sectionLinks {

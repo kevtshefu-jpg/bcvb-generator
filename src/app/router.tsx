@@ -1,3 +1,5 @@
+import { JoueurContenusPage, JoueurChartePage, JoueurEngagementPage } from '../features/joueur/pages'
+import { ParentChartePage, ParentVieClubPage, ParentRolesPage, ParentReferentPage, ParentProjetClubPage } from '../features/parent/pages'
 import { createBrowserRouter } from 'react-router-dom'
 import { MainLayout } from './layouts/MainLayout'
 import RequireAuth from '../features/auth/components/RequireAuth'
@@ -79,6 +81,40 @@ export const router = createBrowserRouter([
             path: 'club',
             element: <ClubPage />,
           },
+         // Joueur pages
+         {
+           path: 'joueur/charte',
+           element: <JoueurChartePage />,
+         },
+         {
+           path: 'joueur/engagement',
+           element: <JoueurEngagementPage />,
+         },
+         {
+           path: 'joueur/contenus',
+           element: <JoueurContenusPage />,
+         },
+         // Parent pages
+         {
+           path: 'parent/charte',
+           element: <ParentChartePage />,
+         },
+         {
+           path: 'parent/vie-club',
+           element: <ParentVieClubPage />,
+         },
+         {
+           path: 'parent/roles',
+           element: <ParentRolesPage />,
+         },
+         {
+           path: 'parent/referent',
+           element: <ParentReferentPage />,
+         },
+         {
+           path: 'parent/projet-club',
+           element: <ParentProjetClubPage />,
+         },
         ],
       },
 
