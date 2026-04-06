@@ -1,9 +1,9 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import AccessDeniedPage from '../../shared/pages/AccessDeniedPage'
+import type { UserRole } from '../context/AuthContext'
 
 type RequireAuthProps = {
-  allowedRoles?: Array<'admin' | 'dirigeant' | 'coach' | 'member'>
+  allowedRoles?: UserRole[]
 }
 
 export default function RequireAuth({ allowedRoles }: RequireAuthProps) {
@@ -11,21 +11,20 @@ export default function RequireAuth({ allowedRoles }: RequireAuthProps) {
   const location = useLocation()
 
   if (loading) {
-    return <div style={{ padding: 24 }}>Chargement...</div>
+    return <div>Chargement...</div>
   }
 
   if (!user) {
-    return <Navigate to="/connexion" state={{ from: location }} replace />
+    return <Navigate to="/connexion" replace state={{ from: location }} />
   }
 
-  if (!profile || !profile.is_active) {
-    return <Navigate to="/connexion" replace />
+  if (!profile?.is_active) {
+    return <Navigate to="/" replace />
   }
 
-  if (allowedRoles && !allowedRoles.includes(profile.role)) {
-    return <AccessDeniedPage />
+  if (allowedRoles && profile?.role && !allowedRoles.includes(profile.role)) {
+    return <Navigate to="/" replace />
   }
 
   return <Outlet />
 }
-

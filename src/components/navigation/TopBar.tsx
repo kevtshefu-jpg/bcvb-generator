@@ -1,6 +1,8 @@
-
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../features/auth/context/AuthContext'
 import { formatRole, getRoleHomeLabel } from '../../features/auth/utils/roles'
 
+export function TopBar() {
   const { profile, user, signOut } = useAuth()
   const navigate = useNavigate()
 
