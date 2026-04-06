@@ -19,17 +19,18 @@ export function TopBar() {
   }
 
   return (
-    <header className="topbar">
+    <header className="topbar topbar--v33">
       <div className="topbar__left">
         <p className="topbar__eyebrow">BCVB Référentiel</p>
         <h1 className="topbar__title">Plateforme technique, pédagogique et terrain</h1>
         <p className="topbar__subtitle">
-          Un espace structuré pour les coachs, cadres et dirigeants du BCVB.
+          Une base commune pour structurer le jeu, la formation et les contenus du club.
         </p>
       </div>
 
       <div className="topbar__right">
-        <div className="topbar__identity">
+        <div className="topbar__identityCard">
+          <span className="topbar__identityLabel">Session active</span>
           <span className="topbar__name">
             {profile?.full_name || profile?.email || user?.email || 'Membre'}
           </span>
