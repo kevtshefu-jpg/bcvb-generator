@@ -17,6 +17,8 @@ import { GeneratorPage } from '../features/generator/components/GeneratorPage'
 import { SessionBuilderPage } from '../features/sessions/components/SessionBuilderPage'
 import AccessDeniedPage from '../features/shared/pages/AccessDeniedPage'
 
+import PilotagePage from './features/club/pages/PilotagePage'
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -43,7 +45,15 @@ export const router = createBrowserRouter([
       },
       {
         element: <RequireAuth allowedRoles={['admin', 'dirigeant']} />,
-        children: [{ path: 'club', element: <ClubHubPage /> }],
+        children: [
+          { path: 'club', element: <ClubHubPage /> },
+        ],
+      },
+      {
+        element: <RequireAuth allowedRoles={['admin', 'dirigeant']} />,
+        children: [
+          { path: '/club/pilotage', element: <PilotagePage /> },
+        ],
       },
       {
         element: <RequireAuth allowedRoles={['admin']} />,
