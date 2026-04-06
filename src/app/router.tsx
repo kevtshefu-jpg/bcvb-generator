@@ -1,4 +1,3 @@
-import ClubPage from '../features/club/pages/ClubPage'
 import { createBrowserRouter } from 'react-router-dom'
 import { MainLayout } from './layouts/MainLayout'
 import RequireAuth from '../features/auth/components/RequireAuth'
@@ -15,7 +14,13 @@ import { SituationDetailPage } from '../features/referentiel/pages/SituationDeta
 
 import AdminPage from '../features/admin/pages/AdminPage'
 import PlatformPage from '../features/admin/pages/PlatformPage'
+
+import ClubPage from '../features/club/pages/ClubPage'
 import PilotagePage from '../features/club/pages/PilotagePage'
+
+import LibraryPage from '../features/library/pages/LibraryPage'
+import GeneratorRoutePage from '../features/generator/pages/GeneratorRoutePage'
+import SessionsPage from '../features/sessions/pages/SessionsPage'
 
 export const router = createBrowserRouter([
   {
@@ -30,6 +35,7 @@ export const router = createBrowserRouter([
         path: 'connexion',
         element: <LoginPage />,
       },
+
       {
         element: <RequireAuth />,
         children: [
@@ -58,11 +64,24 @@ export const router = createBrowserRouter([
             element: <SituationDetailPage />,
           },
           {
+            path: 'bibliotheque',
+            element: <LibraryPage />,
+          },
+          {
+            path: 'generateur',
+            element: <GeneratorRoutePage />,
+          },
+          {
+            path: 'seances',
+            element: <SessionsPage />,
+          },
+          {
             path: 'club',
             element: <ClubPage />,
           },
         ],
       },
+
       {
         element: <RequireAuth allowedRoles={['admin', 'dirigeant']} />,
         children: [
@@ -72,6 +91,7 @@ export const router = createBrowserRouter([
           },
         ],
       },
+
       {
         element: <RequireAuth allowedRoles={['admin']} />,
         children: [
