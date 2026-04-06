@@ -1,20 +1,20 @@
-export default function PilotagePage() {
+export default function PlatformPage() {
   return (
     <section className="dashboard-page">
       <div className="dashboard-page__hero">
         <div>
-          <p className="dashboard-page__eyebrow">Pilotage</p>
-          <h2 className="dashboard-page__title">Pilotage BCVB</h2>
+          <p className="dashboard-page__eyebrow">Administration</p>
+          <h2 className="dashboard-page__title">Plateforme</h2>
           <p className="dashboard-page__text">
-            Espace de pilotage du club.
+            Espace d’administration de la plateforme BCVB.
           </p>
         </div>
       </div>
 
       <div className="role-dashboard-grid">
         <article className="role-dashboard-card">
-          <h3>Suivi club</h3>
-          <p>Centraliser les priorités d’organisation et de pilotage.</p>
+          <h3>Modules</h3>
+          <p>Préparer les futurs espaces joueurs, parents, coachs et pilotage.</p>
         </article>
       </div>
     </section>
