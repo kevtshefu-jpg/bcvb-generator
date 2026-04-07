@@ -1,5 +1,3 @@
-import { JoueurContenusPage, JoueurChartePage, JoueurEngagementPage } from '../features/joueur/pages'
-import { ParentChartePage, ParentVieClubPage, ParentRolesPage, ParentReferentPage, ParentProjetClubPage } from '../features/parent/pages'
 import { createBrowserRouter } from 'react-router-dom'
 import { MainLayout } from './layouts/MainLayout'
 import RequireAuth from '../features/auth/components/RequireAuth'
@@ -23,6 +21,16 @@ import PilotagePage from '../features/club/pages/PilotagePage'
 import LibraryPage from '../features/library/pages/LibraryPage'
 import GeneratorRoutePage from '../features/generator/pages/GeneratorRoutePage'
 import SessionsPage from '../features/sessions/pages/SessionsPage'
+
+import JoueurContenusPage from '../features/joueur/pages/JoueurContenusPage'
+import JoueurChartePage from '../features/joueur/pages/JoueurChartePage'
+import JoueurEngagementPage from '../features/joueur/pages/JoueurEngagementPage'
+
+import ParentChartePage from '../features/parent/pages/ParentChartePage'
+import ParentVieClubPage from '../features/parent/pages/ParentVieClubPage'
+import ParentRolesPage from '../features/parent/pages/ParentRolesPage'
+import ParentReferentPage from '../features/parent/pages/ParentReferentPage'
+import ParentProjetClubPage from '../features/parent/pages/ParentProjetClubPage'
 
 export const router = createBrowserRouter([
   {
@@ -81,40 +89,40 @@ export const router = createBrowserRouter([
             path: 'club',
             element: <ClubPage />,
           },
-         // Joueur pages
-         {
-           path: 'joueur/charte',
-           element: <JoueurChartePage />,
-         },
-         {
-           path: 'joueur/engagement',
-           element: <JoueurEngagementPage />,
-         },
-         {
-           path: 'joueur/contenus',
-           element: <JoueurContenusPage />,
-         },
-         // Parent pages
-         {
-           path: 'parent/charte',
-           element: <ParentChartePage />,
-         },
-         {
-           path: 'parent/vie-club',
-           element: <ParentVieClubPage />,
-         },
-         {
-           path: 'parent/roles',
-           element: <ParentRolesPage />,
-         },
-         {
-           path: 'parent/referent',
-           element: <ParentReferentPage />,
-         },
-         {
-           path: 'parent/projet-club',
-           element: <ParentProjetClubPage />,
-         },
+
+          {
+            path: 'joueur/contenus',
+            element: <JoueurContenusPage />,
+          },
+          {
+            path: 'joueur/charte',
+            element: <JoueurChartePage />,
+          },
+          {
+            path: 'joueur/engagement',
+            element: <JoueurEngagementPage />,
+          },
+
+          {
+            path: 'parent/charte',
+            element: <ParentChartePage />,
+          },
+          {
+            path: 'parent/vie-club',
+            element: <ParentVieClubPage />,
+          },
+          {
+            path: 'parent/roles',
+            element: <ParentRolesPage />,
+          },
+          {
+            path: 'parent/referent',
+            element: <ParentReferentPage />,
+          },
+          {
+            path: 'parent/projet-club',
+            element: <ParentProjetClubPage />,
+          },
         ],
       },
 
