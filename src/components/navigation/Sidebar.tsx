@@ -81,19 +81,25 @@ export function Sidebar() {
 								</>
 							)}
 
-							{isJoueur(role) && (
-								<>
-									<NavLink to="/joueur/contenus" className={linkClass}>
-										Mes contenus
-									</NavLink>
-									<NavLink to="/joueur/charte" className={linkClass}>
-										Charte club
-									</NavLink>
-									<NavLink to="/joueur/engagement" className={linkClass}>
-										Arbitrage & table
-									</NavLink>
-								</>
-							)}
+														{isJoueur(role) && (
+															<>
+																<NavLink to="/joueur/contenus" className={linkClass}>
+																	Mes contenus
+																</NavLink>
+																<NavLink to="/joueur/fondamentaux" className={linkClass}>
+																	Fondamentaux
+																</NavLink>
+																<NavLink to="/joueur/progression" className={linkClass}>
+																	Progression
+																</NavLink>
+																<NavLink to="/joueur/charte" className={linkClass}>
+																	Charte club
+																</NavLink>
+																<NavLink to="/joueur/engagement" className={linkClass}>
+																	Arbitrage & table
+																</NavLink>
+															</>
+														)}
 
 							{isParent(role) && (
 								<>

@@ -1,3 +1,7 @@
+import JoueurFondamentauxPage from '../features/joueur/pages/JoueurFondamentauxPage'
+import JoueurProgressionPage from '../features/joueur/pages/JoueurProgressionPage'
+import AdminDeblocagesPage from '../features/admin/pages/AdminDeblocagesPage'
+import CoachJoueurProgressionPage from '../features/coach/pages/CoachJoueurProgressionPage'
 import { createBrowserRouter } from 'react-router-dom'
 import { MainLayout } from './layouts/MainLayout'
 import RequireAuth from '../features/auth/components/RequireAuth'
@@ -94,6 +98,33 @@ export const router = createBrowserRouter([
             path: 'joueur/contenus',
             element: <JoueurContenusPage />,
           },
+           {
+             path: 'joueur/fondamentaux',
+             element: <JoueurFondamentauxPage />,
+           },
+           {
+             path: 'joueur/progression',
+             element: <JoueurProgressionPage />,
+           },
+                {
+                  element: <RequireAuth allowedRoles={['admin']} />,
+                  children: [
+                    {
+                      path: 'admin/deblocages',
+                      element: <AdminDeblocagesPage />,
+                    },
+                  ],
+                },
+
+                {
+                  element: <RequireAuth allowedRoles={['coach']} />,
+                  children: [
+                    {
+                      path: 'coach/joueurs/:id/progression',
+                      element: <CoachJoueurProgressionPage />,
+                    },
+                  ],
+                },
           {
             path: 'joueur/charte',
             element: <JoueurChartePage />,
