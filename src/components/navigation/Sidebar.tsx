@@ -178,6 +178,9 @@ export function Sidebar() {
 							<NavLink to="/admin/inscriptions" className={linkClass}>
 								Inscriptions
 							</NavLink>
+							<NavLink to="/admin/import-joueurs" className={linkClass}>
+								Import joueurs
+							</NavLink>
 							<NavLink to="/admin/deblocages" className={linkClass}>
 								Déblocages
 							</NavLink>
