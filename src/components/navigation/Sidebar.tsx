@@ -170,6 +170,9 @@ export function Sidebar() {
 							<NavLink to="/admin/plateforme" className={linkClass}>
 								Plateforme
 							</NavLink>
+							<NavLink to="/admin/deblocages" className={linkClass}>
+								Déblocages
+							</NavLink>
 						</div>
 					</div>
 				)}

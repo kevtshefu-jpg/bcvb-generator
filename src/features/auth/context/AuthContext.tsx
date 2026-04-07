@@ -17,6 +17,7 @@ type Profile = {
   full_name: string | null
   role: UserRole
   is_active: boolean
+  category_id: string | null
 }
 
 type AuthContextType = {
@@ -39,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function loadProfile(userId: string) {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, email, full_name, role, is_active')
+      .select('id, email, full_name, role, is_active, category_id')
       .eq('id', userId)
       .single()
 

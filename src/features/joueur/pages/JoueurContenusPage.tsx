@@ -1,16 +1,22 @@
+import { useAuth } from '../../auth/context/AuthContext'
 import { playerContents } from '../data/playerContents'
 import { canPlayerSeeContent } from '../utils/access'
-
-const playerCategory = 'U13'
-const unlockedContentIds = ['u13-1c1-contact-1']
+import { usePlayerUnlocks } from '../hooks/usePlayerUnlocks'
 
 export default function JoueurContenusPage() {
+  const { profile } = useAuth()
+
+  const playerId = profile?.id
+  const categoryId = profile?.category_id || ''
+
+  const { unlockedIds, loading, error } = usePlayerUnlocks(playerId)
+
   const visibleContents = playerContents.filter((item) =>
-    canPlayerSeeContent(playerCategory, unlockedContentIds, item)
+    canPlayerSeeContent(categoryId, unlockedIds, item)
   )
 
   const lockedContents = playerContents.filter(
-    (item) => !canPlayerSeeContent(playerCategory, unlockedContentIds, item)
+    (item) => !canPlayerSeeContent(categoryId, unlockedIds, item)
   )
 
   return (
@@ -20,15 +26,19 @@ export default function JoueurContenusPage() {
           <p className="dashboard-page__eyebrow">Joueur</p>
           <h2 className="dashboard-page__title">Mes contenus</h2>
           <p className="dashboard-page__text">
-            Retrouve ici les contenus accessibles selon ta catégorie et les déblocages faits par ton coach.
+            Retrouve ici les contenus accessibles selon ta catégorie réelle et les déblocages faits
+            par ton coach.
           </p>
         </div>
 
         <div className="dashboard-page__badge">
           <span className="dashboard-page__badgeLabel">Catégorie active</span>
-          <strong>{playerCategory}</strong>
+          <strong>{categoryId || 'Non renseignée'}</strong>
         </div>
       </div>
+
+      {loading && <p>Chargement des contenus...</p>}
+      {error && <p>{error}</p>}
 
       <div className="dashboard-page__grid">
         {visibleContents.map((item) => (
