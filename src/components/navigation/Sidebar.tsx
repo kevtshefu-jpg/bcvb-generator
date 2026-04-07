@@ -40,21 +40,26 @@ export function Sidebar() {
 			<nav className="sidebar__nav">
 				<div className="sidebar__section">
 					<p className="sidebar__sectionTitle">Général</p>
-					<div className="sidebar__sectionLinks">
-						<NavLink to="/" end className={linkClass}>
-							Accueil
-						</NavLink>
+						<div className="sidebar__sectionLinks">
+							<NavLink to="/" end className={linkClass}>
+								Accueil
+							</NavLink>
 
-						{!user ? (
-							<NavLink to="/connexion" className={linkClass}>
-								Connexion
-							</NavLink>
-						) : (
-							<NavLink to="/dashboard" className={linkClass}>
-								Tableau de bord
-							</NavLink>
-						)}
-					</div>
+							{!user ? (
+								<>
+									<NavLink to="/connexion" className={linkClass}>
+										Connexion
+									</NavLink>
+									<NavLink to="/inscription" className={linkClass}>
+										Inscription
+									</NavLink>
+								</>
+							) : (
+								<NavLink to="/dashboard" className={linkClass}>
+									Tableau de bord
+								</NavLink>
+							)}
+						</div>
 				</div>
 
 				{user && canAccessReferentiel(role) && (
@@ -169,6 +174,9 @@ export function Sidebar() {
 							</NavLink>
 							<NavLink to="/admin/plateforme" className={linkClass}>
 								Plateforme
+							</NavLink>
+							<NavLink to="/admin/inscriptions" className={linkClass}>
+								Inscriptions
 							</NavLink>
 							<NavLink to="/admin/deblocages" className={linkClass}>
 								Déblocages

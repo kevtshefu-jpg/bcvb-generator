@@ -37,6 +37,9 @@ import ParentProjetClubPage from '../features/parent/pages/ParentProjetClubPage'
 
 import CoachJoueurProgressionPage from '../features/coach/pages/CoachJoueurProgressionPage'
 
+import RegistrationPage from '../features/registration/pages/RegistrationPage'
+import AdminRegistrationRequestsPage from '../features/registration/pages/AdminRegistrationRequestsPage'
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -49,6 +52,10 @@ export const router = createBrowserRouter([
       {
         path: 'connexion',
         element: <LoginPage />,
+      },
+      {
+        path: 'inscription',
+        element: <RegistrationPage />,
       },
 
       {
@@ -140,6 +147,26 @@ export const router = createBrowserRouter([
       },
 
       {
+        element: <RequireAuth allowedRoles={['admin', 'coach', 'dirigeant']} />,
+        children: [
+          {
+            path: 'admin/inscriptions',
+            element: <AdminRegistrationRequestsPage />,
+          },
+        ],
+      },
+
+      {
+        element: <RequireAuth allowedRoles={['admin', 'coach']} />,
+        children: [
+          {
+            path: 'coach/joueurs/:id/progression',
+            element: <CoachJoueurProgressionPage />,
+          },
+        ],
+      },
+
+      {
         element: <RequireAuth allowedRoles={['admin', 'dirigeant']} />,
         children: [
           {
@@ -163,16 +190,6 @@ export const router = createBrowserRouter([
           {
             path: 'admin/deblocages',
             element: <UnlockManagementPage />,
-          },
-        ],
-      },
-
-      {
-        element: <RequireAuth allowedRoles={['coach']} />,
-        children: [
-          {
-            path: 'coach/joueurs/:id/progression',
-            element: <CoachJoueurProgressionPage />,
           },
         ],
       },
