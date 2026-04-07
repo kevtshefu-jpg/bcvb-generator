@@ -181,6 +181,12 @@ export function Sidebar() {
 							<NavLink to="/admin/import-joueurs" className={linkClass}>
 								Import joueurs
 							</NavLink>
+							<NavLink to="/admin/import-export" className={linkClass}>
+								Import / Export
+							</NavLink>
+							<NavLink to="/admin/import-validation" className={linkClass}>
+								Validation imports
+							</NavLink>
 							<NavLink to="/admin/deblocages" className={linkClass}>
 								Déblocages
 							</NavLink>

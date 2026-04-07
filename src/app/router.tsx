@@ -1,3 +1,5 @@
+import ImportBatchValidationPage from '../features/import/pages/ImportBatchValidationPage'
+import ImportCenterPage from '../features/import/pages/ImportCenterPage'
 import ImportPlayersPage from '../features/import/pages/ImportPlayersPage'
 import { createBrowserRouter } from 'react-router-dom'
 import { MainLayout } from './layouts/MainLayout'
@@ -195,6 +197,14 @@ export const router = createBrowserRouter([
           {
             path: 'admin/import-joueurs',
             element: <ImportPlayersPage />,
+          },
+          {
+            path: 'admin/import-export',
+            element: <ImportCenterPage />,
+          },
+          {
+            path: 'admin/import-validation/:batchId',
+            element: <ImportBatchValidationPage />,
           },
         ],
       },
