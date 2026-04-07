@@ -1,7 +1,3 @@
-import JoueurFondamentauxPage from '../features/joueur/pages/JoueurFondamentauxPage'
-import JoueurProgressionPage from '../features/joueur/pages/JoueurProgressionPage'
-import AdminDeblocagesPage from '../features/admin/pages/AdminDeblocagesPage'
-import CoachJoueurProgressionPage from '../features/coach/pages/CoachJoueurProgressionPage'
 import { createBrowserRouter } from 'react-router-dom'
 import { MainLayout } from './layouts/MainLayout'
 import RequireAuth from '../features/auth/components/RequireAuth'
@@ -18,6 +14,7 @@ import { SituationDetailPage } from '../features/referentiel/pages/SituationDeta
 
 import AdminPage from '../features/admin/pages/AdminPage'
 import PlatformPage from '../features/admin/pages/PlatformPage'
+import UnlockManagementPage from '../features/admin/pages/UnlockManagementPage'
 
 import ClubPage from '../features/club/pages/ClubPage'
 import PilotagePage from '../features/club/pages/PilotagePage'
@@ -29,12 +26,16 @@ import SessionsPage from '../features/sessions/pages/SessionsPage'
 import JoueurContenusPage from '../features/joueur/pages/JoueurContenusPage'
 import JoueurChartePage from '../features/joueur/pages/JoueurChartePage'
 import JoueurEngagementPage from '../features/joueur/pages/JoueurEngagementPage'
+import JoueurFondamentauxPage from '../features/joueur/pages/JoueurFondamentauxPage'
+import JoueurProgressionPage from '../features/joueur/pages/JoueurProgressionPage'
 
 import ParentChartePage from '../features/parent/pages/ParentChartePage'
 import ParentVieClubPage from '../features/parent/pages/ParentVieClubPage'
 import ParentRolesPage from '../features/parent/pages/ParentRolesPage'
 import ParentReferentPage from '../features/parent/pages/ParentReferentPage'
 import ParentProjetClubPage from '../features/parent/pages/ParentProjetClubPage'
+
+import CoachJoueurProgressionPage from '../features/coach/pages/CoachJoueurProgressionPage'
 
 export const router = createBrowserRouter([
   {
@@ -98,33 +99,14 @@ export const router = createBrowserRouter([
             path: 'joueur/contenus',
             element: <JoueurContenusPage />,
           },
-           {
-             path: 'joueur/fondamentaux',
-             element: <JoueurFondamentauxPage />,
-           },
-           {
-             path: 'joueur/progression',
-             element: <JoueurProgressionPage />,
-           },
-                {
-                  element: <RequireAuth allowedRoles={['admin']} />,
-                  children: [
-                    {
-                      path: 'admin/deblocages',
-                      element: <AdminDeblocagesPage />,
-                    },
-                  ],
-                },
-
-                {
-                  element: <RequireAuth allowedRoles={['coach']} />,
-                  children: [
-                    {
-                      path: 'coach/joueurs/:id/progression',
-                      element: <CoachJoueurProgressionPage />,
-                    },
-                  ],
-                },
+          {
+            path: 'joueur/fondamentaux',
+            element: <JoueurFondamentauxPage />,
+          },
+          {
+            path: 'joueur/progression',
+            element: <JoueurProgressionPage />,
+          },
           {
             path: 'joueur/charte',
             element: <JoueurChartePage />,
@@ -177,6 +159,20 @@ export const router = createBrowserRouter([
           {
             path: 'admin/plateforme',
             element: <PlatformPage />,
+          },
+          {
+            path: 'admin/deblocages',
+            element: <UnlockManagementPage />,
+          },
+        ],
+      },
+
+      {
+        element: <RequireAuth allowedRoles={['coach']} />,
+        children: [
+          {
+            path: 'coach/joueurs/:id/progression',
+            element: <CoachJoueurProgressionPage />,
           },
         ],
       },
