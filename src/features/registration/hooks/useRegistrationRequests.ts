@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
+import { fetchRegistrationRequests, type RegistrationRequestRow } from '../services/registrationService'
 import {
-  fetchRegistrationRequests,
-  updateRegistrationRequestStatus,
-  type RegistrationRequestRow,
-} from '../services/registrationService'
+  approveRegistrationAndCreateUser,
+  rejectRegistrationRequest,
+} from '../services/registrationApprovalService'
 
 export function useRegistrationRequests(approvedBy?: string) {
   const [requests, setRequests] = useState<RegistrationRequestRow[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [lastCreatedPassword, setLastCreatedPassword] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
@@ -35,16 +36,38 @@ export function useRegistrationRequests(approvedBy?: string) {
     }
   }, [])
 
-  async function setStatus(id: string, status: 'approved' | 'rejected') {
+  async function approve(item: RegistrationRequestRow) {
     try {
       setError(null)
-      const updated = await updateRegistrationRequestStatus(id, status, approvedBy)
+      setLastCreatedPassword(null)
 
-      setRequests((current) =>
-        current.map((item) => (item.id === id ? updated : item))
-      )
+      const result = await approveRegistrationAndCreateUser({
+        request_id: item.id,
+        email: item.email,
+        first_name: item.first_name,
+        last_name: item.last_name,
+        category_requested: item.category_requested,
+        role_requested: item.role_requested,
+        approved_by: approvedBy,
+      })
+
+      setLastCreatedPassword(result.temporary_password)
+
+      const rows = await fetchRegistrationRequests()
+      setRequests(rows)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur mise à jour demande')
+      setError(err instanceof Error ? err.message : 'Erreur approbation')
+    }
+  }
+
+  async function reject(item: RegistrationRequestRow) {
+    try {
+      setError(null)
+      await rejectRegistrationRequest(item.id, approvedBy)
+      const rows = await fetchRegistrationRequests()
+      setRequests(rows)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur refus')
     }
   }
 
@@ -52,6 +75,8 @@ export function useRegistrationRequests(approvedBy?: string) {
     requests,
     loading,
     error,
-    setStatus,
+    approve,
+    reject,
+    lastCreatedPassword,
   }
 }

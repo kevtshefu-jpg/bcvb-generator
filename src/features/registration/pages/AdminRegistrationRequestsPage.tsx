@@ -9,7 +9,8 @@ function getStatusLabel(status: string) {
 
 export default function AdminRegistrationRequestsPage() {
   const { user } = useAuth()
-  const { requests, loading, error, setStatus } = useRegistrationRequests(user?.id)
+  const { requests, loading, error, approve, reject, lastCreatedPassword } =
+    useRegistrationRequests(user?.id)
 
   return (
     <section className="dashboard-page">
@@ -18,18 +19,30 @@ export default function AdminRegistrationRequestsPage() {
           <p className="dashboard-page__eyebrow">Administration</p>
           <h2 className="dashboard-page__title">Demandes d’inscription</h2>
           <p className="dashboard-page__text">
-            Consulte, approuve ou refuse les demandes envoyées par les visiteurs.
+            Valide une demande pour créer un vrai compte utilisateur et son profil club.
           </p>
         </div>
 
         <div className="dashboard-page__badge">
-          <span className="dashboard-page__badgeLabel">File active</span>
+          <span className="dashboard-page__badgeLabel">Demandes</span>
           <strong>{requests.length}</strong>
         </div>
       </div>
 
       {loading && <p>Chargement des demandes...</p>}
       {error && <p>{error}</p>}
+
+      {lastCreatedPassword && (
+        <article className="dashboard-panelCard">
+          <h3 className="dashboard-panelCard__title">Compte créé</h3>
+          <p className="dashboard-actionCard__text">
+            Mot de passe temporaire : <strong>{lastCreatedPassword}</strong>
+          </p>
+          <p className="dashboard-actionCard__text">
+            Transmets-le de manière sécurisée au nouvel inscrit.
+          </p>
+        </article>
+      )}
 
       <div className="dashboard-page__grid">
         {requests.map((item) => (
@@ -39,38 +52,20 @@ export default function AdminRegistrationRequestsPage() {
               {item.first_name} {item.last_name}
             </h3>
 
-            <p className="dashboard-actionCard__text">
-              <strong>Email :</strong> {item.email}
-            </p>
-            <p className="dashboard-actionCard__text">
-              <strong>Téléphone :</strong> {item.phone || '—'}
-            </p>
-            <p className="dashboard-actionCard__text">
-              <strong>Année :</strong> {item.birth_year || '—'}
-            </p>
-            <p className="dashboard-actionCard__text">
-              <strong>Catégorie demandée :</strong> {item.category_requested}
-            </p>
-            <p className="dashboard-actionCard__text">
-              <strong>Type :</strong> {item.role_requested}
-            </p>
-            <p className="dashboard-actionCard__text">
-              <strong>Notes :</strong> {item.notes || '—'}
-            </p>
+            <p className="dashboard-actionCard__text"><strong>Email :</strong> {item.email}</p>
+            <p className="dashboard-actionCard__text"><strong>Téléphone :</strong> {item.phone || '—'}</p>
+            <p className="dashboard-actionCard__text"><strong>Année :</strong> {item.birth_year || '—'}</p>
+            <p className="dashboard-actionCard__text"><strong>Catégorie demandée :</strong> {item.category_requested}</p>
+            <p className="dashboard-actionCard__text"><strong>Type :</strong> {item.role_requested}</p>
+            <p className="dashboard-actionCard__text"><strong>Notes :</strong> {item.notes || '—'}</p>
 
             {item.status === 'pending' && (
               <div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
-                <button
-                  className="bcvb-primary-btn"
-                  onClick={() => setStatus(item.id, 'approved')}
-                >
-                  Approuver
+                <button className="bcvb-primary-btn" onClick={() => approve(item)}>
+                  Approuver et créer le compte
                 </button>
 
-                <button
-                  className="bcvb-btn danger"
-                  onClick={() => setStatus(item.id, 'rejected')}
-                >
+                <button className="bcvb-btn danger" onClick={() => reject(item)}>
                   Refuser
                 </button>
               </div>
