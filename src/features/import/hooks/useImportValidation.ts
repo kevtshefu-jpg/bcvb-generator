@@ -19,12 +19,13 @@ export function useImportValidation(batchId?: string) {
     }
 
     let active = true
+    const currentBatchId = batchId
 
     async function load() {
       try {
         setLoading(true)
         setError(null)
-        const data = await fetchImportRows(batchId)
+        const data = await fetchImportRows(currentBatchId)
         if (active) setRows(data)
       } catch (err) {
         if (active) {

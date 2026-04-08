@@ -2,6 +2,19 @@ import ExcelJS from 'exceljs'
 import { normalizeRow, type NormalizedImportRow } from './normalizeImportRows'
 import type { ImportTemplate } from '../data/importTemplates'
 
+function rowValuesToArray(values: ExcelJS.CellValue[] | { [key: string]: ExcelJS.CellValue }) {
+  if (Array.isArray(values)) {
+    return values.slice(1)
+  }
+
+  return Object.keys(values)
+    .map((key) => Number(key))
+    .filter((key) => !Number.isNaN(key))
+    .sort((a, b) => a - b)
+    .filter((key) => key >= 1)
+    .map((key) => values[key])
+}
+
 export async function parseExcelFile(file: File): Promise<NormalizedImportRow[]> {
   const workbook = new ExcelJS.Workbook()
   const buffer = await file.arrayBuffer()
@@ -11,16 +24,19 @@ export async function parseExcelFile(file: File): Promise<NormalizedImportRow[]>
   if (!worksheet) return []
 
   const rows: Record<string, unknown>[] = []
+
   const headerRow = worksheet.getRow(1)
-  const headers = headerRow.values
-    .slice(1)
-    .map((value) => String(value ?? '').trim())
+  const headerValues = rowValuesToArray(headerRow.values as ExcelJS.CellValue[])
+
+  const headers = headerValues.map((value: ExcelJS.CellValue) => String(value ?? '').trim())
 
   worksheet.eachRow((row, rowNumber) => {
     if (rowNumber === 1) return
 
     const raw: Record<string, unknown> = {}
-    row.values.slice(1).forEach((value, index) => {
+    const rowValues = rowValuesToArray(row.values as ExcelJS.CellValue[])
+
+    rowValues.forEach((value: ExcelJS.CellValue, index: number) => {
       const key = headers[index]
       if (key) raw[key] = value ?? ''
     })
