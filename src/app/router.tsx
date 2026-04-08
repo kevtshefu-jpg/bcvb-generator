@@ -1,6 +1,3 @@
-import ImportBatchValidationPage from '../features/import/pages/ImportBatchValidationPage'
-import ImportCenterPage from '../features/import/pages/ImportCenterPage'
-import ImportPlayersPage from '../features/import/pages/ImportPlayersPage'
 import { createBrowserRouter } from 'react-router-dom'
 import { MainLayout } from './layouts/MainLayout'
 import RequireAuth from '../features/auth/components/RequireAuth'
@@ -42,6 +39,10 @@ import CoachJoueurProgressionPage from '../features/coach/pages/CoachJoueurProgr
 
 import RegistrationPage from '../features/registration/pages/RegistrationPage'
 import AdminRegistrationRequestsPage from '../features/registration/pages/AdminRegistrationRequestsPage'
+
+import ImportBatchValidationPage from '../features/import/pages/ImportBatchValidationPage'
+import ImportCenterPage from '../features/import/pages/ImportCenterPage'
+import ImportPlayersPage from '../features/import/pages/ImportPlayersPage'
 
 export const router = createBrowserRouter([
   {

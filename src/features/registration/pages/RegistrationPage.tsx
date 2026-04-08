@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { createRegistrationRequest } from '../services/registrationService'
+import { FormEvent, useMemo, useState } from 'react'
+import { supabase } from '../../../lib/supabase'
 
-type FormState = {
+type RegistrationFormState = {
   first_name: string
   last_name: string
   email: string
@@ -12,7 +12,7 @@ type FormState = {
   notes: string
 }
 
-const initialState: FormState = {
+const initialForm: RegistrationFormState = {
   first_name: '',
   last_name: '',
   email: '',
@@ -33,45 +33,92 @@ const categoryOptions = [
   'Seniors',
 ]
 
+const roleOptions = [
+  { value: 'joueur', label: 'Joueur / joueuse' },
+  { value: 'parent', label: 'Parent' },
+  { value: 'coach', label: 'Coach' },
+  { value: 'dirigeant', label: 'Dirigeant' },
+]
+
 export default function RegistrationPage() {
-  const [form, setForm] = useState<FormState>(initialState)
+  const [form, setForm] = useState<RegistrationFormState>(initialForm)
   const [loading, setLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
+  const canSubmit = useMemo(() => {
+    return (
+      form.first_name.trim() !== '' &&
+      form.last_name.trim() !== '' &&
+      form.email.trim() !== '' &&
+      form.birth_year.trim() !== '' &&
+      form.category_requested.trim() !== '' &&
+      form.role_requested.trim() !== ''
+    )
+  }, [form])
+
+  function updateField<K extends keyof RegistrationFormState>(
+    key: K,
+    value: RegistrationFormState[K]
+  ) {
     setForm((current) => ({
       ...current,
       [key]: value,
     }))
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+
+    setSuccessMessage(null)
+    setErrorMessage(null)
+
+    if (!canSubmit) {
+      setErrorMessage('Merci de compléter les champs obligatoires.')
+      return
+    }
+
+    const parsedBirthYear = Number(form.birth_year)
+
+    if (Number.isNaN(parsedBirthYear)) {
+      setErrorMessage("L'année de naissance n'est pas valide.")
+      return
+    }
 
     try {
       setLoading(true)
-      setSuccessMessage(null)
-      setErrorMessage(null)
 
-      await createRegistrationRequest({
+      const payload = {
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
-        email: form.email.trim(),
-        phone: form.phone.trim() || undefined,
-        birth_year: form.birth_year ? Number(form.birth_year) : undefined,
+        email: form.email.trim().toLowerCase(),
+        phone: form.phone.trim() || null,
+        birth_year: parsedBirthYear,
         category_requested: form.category_requested,
         role_requested: form.role_requested,
-        notes: form.notes.trim() || undefined,
-      })
+        notes: form.notes.trim() || null,
+        status: 'pending',
+      }
+
+      const { error } = await supabase
+        .from('registration_requests')
+        .insert([payload])
+
+      if (error) {
+        console.error('ERREUR SUPABASE :', error)
+        throw error
+      }
 
       setSuccessMessage(
-        "Votre demande d'inscription a bien été envoyée. Elle sera étudiée par le BCVB."
+        "Votre demande d'inscription a bien été envoyée. Un responsable reviendra vers vous après étude."
       )
-      setForm(initialState)
-    } catch (err) {
+      setForm(initialForm)
+    } catch (error) {
+      console.error('Erreur inscription :', error)
       setErrorMessage(
-        err instanceof Error ? err.message : "Erreur lors de l'envoi de la demande"
+        error instanceof Error
+          ? error.message
+          : "Erreur lors de l'envoi de la demande"
       )
     } finally {
       setLoading(false)
@@ -99,68 +146,134 @@ export default function RegistrationPage() {
       <article className="dashboard-panelCard">
         <h3 className="dashboard-panelCard__title">Informations du demandeur</h3>
 
-        <form onSubmit={handleSubmit} className="bcvb-form-stack" style={{ marginTop: 16 }}>
-          <div className="bcvb-form-grid">
-            <label className="bcvb-label-block">
-              <span>Prénom</span>
+        {successMessage && (
+          <div
+            style={{
+              marginTop: 16,
+              marginBottom: 16,
+              padding: '14px 16px',
+              borderRadius: 14,
+              background: 'rgba(27, 107, 58, 0.10)',
+              border: '1px solid rgba(27, 107, 58, 0.18)',
+            }}
+          >
+            {successMessage}
+          </div>
+        )}
+
+        {errorMessage && (
+          <div
+            style={{
+              marginTop: 16,
+              marginBottom: 16,
+              padding: '14px 16px',
+              borderRadius: 14,
+              background: 'rgba(200, 16, 46, 0.10)',
+              border: '1px solid rgba(200, 16, 46, 0.18)',
+            }}
+          >
+            {errorMessage}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ marginTop: 16 }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+              gap: 16,
+            }}
+          >
+            <div>
+              <label className="bcvb-label" htmlFor="first_name">
+                Prénom
+              </label>
               <input
+                id="first_name"
                 className="bcvb-input"
+                type="text"
                 value={form.first_name}
                 onChange={(e) => updateField('first_name', e.target.value)}
+                placeholder="Prénom"
+                disabled={loading}
                 required
               />
-            </label>
+            </div>
 
-            <label className="bcvb-label-block">
-              <span>Nom</span>
+            <div>
+              <label className="bcvb-label" htmlFor="last_name">
+                Nom
+              </label>
               <input
+                id="last_name"
                 className="bcvb-input"
+                type="text"
                 value={form.last_name}
                 onChange={(e) => updateField('last_name', e.target.value)}
+                placeholder="Nom"
+                disabled={loading}
                 required
               />
-            </label>
-          </div>
+            </div>
 
-          <div className="bcvb-form-grid">
-            <label className="bcvb-label-block">
-              <span>Email</span>
+            <div>
+              <label className="bcvb-label" htmlFor="email">
+                Email
+              </label>
               <input
+                id="email"
                 className="bcvb-input"
                 type="email"
                 value={form.email}
                 onChange={(e) => updateField('email', e.target.value)}
+                placeholder="Email"
+                disabled={loading}
                 required
               />
-            </label>
+            </div>
 
-            <label className="bcvb-label-block">
-              <span>Téléphone</span>
+            <div>
+              <label className="bcvb-label" htmlFor="phone">
+                Téléphone
+              </label>
               <input
+                id="phone"
                 className="bcvb-input"
+                type="text"
                 value={form.phone}
                 onChange={(e) => updateField('phone', e.target.value)}
+                placeholder="Téléphone"
+                disabled={loading}
               />
-            </label>
-          </div>
+            </div>
 
-          <div className="bcvb-form-grid">
-            <label className="bcvb-label-block">
-              <span>Année de naissance</span>
+            <div>
+              <label className="bcvb-label" htmlFor="birth_year">
+                Année de naissance
+              </label>
               <input
+                id="birth_year"
                 className="bcvb-input"
                 type="number"
+                inputMode="numeric"
                 value={form.birth_year}
                 onChange={(e) => updateField('birth_year', e.target.value)}
+                placeholder="Ex : 2012"
+                disabled={loading}
+                required
               />
-            </label>
+            </div>
 
-            <label className="bcvb-label-block">
-              <span>Catégorie demandée</span>
+            <div>
+              <label className="bcvb-label" htmlFor="category_requested">
+                Catégorie demandée
+              </label>
               <select
+                id="category_requested"
                 className="bcvb-input"
                 value={form.category_requested}
                 onChange={(e) => updateField('category_requested', e.target.value)}
+                disabled={loading}
                 required
               >
                 <option value="">Choisir une catégorie</option>
@@ -170,49 +283,65 @@ export default function RegistrationPage() {
                   </option>
                 ))}
               </select>
-            </label>
-          </div>
+            </div>
 
-          <div className="bcvb-form-grid">
-            <label className="bcvb-label-block">
-              <span>Type de demande</span>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label className="bcvb-label" htmlFor="role_requested">
+                Type de demande
+              </label>
               <select
+                id="role_requested"
                 className="bcvb-input"
                 value={form.role_requested}
                 onChange={(e) => updateField('role_requested', e.target.value)}
+                disabled={loading}
+                required
               >
-                <option value="joueur">Joueur / joueuse</option>
-                <option value="parent">Parent</option>
+                {roleOptions.map((role) => (
+                  <option key={role.value} value={role.value}>
+                    {role.label}
+                  </option>
+                ))}
               </select>
-            </label>
+            </div>
 
-            <div />
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label className="bcvb-label" htmlFor="notes">
+                Informations complémentaires
+              </label>
+              <textarea
+                id="notes"
+                className="bcvb-input"
+                value={form.notes}
+                onChange={(e) => updateField('notes', e.target.value)}
+                placeholder="Précisez ici toute information utile."
+                disabled={loading}
+                rows={5}
+                style={{ resize: 'vertical' }}
+              />
+            </div>
           </div>
 
-          <label className="bcvb-label-block">
-            <span>Informations complémentaires</span>
-            <textarea
-              className="bcvb-textarea"
-              value={form.notes}
-              onChange={(e) => updateField('notes', e.target.value)}
-            />
-          </label>
-
-          {successMessage && (
-            <div className="info-banner" style={{ borderColor: '#b7e4c7' }}>
-              {successMessage}
-            </div>
-          )}
-
-          {errorMessage && (
-            <div className="info-banner" style={{ borderColor: '#f5c2c7' }}>
-              {errorMessage}
-            </div>
-          )}
-
-          <div>
-            <button className="bcvb-primary-btn" type="submit" disabled={loading}>
+          <div style={{ marginTop: 20, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <button
+              type="submit"
+              className="bcvb-primary-btn"
+              disabled={loading || !canSubmit}
+            >
               {loading ? 'Envoi en cours...' : "Envoyer la demande d'inscription"}
+            </button>
+
+            <button
+              type="button"
+              className="bcvb-btn"
+              disabled={loading}
+              onClick={() => {
+                setForm(initialForm)
+                setSuccessMessage(null)
+                setErrorMessage(null)
+              }}
+            >
+              Réinitialiser
             </button>
           </div>
         </form>
