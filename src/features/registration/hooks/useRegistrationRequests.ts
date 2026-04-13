@@ -41,15 +41,7 @@ export function useRegistrationRequests(approvedBy?: string) {
       setError(null)
       setLastCreatedPassword(null)
 
-      const result = await approveRegistrationAndCreateUser({
-        request_id: item.id,
-        email: item.email,
-        first_name: item.first_name,
-        last_name: item.last_name,
-        category_requested: item.category_requested,
-        role_requested: item.role_requested,
-        approved_by: approvedBy,
-      })
+      const result = await approveRegistrationAndCreateUser(item.id)
 
       setLastCreatedPassword(result.temporary_password)
 

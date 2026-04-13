@@ -38,6 +38,8 @@ import ParentProjetClubPage from '../features/parent/pages/ParentProjetClubPage'
 import CoachJoueurProgressionPage from '../features/coach/pages/CoachJoueurProgressionPage'
 
 import RegistrationPage from '../features/registration/pages/RegistrationPage'
+import ForgotPasswordPage from '../features/auth/pages/ForgotPasswordPage'
+import ResetPasswordPage from '../features/auth/pages/ResetPasswordPage'
 import AdminRegistrationRequestsPage from '../features/registration/pages/AdminRegistrationRequestsPage'
 
 import ImportBatchValidationPage from '../features/import/pages/ImportBatchValidationPage'
@@ -53,6 +55,7 @@ export const router = createBrowserRouter([
         index: true,
         element: <HomePage />,
       },
+
       {
         path: 'connexion',
         element: <LoginPage />,
@@ -60,6 +63,14 @@ export const router = createBrowserRouter([
       {
         path: 'inscription',
         element: <RegistrationPage />,
+      },
+      {
+        path: 'mot-de-passe-oublie',
+        element: <ForgotPasswordPage />,
+      },
+      {
+        path: 'reinitialisation-mot-de-passe',
+        element: <ResetPasswordPage />,
       },
 
       {

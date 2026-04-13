@@ -7,8 +7,12 @@ export function TopBar() {
   const navigate = useNavigate()
 
   async function handleLogout() {
-    await signOut()
-    navigate('/connexion')
+    try {
+      await signOut()
+      navigate('/connexion')
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion :', error)
+    }
   }
 
   return (
@@ -31,7 +35,11 @@ export function TopBar() {
         </div>
 
         {user && (
-          <button className="topbar__logout" onClick={handleLogout}>
+          <button
+            type="button"
+            className="topbar__logout"
+            onClick={handleLogout}
+          >
             Déconnexion
           </button>
         )}

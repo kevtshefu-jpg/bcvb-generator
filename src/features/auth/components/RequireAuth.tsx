@@ -11,15 +11,11 @@ export default function RequireAuth({ allowedRoles }: RequireAuthProps) {
   const location = useLocation()
 
   if (loading) {
-    return <div>Chargement...</div>
+    return <div style={{ padding: 24 }}>Chargement...</div>
   }
 
   if (!user) {
     return <Navigate to="/connexion" replace state={{ from: location }} />
-  }
-
-  if (!profile?.is_active) {
-    return <Navigate to="/" replace />
   }
 
   if (allowedRoles && profile?.role && !allowedRoles.includes(profile.role)) {

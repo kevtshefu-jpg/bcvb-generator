@@ -1,18 +1,10 @@
 import { supabase } from '../../../lib/supabase'
 
-type ApproveRegistrationInput = {
-  request_id: string
-  email: string
-  first_name: string
-  last_name: string
-  category_requested: string
-  role_requested: string
-  approved_by?: string
-}
-
-export async function approveRegistrationAndCreateUser(input: ApproveRegistrationInput) {
+export async function approveRegistrationAndCreateUser(requestId: string) {
   const { data, error } = await supabase.functions.invoke('create-approved-user', {
-    body: input,
+    body: {
+      requestId,
+    },
   })
 
   if (error) throw error
@@ -20,6 +12,7 @@ export async function approveRegistrationAndCreateUser(input: ApproveRegistratio
   return data as {
     success: boolean
     user_id: string
+    email: string
     temporary_password: string
   }
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { Link } from 'react-router-dom'
 
 function getDefaultPathByRole(role?: string | null) {
   if (role === 'admin') return '/admin'
@@ -75,6 +76,12 @@ export default function LoginPage() {
           {submitting ? 'Connexion...' : 'Se connecter'}
         </button>
       </form>
+
+      <div style={{ marginTop: 16 }}>
+        <Link to="/mot-de-passe-oublie" className="dashboard-inlineLink">
+          Mot de passe oublié ?
+        </Link>
+      </div>
     </div>
   )
 }
