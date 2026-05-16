@@ -194,6 +194,10 @@ export function Sidebar() {
                 Plateforme
               </NavLink>
 
+              <NavLink to="/admin/ia-documentaire" className={linkClass}>
+  IA documentaire
+</NavLink>
+
               <NavLink to="/admin/inscriptions" className={linkClass}>
                 Inscriptions
               </NavLink>

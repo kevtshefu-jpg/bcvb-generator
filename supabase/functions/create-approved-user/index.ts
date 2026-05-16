@@ -1,12 +1,20 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+function cleanHeaderValue(value: string) {
+  return value
+    .trim()
+    .replace(/[\r\n\t]/g, '')
+}
+
 serve(async (req) => {
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const serviceRoleKey = Deno.env.get('SERVICE_ROLE_KEY')!
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')?.trim()
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.trim()
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')?.trim()
+    const AI_MODEL = Deno.env.get('AI_MODEL')?.trim() || 'gpt-5.5'
 
-    const adminClient = createClient(supabaseUrl, serviceRoleKey)
+    const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
     const body = await req.json()
     const {
@@ -14,7 +22,7 @@ serve(async (req) => {
       email,
       first_name,
       last_name,
-      category_requested,
+      category_requested, 
       role_requested,
       approved_by,
     } = body ?? {}
