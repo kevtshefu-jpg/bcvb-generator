@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { AttachmentProcessingResult, OCRPageResult } from "../../../types/attachments";
 
 type OcrPreviewProps = {
@@ -6,12 +6,17 @@ type OcrPreviewProps = {
   onChange: (result: AttachmentProcessingResult) => void;
   retryingPageNumber?: number | null;
   onRetryPage?: (pageNumber: number) => void;
+  requestedTab?: PreviewTab;
 };
 
-type PreviewTab = "cleaned" | "raw" | "pages";
+export type PreviewTab = "cleaned" | "raw" | "pages";
 
-export default function OcrPreview({ result, onChange, retryingPageNumber = null, onRetryPage }: OcrPreviewProps) {
+export default function OcrPreview({ result, onChange, retryingPageNumber = null, onRetryPage, requestedTab }: OcrPreviewProps) {
   const [tab, setTab] = useState<PreviewTab>("cleaned");
+
+  useEffect(() => {
+    if (requestedTab) setTab(requestedTab);
+  }, [requestedTab]);
 
   if (!result) {
     return (
@@ -47,6 +52,7 @@ export default function OcrPreview({ result, onChange, retryingPageNumber = null
           <h2>{result.fileName}</h2>
           <span>
             Brut conservé · texte nettoyé éditable · {result.pages.length} page{result.pages.length > 1 ? "s" : ""}
+            {result.confidence < 70 ? " · qualité faible — relecture nécessaire" : ""}
           </span>
         </div>
         <div className="ocr-preview__tabs">

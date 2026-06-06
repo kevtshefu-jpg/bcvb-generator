@@ -54,7 +54,7 @@ export default function AttachmentToDocumentPanel({
 
       <div className="attachment-transform-actions">
         <button type="button" onClick={buildMarkdown} disabled={!result || building}>
-          {building ? "Structuration..." : "Générer brouillon BCVB"}
+          {building ? "Transformation en cours..." : "Transformer en document BCVB"}
         </button>
         <button type="button" onClick={() => onSendToStudio(documentType, markdown)} disabled={!result || !markdown.trim()}>
           Envoyer au Studio éditorial

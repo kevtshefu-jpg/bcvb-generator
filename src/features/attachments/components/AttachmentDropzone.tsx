@@ -7,6 +7,24 @@ type AttachmentDropzoneProps = {
 
 const acceptedFormats = ".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.csv";
 
+const importZones = [
+  {
+    title: "PDF lisible",
+    text: "Le site récupère le texte directement, sans OCR lourd.",
+    formats: "PDF texte",
+  },
+  {
+    title: "PDF scanné",
+    text: "Le site lance l’OCR page par page puis signale les passages faibles.",
+    formats: "Scan multipage",
+  },
+  {
+    title: "Image / photo",
+    text: "Le site extrait le texte de la photo et propose une correction humaine.",
+    formats: "JPG, PNG, WEBP",
+  },
+];
+
 export default function AttachmentDropzone({ disabled = false, onFileSelected }: AttachmentDropzoneProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -37,13 +55,25 @@ export default function AttachmentDropzone({ disabled = false, onFileSelected }:
         disabled={disabled}
         onChange={(event) => handleFiles(event.target.files)}
       />
-      <div>
+      <div className="attachment-dropzone__intro">
         <p className="bcvb-eyebrow">Import fichier</p>
         <h2>Déposer PDF texte, PDF scanné ou image</h2>
         <p>
           Formats acceptés : PDF, JPG, PNG, WEBP, TXT, Markdown, CSV. Taille conseillée : moins de 25 Mo pour garder
           l’interface réactive.
         </p>
+        <div className="attachment-import-zones">
+          {importZones.map((zone) => (
+            <article key={zone.title}>
+              <span>{zone.formats}</span>
+              <strong>{zone.title}</strong>
+              <p>{zone.text}</p>
+              <button type="button" disabled={disabled} onClick={() => inputRef.current?.click()}>
+                Importer
+              </button>
+            </article>
+          ))}
+        </div>
       </div>
       <button type="button" disabled={disabled} onClick={() => inputRef.current?.click()}>
         Choisir un fichier

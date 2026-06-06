@@ -12,7 +12,9 @@ import AttachmentDropzone from "./AttachmentDropzone";
 import AttachmentProcessingPanel from "./AttachmentProcessingPanel";
 import AttachmentToDocumentPanel from "./AttachmentToDocumentPanel";
 import OcrPreview from "./OcrPreview";
+import type { PreviewTab } from "./OcrPreview";
 import { processAttachment } from "../services/attachmentPipeline";
+import { attachmentKindLabels, attachmentStatusLabels, formatFileSize } from "../services/attachmentUiLabels";
 import { recognizeCanvasWithOcr } from "../services/imageOcrExtractor";
 import { cleanOcrPages } from "../services/ocrCleaner";
 import "../../../styles/attachments.css";
@@ -56,13 +58,14 @@ export default function AttachmentsOcrAdminPage() {
   const [markdown, setMarkdown] = useState("");
   const [message, setMessage] = useState("Dépose une pièce jointe pour démarrer la chaîne OCR.");
   const [retryingPageNumber, setRetryingPageNumber] = useState<number | null>(null);
+  const [previewTab, setPreviewTab] = useState<PreviewTab>("cleaned");
 
   async function handleFile(file: File) {
     setSelectedFile(file);
     setResult(null);
     setMarkdown("");
     setProcessing(true);
-    setMessage(`Traitement de ${file.name} en cours.`);
+    setMessage(`Analyse de ${file.name} en cours : le site détecte le type puis extrait le contenu.`);
 
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
@@ -77,8 +80,10 @@ export default function AttachmentsOcrAdminPage() {
     setProcessing(false);
     setMessage(
       nextResult.status === "error"
-        ? "Le traitement a échoué. Vérifie le fichier ou essaie une source plus lisible."
-        : "Extraction terminée. Relis le texte nettoyé avant transformation."
+        ? "Extraction impossible — essaie un fichier plus net ou relance depuis une photo mieux cadrée."
+        : nextResult.status === "low_confidence"
+          ? "Qualité faible — relecture nécessaire avant transformation."
+          : "Texte prêt à être utilisé. Tu peux relire puis transformer en document BCVB."
     );
   }
 
@@ -186,6 +191,19 @@ export default function AttachmentsOcrAdminPage() {
     navigate("/admin/studio-editorial");
   }
 
+  function focusPreview(tab: PreviewTab) {
+    setPreviewTab(tab);
+    window.setTimeout(() => {
+      document.getElementById("ocr-preview")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
+  }
+
+  function focusTransform() {
+    window.setTimeout(() => {
+      document.getElementById("attachment-transform")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
+  }
+
   return (
     <main className="bcvb-page attachments-page">
       <section className="attachments-hero">
@@ -193,8 +211,8 @@ export default function AttachmentsOcrAdminPage() {
           <p className="bcvb-eyebrow">OCR & pièces jointes</p>
           <h1>Transformer les sources brutes en matière documentaire BCVB</h1>
           <p>
-            Import PDF texte, PDF scanné, image ou source texte, extraction native ou OCR, nettoyage, correction humaine,
-            structuration BCVB Rich Markdown et envoi vers le Studio éditorial.
+            Ajoute un PDF, un scan ou une photo. Le site extrait le contenu, nettoie le texte,
+            signale les incertitudes puis propose de le transformer en document BCVB.
           </p>
         </div>
         <div className="attachments-hero__checks">
@@ -222,6 +240,10 @@ export default function AttachmentsOcrAdminPage() {
           processing={processing}
           onReset={resetProcessing}
           onCancel={cancelProcessing}
+          onShowRaw={() => focusPreview("raw")}
+          onShowCleaned={() => focusPreview("cleaned")}
+          onCorrect={() => focusPreview("pages")}
+          onTransform={focusTransform}
         />
 
         <section className="attachments-source-card">
@@ -232,25 +254,48 @@ export default function AttachmentsOcrAdminPage() {
             <dl>
               <div>
                 <dt>Type</dt>
-                <dd>{selectedFile.type || "Inconnu"}</dd>
+                <dd>{result ? attachmentKindLabels[result.kind] : selectedFile.type || "Détection en cours"}</dd>
               </div>
               <div>
                 <dt>Taille</dt>
-                <dd>{Math.round(selectedFile.size / 1024)} Ko</dd>
+                <dd>{formatFileSize(selectedFile.size)}</dd>
+              </div>
+              <div>
+                <dt>Statut</dt>
+                <dd>{result ? attachmentStatusLabels[result.status] : processing ? "Analyse en cours" : "Importé"}</dd>
+              </div>
+              <div>
+                <dt>Confiance OCR</dt>
+                <dd>{result ? `${result.confidence}%` : "—"}</dd>
               </div>
             </dl>
+          )}
+          {result && (
+            <button type="button" className="attachments-source-card__transform" onClick={focusTransform}>
+              Transformer en document BCVB
+            </button>
           )}
         </section>
       </section>
 
-      <OcrPreview result={result} onChange={setResult} retryingPageNumber={retryingPageNumber} onRetryPage={retryPageOcr} />
+      <div id="ocr-preview">
+        <OcrPreview
+          result={result}
+          onChange={setResult}
+          retryingPageNumber={retryingPageNumber}
+          onRetryPage={retryPageOcr}
+          requestedTab={previewTab}
+        />
+      </div>
 
-      <AttachmentToDocumentPanel
-        result={result}
-        markdown={markdown}
-        onMarkdownChange={setMarkdown}
-        onSendToStudio={sendToStudio}
-      />
+      <div id="attachment-transform">
+        <AttachmentToDocumentPanel
+          result={result}
+          markdown={markdown}
+          onMarkdownChange={setMarkdown}
+          onSendToStudio={sendToStudio}
+        />
+      </div>
     </main>
   );
 }
