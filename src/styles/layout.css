@@ -136,6 +136,47 @@
   background: #ffffff;
 }
 
+.sidebar__linkText {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  flex: 1;
+}
+
+.sidebar__linkText > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar__linkHint {
+  overflow: hidden;
+  max-width: 170px;
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar__link--active .sidebar__linkHint,
+.sidebar__link:hover .sidebar__linkHint {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.sidebar__adminBadge {
+  margin-left: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  padding: 3px 6px;
+  color: #ffffff;
+  background: rgba(200, 16, 46, 0.42);
+  font-size: 0.64rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .sidebar__footer {
   margin-top: auto;
   padding: 14px 12px 0;
@@ -194,6 +235,7 @@
 
 .topbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 16px;

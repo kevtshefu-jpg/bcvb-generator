@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../features/auth/context/AuthContext'
 import { formatRole, getRoleHomeLabel } from '../../features/auth/utils/roles'
 import { PRESENTATION_LABELS } from '../../config/presentationMode'
+import CurrentModuleContext from '../../features/studio-ux/components/CurrentModuleContext'
 
 export function TopBar() {
   const { profile, user, signOut } = useAuth()
@@ -50,6 +51,8 @@ export function TopBar() {
           </button>
         )}
       </div>
+
+      <CurrentModuleContext role={profile?.role} />
     </header>
   )
 }

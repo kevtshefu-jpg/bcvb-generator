@@ -55,7 +55,10 @@ export function Sidebar() {
                   <span className="sidebar__linkIcon" aria-hidden="true">
                     {item.color === 'green' ? '●' : '◆'}
                   </span>
-                  <span className="sidebar__linkText">{item.label}</span>
+                  <span className="sidebar__linkText">
+                    <span>{item.label}</span>
+                    {item.mainActions[0] && <small className="sidebar__linkHint">{item.mainActions[0]}</small>}
+                  </span>
                   {item.adminOnly && <span className="sidebar__adminBadge">Admin</span>}
                 </NavLink>
               ))}
