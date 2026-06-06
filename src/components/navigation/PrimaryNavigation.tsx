@@ -4,23 +4,99 @@ import { canAccessCategory, getSiteCategoryById } from '../../config/siteCategor
 type PrimaryNavItem = {
   id: string
   label: string
+  shortLabel?: string
+  ariaLabel: string
   to: string
+  icon: string
   categoryId?: string
   adminOnly?: boolean
+  priority?: 'main' | 'control' | 'secondary'
 }
 
 const primaryNavItems: PrimaryNavItem[] = [
-  { id: 'home', label: 'Accueil', to: '/dashboard' },
-  { id: 'create', label: 'Créer', to: '/admin/documents/nouveau', categoryId: 'editorial-studio', adminOnly: true },
-  { id: 'import', label: 'Importer / OCR', to: '/admin/ocr-pieces-jointes', categoryId: 'ocr-attachments', adminOnly: true },
-  { id: 'library', label: 'Bibliothèque', to: '/bibliotheque', categoryId: 'library' },
-  { id: 'quality', label: 'Qualité', to: '/admin/qualite-exports#qualite', categoryId: 'quality-exports', adminOnly: true },
-  { id: 'exports', label: 'Exports', to: '/admin/qualite-exports#export', categoryId: 'quality-exports', adminOnly: true },
-  { id: 'settings', label: 'Paramètres', to: '/parametres', categoryId: 'admin-settings', adminOnly: true },
+  {
+    id: 'home',
+    label: 'Accueil',
+    ariaLabel: 'Retourner au tableau de bord',
+    to: '/dashboard',
+    icon: '⌂',
+    priority: 'main',
+  },
+  {
+    id: 'create',
+    label: 'Créer',
+    ariaLabel: 'Créer un nouveau document BCVB',
+    to: '/admin/documents/nouveau',
+    categoryId: 'editorial-studio',
+    adminOnly: true,
+    icon: '+',
+    priority: 'main',
+  },
+  {
+    id: 'import',
+    label: 'Importer',
+    shortLabel: 'OCR',
+    ariaLabel: 'Importer un PDF, une image ou un scan avec OCR',
+    to: '/admin/ocr-pieces-jointes',
+    categoryId: 'ocr-attachments',
+    adminOnly: true,
+    icon: '↥',
+    priority: 'main',
+  },
+  {
+    id: 'library',
+    label: 'Bibliothèque',
+    ariaLabel: 'Ouvrir la bibliothèque documentaire',
+    to: '/bibliotheque',
+    categoryId: 'library',
+    icon: '▦',
+    priority: 'main',
+  },
+  {
+    id: 'quality',
+    label: 'Qualité',
+    ariaLabel: 'Contrôler la qualité des documents',
+    to: '/admin/qualite-exports#qualite',
+    categoryId: 'quality-exports',
+    adminOnly: true,
+    icon: '✓',
+    priority: 'control',
+  },
+  {
+    id: 'exports',
+    label: 'Exports',
+    ariaLabel: 'Préparer et exporter les documents en PDF',
+    to: '/admin/qualite-exports#export',
+    categoryId: 'quality-exports',
+    adminOnly: true,
+    icon: '↓',
+    priority: 'control',
+  },
+  {
+    id: 'settings',
+    label: 'Paramètres',
+    ariaLabel: 'Ouvrir les paramètres du site',
+    to: '/parametres',
+    categoryId: 'admin-settings',
+    adminOnly: true,
+    icon: '⚙',
+    priority: 'secondary',
+  },
 ]
 
+function isAdminRole(role?: string | null) {
+  return role === 'admin' || role === 'responsable_technique'
+}
+
 function isVisible(item: PrimaryNavItem, role?: string | null) {
-  if (!item.categoryId) return true
+  if (item.adminOnly && !isAdminRole(role)) {
+    return false
+  }
+
+  if (!item.categoryId) {
+    return true
+  }
+
   const category = getSiteCategoryById(item.categoryId)
   return category ? canAccessCategory(category, role) : false
 }
@@ -32,8 +108,14 @@ function isActive(item: PrimaryNavItem, pathname: string, hash: string) {
     return pathname === targetPath && (!hash || hash === '#qualite')
   }
 
-  if (targetHash) return pathname === targetPath && hash === `#${targetHash}`
-  if (item.id === 'home') return pathname === '/' || pathname === '/dashboard'
+  if (targetHash) {
+    return pathname === targetPath && hash === `#${targetHash}`
+  }
+
+  if (item.id === 'home') {
+    return pathname === '/' || pathname === '/dashboard'
+  }
+
   return pathname === targetPath || pathname.startsWith(`${targetPath}/`)
 }
 
@@ -41,17 +123,48 @@ export function PrimaryNavigation({ role }: { role?: string | null }) {
   const location = useLocation()
   const visibleItems = primaryNavItems.filter((item) => isVisible(item, role))
 
+  const mainItems = visibleItems.filter((item) => item.priority === 'main')
+  const controlItems = visibleItems.filter((item) => item.priority === 'control')
+  const secondaryItems = visibleItems.filter((item) => item.priority === 'secondary')
+
+  const renderItem = (item: PrimaryNavItem) => {
+    const active = isActive(item, location.pathname, location.hash)
+
+    return (
+      <Link
+        key={item.id}
+        to={item.to}
+        className={`primary-nav__link primary-nav__link--${item.priority ?? 'main'}${
+          active ? ' primary-nav__link--active' : ''
+        }`}
+        aria-label={item.ariaLabel}
+        aria-current={active ? 'page' : undefined}
+      >
+        <span className="primary-nav__icon" aria-hidden="true">
+          {item.icon}
+        </span>
+        <span className="primary-nav__label">{item.label}</span>
+      </Link>
+    )
+  }
+
   return (
     <nav className="primary-nav" aria-label="Navigation principale">
-      {visibleItems.map((item) => (
-        <Link
-          key={item.id}
-          to={item.to}
-          className={`primary-nav__link${isActive(item, location.pathname, location.hash) ? ' primary-nav__link--active' : ''}`}
-        >
-          {item.label}
-        </Link>
-      ))}
+      <div className="primary-nav__group primary-nav__group--main">
+        {mainItems.map(renderItem)}
+      </div>
+
+      {controlItems.length > 0 && (
+        <div className="primary-nav__group primary-nav__group--control" aria-label="Contrôle documentaire">
+          {controlItems.map(renderItem)}
+        </div>
+      )}
+
+      {secondaryItems.length > 0 && (
+        <div className="primary-nav__group primary-nav__group--secondary" aria-label="Paramètres">
+          {secondaryItems.map(renderItem)}
+        </div>
+      )}
     </nav>
   )
 }

@@ -37,30 +37,46 @@ export function TopBar() {
   }
 
   return (
+  <>
     <header className="topbar topbar--v33" role="banner">
       <div className="topbar__left">
         <div className="topbar__brandLine">
-          <img src="/logo_bcvb copie.png" alt="Logo BCVB" className="topbar__logo" />
-          <div>
-	            <p className="topbar__eyebrow">{PRESENTATION_LABELS.appTitle}</p>
-	            <h1 className="topbar__title">{getRoleHomeLabel(profile?.role)}</h1>
-	            <p className="topbar__subtitle">
-	              {PRESENTATION_LABELS.appSubtitle}
-	            </p>
+          <img
+            src="/logo_bcvb copie.png"
+            alt="Logo BCVB"
+            className="topbar__logo"
+          />
+
+          <div className="topbar__brandText">
+            <p className="topbar__eyebrow">
+              {PRESENTATION_LABELS.appTitle}
+            </p>
+
+            <h1 className="topbar__title">
+              Studio documentaire BCVB
+            </h1>
+
+            <p className="topbar__subtitle">
+              {getRoleHomeLabel(profile?.role)} · {PRESENTATION_LABELS.appSubtitle}
+            </p>
           </div>
         </div>
       </div>
 
       <PrimaryNavigation role={profile?.role} />
 
-      <div className="topbar__right">
+      <div className="topbar__right" aria-label="Informations utilisateur">
         <div className="topbar__identityCard">
           <span className="topbar__identityLabel">Session active</span>
+
           <span className="topbar__name">
             {profile?.full_name || profile?.email || user?.email || 'Membre'}
           </span>
+
           <span className="topbar__role">
-            <span className="topbar__roleIcon">{getRoleIcon(profile?.role)}</span>
+            <span className="topbar__roleIcon" aria-hidden="true">
+              {getRoleIcon(profile?.role)}
+            </span>
             {formatRole(profile?.role)}
           </span>
         </div>
@@ -70,15 +86,18 @@ export function TopBar() {
             type="button"
             className="topbar__logout"
             onClick={handleLogout}
-            title="Cliquer pour se déconnecter"
+            aria-label="Se déconnecter du Studio documentaire BCVB"
           >
             Déconnexion
           </button>
         )}
       </div>
+    </header>
 
+    <div className="topbar-context" aria-label="Contexte de navigation">
       <Breadcrumbs role={profile?.role} />
       <CurrentModuleContext role={profile?.role} />
-    </header>
-  )
+    </div>
+  </>
+)
 }
