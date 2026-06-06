@@ -40,6 +40,7 @@ import AttendancePage from '../pages/AttendancePage'
 import PlayerEvaluationPage from '../pages/PlayerEvaluationPage'
 import EditorialStudioPage from '../pages/EditorialStudioPage'
 import EditorialRoadmapPage from '../pages/EditorialRoadmapPage'
+import CreateDocumentPage from '../features/document-creation/pages/CreateDocumentPage'
 import TeamsManagementPage from '../features/modules/pages/TeamsManagementPage'
 import TeamProfilePage from '../components/teams/TeamProfilePage'
 import DirigeantsSpacePage from '../features/modules/pages/DirigeantsSpacePage'
@@ -282,7 +283,7 @@ export const router = createBrowserRouter([
 	          // 🔥 IA DOCUMENTAIRE
 	          { path: 'admin/ia-documentaire', element: <AdminAIDocumentsPage /> },
 	          { path: 'admin/studio-editorial', element: <EditorialStudioPage /> },
-	          { path: 'admin/documents/nouveau', element: <EditorialStudioPage /> },
+	          { path: 'admin/documents/nouveau', element: <CreateDocumentPage /> },
 	          { path: 'admin/documents/transformer', element: <EditorialStudioPage /> },
 	          { path: 'admin/controle-qualite', element: <EditorialStudioPage /> },
 	          { path: 'admin/roadmap-documentaire', element: <EditorialRoadmapPage /> },

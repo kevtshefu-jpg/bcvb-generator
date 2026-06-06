@@ -11,7 +11,7 @@ type PrimaryNavItem = {
 
 const primaryNavItems: PrimaryNavItem[] = [
   { id: 'home', label: 'Accueil', to: '/dashboard' },
-  { id: 'create', label: 'Créer', to: '/admin/studio-editorial', categoryId: 'editorial-studio', adminOnly: true },
+  { id: 'create', label: 'Créer', to: '/admin/documents/nouveau', categoryId: 'editorial-studio', adminOnly: true },
   { id: 'import', label: 'Importer / OCR', to: '/admin/ocr-pieces-jointes', categoryId: 'ocr-attachments', adminOnly: true },
   { id: 'library', label: 'Bibliothèque', to: '/bibliotheque', categoryId: 'library' },
   { id: 'quality', label: 'Qualité', to: '/admin/qualite-exports#qualite', categoryId: 'quality-exports', adminOnly: true },
