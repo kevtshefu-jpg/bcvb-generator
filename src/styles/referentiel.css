@@ -277,7 +277,8 @@
 
 .bcvb-field input:focus,
 .bcvb-field select:focus {
-  outline: none;
+  outline: 2px solid var(--bcvb-red);
+  outline-offset: 2px;
   border-color: var(--bcvb-red-dark);
   box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.1);
 }
@@ -302,7 +303,8 @@
 }
 
 .bcvb-card textarea:focus {
-  outline: none;
+  outline: 2px solid var(--bcvb-red);
+  outline-offset: 2px;
   border-color: var(--bcvb-red-dark);
   box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.1);
 }

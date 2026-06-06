@@ -6,6 +6,23 @@ import CurrentModuleContext from '../../features/studio-ux/components/CurrentMod
 import { Breadcrumbs } from './Breadcrumbs'
 import { PrimaryNavigation } from './PrimaryNavigation'
 
+function getRoleIcon(role?: string | null): string {
+  switch (role) {
+    case 'admin':
+      return '⚙️'
+    case 'coach':
+      return '🎯'
+    case 'dirigeant':
+      return '👔'
+    case 'parent_referent':
+      return '👥'
+    case 'team_staff':
+      return '👷'
+    default:
+      return '📖'
+  }
+}
+
 export function TopBar() {
   const { profile, user, signOut } = useAuth()
   const navigate = useNavigate()
@@ -20,7 +37,7 @@ export function TopBar() {
   }
 
   return (
-    <header className="topbar topbar--v33">
+    <header className="topbar topbar--v33" role="banner">
       <div className="topbar__left">
         <div className="topbar__brandLine">
           <img src="/logo_bcvb copie.png" alt="Logo BCVB" className="topbar__logo" />
@@ -42,7 +59,10 @@ export function TopBar() {
           <span className="topbar__name">
             {profile?.full_name || profile?.email || user?.email || 'Membre'}
           </span>
-          <span className="topbar__role">{formatRole(profile?.role)}</span>
+          <span className="topbar__role">
+            <span className="topbar__roleIcon">{getRoleIcon(profile?.role)}</span>
+            {formatRole(profile?.role)}
+          </span>
         </div>
 
         {user && (
@@ -50,6 +70,7 @@ export function TopBar() {
             type="button"
             className="topbar__logout"
             onClick={handleLogout}
+            title="Cliquer pour se déconnecter"
           >
             Déconnexion
           </button>

@@ -181,10 +181,11 @@
   background: #f8fafc;
   color: #111827;
   font: inherit;
-  outline: none;
 }
 
 .faq-search-bar input:focus {
+  outline: 2px solid var(--bcvb-red);
+  outline-offset: 2px;
   border-color: rgba(200, 16, 46, 0.52);
   box-shadow: 0 0 0 4px rgba(200, 16, 46, 0.1);
 }

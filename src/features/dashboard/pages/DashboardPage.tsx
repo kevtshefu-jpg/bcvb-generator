@@ -6,6 +6,7 @@ import { useSafeLoading } from '../../../hooks/useSafeLoading'
 import { PRESENTATION_MODE } from '../../../config/presentationMode'
 import { buildDirectorSpaceModel } from '../../../lib/directors/directorDashboard'
 import StudioExperiencePanel from '../../studio-ux/components/StudioExperiencePanel'
+import ActionHeroCard from '../../../components/dashboard/ActionHeroCard'
 import {
   formatRole,
   isAdmin,
@@ -84,8 +85,10 @@ function DashboardPanel({ title, children }: { title: string; children: ReactNod
   return (
     <section className="bcvb-dashboard-panel">
       <header className="bcvb-dashboard-panel__header">
-        <p className="bcvb-eyebrow">Tableau de bord</p>
-        <h2>{title}</h2>
+        <div>
+          <p className="bcvb-eyebrow">Tableau de bord</p>
+          <h2>{title}</h2>
+        </div>
       </header>
       {children}
     </section>
@@ -140,6 +143,8 @@ function BcvbDashboardOverview({ role }: { role?: string | null }) {
 
   return (
     <>
+      <ActionHeroCard role={role} />
+
       <DashboardPanel title="Vue synthétique">
         <div className="bcvb-dashboard-metrics">
           {overviewItems.map((item) => (
