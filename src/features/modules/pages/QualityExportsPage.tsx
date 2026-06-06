@@ -15,6 +15,10 @@ import {
 } from "../../document-versioning/services/documentVersionService";
 import type { DocumentVersion } from "../../document-versioning/types/version.types";
 import RichMarkdownRenderer from "../../rich-markdown/components/RichMarkdownRenderer";
+import DocumentWorkflowStepper, {
+  type DocumentWorkflowStep,
+  type DocumentWorkflowStatus,
+} from "../../workflow/components/DocumentWorkflowStepper";
 import { loadEditorialStudioState } from "../../../utils/editorialStudioStorage";
 
 const EXPORT_ELEMENT_ID = "bcvb-quality-export-document";
@@ -138,6 +142,14 @@ function formatDate(value?: string) {
   return new Date(value).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
 }
 
+function activeAwareStatus(
+  stepId: string,
+  activeStep: string,
+  baseStatus: Exclude<DocumentWorkflowStatus, "in_progress">
+): DocumentWorkflowStatus {
+  return activeStep === stepId && baseStatus !== "done" ? "in_progress" : baseStatus;
+}
+
 export default function QualityExportsPage() {
   const initialDocument = useMemo(loadInitialDocument, []);
   const [title, setTitle] = useState(initialDocument.title);
@@ -155,6 +167,15 @@ export default function QualityExportsPage() {
     [contentSource, family]
   );
   const currentVersion = versions[0]?.version ?? 0;
+  const hasSource = contentSource.trim().length > 0;
+  const criticalWarningCount = score.warnings.filter((warning) => warning.level === "critical").length;
+  const qualityBaseStatus: Exclude<DocumentWorkflowStatus, "in_progress"> =
+    criticalWarningCount > 0 ? "error" : score.globalScore < 85 ? "needs_review" : "done";
+  const correctionBaseStatus: Exclude<DocumentWorkflowStatus, "in_progress"> =
+    score.globalScore < 85 || criticalWarningCount > 0 ? "needs_review" : "done";
+  const exportBaseStatus: Exclude<DocumentWorkflowStatus, "in_progress"> =
+    criticalWarningCount > 0 ? "error" : score.globalScore < 85 ? "needs_review" : "todo";
+  const archiveBaseStatus: Exclude<DocumentWorkflowStatus, "in_progress"> = versions.length > 0 ? "done" : "todo";
 
   async function refreshVersions() {
     const nextVersions = await getVersionHistory(documentId);
@@ -230,6 +251,119 @@ export default function QualityExportsPage() {
   }
 
   const activeStepLabel = workflowSteps.find((step) => step.id === activeStep)?.label ?? "Source";
+  const guidedWorkflowSteps: DocumentWorkflowStep[] = [
+    {
+      id: "source",
+      label: "Source",
+      status: activeAwareStatus("source", activeStep, hasSource ? "done" : "todo"),
+      explanation: "Ajoute un prompt, un PDF, une image ou un texte brut.",
+      primaryAction: {
+        label: "Importer / écrire",
+        onClick: () => goToStep("source"),
+      },
+      secondaryAction: {
+        label: "Voir OCR",
+        onClick: () => {
+          window.location.href = "/admin/ocr-pieces-jointes";
+        },
+      },
+    },
+    {
+      id: "structure",
+      label: "Structuration",
+      status: activeAwareStatus("structure", activeStep, hasSource && family !== "unknown" ? "done" : "todo"),
+      explanation: "Le contenu est transformé en document BCVB Rich Markdown.",
+      primaryAction: {
+        label: "Structurer",
+        onClick: () => goToStep("structure"),
+      },
+      secondaryAction: {
+        label: "Changer famille",
+        onClick: () => goToStep("source"),
+      },
+    },
+    {
+      id: "apercu",
+      label: "Aperçu",
+      status: activeAwareStatus("apercu", activeStep, hasSource ? "done" : "todo"),
+      explanation: "Vérifie le rendu avant export.",
+      primaryAction: {
+        label: "Prévisualiser",
+        onClick: () => goToStep("apercu"),
+      },
+      secondaryAction: {
+        label: "Modifier source",
+        onClick: () => goToStep("source"),
+      },
+    },
+    {
+      id: "qualite",
+      label: "Qualité",
+      status: activeAwareStatus("qualite", activeStep, qualityBaseStatus),
+      explanation: "Le document reçoit un score sur 100.",
+      primaryAction: {
+        label: "Lancer le score",
+        onClick: () => {
+          setMessage(`Score actuel : ${score.globalScore}/100. ${criticalWarningCount} warning critique.`);
+          goToStep("qualite");
+        },
+      },
+      secondaryAction: {
+        label: "Voir warnings",
+        onClick: () => goToStep("qualite"),
+      },
+    },
+    {
+      id: "correction",
+      label: "Correction",
+      status: activeAwareStatus("correction", activeStep, correctionBaseStatus),
+      explanation: "Le site propose une amélioration forte.",
+      primaryAction: {
+        label: "Améliorer fortement",
+        onClick: () => {
+          setMessage("Correction massive prête : vérifiez le plan proposé.");
+          goToStep("correction");
+        },
+      },
+      secondaryAction: {
+        label: "Comparer",
+        onClick: () => goToStep("correction"),
+      },
+    },
+    {
+      id: "export",
+      label: "Export",
+      status: activeAwareStatus("export", activeStep, exportBaseStatus),
+      explanation: "Génère une version PDF propre.",
+      primaryAction: {
+        label: "Exporter",
+        disabled: criticalWarningCount > 0,
+        onClick: () => {
+          void handleExportPdf();
+        },
+      },
+      secondaryAction: {
+        label: "Préparer PDF",
+        onClick: () => goToStep("export"),
+      },
+    },
+    {
+      id: "versions",
+      label: "Archivage",
+      status: activeAwareStatus("versions", activeStep, archiveBaseStatus),
+      explanation: "La source et les versions sont conservées.",
+      primaryAction: {
+        label: "Voir l’historique",
+        onClick: () => goToStep("versions"),
+      },
+      secondaryAction: {
+        label: "Sauvegarder",
+        onClick: () => {
+          void handleSaveVersion(["Archivage manuel depuis le parcours guidé."]);
+        },
+      },
+    },
+  ];
   const documentActions: DocumentAction[] = [
     {
       id: "save",
@@ -299,6 +433,7 @@ export default function QualityExportsPage() {
         <span className="quality-status-message no-print">{message}</span>
       </section>
 
+      <DocumentWorkflowStepper steps={guidedWorkflowSteps} activeStepId={activeStep} onStepSelect={goToStep} />
       <DocumentWorkflowNav steps={workflowSteps} activeStep={activeStep} onStepChange={setActiveStep} />
 
       <section className="quality-page__workspace">

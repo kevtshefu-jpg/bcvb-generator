@@ -1,0 +1,213 @@
+.document-workflow-stepper {
+  display: grid;
+  gap: 16px;
+  max-width: 1440px;
+  margin: 0 auto 18px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  padding: 18px;
+  color: #ffffff;
+  background:
+    radial-gradient(circle at top left, rgba(200, 16, 46, 0.24), transparent 32%),
+    linear-gradient(135deg, rgba(20, 24, 31, 0.98), rgba(16, 24, 39, 0.96));
+  box-shadow: 0 20px 56px rgba(2, 6, 23, 0.24);
+}
+
+.document-workflow-stepper__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, auto);
+  gap: 18px;
+  align-items: end;
+}
+
+.document-workflow-stepper__header h2 {
+  margin: 4px 0 8px;
+  color: #ffffff;
+  font-size: clamp(1.55rem, 3vw, 2.6rem);
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.document-workflow-stepper__header p {
+  max-width: 780px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.74);
+  line-height: 1.5;
+}
+
+.document-workflow-stepper__next {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.document-workflow-stepper__next span {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.document-workflow-stepper__next strong {
+  color: #ffffff;
+  font-size: 1.05rem;
+}
+
+.document-workflow-stepper__next button,
+.document-workflow-card__actions button {
+  border: 0;
+  border-radius: 999px;
+  min-height: 36px;
+  padding: 0 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.document-workflow-stepper__next button,
+.document-workflow-card__actions button:first-child {
+  color: #ffffff;
+  background: #c8102e;
+}
+
+.document-workflow-card__actions button:disabled,
+.document-workflow-stepper__next button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.document-workflow-stepper__progress {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.document-workflow-stepper__progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #c8102e, #ffffff);
+  transition: width 180ms ease;
+}
+
+.document-workflow-stepper__steps {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.document-workflow-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 5px solid rgba(255, 255, 255, 0.34);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.document-workflow-card--done {
+  border-top-color: #22c55e;
+}
+
+.document-workflow-card--in_progress {
+  border-top-color: #c8102e;
+}
+
+.document-workflow-card--needs_review {
+  border-top-color: #f59e0b;
+}
+
+.document-workflow-card--error {
+  border-top-color: #ef4444;
+}
+
+.document-workflow-card--active {
+  outline: 2px solid rgba(255, 255, 255, 0.84);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.document-workflow-card__selector {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.document-workflow-card__number,
+.document-workflow-card__status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.document-workflow-card__number {
+  width: 28px;
+  height: 28px;
+  color: #101827;
+  background: #ffffff;
+}
+
+.document-workflow-card__status {
+  padding: 4px 7px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.document-workflow-card strong {
+  color: #ffffff;
+  font-size: 0.96rem;
+  line-height: 1.15;
+}
+
+.document-workflow-card p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.document-workflow-card__actions {
+  display: grid;
+  gap: 7px;
+  margin-top: auto;
+}
+
+.document-workflow-card__actions .document-workflow-card__secondary {
+  color: #101827;
+  background: #ffffff;
+}
+
+@media (max-width: 1320px) {
+  .document-workflow-stepper__steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .document-workflow-stepper__header {
+    grid-template-columns: 1fr;
+  }
+
+  .document-workflow-stepper__steps {
+    grid-template-columns: 1fr;
+  }
+}
