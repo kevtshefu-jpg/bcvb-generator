@@ -3,6 +3,8 @@ import { useAuth } from '../../features/auth/context/AuthContext'
 import { formatRole, getRoleHomeLabel } from '../../features/auth/utils/roles'
 import { PRESENTATION_LABELS } from '../../config/presentationMode'
 import CurrentModuleContext from '../../features/studio-ux/components/CurrentModuleContext'
+import { Breadcrumbs } from './Breadcrumbs'
+import { PrimaryNavigation } from './PrimaryNavigation'
 
 export function TopBar() {
   const { profile, user, signOut } = useAuth()
@@ -32,6 +34,8 @@ export function TopBar() {
         </div>
       </div>
 
+      <PrimaryNavigation role={profile?.role} />
+
       <div className="topbar__right">
         <div className="topbar__identityCard">
           <span className="topbar__identityLabel">Session active</span>
@@ -52,6 +56,7 @@ export function TopBar() {
         )}
       </div>
 
+      <Breadcrumbs role={profile?.role} />
       <CurrentModuleContext role={profile?.role} />
     </header>
   )

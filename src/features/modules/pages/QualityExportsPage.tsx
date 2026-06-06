@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { DocumentActionBar, type DocumentAction } from "../../../components/navigation/DocumentActionBar";
+import { DocumentWorkflowNav } from "../../../components/navigation/DocumentWorkflowNav";
 import ExportPanel from "../../document-export/components/ExportPanel";
+import { exportDocumentToPdf } from "../../document-export/services/pdfExportService";
 import MassiveCorrectionPanel from "../../document-quality/components/MassiveCorrectionPanel";
 import QualityScorePanel from "../../document-quality/components/QualityScorePanel";
 import "../../document-quality/styles/documentQuality.css";
@@ -15,6 +18,16 @@ import RichMarkdownRenderer from "../../rich-markdown/components/RichMarkdownRen
 import { loadEditorialStudioState } from "../../../utils/editorialStudioStorage";
 
 const EXPORT_ELEMENT_ID = "bcvb-quality-export-document";
+
+const workflowSteps = [
+  { id: "source", label: "Source", detail: "Texte" },
+  { id: "structure", label: "Structure", detail: "Famille" },
+  { id: "apercu", label: "Aperçu", detail: "Rendu" },
+  { id: "qualite", label: "Qualité", detail: "Score" },
+  { id: "correction", label: "Correction", detail: "Améliorer" },
+  { id: "export", label: "Export", detail: "PDF" },
+  { id: "versions", label: "Versions", detail: "Historique" },
+];
 
 const familyOptions: Array<{ value: DocumentFamily; label: string }> = [
   { value: "guide_coach", label: "Guide coach" },
@@ -131,6 +144,10 @@ export default function QualityExportsPage() {
   const [family, setFamily] = useState<DocumentFamily>(initialDocument.family);
   const [contentSource, setContentSource] = useState(initialDocument.source);
   const [versions, setVersions] = useState<DocumentVersion[]>([]);
+  const [activeStep, setActiveStep] = useState(() => {
+    const hash = typeof window === "undefined" ? "" : window.location.hash.replace("#", "");
+    return workflowSteps.some((step) => step.id === hash) ? hash : "source";
+  });
   const [message, setMessage] = useState("Atelier prêt : analyse qualité, correction, export et versionnage séparés.");
   const documentId = useMemo(() => makeDocumentId(initialDocument.title), [initialDocument.title]);
   const score: QualityScore = useMemo(
@@ -147,6 +164,23 @@ export default function QualityExportsPage() {
   useEffect(() => {
     void refreshVersions();
   }, [documentId]);
+
+  useEffect(() => {
+    function syncHashStep() {
+      const nextStep = window.location.hash.replace("#", "");
+      if (workflowSteps.some((step) => step.id === nextStep)) setActiveStep(nextStep);
+    }
+
+    window.addEventListener("hashchange", syncHashStep);
+    return () => window.removeEventListener("hashchange", syncHashStep);
+  }, []);
+
+  function goToStep(stepId: string) {
+    setActiveStep(stepId);
+    window.setTimeout(() => {
+      document.getElementById(stepId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
+  }
 
   async function handleSaveVersion(changeLog = ["Version source enregistrée manuellement."], scoreOverride = score) {
     const parentId = versions[0]?.id;
@@ -185,6 +219,67 @@ export default function QualityExportsPage() {
     setMessage(`Version ${version.version} restaurée en aperçu. Enregistrez pour créer une nouvelle branche.`);
   }
 
+  async function handleExportPdf() {
+    setMessage("Export PDF lancé depuis la barre d’actions persistante.");
+    await exportDocumentToPdf({
+      documentId,
+      title,
+      contentElementId: EXPORT_ELEMENT_ID,
+      orientation: "portrait",
+    });
+  }
+
+  const activeStepLabel = workflowSteps.find((step) => step.id === activeStep)?.label ?? "Source";
+  const documentActions: DocumentAction[] = [
+    {
+      id: "save",
+      label: "Sauvegarder",
+      detail: "Créer une version source restaurable.",
+      tone: "primary",
+      onClick: () => {
+        void handleSaveVersion();
+      },
+    },
+    {
+      id: "score",
+      label: "Scorer",
+      detail: "Afficher le score qualité et les warnings.",
+      onClick: () => {
+        setMessage(`Score actuel : ${score.globalScore}/100. Consultez les warnings qualité.`);
+        goToStep("qualite");
+      },
+    },
+    {
+      id: "improve",
+      label: "Améliorer",
+      detail: "Ouvrir la correction massive guidée par le score.",
+      onClick: () => {
+        setMessage("Correction massive prête : vérifiez le plan avant lancement.");
+        goToStep("correction");
+      },
+    },
+    {
+      id: "preview",
+      label: "Prévisualiser",
+      detail: "Revenir au rendu exportable.",
+      onClick: () => goToStep("apercu"),
+    },
+    {
+      id: "export",
+      label: "Exporter",
+      detail: "Exporter la zone document en PDF.",
+      onClick: () => {
+        void handleExportPdf();
+      },
+    },
+    {
+      id: "history",
+      label: "Historique",
+      detail: "Consulter et restaurer les versions.",
+      onClick: () => goToStep("versions"),
+    },
+  ];
+
   return (
     <main className="quality-page">
       <section className="quality-page__hero">
@@ -204,33 +299,46 @@ export default function QualityExportsPage() {
         <span className="quality-status-message no-print">{message}</span>
       </section>
 
+      <DocumentWorkflowNav steps={workflowSteps} activeStep={activeStep} onStepChange={setActiveStep} />
+
       <section className="quality-page__workspace">
         <aside className="quality-side-panel no-print" aria-label="Pilotage qualité documentaire">
-          <QualityScorePanel
-            score={score}
-            onImprove={() => setMessage("Plan prêt : utilisez la reconstruction publication club ci-dessous.")}
-          />
-          <MassiveCorrectionPanel
-            contentSource={contentSource}
-            family={family}
-            score={score}
-            onCorrectionApplied={(result) => {
-              void handleCorrectionApplied(result);
-            }}
-          />
-          <ExportPanel
-            documentId={documentId}
-            title={title}
-            contentElementId={EXPORT_ELEMENT_ID}
-            contentSource={contentSource}
-            score={score}
-            version={currentVersion}
-          />
-          <VersionHistoryPanel versions={versions} onRestore={handleRestore} />
+          <div id="qualite" className="quality-anchor">
+            <QualityScorePanel
+              score={score}
+              onImprove={() => {
+                setMessage("Plan prêt : utilisez la reconstruction publication club ci-dessous.");
+                goToStep("correction");
+              }}
+            />
+          </div>
+          <div id="correction" className="quality-anchor">
+            <MassiveCorrectionPanel
+              contentSource={contentSource}
+              family={family}
+              score={score}
+              onCorrectionApplied={(result) => {
+                void handleCorrectionApplied(result);
+              }}
+            />
+          </div>
+          <div id="export" className="quality-anchor">
+            <ExportPanel
+              documentId={documentId}
+              title={title}
+              contentElementId={EXPORT_ELEMENT_ID}
+              contentSource={contentSource}
+              score={score}
+              version={currentVersion}
+            />
+          </div>
+          <div id="versions" className="quality-anchor">
+            <VersionHistoryPanel versions={versions} onRestore={handleRestore} />
+          </div>
         </aside>
 
         <div className="quality-main-panel">
-          <section className="quality-editor-panel no-print">
+          <section id="source" className="quality-editor-panel no-print quality-anchor">
             <header>
               <div>
                 <p className="bcvb-eyebrow">Source conservée</p>
@@ -282,7 +390,31 @@ export default function QualityExportsPage() {
             </div>
           </section>
 
-          <section className="quality-preview-panel">
+          <section id="structure" className="quality-structure-panel no-print quality-anchor">
+            <header>
+              <div>
+                <p className="bcvb-eyebrow">Document actif</p>
+                <h2>{title}</h2>
+                <span>{familyOptions.find((option) => option.value === family)?.label ?? "Famille non définie"}</span>
+              </div>
+            </header>
+            <div className="quality-structure-grid">
+              <article>
+                <strong>Étape active</strong>
+                <p>{activeStepLabel}</p>
+              </article>
+              <article>
+                <strong>Action suivante</strong>
+                <p>{score.globalScore < 85 ? "Scorer puis améliorer avant export." : "Prévisualiser et exporter après relecture."}</p>
+              </article>
+              <article>
+                <strong>Publication</strong>
+                <p>{score.status.replace(/_/g, " ")}</p>
+              </article>
+            </div>
+          </section>
+
+          <section id="apercu" className="quality-preview-panel quality-anchor">
             <header className="no-print">
               <div>
                 <p className="bcvb-eyebrow">Aperçu exportable</p>
@@ -298,6 +430,13 @@ export default function QualityExportsPage() {
           </section>
         </div>
       </section>
+
+      <DocumentActionBar
+        documentTitle={title}
+        activeStepLabel={`Étape ${activeStepLabel}`}
+        qualityLabel={`Score ${score.globalScore}/100`}
+        actions={documentActions}
+      />
     </main>
   );
 }

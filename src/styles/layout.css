@@ -309,6 +309,74 @@
   gap: 14px;
 }
 
+.primary-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  justify-content: center;
+  flex: 1 1 460px;
+}
+
+.primary-nav__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  border: 1px solid rgba(20, 24, 31, 0.08);
+  border-radius: 999px;
+  padding: 0 12px;
+  color: #14181f;
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 0.83rem;
+  font-weight: 900;
+  text-decoration: none;
+  transition: 0.18s ease;
+}
+
+.primary-nav__link:hover {
+  transform: translateY(-1px);
+  border-color: rgba(200, 16, 46, 0.22);
+  color: #a32035;
+}
+
+.primary-nav__link--active {
+  border-color: rgba(200, 16, 46, 0.28);
+  color: #ffffff;
+  background: linear-gradient(135deg, #a32035, #c8102e);
+  box-shadow: 0 12px 24px rgba(200, 16, 46, 0.18);
+}
+
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  flex-basis: 100%;
+  color: rgba(20, 24, 31, 0.68);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.breadcrumbs__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.breadcrumbs__item + .breadcrumbs__item::before {
+  content: '>';
+  color: rgba(20, 24, 31, 0.38);
+}
+
+.breadcrumbs a {
+  color: #a32035;
+  text-decoration: none;
+}
+
+.breadcrumbs span span {
+  color: rgba(20, 24, 31, 0.74);
+}
+
 .topbar__identityCard {
   display: grid;
   gap: 2px;
@@ -353,6 +421,128 @@
 .topbar__logout:hover {
   transform: translateY(-1px);
   background: #c8102e;
+}
+
+.document-workflow-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  position: sticky;
+  top: 14px;
+  z-index: 8;
+  margin-bottom: 18px;
+  border: 1px solid rgba(20, 24, 31, 0.1);
+  border-radius: 16px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 14px 34px rgba(16, 24, 39, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+.document-workflow-nav__step {
+  display: grid;
+  gap: 2px;
+  min-width: 108px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 9px 10px;
+  color: #14181f;
+  background: #f4f5f7;
+  text-decoration: none;
+}
+
+.document-workflow-nav__step span {
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.document-workflow-nav__step small {
+  color: rgba(20, 24, 31, 0.58);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.document-workflow-nav__step--active {
+  border-color: rgba(200, 16, 46, 0.28);
+  color: #ffffff;
+  background: linear-gradient(135deg, #14181f, #a32035);
+}
+
+.document-workflow-nav__step--active small {
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.document-action-bar {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.34fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  position: sticky;
+  bottom: 14px;
+  z-index: 20;
+  max-width: 1440px;
+  margin: 22px auto 0;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  padding: 12px;
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(20, 24, 31, 0.98), rgba(16, 24, 39, 0.96) 58%, rgba(163, 32, 53, 0.94));
+  box-shadow: 0 20px 50px rgba(2, 6, 23, 0.32);
+}
+
+.document-action-bar__context {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.document-action-bar__context span,
+.document-action-bar__context em {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.document-action-bar__context strong {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.98rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.document-action-bar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.document-action-bar__button {
+  border: 0;
+  border-radius: 999px;
+  min-height: 38px;
+  padding: 0 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.document-action-bar__button--primary {
+  color: #ffffff;
+  background: #c8102e;
+}
+
+.document-action-bar__button--secondary {
+  color: #14181f;
+  background: #ffffff;
+}
+
+.document-action-bar__button--danger {
+  color: #ffffff;
+  background: #7f1d1d;
 }
 
 /* =========================================================
@@ -2575,5 +2765,21 @@
   .bcvb-dashboard-panel__header {
     align-items: start;
     flex-direction: column;
+  }
+
+  .primary-nav,
+  .document-workflow-nav,
+  .document-action-bar__actions {
+    justify-content: flex-start;
+  }
+
+  .primary-nav__link,
+  .document-workflow-nav__step {
+    flex: 1 1 calc(50% - 8px);
+  }
+
+  .document-action-bar {
+    grid-template-columns: 1fr;
+    bottom: 8px;
   }
 }

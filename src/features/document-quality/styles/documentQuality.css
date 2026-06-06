@@ -1,6 +1,6 @@
 .quality-page {
   min-height: 100vh;
-  padding: 32px;
+  padding: 32px 32px 110px;
   color: #0f172a;
   background:
     linear-gradient(135deg, rgba(7, 11, 24, 0.96), rgba(15, 23, 42, 0.88) 42%, rgba(176, 24, 39, 0.78)),
@@ -106,6 +106,7 @@
 
 .quality-editor-panel,
 .quality-preview-panel,
+.quality-structure-panel,
 .quality-score-panel,
 .massive-correction-panel,
 .export-panel,
@@ -117,12 +118,14 @@
 }
 
 .quality-editor-panel,
-.quality-preview-panel {
+.quality-preview-panel,
+.quality-structure-panel {
   padding: 18px;
 }
 
 .quality-editor-panel header,
 .quality-preview-panel header,
+.quality-structure-panel header,
 .quality-score-panel header,
 .massive-correction-panel header,
 .export-panel header,
@@ -136,6 +139,7 @@
 
 .quality-editor-panel h2,
 .quality-preview-panel h2,
+.quality-structure-panel h2,
 .quality-score-panel h2,
 .massive-correction-panel h2,
 .export-panel h2,
@@ -199,11 +203,43 @@
 
 .quality-editor-actions span,
 .quality-preview-panel header span,
+.quality-structure-panel header span,
 .quality-score-panel header span,
 .massive-correction-panel header span,
 .export-panel header span {
   color: #64748b;
   font-size: 0.82rem;
+}
+
+.quality-anchor {
+  scroll-margin-top: 116px;
+}
+
+.quality-structure-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.quality-structure-grid article {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f8fafc;
+}
+
+.quality-structure-grid strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #b01827;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+}
+
+.quality-structure-grid p {
+  margin: 0;
+  color: #334155;
+  line-height: 1.45;
 }
 
 .quality-score-panel,
@@ -591,7 +627,8 @@
 
   .quality-editor-grid,
   .before-after-diff,
-  .export-actions {
+  .export-actions,
+  .quality-structure-grid {
     grid-template-columns: 1fr;
   }
 
