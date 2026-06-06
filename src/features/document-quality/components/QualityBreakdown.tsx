@@ -1,34 +1,28 @@
 import type { QualityScore } from "../types/quality.types";
+import { buildQualityDecisionItems } from "../services/qualityDecisionView";
 
 type QualityBreakdownProps = {
   score: QualityScore;
 };
 
-const rows: Array<[keyof QualityScore, string]> = [
-  ["structureScore", "Structure"],
-  ["bcvbIdentityScore", "Identité BCVB"],
-  ["pedagogicalScore", "Pédagogie"],
-  ["fieldUseScore", "Terrain"],
-  ["tableScore", "Tableaux"],
-  ["situationScore", "Situations"],
-  ["diagramScore", "Schémas"],
-  ["styleScore", "Style"],
-  ["exportReadinessScore", "Export"],
-];
-
 export default function QualityBreakdown({ score }: QualityBreakdownProps) {
+  const items = buildQualityDecisionItems(score);
+
   return (
     <div className="quality-breakdown">
-      {rows.map(([key, label]) => {
-        const value = Number(score[key]);
+      {items.map((item) => {
         return (
-          <div key={key} className="quality-breakdown__row">
-            <span>{label}</span>
-            <div aria-label={`${label} ${value}/100`}>
-              <i style={{ width: `${value}%` }} />
+          <article key={item.key} className="quality-breakdown__row">
+            <header>
+              <span>{item.label}</span>
+              <strong>{item.value}/100</strong>
+            </header>
+            <div className="quality-breakdown__bar" aria-label={`${item.label} ${item.value}/100`}>
+              <span style={{ width: `${item.value}%` }} />
             </div>
-            <strong>{value}</strong>
-          </div>
+            <p>{item.label} : {item.value}/100 — {item.explanation}</p>
+            <button type="button">{item.action}</button>
+          </article>
         );
       })}
     </div>
