@@ -211,6 +211,92 @@ export default function EditorialStudioPage() {
     setMessage('Document enregistré dans les brouillons bibliothèque.')
   }
 
+  function scrollToStudioBlock(blockId: string) {
+    window.setTimeout(() => {
+      document.getElementById(blockId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 0)
+  }
+
+  function saveStudioNow() {
+    const nextState = saveEditorialStudioState(savedState)
+    setLastSavedAt(nextState.updatedAt)
+    setMessage('Studio sauvegardé.')
+  }
+
+  function appendToFinalDocument(label: string, snippet: string) {
+    const base = state.finalDocument.trim() || state.analyzedResponse.trim() || state.sourceText.trim()
+    const nextDocument = `${base ? `${base}\n\n` : ''}${snippet}`.trim()
+    patch({
+      finalDocument: nextDocument,
+      qualityScore: computeQualityScore(nextDocument),
+      recommendedAction: 'Bloc ajouté. Relance le score puis vérifie le rendu.',
+    })
+    setMessage(`${label} ajouté au document.`)
+    scrollToStudioBlock('studio-editor')
+  }
+
+  const studioWarnings = useMemo(() => {
+    const content = state.finalDocument || state.analyzedResponse || state.sourceText
+    const warnings = []
+    if (!state.sourceText.trim()) warnings.push('Source absente : ajoute un prompt, un OCR ou une note admin.')
+    if (!state.editorialPlan.trim()) warnings.push('Plan éditorial à construire.')
+    if (!content.trim()) warnings.push('Document final non généré.')
+    if (state.qualityScore < 90) warnings.push('Score qualité à améliorer avant publication.')
+    if (!/objectif|objectifs/i.test(content)) warnings.push('Objectifs explicites manquants.')
+    if (!/crit[eè]re|observable|réussite/i.test(content)) warnings.push('Critères de réussite à ajouter.')
+    if (!/vigilance|attention|point clé/i.test(content)) warnings.push('Bloc vigilance conseillé.')
+    return warnings
+  }, [state.editorialPlan, state.finalDocument, state.analyzedResponse, state.sourceText, state.qualityScore])
+
+  const editorStats = useMemo(() => {
+    const content = state.finalDocument || ''
+    return [
+      { label: 'Sections', value: String((content.match(/^##\s+/gm) || []).length) },
+      { label: 'Tableaux', value: String((content.match(/\|.+\|/g) || []).length > 0 ? (content.match(/\n\|/g) || []).length : 0) },
+      { label: 'Situations', value: String((content.match(/bcvb-situation|situation pédagogique|situation/gi) || []).length) },
+      { label: 'Encarts', value: String((content.match(/:::bcvb-/gi) || []).length) },
+    ]
+  }, [state.finalDocument])
+
+  const quickActions = [
+    {
+      label: 'Ajouter identité BCVB',
+      action: () => appendToFinalDocument('Identité BCVB', ':::bcvb-identity\ntitle: Identité BCVB\ncontent: Défendre Fort, Courir et Partager la Balle. Défense Homme à Homme, intensité, agressivité maîtrisée, maîtrise et jeu collectif.\n:::'),
+    },
+    {
+      label: 'Ajouter objectifs',
+      action: () => appendToFinalDocument('Objectifs', '## Objectifs\n- Objectif principal : à préciser.\n- Objectif terrain : action observable à obtenir.\n- Objectif BCVB : relier Défendre Fort, Courir ou Partager la Balle.'),
+    },
+    {
+      label: 'Ajouter critères de réussite',
+      action: () => appendToFinalDocument('Critères de réussite', '## Critères de réussite\n- Critère observable 1 : comportement visible.\n- Critère observable 2 : décision juste sous pression.\n- Critère quantifiable : fréquence, durée ou réussite attendue.'),
+    },
+    {
+      label: 'Ajouter tableau',
+      action: () => appendToFinalDocument('Tableau', '## Tableau de synthèse\n| Élément | Intention | Critère | Point de vigilance |\n| --- | --- | --- | --- |\n| À compléter | À préciser | Observable | À relire |'),
+    },
+    {
+      label: 'Ajouter situation pédagogique',
+      action: () => appendToFinalDocument('Situation pédagogique', ':::bcvb-situation\ntitle: Situation à compléter\nobjectif: Relier l’objectif à une action terrain.\norganisation: Espace, joueurs, matériel, rotations.\nconsignes_joueurs: Défendre Fort, Courir, Partager la Balle.\ncriteres_reussite: Critères observables et mesurables.\nevolution_1: Simplifier ou complexifier.\n:::'),
+    },
+    {
+      label: 'Ajouter bloc vigilance',
+      action: () => appendToFinalDocument('Bloc vigilance', ':::bcvb-vigilance\ntitle: Point de vigilance\ncontent: À relire avant publication : clarté des consignes, sécurité, cohérence avec le niveau et rôle des adultes.\n:::'),
+    },
+    {
+      label: 'Ajouter bilan',
+      action: () => appendToFinalDocument('Bilan', '## Bilan\n- Ce qui est acquis.\n- Ce qui reste à travailler.\n- Prochaine action coach / admin / dirigeant.\n- Décision de publication.'),
+    },
+    {
+      label: 'Améliorer le style',
+      action: () => generatePrompt('massive-correction'),
+    },
+    {
+      label: 'Préparer export PDF',
+      action: () => scrollToStudioBlock('studio-export'),
+    },
+  ]
+
   return (
     <main className="editorial-studio-page bcvb-page">
       <section className="editorial-studio-hero">
@@ -238,14 +324,66 @@ export default function EditorialStudioPage() {
         ))}
       </section>
 
-      <div className="editorial-studio-layout">
-        <section className="editorial-studio-main">
+      <section className="editorial-top-toolbar">
+        <button type="button" onClick={saveStudioNow}>Sauvegarder</button>
+        <button type="button" onClick={() => { analyzeResponse(); scrollToStudioBlock('studio-preview') }}>Prévisualiser</button>
+        <button type="button" onClick={analyzeResponse}>Scorer</button>
+        <button type="button" onClick={() => generatePrompt('massive-correction')}>Améliorer</button>
+        <button type="button" onClick={exportPdf}>Exporter</button>
+        <button type="button" onClick={resumeWork}>Historique</button>
+      </section>
+
+      <div className="editorial-studio-layout editorial-studio-layout--workbench">
+        <aside className="editorial-source-column" id="studio-source">
           <section className="editorial-panel">
             <header>
-              <p className="bcvb-eyebrow">Cadrage</p>
-              <h2>Document cible</h2>
+              <p className="bcvb-eyebrow">Source</p>
+              <h2>Prompt initial</h2>
             </header>
-            <div className="editorial-form-grid">
+            <textarea
+              className="editorial-textarea editorial-textarea--small"
+              value={state.activePrompt}
+              onChange={(event) => patch({ activePrompt: event.target.value })}
+              placeholder="Prompt initial ou prompt généré par le module Créer."
+            />
+            <div className="editorial-actions">
+              <button type="button" onClick={() => generatePrompt('chatgpt')}>Prompt ChatGPT</button>
+              <button type="button" onClick={() => generatePrompt('claude')}>Prompt Claude</button>
+              <button type="button" onClick={copyPrompt}>Copier</button>
+            </div>
+            {copied && <p className="editorial-message">{copied}</p>}
+          </section>
+
+          <section className="editorial-panel">
+            <header>
+              <p className="bcvb-eyebrow">OCR / texte brut</p>
+              <h2>Sources importées</h2>
+            </header>
+            <div className="editorial-attachment-row">
+              <label>
+                <span>Importer PDF, image, DOCX ou texte</span>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt,.md,.csv,image/*"
+                  onChange={(event) => handleAttachment(event.target.files?.[0] ?? null)}
+                />
+              </label>
+              <Link to="/admin/ocr-pieces-jointes">OCR avancé</Link>
+            </div>
+            <textarea
+              className="editorial-textarea"
+              value={state.sourceText}
+              onChange={(event) => patch({ sourceText: event.target.value })}
+              placeholder="Texte OCR, source brute, notes de fichier ou contenu à transformer."
+            />
+          </section>
+
+          <section className="editorial-panel">
+            <header>
+              <p className="bcvb-eyebrow">Notes admin</p>
+              <h2>Cadrage et métadonnées</h2>
+            </header>
+            <div className="editorial-form-grid editorial-form-grid--single">
               <label>
                 <span>Titre du document</span>
                 <input value={state.targetDocument} onChange={(event) => patch({ targetDocument: event.target.value })} />
@@ -267,46 +405,41 @@ export default function EditorialStudioPage() {
                 <input value={state.audience} onChange={(event) => patch({ audience: event.target.value })} />
               </label>
             </div>
-            <ul className="editorial-requirements">
-              {selectedFamily.requirements.map((requirement) => (
-                <li key={requirement}>{requirement}</li>
-              ))}
-            </ul>
+            <dl className="editorial-metadata-list">
+              <div><dt>Fichier associé</dt><dd>{state.transformedFromTitle || 'Aucun fichier associé'}</dd></div>
+              <div><dt>Source document</dt><dd>{state.sourceDocumentId || 'Source locale'}</dd></div>
+              <div><dt>Dernière sauvegarde</dt><dd>{lastSavedAt ? new Date(lastSavedAt).toLocaleString('fr-FR') : 'Autosave actif'}</dd></div>
+            </dl>
           </section>
+        </aside>
 
-          <section className="editorial-panel">
+        <section className="editorial-editor-column" id="studio-editor">
+          <section className="editorial-panel editorial-editor-shell">
             <header>
-              <p className="bcvb-eyebrow">Sources</p>
-              <h2>Sources / OCR / pièces jointes</h2>
+              <p className="bcvb-eyebrow">Éditeur</p>
+              <h2>BCVB Rich Markdown</h2>
+              <span>Sections · tableaux · situations · encarts</span>
             </header>
-            <div className="editorial-attachment-row">
-              <label>
-                <span>Importer PDF, image, DOCX ou texte</span>
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx,.txt,.md,.csv,image/*"
-                  onChange={(event) => handleAttachment(event.target.files?.[0] ?? null)}
-                />
-              </label>
-              <Link to="/admin/ocr-pieces-jointes">Ouvrir OCR avancé</Link>
+            <div className="editorial-editor-stats">
+              {editorStats.map((item) => (
+                <article key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </article>
+              ))}
             </div>
             <textarea
-              className="editorial-textarea"
-              value={state.sourceText}
-              onChange={(event) => patch({ sourceText: event.target.value })}
-              placeholder="Colle ici le texte source, une extraction OCR, le contenu d’un PDF ou une matière brute à transformer."
+              className="editorial-markdown-editor"
+              value={state.finalDocument}
+              onChange={(event) => patch({ finalDocument: event.target.value, qualityScore: computeQualityScore(event.target.value) })}
+              placeholder="Écris ou colle ici le document final BCVB Rich Markdown. Les actions rapides à droite ajoutent des blocs prêts à relire."
             />
-            <div className="editorial-actions">
-              <button type="button" onClick={() => patch({ editorialPlan: buildPlanDraft(state) })}>Générer plan éditorial</button>
-              <button type="button" onClick={() => generatePrompt('chatgpt')}>Générer prompt ChatGPT</button>
-              <button type="button" onClick={() => generatePrompt('claude')}>Générer prompt Claude</button>
-            </div>
           </section>
 
           <section className="editorial-panel">
             <header>
-              <p className="bcvb-eyebrow">Plan éditorial</p>
-              <h2>Architecture publication club</h2>
+              <p className="bcvb-eyebrow">Structure</p>
+              <h2>Plan et production IA</h2>
             </header>
             <textarea
               className="editorial-textarea editorial-textarea--small"
@@ -314,13 +447,6 @@ export default function EditorialStudioPage() {
               onChange={(event) => patch({ editorialPlan: event.target.value })}
               placeholder="Plan éditorial, sections, progression, situations, schémas, évaluations..."
             />
-          </section>
-
-          <section className="editorial-panel">
-            <header>
-              <p className="bcvb-eyebrow">Production IA</p>
-              <h2>Modes spécialisés</h2>
-            </header>
             <div className="editorial-mode-grid">
               {EDITORIAL_AI_MODES.map((mode) => (
                 <button
@@ -333,25 +459,17 @@ export default function EditorialStudioPage() {
                 </button>
               ))}
             </div>
-            <textarea
-              className="editorial-textarea"
-              value={state.activePrompt}
-              onChange={(event) => patch({ activePrompt: event.target.value })}
-              placeholder="Le prompt spécialisé apparaît ici."
-            />
             <div className="editorial-actions">
-              <button type="button" onClick={copyPrompt}>Copier prompt</button>
-              <button type="button" onClick={() => generatePrompt('fusion')}>Fusionner les réponses</button>
-              <button type="button" onClick={() => generatePrompt('massive-correction')}>Correction massive</button>
-              <button type="button" onClick={() => generatePrompt('publication-reconstruction')}>Reconstruction publication club</button>
+              <button type="button" onClick={() => patch({ editorialPlan: buildPlanDraft(state) })}>Générer plan</button>
+              <button type="button" onClick={() => generatePrompt('fusion')}>Fusion ChatGPT + Claude</button>
+              <button type="button" onClick={() => generatePrompt('publication-reconstruction')}>Reconstruction publication</button>
             </div>
-            {copied && <p className="editorial-message">{copied}</p>}
           </section>
 
           <section className="editorial-panel">
             <header>
               <p className="bcvb-eyebrow">Réponses IA</p>
-              <h2>Coller / analyser réponse</h2>
+              <h2>Comparer et analyser</h2>
             </header>
             <div className="editorial-response-grid">
               <textarea value={state.chatGptResponse} onChange={(event) => patch({ chatGptResponse: event.target.value })} placeholder="Réponse ChatGPT" />
@@ -361,79 +479,108 @@ export default function EditorialStudioPage() {
               className="editorial-textarea editorial-textarea--small"
               value={state.analyzedResponse}
               onChange={(event) => patch({ analyzedResponse: event.target.value })}
-              placeholder="Colle ici la réponse finale à analyser ou prévisualiser."
+              placeholder="Réponse finale à analyser ou à convertir en document final."
             />
             <div className="editorial-actions">
-              <button type="button" onClick={analyzeResponse}>Coller / analyser réponse</button>
-              <button type="button" onClick={analyzeResponse}>Prévisualiser</button>
+              <button type="button" onClick={analyzeResponse}>Analyser et envoyer dans l’éditeur</button>
+              <button type="button" onClick={() => patch({ finalDocument: state.analyzedResponse || state.chatGptResponse || state.claudeResponse })}>Utiliser comme document final</button>
             </div>
           </section>
 
-          <section className="editorial-panel editorial-quality-panel">
+          <section className="editorial-panel editorial-preview" id="studio-preview">
             <header>
-              <p className="bcvb-eyebrow">Contrôle qualité actionable</p>
-              <h2>Score et corrections recommandées</h2>
-            </header>
-            <div className="editorial-quality-summary">
-              <strong>{state.qualityScore}/100</strong>
-              <div>
-                <p>{state.recommendedAction}</p>
-                <ul>
-                  {qualityActions.map((action) => (
-                    <li key={action}>{action}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            <div className="editorial-actions">
-              <button type="button" onClick={analyzeResponse}>Relancer contrôle qualité</button>
-              <button type="button" onClick={() => generatePrompt('massive-correction')}>Correction massive</button>
-              <button type="button" onClick={() => generatePrompt('publication-reconstruction')}>Reconstruction publication club</button>
-            </div>
-          </section>
-
-          <section className="editorial-panel editorial-preview">
-            <header>
-              <p className="bcvb-eyebrow">Export</p>
+              <p className="bcvb-eyebrow">Aperçu / Export</p>
               <h2>Document final</h2>
             </header>
             {finalDocumentExists ? (
               <pre>{state.finalDocument}</pre>
             ) : (
               <div className="editorial-empty-preview">
-                Colle ou génère une réponse finale pour activer les exports.
+                Colle ou génère une réponse finale pour activer la prévisualisation.
               </div>
             )}
             {finalDocumentExists && (
-              <div className="editorial-actions editorial-actions--export">
+              <div className="editorial-actions editorial-actions--export" id="studio-export">
                 <button type="button" onClick={exportPdf}>Export PDF</button>
                 <button type="button" onClick={() => downloadText(`${state.targetDocument}.md`, state.finalDocument)}>Télécharger source</button>
                 <button type="button" onClick={saveToLibrary}>Enregistrer bibliothèque</button>
               </div>
             )}
           </section>
-
         </section>
 
-        <aside className="editorial-status-sidebar">
-          <p className="bcvb-eyebrow">Statut studio</p>
-          <h2>{state.targetDocument}</h2>
-          <dl>
-            <div><dt>Famille</dt><dd>{selectedFamily.label}</dd></div>
-            <div><dt>Catégorie</dt><dd>{state.category}</dd></div>
-            <div><dt>Score qualité</dt><dd>{state.qualityScore}/100</dd></div>
-            <div><dt>Source</dt><dd>{savedState.steps.sources}</dd></div>
-            <div><dt>Plan</dt><dd>{savedState.steps.plan}</dd></div>
-            <div><dt>Production</dt><dd>{savedState.steps.production}</dd></div>
-            <div><dt>Export</dt><dd>{savedState.steps.export}</dd></div>
-            <div><dt>Dernière sauvegarde</dt><dd>{lastSavedAt ? new Date(lastSavedAt).toLocaleString('fr-FR') : 'Autosave actif'}</dd></div>
-          </dl>
-          <article className="editorial-status-sidebar__action">
-            <span>Action recommandée</span>
-            <p>{state.recommendedAction}</p>
-          </article>
-          <p className="editorial-message">{message}</p>
-          {state.updatedAt && <p className="editorial-save-state">Sauvegardé automatiquement.</p>}
+        <aside className="editorial-assistance-column">
+          <section className="editorial-status-sidebar">
+            <p className="bcvb-eyebrow">Assistance</p>
+            <h2>{state.targetDocument}</h2>
+            <div className="editorial-quality-summary editorial-quality-summary--compact">
+              <strong>{state.qualityScore}/100</strong>
+              <div>
+                <p>{state.recommendedAction}</p>
+              </div>
+            </div>
+            <dl>
+              <div><dt>Famille</dt><dd>{selectedFamily.label}</dd></div>
+              <div><dt>Catégorie</dt><dd>{state.category}</dd></div>
+              <div><dt>Source</dt><dd>{savedState.steps.sources}</dd></div>
+              <div><dt>Plan</dt><dd>{savedState.steps.plan}</dd></div>
+              <div><dt>Production</dt><dd>{savedState.steps.production}</dd></div>
+              <div><dt>Export</dt><dd>{savedState.steps.export}</dd></div>
+            </dl>
+            <p className="editorial-message">{message}</p>
+          </section>
+
+          <section className="editorial-panel editorial-assist-panel">
+            <header>
+              <p className="bcvb-eyebrow">Recommandations</p>
+              <h2>À améliorer</h2>
+            </header>
+            <ul className="editorial-assist-list">
+              {qualityActions.map((action) => (
+                <li key={action}>{action}</li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="editorial-panel editorial-assist-panel">
+            <header>
+              <p className="bcvb-eyebrow">Warnings</p>
+              <h2>Points à relire</h2>
+            </header>
+            <ul className="editorial-warning-list">
+              {studioWarnings.length > 0 ? studioWarnings.map((warning) => (
+                <li key={warning}>{warning}</li>
+              )) : <li>Aucun warning majeur détecté.</li>}
+            </ul>
+          </section>
+
+          <section className="editorial-panel editorial-assist-panel">
+            <header>
+              <p className="bcvb-eyebrow">Actions rapides</p>
+              <h2>Améliorer sans chercher</h2>
+            </header>
+            <div className="editorial-quick-actions">
+              {quickActions.map((item) => (
+                <button type="button" key={item.label} onClick={item.action}>
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="editorial-panel editorial-assist-panel">
+            <header>
+              <p className="bcvb-eyebrow">Checklist publication</p>
+              <h2>Avant diffusion</h2>
+            </header>
+            <ul className="editorial-checklist">
+              <li>Source conservée et compréhensible.</li>
+              <li>Objectifs et critères de réussite visibles.</li>
+              <li>Tableaux, situations et encarts relus.</li>
+              <li>Score qualité contrôlé par l’admin.</li>
+              <li>Export PDF testé avant publication.</li>
+            </ul>
+          </section>
         </aside>
       </div>
     </main>
