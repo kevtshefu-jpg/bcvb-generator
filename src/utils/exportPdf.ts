@@ -47,11 +47,23 @@ export async function exportElementToPdf(
  * Exports a DOM node as a paginated PDF (A4 portrait).
  * Content taller than one page is sliced across multiple pages.
  */
-export async function exportNodeToPdf(node: HTMLElement, filename: string): Promise<void> {
+export type ExportNodeToPdfOptions = {
+  orientation?: "portrait" | "landscape";
+}
+
+export async function exportNodeToPdf(
+  node: HTMLElement,
+  filename: string,
+  options: ExportNodeToPdfOptions = {}
+): Promise<void> {
   const { default: JsPDF } = await import("jspdf");
   const imageData = await nodeToDataUrl(node, 2);
 
-  const pdf = new JsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const pdf = new JsPDF({
+    orientation: options.orientation ?? "portrait",
+    unit: "mm",
+    format: "a4",
+  });
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
 

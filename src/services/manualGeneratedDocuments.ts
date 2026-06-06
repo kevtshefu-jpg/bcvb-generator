@@ -1,10 +1,15 @@
 import { supabase } from '../lib/supabase'
 
-type SaveManualGeneratedDocumentInput = {
+export type SaveManualGeneratedDocumentInput = {
   title: string
   content: string
+  description?: string
+  documentType: string
   category?: string
   subcategory?: string
+  audience?: string
+  season?: string | null
+  tags?: string[]
   sourceDocumentId?: string | null
   generationType?: string
 }
@@ -22,15 +27,29 @@ function slugify(value: string) {
 export async function saveManualGeneratedDocument({
   title,
   content,
-  category = 'Document généré',
-  subcategory = 'Mode manuel ChatGPT',
+  description,
+  documentType,
+  category = 'Général BCVB',
+  subcategory = 'Ressource documentaire',
+  audience = 'Interne club',
+  season = null,
+  tags = [],
   sourceDocumentId = null,
   generationType = 'manual_chatgpt',
 }: SaveManualGeneratedDocumentInput) {
   console.log('Début enregistrement manuel ChatGPT')
 
-  const cleanTitle = title?.trim() || 'Document généré manuellement avec ChatGPT'
+  const cleanTitle = title?.trim()
   const cleanContent = content?.trim()
+  const cleanDocumentType = documentType?.trim()
+
+  if (!cleanTitle) {
+    throw new Error('Le titre du document est obligatoire.')
+  }
+
+  if (!cleanDocumentType) {
+    throw new Error('Le type de document est obligatoire.')
+  }
 
   if (!cleanContent) {
     throw new Error('Le contenu à enregistrer est vide.')
@@ -38,26 +57,31 @@ export async function saveManualGeneratedDocument({
 
   const now = new Date().toISOString()
   const safeSlug = slugify(cleanTitle)
-  const uniquePath = `manual-chatgpt/${Date.now()}-${safeSlug}.md`
+  const storageFolder =
+    generationType === 'transformed_document'
+      ? 'transformed-documents'
+      : 'manual-chatgpt'
+  const uniquePath = `${storageFolder}/${Date.now()}-${safeSlug}.md`
 
   const payload = {
     title: cleanTitle,
     description:
-      'Document généré manuellement avec ChatGPT puis enregistré dans la bibliothèque BCVB.',
+      description?.trim() ||
+      'Ressource documentaire BCVB.',
 
-    document_type: generationType || 'manual_chatgpt',
+    document_type: cleanDocumentType,
     file_ext: 'md',
     bucket_name: 'bcvb-library',
     storage_path: uniquePath,
 
-    category,
-    subcategory,
-    category_code: null,
-    theme_code: null,
+    category: category?.trim() || null,
+    subcategory: subcategory?.trim() || null,
+    category_code: category?.trim() || null,
+    theme_code: subcategory?.trim() || null,
     team_code: null,
 
-    audience: 'member',
-    season: null,
+    audience: audience?.trim() || 'Interne club',
+    season: season?.trim() || null,
     status: 'uploaded',
 
     is_active: true,
@@ -68,7 +92,13 @@ export async function saveManualGeneratedDocument({
     source_document_id: sourceDocumentId,
     generation_request_id: null,
 
-    tags: ['BCVB', 'ChatGPT', 'Mode manuel', generationType],
+    tags: Array.from(
+      new Set(
+        ['BCVB', ...tags]
+          .map((tag) => tag.trim())
+          .filter(Boolean)
+      )
+    ),
     content: cleanContent,
 
     created_at: now,

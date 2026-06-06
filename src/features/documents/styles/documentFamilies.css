@@ -1,0 +1,151 @@
+.document-family-layout {
+  --family-accent: #c8102e;
+  --family-dark: #111827;
+  --family-soft: #f8fafc;
+}
+
+.document-family-layout .bcvb-doc-block,
+.document-family-layout .bcvb-situation-layout,
+.document-family-layout .bcvb-table-block {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.document-layout--technical-book .bcvb-situation-layout {
+  grid-template-columns: minmax(0, 0.55fr) minmax(360px, 0.45fr);
+}
+
+.document-layout--technical-book .bcvb-situation-header small::before {
+  content: "EXERCICE ";
+}
+
+.document-layout--technical-book .bcvb-situation-diagrams {
+  align-self: start;
+}
+
+.document-layout--coach-guide .bcvb-doc-block {
+  border-left: 5px solid #f97316;
+}
+
+.document-layout--coach-guide .bcvb-doc-card,
+.document-layout--coach-guide .bcvb-doc-quote {
+  border-left-color: #f97316;
+  background: #fff7ed;
+}
+
+.document-layout--training-plan {
+  --family-accent: #0f2a44;
+  --family-dark: #0f172a;
+}
+
+.document-layout--training-plan .bcvb-editorial-hero,
+.document-layout--training-plan .bcvb-conclusion-block {
+  background: linear-gradient(135deg, #0f2a44, #14532d);
+}
+
+.document-layout--training-plan .bcvb-doc-section-title {
+  color: #0f2a44;
+}
+
+.document-layout--training-plan .bcvb-editorial-table th {
+  background: linear-gradient(135deg, #0f2a44, #f97316);
+}
+
+.document-layout--pedagogical-ribbon .bcvb-editorial-page {
+  max-width: 1280px;
+}
+
+.document-layout--pedagogical-ribbon .bcvb-editorial-content {
+  gap: 16px;
+}
+
+.document-layout--pedagogical-ribbon .bcvb-table-wrap {
+  border-radius: 16px;
+}
+
+.document-layout--pedagogical-ribbon .bcvb-editorial-table {
+  font-size: 0.82rem;
+  min-width: 980px;
+}
+
+.document-layout--pedagogical-ribbon .bcvb-editorial-table th,
+.document-layout--pedagogical-ribbon .bcvb-editorial-table td {
+  padding: 10px 12px;
+}
+
+.document-layout--practice-session .bcvb-editorial-page {
+  max-width: 1040px;
+}
+
+.document-layout--practice-session .bcvb-editorial-content {
+  gap: 14px;
+}
+
+.document-layout--practice-session .bcvb-doc-paragraph {
+  margin: 0 0 8px;
+}
+
+.document-layout--practice-session .bcvb-court-diagram {
+  min-height: 460px;
+}
+
+.document-layout--theme-sheet {
+  --family-accent: #c8102e;
+}
+
+.document-layout--theme-sheet .bcvb-editorial-hero {
+  border-top: 10px solid var(--family-accent);
+}
+
+.document-layout--theme-sheet .bcvb-doc-block {
+  border-radius: 18px;
+}
+
+.bcvb-editorial-table--matrix th {
+  background: linear-gradient(135deg, #111827, #0f766e);
+}
+
+.bcvb-editorial-table--matrix td:first-child {
+  color: #0f766e;
+}
+
+.bcvb-editorial-table--dashboard th {
+  background: linear-gradient(135deg, #111827, #0f2a44);
+}
+
+.bcvb-editorial-table--dashboard td:first-child {
+  color: #0f2a44;
+}
+
+.bcvb-editorial-table--compact {
+  min-width: 980px;
+}
+
+.bcvb-editorial-table--compact th,
+.bcvb-editorial-table--compact td {
+  padding: 10px 12px;
+  font-size: 0.82rem;
+}
+
+@media print {
+  .document-family-layout,
+  .document-family-layout * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .document-layout--pedagogical-ribbon .bcvb-editorial-page {
+    max-width: none !important;
+    width: 297mm;
+  }
+
+  .document-layout--practice-session .bcvb-editorial-page {
+    max-width: none !important;
+  }
+
+  .document-layout--practice-session .bcvb-situation-layout,
+  .document-layout--technical-book .bcvb-situation-layout {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

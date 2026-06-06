@@ -1,0 +1,671 @@
+.admin-settings-page {
+  display: grid;
+  gap: 22px;
+  padding-bottom: 96px;
+}
+
+.admin-settings-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+  gap: 22px;
+  padding: 30px;
+  border-radius: 24px;
+  color: #ffffff;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(200, 16, 46, 0.34), transparent 34%),
+    linear-gradient(135deg, #080b12 0%, #111827 55%, #300710 100%);
+  box-shadow: 0 22px 54px rgba(10, 12, 18, 0.18);
+  overflow: hidden;
+  position: relative;
+}
+
+.admin-settings-hero::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 52%;
+  height: 6px;
+  background: linear-gradient(90deg, transparent, #c8102e, #ffffff);
+}
+
+.admin-settings-hero h1 {
+  margin: 0;
+  max-width: 920px;
+  color: #ffffff;
+  font-size: clamp(2.1rem, 4vw, 4.7rem);
+  line-height: 0.96;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.admin-settings-hero p {
+  margin: 14px 0 0;
+  max-width: 850px;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.65;
+}
+
+.admin-settings-hero__cards {
+  display: grid;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-settings-hero__cards article {
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+}
+
+.admin-settings-hero__cards span,
+.admin-settings-panel__head p,
+.admin-settings-sidebar__button span {
+  color: #f3c7cf;
+  font-size: 0.76rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.admin-settings-hero__cards strong {
+  display: block;
+  margin-top: 8px;
+  color: #ffffff;
+  font-size: 1.42rem;
+  line-height: 1.1;
+}
+
+.admin-settings-layout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.admin-settings-sidebar {
+  display: grid;
+  gap: 14px;
+  position: sticky;
+  top: 96px;
+}
+
+.admin-settings-sidebar__metrics,
+.admin-settings-sidebar__nav,
+.admin-settings-panel,
+.admin-save-bar {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+}
+
+.admin-settings-sidebar__metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px;
+  border-radius: 20px;
+}
+
+.admin-settings-sidebar__metrics article {
+  min-height: 92px;
+  padding: 13px;
+  border-radius: 15px;
+  background: #f8fafc;
+  display: grid;
+  align-content: end;
+  gap: 4px;
+}
+
+.admin-settings-sidebar__metrics strong {
+  color: #111827;
+  font-size: 1.28rem;
+}
+
+.admin-settings-sidebar__metrics span {
+  color: #667085;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.admin-settings-sidebar__nav {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 20px;
+}
+
+.admin-settings-sidebar__button {
+  display: grid;
+  gap: 5px;
+  padding: 13px;
+  border-radius: 15px;
+  border: 1px solid transparent;
+  background: #ffffff;
+  color: #111827;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-settings-sidebar__button span {
+  color: #c8102e;
+}
+
+.admin-settings-sidebar__button strong {
+  font-size: 0.98rem;
+}
+
+.admin-settings-sidebar__button em {
+  color: #667085;
+  font-style: normal;
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+.admin-settings-sidebar__button--active {
+  border-color: rgba(200, 16, 46, 0.32);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 242, 245, 0.95)),
+    #ffffff;
+  box-shadow: 0 16px 34px rgba(200, 16, 46, 0.12);
+}
+
+.admin-settings-content {
+  min-width: 0;
+}
+
+.admin-settings-panel {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border-radius: 24px;
+}
+
+.admin-settings-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.admin-settings-panel__head p {
+  margin: 0 0 4px;
+  color: #c8102e;
+}
+
+.admin-settings-panel__head h2 {
+  margin: 0;
+  color: #111827;
+  font-size: clamp(1.5rem, 2.4vw, 2.2rem);
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+.admin-settings-panel__head span {
+  display: block;
+  margin-top: 8px;
+  color: #667085;
+  line-height: 1.55;
+}
+
+.admin-settings-panel__head > strong,
+.admin-settings-panel__head button {
+  min-height: 38px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 0;
+  background: #111827;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.admin-settings-panel__head button {
+  cursor: pointer;
+}
+
+.admin-role-grid,
+.admin-standards-grid,
+.admin-referential-grid,
+.admin-export-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-role-card,
+.admin-standard-card,
+.admin-referential-card,
+.admin-export-card,
+.admin-season-card,
+.admin-season-summary,
+.admin-security-grid article,
+.admin-security-roadmap article,
+.admin-module-table {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.admin-role-card {
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.admin-role-card header {
+  display: grid;
+  gap: 5px;
+}
+
+.admin-role-card h3,
+.admin-standard-card h3,
+.admin-referential-card h3,
+.admin-export-card h3,
+.admin-season-card h3,
+.admin-security-grid h3,
+.admin-security-roadmap h3,
+.admin-module-table h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 1.02rem;
+  letter-spacing: 0;
+}
+
+.admin-role-card p,
+.admin-referential-card p,
+.admin-season-summary p,
+.admin-security-grid p,
+.admin-security-roadmap p,
+.admin-security-roadmap li {
+  margin: 0;
+  color: #667085;
+  line-height: 1.55;
+}
+
+.admin-role-card header span,
+.admin-standard-card header span,
+.admin-season-card__actions span,
+.admin-security-grid span {
+  width: fit-content;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(200, 16, 46, 0.1);
+  color: #b0122b;
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-permission-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-permission-group {
+  padding: 12px;
+  border-radius: 15px;
+  background: #ffffff;
+  display: grid;
+  gap: 8px;
+}
+
+.admin-permission-group > strong {
+  color: #111827;
+  font-size: 0.84rem;
+  text-transform: uppercase;
+}
+
+.admin-switch {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #344054;
+  font-size: 0.86rem;
+  font-weight: 760;
+}
+
+.admin-switch input {
+  width: 18px;
+  height: 18px;
+  accent-color: #c8102e;
+  flex: 0 0 auto;
+}
+
+.admin-switch--disabled {
+  opacity: 0.48;
+}
+
+.admin-season-summary {
+  padding: 16px;
+  display: grid;
+  gap: 5px;
+  background:
+    radial-gradient(circle at top right, rgba(200, 16, 46, 0.08), transparent 35%),
+    #f8fafc;
+}
+
+.admin-season-summary span {
+  color: #c8102e;
+  font-size: 0.76rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.admin-season-summary strong {
+  color: #111827;
+  font-size: 1.45rem;
+}
+
+.admin-season-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-season-card {
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.admin-season-card--active {
+  border-color: rgba(200, 16, 46, 0.34);
+  background: #fff4f6;
+}
+
+.admin-season-card p {
+  margin: 5px 0 0;
+  color: #667085;
+}
+
+.admin-season-card__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.admin-season-card__actions button,
+.admin-module-table a {
+  min-height: 32px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: #111827;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 850;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.admin-season-card__actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.admin-standards-grid,
+.admin-export-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-referential-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-standard-card,
+.admin-referential-card,
+.admin-export-card {
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.admin-standard-card header,
+.admin-referential-card header,
+.admin-export-card header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-referential-card--enabled {
+  border-color: rgba(22, 101, 52, 0.18);
+  background: rgba(22, 101, 52, 0.06);
+}
+
+.admin-number-grid,
+.admin-margin-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.admin-margin-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.admin-number-grid label,
+.admin-margin-grid label {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-number-grid span,
+.admin-margin-grid span {
+  color: #667085;
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.admin-number-grid input,
+.admin-margin-grid input,
+.admin-export-card select {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 11px;
+  background: #ffffff;
+  color: #111827;
+  padding: 0 10px;
+  font: inherit;
+}
+
+.admin-standard-toggles,
+.admin-referential-card__switches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+
+.admin-security-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-security-grid article,
+.admin-security-roadmap article {
+  padding: 15px;
+  display: grid;
+  gap: 8px;
+}
+
+.admin-security-roadmap {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 12px;
+}
+
+.admin-security-roadmap ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.admin-module-table {
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.admin-module-table > div {
+  overflow-x: auto;
+}
+
+.admin-module-table table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border-radius: 15px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.admin-module-table th,
+.admin-module-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+  color: #475467;
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.86rem;
+}
+
+.admin-module-table th {
+  background: #111827;
+  color: #ffffff;
+  font-weight: 950;
+}
+
+.admin-module-table td:first-child {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-module-table td > span {
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #c8102e;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.admin-save-bar {
+  position: sticky;
+  bottom: 18px;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 18px;
+}
+
+.admin-save-bar--dirty {
+  border-color: rgba(200, 16, 46, 0.28);
+  box-shadow: 0 22px 52px rgba(200, 16, 46, 0.12);
+}
+
+.admin-save-bar span {
+  display: block;
+  color: #c8102e;
+  font-size: 0.78rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.admin-save-bar strong {
+  color: #111827;
+}
+
+.admin-save-bar > div:last-child {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-save-bar button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #c8102e;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.admin-save-bar button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.admin-save-bar__secondary {
+  background: #111827 !important;
+}
+
+@media (max-width: 1180px) {
+  .admin-settings-hero,
+  .admin-settings-layout,
+  .admin-security-roadmap {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-settings-sidebar {
+    position: static;
+  }
+
+  .admin-settings-sidebar__nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-referential-grid,
+  .admin-security-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 780px) {
+  .admin-settings-hero {
+    padding: 22px;
+    border-radius: 20px;
+  }
+
+  .admin-settings-sidebar__metrics,
+  .admin-settings-sidebar__nav,
+  .admin-permission-groups,
+  .admin-standards-grid,
+  .admin-export-grid,
+  .admin-referential-grid,
+  .admin-security-grid,
+  .admin-number-grid,
+  .admin-margin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-settings-panel__head,
+  .admin-season-card,
+  .admin-save-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-season-card__actions,
+  .admin-save-bar > div:last-child {
+    justify-content: flex-start;
+  }
+}

@@ -2,11 +2,15 @@ import { createContext, useContext, useEffect, useMemo, useState, useCallback } 
 import type { ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../../../lib/supabase'
+import { withTimeout } from '../../../utils/withTimeout'
 
 export type UserRole =
   | 'admin'
   | 'dirigeant'
+  | 'responsable_technique'
   | 'coach'
+  | 'team_staff'
+  | 'parent_referent'
   | 'joueur'
   | 'parent'
   | 'member'
@@ -56,11 +60,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, role, is_active, category_id')
-        .eq('id', currentUser.id)
-        .maybeSingle()
+      const { data, error } = await withTimeout(
+        supabase
+          .from('profiles')
+          .select('id, email, full_name, role, is_active, category_id')
+          .eq('id', currentUser.id)
+          .maybeSingle(),
+        12000,
+        'Chargement du profil trop long.'
+      )
 
       if (error) {
         console.error('Erreur chargement profil :', error)
@@ -91,7 +99,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true)
 
       try {
-        const { data } = await supabase.auth.getSession()
+        const { data } = await withTimeout(
+          supabase.auth.getSession(),
+          12000,
+          'Chargement de session trop long.'
+        )
         if (!isMounted) return
 
         const currentSession = data.session ?? null
@@ -101,6 +113,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(currentUser)
 
         await loadProfile(currentUser)
+      } catch (error) {
+        console.error('Erreur bootstrap auth :', error)
+        if (isMounted) {
+          setSession(null)
+          setUser(null)
+          setProfile(null)
+        }
       } finally {
         if (isMounted) {
           setLoading(false)
@@ -124,9 +143,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Évite de repasser toute l'app en loading sur les refresh silencieux
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
         setLoading(true)
-        await loadProfile(currentUser)
-        if (isMounted) {
-          setLoading(false)
+        try {
+          await loadProfile(currentUser)
+        } finally {
+          if (isMounted) {
+            setLoading(false)
+          }
         }
         return
       }

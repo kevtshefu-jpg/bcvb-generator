@@ -3,6 +3,10 @@ import ReactDOM from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
 import { router } from './app/router'
 import { AuthProvider } from './features/auth/context/AuthContext'
+import './features/documents/styles/bcvb-premium.css'
+import './features/documents/styles/bcvbEditorialDocument.css'
+import './features/documents/styles/documentFamilies.css'
+import './features/ai-document/styles/aiDocumentStudio.css'
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },

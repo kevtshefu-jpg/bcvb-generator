@@ -1,179 +1,222 @@
-import type { CategoryId, ThemeId } from "./referentiel";
+import type { CategoryId, ThemeId } from './referentiel'
 
-export type SessionStep = "je découvre" | "je m'exerce" | "je retranscris" | "je régule";
+export type SessionStep = "je découvre" | "je m'exerce" | "je retranscris" | "je régule"
 
-export type CourtType = "half" | "full";
+export type CourtType = 'half' | 'full'
 
 export type DiagramElementType =
-  | "attacker"
-  | "defender"
-  | "coach"
-  | "cone"
-  | "ball"
-  | "zone-label";
+  | 'attacker'
+  | 'defender'
+  | 'coach'
+  | 'cone'
+  | 'ball'
+  | 'zone-label'
 
 export interface DiagramElement {
-  id: string;
-  type: DiagramElementType;
-  x: number;
-  y: number;
-  label?: string;
+  id: string
+  type: DiagramElementType
+  x: number
+  y: number
+  label?: string
 }
 
-export type DiagramActionType = "move" | "pass" | "dribble" | "cut" | "shot" | "screen";
+export type DiagramActionType = 'move' | 'pass' | 'dribble' | 'cut' | 'shot' | 'screen'
 
 export interface Position {
-  x: number;
-  y: number;
+  x: number
+  y: number
 }
 
 export type Action = {
-  type: "move" | "pass" | "dribble";
-  from: Position;
-  to: Position;
-  playerId: string;
-};
+  type: 'move' | 'pass' | 'dribble'
+  from: Position
+  to: Position
+  playerId: string
+}
 
 export interface DiagramAnchor {
-  elementId?: string | null;
-  x: number;
-  y: number;
+  elementId?: string | null
+  x: number
+  y: number
 }
 
 export interface DiagramAction {
-  id: string;
-  type: DiagramActionType;
-  from: DiagramAnchor;
-  to: DiagramAnchor;
-  label?: string;
-  order?: number;
+  id: string
+  type: DiagramActionType
+  from: DiagramAnchor
+  to: DiagramAnchor
+  label?: string
+  order?: number
 }
 
 export interface DiagramData {
-  courtType: CourtType;
-  elements: DiagramElement[];
-  actions: DiagramAction[];
+  courtType: CourtType
+  elements: DiagramElement[]
+  actions: DiagramAction[]
 }
 
 export type SessionUsageLevel =
-  | "initiation"
-  | "formation"
-  | "perfectionnement"
-  | "pré-compétition"
-  | "compétition";
+  | 'initiation'
+  | 'formation'
+  | 'perfectionnement'
+  | 'pré-compétition'
+  | 'compétition'
 
 export type SessionGameFormat =
-  | "1c0"
-  | "1c1"
-  | "2c1"
-  | "2c2"
-  | "3c3"
-  | "4c4"
-  | "5c5"
-  | "atelier"
-  | "jeu réduit"
-  | "non précisé";
+  | '1c0'
+  | '1c1'
+  | '2c1'
+  | '2c2'
+  | '3c3'
+  | '4c4'
+  | '5c5'
+  | 'atelier'
+  | 'jeu réduit'
+  | 'non précisé'
 
 export interface SessionMetadata {
-  subTheme: string;
-  playerCount: number | null;
-  gameFormat: SessionGameFormat;
-  usageLevel: SessionUsageLevel;
-  keywords: string[];
+  subTheme: string
+  playerCount: number | null
+  gameFormat: SessionGameFormat
+  usageLevel: SessionUsageLevel
+  keywords: string[]
 }
 
 export interface SessionSourceImage {
-  id: string;
-  name: string;
-  dataUrl: string;
-  mimeType: string;
-  width?: number;
-  height?: number;
-  page?: number | null;
-  isPrimary?: boolean;
-  kind?: "source" | "diagramme_pdf" | "illustration";
+  id: string
+  name: string
+  dataUrl: string
+  mimeType: string
+  width?: number
+  height?: number
+  page?: number | null
+  isPrimary?: boolean
+  kind?: 'source' | 'diagramme_pdf' | 'illustration'
 }
 
 export interface ReconstructionPoint {
-  id: string;
-  label: string;
-  x: number; // 0 -> 1
-  y: number; // 0 -> 1
-  color: string;
+  id: string
+  label: string
+  x: number
+  y: number
+  color: string
 }
 
 export interface ReconstructionState {
-  activeSourceImageId: string | null;
-  points: ReconstructionPoint[];
-  notes: string;
+  activeSourceImageId: string | null
+  points: ReconstructionPoint[]
+  notes: string
 }
 
 export interface BCVBSession {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  title: string;
-  category: string;
-  durationMin: number;
-  theme: string;
-  step: SessionStep;
-  philosophy: string;
-  axes: string[];
-  objective: string;
-  intentions: string[];
-  organization: string;
-  equipment: string[];
-  setup: string[];
-  instructions: string[];
-  variables: string[];
-  successCriteria: string[];
-  rawText: string;
-  diagram: DiagramData;
-  metadata: SessionMetadata;
-  sourceImages: SessionSourceImage[];
-  reconstruction: ReconstructionState;
+  id: string
+  createdAt: string
+  updatedAt: string
+  title: string
+  category: string
+  durationMin: number
+  theme: string
+  step: SessionStep
+  philosophy: string
+  axes: string[]
+  objective: string
+  intentions: string[]
+  organization: string
+  equipment: string[]
+  setup: string[]
+  instructions: string[]
+  variables: string[]
+  successCriteria: string[]
+  rawText: string
+  diagram: DiagramData
+  metadata: SessionMetadata
+  sourceImages: SessionSourceImage[]
+  reconstruction: ReconstructionState
 }
 
 export interface PdfParseResult {
-  text: string;
-  pageCount: number;
+  text: string
+  pageCount: number
 }
 
 export type SessionBlockType =
-  | "Mise en route"
-  | "Apprentissage"
-  | "Situation"
-  | "Opposition"
-  | "Transfert"
-  | "Régulation";
+  | 'Mise en route'
+  | 'Apprentissage'
+  | 'Situation'
+  | 'Opposition'
+  | 'Transfert'
+  | 'Régulation'
 
-export type SessionBlockSource = "manual" | "library" | "generator";
+export type SessionBlockSource = 'manual' | 'library' | 'generator'
 
 export type SessionBlock = {
-  id: string;
-  type: SessionBlockType;
-  title: string;
-  duration: number;
-  objective: string;
-  source: SessionBlockSource;
-  sourceSituationId?: string;
-  setup: string;
-  instructions: string;
-  successCriteria: string;
-  variables: string;
-  coachingPoints: string[];
-  intentions: string[];
-  material: string[];
-  diagramSvgMarkup?: string;
-};
+  id: string
+  type: SessionBlockType
+  title: string
+  duration: number
+  objective: string
+  source: SessionBlockSource
+  sourceSituationId?: string
+  setup: string
+  instructions: string
+  successCriteria: string
+  variables: string
+  coachingPoints: string[]
+  intentions: string[]
+  material: string[]
+  diagramSvgMarkup?: string
+}
 
 export type SessionState = {
-  id: string;
-  title: string;
-  categoryId: CategoryId;
-  themeId: ThemeId;
-  cycleStep: string;
-  globalObjective: string;
-  notes: string;
-  blocks: SessionBlock[];
-};
+  id: string
+  title: string
+  categoryId: CategoryId
+  themeId: ThemeId
+  cycleStep: string
+  globalObjective: string
+  notes: string
+  blocks: SessionBlock[]
+}
+
+export type SessionCourtChoice = 'full-1' | 'full-2' | 'half-1' | 'half-2' | 'half-3'
+export type SessionFormat = 'A4 portrait' | 'A4 paysage'
+
+export type SessionSituation = {
+  id: string
+  title: string
+  time: string
+  objective: string
+  description: string
+  organisation: string
+  material: string
+  instructions: string
+  evolution: string
+  evaluation: string
+  observableCriteria: string
+  quantifiableCriteria: string
+  coachPoints: string
+  vigilance: string
+  commonErrors: string
+  corrections: string
+  matchTransfer: string
+  courtChoice: SessionCourtChoice
+}
+
+export type TrainingSession = {
+  title: string
+  team: string
+  category: string
+  date: string
+  location: string
+  coach: string
+  totalDuration: string
+  theme: string
+  format: SessionFormat
+  mainObjective: string
+  secondaryObjectives: string
+  material: string
+  playerCount: string
+  generalOrganisation: string
+  pedagogicalStep: string
+  situations: SessionSituation[]
+}

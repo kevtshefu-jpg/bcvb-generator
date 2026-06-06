@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../features/auth/context/AuthContext'
 import { formatRole, getRoleHomeLabel } from '../../features/auth/utils/roles'
+import { PRESENTATION_LABELS } from '../../config/presentationMode'
 
 export function TopBar() {
   const { profile, user, signOut } = useAuth()
@@ -18,11 +19,16 @@ export function TopBar() {
   return (
     <header className="topbar topbar--v33">
       <div className="topbar__left">
-        <p className="topbar__eyebrow">BCVB Référentiel</p>
-        <h1 className="topbar__title">{getRoleHomeLabel(profile?.role)}</h1>
-        <p className="topbar__subtitle">
-          Plateforme technique, pédagogique et terrain du BCVB.
-        </p>
+        <div className="topbar__brandLine">
+          <img src="/logo_bcvb copie.png" alt="Logo BCVB" className="topbar__logo" />
+          <div>
+	            <p className="topbar__eyebrow">{PRESENTATION_LABELS.appTitle}</p>
+	            <h1 className="topbar__title">{getRoleHomeLabel(profile?.role)}</h1>
+	            <p className="topbar__subtitle">
+	              {PRESENTATION_LABELS.appSubtitle}
+	            </p>
+          </div>
+        </div>
       </div>
 
       <div className="topbar__right">

@@ -1,0 +1,417 @@
+.fastdraw-editor {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(16, 24, 39, 0.1);
+  border-radius: 22px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8f6f3 100%);
+  box-shadow: 0 16px 38px rgba(16, 24, 39, 0.08);
+}
+
+.fastdraw-editor__header {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(220px, 1.1fr);
+  gap: 12px;
+  align-items: end;
+  min-width: 0;
+}
+
+.fastdraw-editor__header > div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fastdraw-editor__header span,
+.fastdraw-toolbar__group span,
+.fastdraw-properties__header span {
+  color: rgba(16, 24, 39, 0.62);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.fastdraw-editor input,
+.fastdraw-editor select {
+  min-width: 0;
+  border: 1px solid rgba(16, 24, 39, 0.14);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #ffffff;
+  color: #101827;
+  font: inherit;
+  font-weight: 800;
+}
+
+.fastdraw-editor__header input:first-of-type {
+  font-size: 19px;
+  font-weight: 950;
+}
+
+.fastdraw-toolbar {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.fastdraw-toolbar__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  padding: 10px;
+  border-radius: 16px;
+  background: #f4f1ec;
+  border: 1px solid rgba(16, 24, 39, 0.08);
+}
+
+.fastdraw-toolbar__group--exports {
+  background: #101827;
+}
+
+.fastdraw-toolbar__group--exports span {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.fastdraw-toolbar button,
+.fastdraw-properties button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgba(16, 24, 39, 0.14);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #101827;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.fastdraw-toolbar__group--exports button {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: #ffffff;
+}
+
+.fastdraw-toolbar button.is-active {
+  border-color: #b5122b;
+  background: #b5122b;
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(181, 18, 43, 0.22);
+}
+
+.fastdraw-toolbar__status {
+  background: #ffffff;
+}
+
+.fastdraw-toolbar__status strong {
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: #101827;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: capitalize;
+}
+
+.fastdraw-toolbar__status em {
+  color: #b5122b;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.fastdraw-logo-toggle,
+.fastdraw-checkbox {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #101827;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.fastdraw-editor__workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 300px);
+  gap: 16px;
+  align-items: start;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.fastdraw-stage {
+  min-width: 0;
+  max-width: 100%;
+  padding: 12px;
+  overflow: hidden;
+  border-radius: 22px;
+  background: #101827;
+  background-image: none !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.fastdraw-court-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  border-radius: 18px;
+  touch-action: none;
+  background: #d8ad6a;
+  background-image: none !important;
+}
+
+.fastdraw-center-logo,
+.court-center-logo {
+  pointer-events: none;
+  opacity: 0.12;
+}
+
+.fastdraw-zone,
+.fastdraw-motion,
+.fastdraw-object {
+  cursor: pointer;
+}
+
+.fastdraw-object {
+  cursor: grab;
+}
+
+.fastdraw-object:active {
+  cursor: grabbing;
+}
+
+.fastdraw-player-label,
+.fastdraw-zone-label,
+.fastdraw-motion-label,
+.fastdraw-text-object {
+  font-family: Inter, system-ui, sans-serif;
+  font-weight: 950;
+  letter-spacing: 0;
+  pointer-events: none;
+}
+
+.fastdraw-player-label {
+  font-size: 28px;
+  dominant-baseline: middle;
+}
+
+.fastdraw-zone-label,
+.fastdraw-motion-label,
+.fastdraw-text-object {
+  fill: #101827;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 5px;
+}
+
+.fastdraw-zone-label,
+.fastdraw-motion-label {
+  font-size: 22px;
+}
+
+.fastdraw-motion-handle {
+  fill: #ffffff;
+  stroke: #101827;
+  stroke-width: 4px;
+  cursor: move;
+}
+
+.fastdraw-pending-motion circle {
+  fill: #ffffff;
+  stroke: #b5122b;
+  stroke-width: 6px;
+  stroke-dasharray: 8 6;
+}
+
+.fastdraw-pending-motion text {
+  fill: #101827;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 24px;
+  font-weight: 950;
+  letter-spacing: 0;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 5px;
+  pointer-events: none;
+}
+
+.fastdraw-properties {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 14px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid rgba(16, 24, 39, 0.1);
+  box-shadow: 0 10px 24px rgba(16, 24, 39, 0.08);
+}
+
+.fastdraw-properties__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: start;
+}
+
+.fastdraw-properties__header > div {
+  display: grid;
+  gap: 4px;
+}
+
+.fastdraw-properties__header strong {
+  color: #101827;
+  font-size: 18px;
+  text-transform: capitalize;
+}
+
+.fastdraw-properties__empty {
+  padding: 14px;
+  border-radius: 14px;
+  background: #f4f1ec;
+  color: rgba(16, 24, 39, 0.72);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.fastdraw-properties__form {
+  display: grid;
+  gap: 10px;
+}
+
+.fastdraw-properties__form label {
+  display: grid;
+  gap: 6px;
+  color: rgba(16, 24, 39, 0.68);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.fastdraw-properties__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.fastdraw-properties input[type="color"] {
+  width: 100%;
+  min-height: 40px;
+  padding: 3px;
+}
+
+.fastdraw-danger {
+  justify-self: start;
+  border-color: rgba(181, 18, 43, 0.26) !important;
+  background: rgba(181, 18, 43, 0.08) !important;
+  color: #9f1239 !important;
+}
+
+.fastdraw-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.fastdraw-legend span {
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: #ffffff;
+  color: #101827;
+  font-size: 12px;
+  font-weight: 950;
+  border: 1px solid rgba(16, 24, 39, 0.1);
+}
+
+.fastdraw-legend__move {
+  box-shadow: inset 4px 0 0 #b5122b;
+}
+
+.fastdraw-legend__pass {
+  box-shadow: inset 4px 0 0 #2563eb;
+}
+
+.fastdraw-legend__dribble {
+  box-shadow: inset 4px 0 0 #f97316;
+}
+
+.fastdraw-legend__screen {
+  box-shadow: inset 4px 0 0 #101827;
+}
+
+.fastdraw-legend__zone {
+  box-shadow: inset 4px 0 0 rgba(181, 18, 43, 0.5);
+}
+
+.session-editor-main .fastdraw-editor,
+.session-main .fastdraw-editor {
+  width: 100%;
+  min-width: 0;
+}
+
+.advanced-court,
+.advanced-court__frame {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+@media (max-width: 1280px) {
+  .fastdraw-editor__workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .fastdraw-properties {
+    position: relative;
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .fastdraw-editor {
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .fastdraw-editor__header {
+    grid-template-columns: 1fr;
+  }
+
+  .fastdraw-toolbar__group {
+    align-items: stretch;
+  }
+
+  .fastdraw-toolbar button,
+  .fastdraw-toolbar select,
+  .fastdraw-logo-toggle {
+    flex: 1 1 120px;
+  }
+}
+
+@media print {
+  .fastdraw-toolbar,
+  .fastdraw-properties,
+  .fastdraw-legend {
+    display: none !important;
+  }
+
+  .fastdraw-editor,
+  .fastdraw-stage {
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+  }
+}

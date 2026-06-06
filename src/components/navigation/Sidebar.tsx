@@ -1,217 +1,77 @@
 import { NavLink } from 'react-router-dom'
+import { NAV_ITEMS } from '../../config/navigation'
+import { PRESENTATION_LABELS } from '../../config/presentationMode'
 import { useAuth } from '../../features/auth/context/AuthContext'
-import {
-  canAccessAdmin,
-  canAccessClub,
-  canAccessProduction,
-  canAccessReferentiel,
-  isAdmin,
-  isCoach,
-  isDirigeant,
-  isJoueur,
-  isParent,
-} from '../../features/auth/utils/roles'
 
 function linkClass({ isActive }: { isActive: boolean }) {
   return `sidebar__link${isActive ? ' sidebar__link--active' : ''}`
 }
 
+function groupBySection<T extends { group: string }>(items: T[]) {
+  return items.reduce<Record<string, T[]>>((groups, item) => {
+    groups[item.group] = groups[item.group] ? [...groups[item.group], item] : [item]
+    return groups
+  }, {})
+}
+
 export function Sidebar() {
   const { user, profile } = useAuth()
   const role = profile?.role
+  const visibleItems = NAV_ITEMS.filter((item) => item.visible(role))
+  const groupedItems = groupBySection(visibleItems)
 
   return (
     <aside className="sidebar">
       <div className="sidebar__brand">
         <img
-          src="/logo-bcvb.png"
+          src="/logo_bcvb copie.png"
           alt="Logo BCVB"
           className="sidebar__logoImage"
-          onError={(e) => {
-            e.currentTarget.style.display = 'none'
+          onError={(event) => {
+            event.currentTarget.style.display = 'none'
           }}
         />
 
         <div>
-          <h1 className="sidebar__title">BCVB Référentiel</h1>
-          <p className="sidebar__subtitle">Plateforme technique, pédagogique et terrain</p>
+          <h1 className="sidebar__title">{PRESENTATION_LABELS.appTitle}</h1>
+          <p className="sidebar__subtitle">{PRESENTATION_LABELS.appSubtitle}</p>
         </div>
       </div>
 
       <nav className="sidebar__nav">
-        <div className="sidebar__section">
-          <p className="sidebar__sectionTitle">Général</p>
-
-          <div className="sidebar__sectionLinks">
-            <NavLink to="/" end className={linkClass}>
-              Accueil
-            </NavLink>
-
-            {!user ? (
-              <>
-                <NavLink to="/connexion" className={linkClass}>
-                  Connexion
-                </NavLink>
-
-                <NavLink to="/inscription" className={linkClass}>
-                  Inscription
-                </NavLink>
-              </>
-            ) : (
-              <NavLink to="/dashboard" className={linkClass}>
-                Tableau de bord
-              </NavLink>
-            )}
-          </div>
-        </div>
-
-        {user && canAccessReferentiel(role) && (
-          <div className="sidebar__section">
-            <p className="sidebar__sectionTitle">
-              {isJoueur(role)
-                ? 'Ma formation'
-                : isParent(role)
-                  ? 'Vie club'
-                  : 'Référentiel'}
-            </p>
+        {Object.entries(groupedItems).map(([section, items]) => (
+          <div className="sidebar__section" key={section}>
+            <p className="sidebar__sectionTitle">{section}</p>
 
             <div className="sidebar__sectionLinks">
-              {(isAdmin(role) || isDirigeant(role) || isCoach(role)) && (
-                <>
-                  <NavLink to="/categories" className={linkClass}>
-                    Catégories
-                  </NavLink>
-
-                  <NavLink to="/themes" className={linkClass}>
-                    Thèmes
-                  </NavLink>
-
-                  <NavLink to="/situations" className={linkClass}>
-                    Situations
-                  </NavLink>
-
-                  <NavLink to="/bibliotheque" className={linkClass}>
-                    Bibliothèque
-                  </NavLink>
-                </>
-              )}
-
-              {isJoueur(role) && (
-                <>
-                  <NavLink to="/joueur/contenus" className={linkClass}>
-                    Mes contenus
-                  </NavLink>
-
-                  <NavLink to="/joueur/fondamentaux" className={linkClass}>
-                    Fondamentaux
-                  </NavLink>
-
-                  <NavLink to="/joueur/progression" className={linkClass}>
-                    Progression
-                  </NavLink>
-
-                  <NavLink to="/joueur/charte" className={linkClass}>
-                    Charte club
-                  </NavLink>
-
-                  <NavLink to="/joueur/engagement" className={linkClass}>
-                    Arbitrage & table
-                  </NavLink>
-                </>
-              )}
-
-              {isParent(role) && (
-                <>
-                  <NavLink to="/parent/charte" className={linkClass}>
-                    Charte parent
-                  </NavLink>
-
-                  <NavLink to="/parent/vie-club" className={linkClass}>
-                    Vie associative
-                  </NavLink>
-
-                  <NavLink to="/parent/roles" className={linkClass}>
-                    Tours de rôles
-                  </NavLink>
-
-                  <NavLink to="/parent/referent" className={linkClass}>
-                    Parent référent
-                  </NavLink>
-
-                  <NavLink to="/parent/projet-club" className={linkClass}>
-                    Projet sportif
-                  </NavLink>
-                </>
-              )}
+              {items.map((item) => (
+                <NavLink
+                  key={item.id}
+                  to={item.path}
+                  end={item.path === '/'}
+                  className={({ isActive }) => `${linkClass({ isActive })} sidebar__link--${item.color}`}
+                  title={item.description}
+                >
+                  <span className="sidebar__linkIcon" aria-hidden="true">
+                    {item.color === 'green' ? '●' : '◆'}
+                  </span>
+                  <span className="sidebar__linkText">{item.label}</span>
+                  {item.adminOnly && <span className="sidebar__adminBadge">Admin</span>}
+                </NavLink>
+              ))}
             </div>
           </div>
-        )}
+        ))}
 
-        {user && canAccessProduction(role) && (
+        {!user && (
           <div className="sidebar__section">
-            <p className="sidebar__sectionTitle">Production</p>
-
+            <p className="sidebar__sectionTitle">Compte</p>
             <div className="sidebar__sectionLinks">
-              <NavLink to="/generateur" className={linkClass}>
-                Générateur
+              <NavLink to="/connexion" className={linkClass}>
+                Connexion
               </NavLink>
-
-              <NavLink to="/seances" className={linkClass}>
-                Séances
-              </NavLink>
-            </div>
-          </div>
-        )}
-
-        {user && canAccessClub(role) && (
-          <div className="sidebar__section">
-            <p className="sidebar__sectionTitle">Club</p>
-
-            <div className="sidebar__sectionLinks">
-              <NavLink to="/club" className={linkClass}>
-                Projet club
-              </NavLink>
-
-              {(isAdmin(role) || isDirigeant(role)) && (
-                <NavLink to="/club/pilotage" className={linkClass}>
-                  Pilotage
-                </NavLink>
-              )}
-            </div>
-          </div>
-        )}
-
-        {user && canAccessAdmin(role) && (
-          <div className="sidebar__section">
-            <p className="sidebar__sectionTitle">Administration</p>
-
-            <div className="sidebar__sectionLinks">
-              <NavLink to="/admin" className={linkClass}>
-                Membres
-              </NavLink>
-
-              <NavLink to="/admin/plateforme" className={linkClass}>
-                Plateforme
-              </NavLink>
-
-              <NavLink to="/admin/ia-documentaire" className={linkClass}>
-  IA documentaire
-</NavLink>
-
-              <NavLink to="/admin/inscriptions" className={linkClass}>
-                Inscriptions
-              </NavLink>
-
-              <NavLink to="/admin/import-joueurs" className={linkClass}>
-                Import joueurs
-              </NavLink>
-
-              <NavLink to="/admin/import-export" className={linkClass}>
-                Import / Export
-              </NavLink>
-
-              <NavLink to="/admin/deblocages" className={linkClass}>
-                Déblocages
+              <NavLink to="/inscription" className={linkClass}>
+                Inscription
               </NavLink>
             </div>
           </div>

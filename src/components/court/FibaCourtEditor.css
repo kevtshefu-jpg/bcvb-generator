@@ -1,0 +1,86 @@
+.bcvb-court-editor {
+  width: 100%;
+  margin: 0;
+}
+
+.bcvb-court-stage {
+  position: relative;
+  width: 100%;
+  overflow: visible;
+  background: transparent;
+  background-image: none !important;
+}
+
+.bcvb-court-stage.full {
+  aspect-ratio: 28 / 15;
+  max-width: 980px;
+}
+
+.bcvb-court-stage.half {
+  aspect-ratio: 14 / 15;
+  max-width: 620px;
+}
+
+.bcvb-court-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  min-height: 0;
+  flex: none;
+  border-radius: 18px;
+  background: #d8b676;
+  background-image: none !important;
+}
+
+.court-center-logo {
+  pointer-events: none;
+  opacity: 0.12;
+}
+
+.court-logo,
+.court-logo img,
+.bcvb-court-logo,
+.logo-court-bg,
+.court-logo-background,
+.watermark-full {
+  width: auto;
+  height: auto;
+  position: static;
+  inset: auto;
+  background: none;
+}
+
+.bcvb-court-object {
+  cursor: grab;
+}
+
+.bcvb-court-object:active {
+  cursor: grabbing;
+}
+
+.bcvb-court-player-label {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 30px;
+  font-weight: 900;
+  dominant-baseline: middle;
+  pointer-events: none;
+}
+
+.bcvb-court-text,
+.bcvb-court-arrow-label,
+.bcvb-court-zone-label {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 34px;
+  font-weight: 900;
+  fill: #101722;
+  letter-spacing: 0;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 5px;
+}
+
+.bcvb-court-arrow-label,
+.bcvb-court-zone-label {
+  font-size: 24px;
+  stroke-width: 4px;
+}

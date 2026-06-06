@@ -1,0 +1,625 @@
+.roster-page {
+  display: grid;
+  gap: 20px;
+}
+
+.roster-hero {
+  align-items: stretch;
+  overflow: hidden;
+  position: relative;
+}
+
+.roster-hero::after {
+  content: '';
+  position: absolute;
+  inset: auto 28px 0 auto;
+  width: 180px;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #c8102e, #ffffff, #07101f);
+  opacity: 0.8;
+}
+
+.roster-hero-status {
+  min-width: 164px;
+  padding: 18px;
+  border-radius: 18px;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 4px;
+  color: #ffffff;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 40%),
+    linear-gradient(145deg, #07101f, #111111 58%, #c8102e);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.roster-hero-status strong {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.roster-hero-status span {
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.roster-block-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.roster-block-card {
+  min-height: 150px;
+  padding: 16px;
+  border-radius: 18px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 249, 252, 0.94));
+  border: 1px solid rgba(7, 16, 31, 0.08);
+  box-shadow: 0 18px 38px rgba(7, 16, 31, 0.08);
+}
+
+.roster-block-card span {
+  width: fit-content;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: #c8102e;
+  background: rgba(200, 16, 46, 0.1);
+}
+
+.roster-block-card h2 {
+  margin: 0;
+  color: #07101f;
+  font-size: 1rem;
+}
+
+.roster-block-card p {
+  margin: 0;
+  color: #5c6472;
+  line-height: 1.45;
+}
+
+.roster-block-card strong {
+  margin-top: auto;
+  color: #111111;
+  font-size: 0.82rem;
+}
+
+.roster-command-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 18px;
+  align-items: stretch;
+}
+
+.roster-shell-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 18px;
+  align-items: start;
+}
+
+.roster-main-column,
+.roster-right-column {
+  min-width: 0;
+  display: grid;
+  gap: 18px;
+}
+
+.roster-right-column {
+  position: sticky;
+  top: 18px;
+  align-self: start;
+}
+
+.roster-admin-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(7, 16, 31, 0.08);
+  box-shadow: 0 16px 34px rgba(7, 16, 31, 0.07);
+}
+
+.roster-import-report {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.roster-import-report article {
+  padding: 14px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid rgba(7, 16, 31, 0.08);
+  box-shadow: 0 14px 30px rgba(7, 16, 31, 0.06);
+}
+
+.roster-import-report span {
+  display: block;
+  color: #5c6472;
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.roster-import-report strong {
+  display: block;
+  margin-top: 6px;
+  color: #07101f;
+  font-size: 1.55rem;
+}
+
+.roster-import-card {
+  min-width: 0;
+}
+
+.roster-dropzone {
+  min-height: 180px;
+  padding: 22px;
+  border: 2px dashed rgba(200, 16, 46, 0.3);
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 10px;
+  background:
+    radial-gradient(circle at top left, rgba(200, 16, 46, 0.08), transparent 32%),
+    #f8fafc;
+  transition: 0.18s ease;
+}
+
+.roster-dropzone.is-active {
+  border-color: #c8102e;
+  background: #fff3f5;
+}
+
+.roster-dropzone.is-disabled {
+  filter: grayscale(0.4);
+  opacity: 0.72;
+}
+
+.roster-dropzone strong {
+  color: #07101f;
+  font-size: 1.1rem;
+}
+
+.roster-dropzone p {
+  max-width: 520px;
+  margin: 0;
+  color: #5c6472;
+}
+
+.roster-import-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  color: #5c6472;
+  font-weight: 800;
+}
+
+.roster-card-title,
+.roster-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.roster-card-title {
+  display: grid;
+  justify-content: stretch;
+  gap: 4px;
+}
+
+.roster-card-title span,
+.roster-section-header span {
+  display: block;
+  margin-bottom: 4px;
+  color: #c8102e;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.roster-card-title h2,
+.roster-section-header h2 {
+  margin: 0;
+  color: #07101f;
+  font-size: 1.18rem;
+}
+
+.roster-section-header p {
+  margin: 0;
+  color: #5c6472;
+  text-align: right;
+}
+
+.roster-section-header strong {
+  color: #c8102e;
+  font-size: 0.92rem;
+}
+
+.roster-control-card {
+  padding: 22px;
+  border-radius: 22px;
+  color: #ffffff;
+  background:
+    radial-gradient(circle at top right, rgba(200, 16, 46, 0.42), transparent 34%),
+    linear-gradient(160deg, #07101f, #111111 62%, #2a0c13);
+  box-shadow: 0 22px 44px rgba(7, 16, 31, 0.18);
+}
+
+.roster-control-card span {
+  color: #ffccd4;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.roster-control-card h2 {
+  margin: 8px 0;
+  font-size: 1.45rem;
+  line-height: 1.1;
+}
+
+.roster-control-card p,
+.roster-control-card li {
+  color: rgba(255, 255, 255, 0.74);
+  line-height: 1.5;
+}
+
+.roster-control-card ul {
+  margin: 14px 0 0;
+  padding-left: 18px;
+}
+
+.roster-stats .bcvb-tool-card h3 {
+  font-size: 2rem;
+}
+
+.roster-section {
+  min-width: 0;
+}
+
+.roster-team-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.roster-team-grid label {
+  display: grid;
+  gap: 6px;
+  color: #5c6472;
+  font-weight: 800;
+}
+
+.roster-team-grid input,
+.roster-team-grid select {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid rgba(7, 16, 31, 0.12);
+  border-radius: 12px;
+  padding: 11px 12px;
+  background: #ffffff;
+}
+
+.roster-planning-context {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid rgba(7, 16, 31, 0.08);
+}
+
+.roster-planning-context span {
+  color: #c8102e;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.roster-planning-context p,
+.roster-planning-context strong {
+  margin: 0;
+}
+
+.roster-two-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.roster-contact-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.roster-contact-metrics span {
+  padding: 10px;
+  border-radius: 14px;
+  color: #5c6472;
+  background: #f5f6f9;
+  border: 1px solid rgba(7, 16, 31, 0.07);
+  font-weight: 800;
+}
+
+.roster-contact-metrics strong {
+  display: block;
+  color: #07101f;
+  font-size: 1.25rem;
+}
+
+.roster-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #07101f;
+  background: #eef1f6;
+  border: 1px solid rgba(7, 16, 31, 0.08);
+  font-size: 0.76rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.roster-chip--ok,
+.roster-chip--complet {
+  color: #0f5132;
+  background: #dff7ea;
+  border-color: rgba(15, 81, 50, 0.16);
+}
+
+.roster-chip--partiel {
+  color: #8a5a00;
+  background: #fff2cf;
+  border-color: rgba(138, 90, 0, 0.16);
+}
+
+.roster-chip--danger,
+.roster-chip--manquant {
+  color: #9b1028;
+  background: #ffe1e7;
+  border-color: rgba(200, 16, 46, 0.18);
+}
+
+.roster-preview-table tr.is-valid td {
+  background: rgba(223, 247, 234, 0.42);
+}
+
+.roster-preview-table tr.is-warning td {
+  background: rgba(255, 242, 207, 0.48);
+}
+
+.roster-preview-table tr.is-error td {
+  background: rgba(255, 225, 231, 0.58);
+}
+
+.roster-preview-table tr.is-duplicate td {
+  background: rgba(219, 234, 254, 0.58);
+}
+
+.roster-preview-table tr.is-muted td {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.roster-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.roster-row-actions button,
+.roster-export-panel button,
+.roster-player-card button {
+  border: 1px solid rgba(7, 16, 31, 0.12);
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: #ffffff;
+  color: #07101f;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.roster-row-actions button:hover,
+.roster-export-panel button:hover,
+.roster-player-card button:hover {
+  border-color: rgba(200, 16, 46, 0.34);
+  color: #c8102e;
+}
+
+.roster-player-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.roster-player-card {
+  min-width: 0;
+  padding: 14px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid rgba(7, 16, 31, 0.08);
+  display: grid;
+  gap: 8px;
+}
+
+.roster-player-card span {
+  width: fit-content;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #c8102e;
+  background: rgba(200, 16, 46, 0.1);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.roster-player-card h3,
+.roster-player-card p {
+  margin: 0;
+}
+
+.roster-player-card div {
+  display: grid;
+  gap: 4px;
+  color: #5c6472;
+}
+
+.roster-player-profile,
+.roster-quality-panel,
+.roster-export-panel {
+  overflow: hidden;
+}
+
+.roster-profile-list {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.roster-profile-list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(7, 16, 31, 0.08);
+}
+
+.roster-profile-list dt {
+  color: #5c6472;
+  font-weight: 800;
+}
+
+.roster-profile-list dd {
+  margin: 0;
+  color: #07101f;
+  font-weight: 900;
+  text-align: right;
+}
+
+.roster-profile-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.roster-profile-links span {
+  padding: 7px 9px;
+  border-radius: 999px;
+  background: #eef1f6;
+  color: #07101f;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.roster-quality-ring {
+  width: 118px;
+  height: 118px;
+  margin: 8px auto 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at center, #ffffff 0 56%, transparent 57%),
+    conic-gradient(#c8102e var(--score), #eef1f6 0);
+}
+
+.roster-quality-ring strong {
+  color: #07101f;
+  font-size: 1.4rem;
+}
+
+.roster-export-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.bcvb-table-premium .roster-chip {
+  margin: 2px 0;
+}
+
+.roster-page button:disabled,
+.roster-page input:disabled,
+.roster-page select:disabled,
+.roster-page textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+@media (max-width: 1240px) {
+  .roster-block-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .roster-command-layout,
+  .roster-two-columns,
+  .roster-shell-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .roster-right-column {
+    position: static;
+  }
+
+  .roster-player-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1100px) {
+  .roster-command-layout,
+  .roster-shell-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .roster-team-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .roster-block-grid,
+  .roster-import-report,
+  .roster-contact-metrics,
+  .roster-team-grid,
+  .roster-player-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .roster-card-title,
+  .roster-section-header {
+    display: grid;
+  }
+
+  .roster-section-header p {
+    text-align: left;
+  }
+}

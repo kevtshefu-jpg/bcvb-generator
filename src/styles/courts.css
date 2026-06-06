@@ -1,0 +1,181 @@
+.court-editor {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #f7f1ee;
+}
+
+.court-editor-shell {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.court-canvas-wrapper {
+  width: 100%;
+  aspect-ratio: 28 / 15;
+  overflow: hidden;
+  border-radius: 14px;
+  background-image: none !important;
+}
+
+.court-card,
+.court-canvas,
+.court-canvas-wrapper,
+.bcvb-court-svg,
+.fastdraw-court-svg {
+  background-image: none !important;
+}
+
+.advanced-court {
+  display: grid;
+  gap: 14px;
+}
+
+.advanced-court__frame {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid rgba(20, 24, 31, 0.1);
+}
+
+.advanced-court__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.court-editor__top,
+.court-toolbar,
+.court-legend,
+.court-object-row,
+.court-frame-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.court-editor__top input,
+.court-editor__top select,
+.court-editor textarea {
+  border: 1px solid rgba(20, 24, 31, 0.14);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+}
+
+.court-editor__top input,
+.court-editor textarea {
+  flex: 1;
+  min-width: 220px;
+}
+
+.court-toolbar button,
+.court-object-row button,
+.court-editor__top button,
+.advanced-court__actions button,
+.court-frame-tabs button {
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(20, 24, 31, 0.14);
+  background: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.court-frame-tabs button.is-active {
+  background: #a32035;
+  border-color: #a32035;
+  color: #ffffff;
+}
+
+.fiba-court-box {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.fiba-court-box.full {
+  aspect-ratio: 28 / 15;
+}
+
+.fiba-court-box.half {
+  aspect-ratio: 14 / 15;
+  max-width: 620px;
+}
+
+.court-svg {
+  display: block;
+  width: 100%;
+  max-width: 760px;
+  height: 100%;
+  aspect-ratio: 28 / 15;
+  border-radius: 14px;
+  background: #f6d8a8;
+  box-shadow: inset 0 0 0 1px rgba(20, 24, 31, 0.12);
+}
+
+.fiba-court-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+}
+
+.court-half-frame {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+.court-legend__item {
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #ffffff;
+  color: #14181f;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.court-legend__item--pass {
+  color: #2563eb;
+}
+
+.court-legend__item--dribble {
+  color: #a32035;
+}
+
+.court-legend__item--zone {
+  color: #f97316;
+}
+
+.court-object-list {
+  display: grid;
+  gap: 8px;
+}
+
+.court-object-row {
+  padding: 8px;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.court-object-row.is-selected {
+  outline: 2px solid #a32035;
+}
+
+.court-object-row input {
+  min-width: 70px;
+  border: 1px solid rgba(20, 24, 31, 0.14);
+  border-radius: 10px;
+  padding: 7px 9px;
+  font: inherit;
+  font-weight: 800;
+}

@@ -1,0 +1,87 @@
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+
+  .sidebar,
+  .topbar,
+  .session-hero,
+  .session-sidebar,
+  .session-actions,
+  .session-status-strip,
+  .session-import-panel,
+  .session-library-filters,
+  .session-stats-grid,
+  .session-library-grid,
+  .session-classification,
+  .session-import-prompt,
+  .session-situation-actions,
+  .court-toolbar,
+  .advanced-court__actions,
+  .court-object-list,
+  .session-template-card button,
+  .session-section-header button {
+    display: none !important;
+  }
+
+  .public-main,
+  .public-content,
+  .session-page {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .session-layout,
+  .session-main,
+  .session-preview,
+  .session-print-cover,
+  .session-print-page {
+    display: block !important;
+  }
+
+  .session-card,
+  .session-situation,
+  .session-print-page {
+    box-shadow: none !important;
+    border: 1px solid #d1d5db !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 12mm;
+  }
+
+  .session-print-page {
+    page-break-inside: avoid;
+    page-break-before: always;
+  }
+
+  .court-svg {
+    max-width: 100% !important;
+    break-inside: avoid;
+  }
+
+  .print-court-frame,
+  .bcvb-court-stage,
+  .court-stage,
+  .court-stage-shell,
+  .fiba-court-pro {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    max-width: 100% !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .fiba-court-pro svg,
+  .bcvb-court-stage svg,
+  .court-stage svg {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 170mm;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+}

@@ -1,0 +1,115 @@
+.bcvb-premium-panel,
+.bcvb-normalizer-panel {
+  display: grid;
+  gap: 16px;
+  margin: 24px 0;
+  padding: 22px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 16px 42px rgba(17, 24, 39, 0.08);
+}
+
+.bcvb-premium-panel__head p,
+.bcvb-normalizer-panel p {
+  margin: 0 0 4px;
+  color: #c8102e;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bcvb-premium-panel__head h2 {
+  margin: 0;
+  color: #111827;
+}
+
+.bcvb-premium-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.bcvb-premium-grid label,
+.bcvb-premium-sources label {
+  display: grid;
+  gap: 8px;
+  color: #111827;
+  font-weight: 800;
+}
+
+.bcvb-premium-grid input,
+.bcvb-premium-grid select {
+  min-height: 42px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 9px 12px;
+  font: inherit;
+}
+
+.bcvb-premium-checks,
+.bcvb-normalizer-panel__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.bcvb-premium-checks label,
+.bcvb-normalizer-panel__stats span {
+  padding: 9px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #f9fafb;
+  color: #111827;
+  font-weight: 800;
+}
+
+.bcvb-premium-sources {
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #f9fafb;
+}
+
+.bcvb-premium-sources summary {
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.bcvb-premium-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.bcvb-premium-actions button,
+.bcvb-normalizer-panel button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 18px;
+  background: #c8102e;
+  color: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.bcvb-premium-actions button:disabled,
+.bcvb-normalizer-panel button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.bcvb-premium-prompt {
+  max-height: 420px;
+  overflow: auto;
+  white-space: pre-wrap;
+  padding: 16px;
+  border-radius: 14px;
+  background: #111827;
+  color: #f9fafb;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+}
