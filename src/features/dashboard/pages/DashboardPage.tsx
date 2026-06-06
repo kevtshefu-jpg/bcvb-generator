@@ -5,6 +5,7 @@ import { useStableSession } from '../../../hooks/useStableSession'
 import { useSafeLoading } from '../../../hooks/useSafeLoading'
 import { PRESENTATION_MODE } from '../../../config/presentationMode'
 import { buildDirectorSpaceModel } from '../../../lib/directors/directorDashboard'
+import StudioExperiencePanel from '../../studio-ux/components/StudioExperiencePanel'
 import {
   formatRole,
   isAdmin,
@@ -535,6 +536,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
+	      {!PRESENTATION_MODE && <StudioExperiencePanel role={role} />}
 	      {PRESENTATION_MODE && <PresentationDashboard role={role} />}
 	      {!PRESENTATION_MODE && <BcvbDashboardOverview role={role} />}
 	      {!PRESENTATION_MODE && isAdmin(role) && <AdminDashboard />}
