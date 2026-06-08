@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { resolveStudioCategory } from '../../features/studio-ux/services/studioExperience'
+import { resolveStudioCategory } from '../../features/ux/services/studioExperience'
 
 const hashLabels: Record<string, string> = {
   '#source': 'Source',

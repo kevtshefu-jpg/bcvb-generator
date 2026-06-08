@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../features/auth/context/AuthContext'
 import { formatRole, getRoleHomeLabel } from '../../features/auth/utils/roles'
 import { PRESENTATION_LABELS } from '../../config/presentationMode'
-import CurrentModuleContext from '../../features/studio-ux/components/CurrentModuleContext'
+import CurrentModuleContext from '../../features/ux/components/CurrentModuleContext'
 import { Breadcrumbs } from './Breadcrumbs'
 import { PrimaryNavigation } from './PrimaryNavigation'
 
@@ -48,9 +48,15 @@ export function TopBar() {
           />
 
           <div className="topbar__brandText">
+            <div className="topbar__eyebrowLine">
+            <span className="topbar__emojiBadge" aria-hidden="true">
+              🏀
+            </span>
+
             <p className="topbar__eyebrow">
               {PRESENTATION_LABELS.appTitle}
             </p>
+          </div>
 
             <h1 className="topbar__title">
               Studio documentaire BCVB
@@ -67,7 +73,9 @@ export function TopBar() {
 
       <div className="topbar__right" aria-label="Informations utilisateur">
         <div className="topbar__identityCard">
-          <span className="topbar__identityLabel">Session active</span>
+          <span className="topbar__identityLabel">
+            👤 Session active
+          </span>
 
           <span className="topbar__name">
             {profile?.full_name || profile?.email || user?.email || 'Membre'}

@@ -4,10 +4,9 @@ import { canAccessCategory, getSiteCategoryById } from '../../config/siteCategor
 type PrimaryNavItem = {
   id: string
   label: string
-  shortLabel?: string
   ariaLabel: string
   to: string
-  icon: string
+  emoji: string
   categoryId?: string
   adminOnly?: boolean
   priority?: 'main' | 'control' | 'secondary'
@@ -19,7 +18,7 @@ const primaryNavItems: PrimaryNavItem[] = [
     label: 'Accueil',
     ariaLabel: 'Retourner au tableau de bord',
     to: '/dashboard',
-    icon: '⌂',
+    emoji: '🏠',
     priority: 'main',
   },
   {
@@ -29,18 +28,17 @@ const primaryNavItems: PrimaryNavItem[] = [
     to: '/admin/documents/nouveau',
     categoryId: 'editorial-studio',
     adminOnly: true,
-    icon: '+',
+    emoji: '✍️',
     priority: 'main',
   },
   {
     id: 'import',
     label: 'Importer',
-    shortLabel: 'OCR',
     ariaLabel: 'Importer un PDF, une image ou un scan avec OCR',
     to: '/admin/ocr-pieces-jointes',
     categoryId: 'ocr-attachments',
     adminOnly: true,
-    icon: '↥',
+    emoji: '📥',
     priority: 'main',
   },
   {
@@ -49,7 +47,7 @@ const primaryNavItems: PrimaryNavItem[] = [
     ariaLabel: 'Ouvrir la bibliothèque documentaire',
     to: '/bibliotheque',
     categoryId: 'library',
-    icon: '▦',
+    emoji: '📚',
     priority: 'main',
   },
   {
@@ -59,7 +57,7 @@ const primaryNavItems: PrimaryNavItem[] = [
     to: '/admin/qualite-exports#qualite',
     categoryId: 'quality-exports',
     adminOnly: true,
-    icon: '✓',
+    emoji: '🛡️',
     priority: 'control',
   },
   {
@@ -69,7 +67,7 @@ const primaryNavItems: PrimaryNavItem[] = [
     to: '/admin/qualite-exports#export',
     categoryId: 'quality-exports',
     adminOnly: true,
-    icon: '↓',
+    emoji: '📤',
     priority: 'control',
   },
   {
@@ -79,7 +77,7 @@ const primaryNavItems: PrimaryNavItem[] = [
     to: '/parametres',
     categoryId: 'admin-settings',
     adminOnly: true,
-    icon: '⚙',
+    emoji: '⚙️',
     priority: 'secondary',
   },
 ]
@@ -140,10 +138,13 @@ export function PrimaryNavigation({ role }: { role?: string | null }) {
         aria-label={item.ariaLabel}
         aria-current={active ? 'page' : undefined}
       >
-        <span className="primary-nav__icon" aria-hidden="true">
-          {item.icon}
+        <span className="primary-nav__emoji" aria-hidden="true">
+          {item.emoji}
         </span>
-        <span className="primary-nav__label">{item.label}</span>
+
+        <span className="primary-nav__label">
+          {item.label}
+        </span>
       </Link>
     )
   }
@@ -155,13 +156,19 @@ export function PrimaryNavigation({ role }: { role?: string | null }) {
       </div>
 
       {controlItems.length > 0 && (
-        <div className="primary-nav__group primary-nav__group--control" aria-label="Contrôle documentaire">
+        <div
+          className="primary-nav__group primary-nav__group--control"
+          aria-label="Contrôle documentaire"
+        >
           {controlItems.map(renderItem)}
         </div>
       )}
 
       {secondaryItems.length > 0 && (
-        <div className="primary-nav__group primary-nav__group--secondary" aria-label="Paramètres">
+        <div
+          className="primary-nav__group primary-nav__group--secondary"
+          aria-label="Paramètres"
+        >
           {secondaryItems.map(renderItem)}
         </div>
       )}
