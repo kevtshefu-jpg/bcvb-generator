@@ -21,7 +21,10 @@ export default function ForgotPasswordPage() {
     try {
       setLoading(true)
 
-      const redirectTo = `${window.location.origin}/reinitialisation-mot-de-passe`
+      const appUrl =
+        import.meta.env.VITE_APP_URL?.replace(/\/$/, '') || window.location.origin
+
+      const redirectTo = `${appUrl}/reinitialisation-mot-de-passe`
 
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo,

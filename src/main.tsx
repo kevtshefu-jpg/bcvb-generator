@@ -7,6 +7,7 @@ import './features/documents/styles/bcvb-premium.css'
 import './features/documents/styles/bcvbEditorialDocument.css'
 import './features/documents/styles/documentFamilies.css'
 import './features/ai-document/styles/aiDocumentStudio.css'
+import './styles/mobile-premium.css'
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },

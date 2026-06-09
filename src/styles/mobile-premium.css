@@ -1,0 +1,552 @@
+/* =========================================================
+   BCVB — MOBILE PREMIUM UX
+   Objectif : rendu plus propre, plus dense, plus pratique
+   sur iPhone / Android.
+========================================================= */
+
+:root {
+  --bcvb-mobile-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --bcvb-mobile-radius: 28px;
+  --bcvb-mobile-card-radius: 24px;
+  --bcvb-mobile-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+}
+
+/* Base mobile */
+@media (max-width: 768px) {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(200, 16, 46, 0.12), transparent 34%),
+      linear-gradient(180deg, #fff8fa 0%, #f8fafc 45%, #ffffff 100%);
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* =========================================================
+   Layout général
+========================================================= */
+
+@media (max-width: 768px) {
+  .app-shell,
+  .dashboard-layout,
+  .referentiel-layout,
+  .studio-layout {
+    display: block;
+    width: 100%;
+    min-height: 100dvh;
+  }
+
+  .main-content,
+  .dashboard-main,
+  .referentiel-main,
+  .studio-main {
+    width: 100%;
+    min-width: 0;
+    padding: 18px 14px calc(120px + var(--bcvb-mobile-safe-bottom));
+  }
+}
+
+/* =========================================================
+   Sidebar mobile
+   Transforme la sidebar en panneau premium compact.
+========================================================= */
+
+@media (max-width: 768px) {
+  .sidebar,
+  .app-sidebar,
+  .bcvb-sidebar {
+    position: relative;
+    width: 100%;
+    max-height: none;
+    border-radius: 0 0 32px 32px;
+    padding: 22px 18px 26px;
+    background:
+      radial-gradient(circle at top left, rgba(200, 16, 46, 0.28), transparent 34%),
+      linear-gradient(160deg, #100812 0%, #180a10 48%, #070912 100%);
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.28);
+    overflow: hidden;
+  }
+
+  .sidebar::after,
+  .app-sidebar::after,
+  .bcvb-sidebar::after {
+    content: "";
+    position: absolute;
+    inset: auto 24px 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+  }
+
+  .sidebar-header,
+  .app-sidebar__header,
+  .bcvb-sidebar__header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .sidebar-logo,
+  .app-sidebar__logo,
+  .bcvb-sidebar__logo {
+    width: 54px;
+    height: 54px;
+    border-radius: 18px;
+    flex: 0 0 auto;
+  }
+
+  .sidebar-title,
+  .app-sidebar__title,
+  .bcvb-sidebar__title {
+    font-size: 20px;
+    line-height: 1.1;
+    color: #ffffff;
+  }
+
+  .sidebar-subtitle,
+  .app-sidebar__subtitle,
+  .bcvb-sidebar__subtitle {
+    font-size: 13px;
+    line-height: 1.35;
+    color: rgba(255,255,255,0.68);
+  }
+
+  .sidebar-section,
+  .app-sidebar__section,
+  .bcvb-sidebar__section {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .sidebar-section-title,
+  .app-sidebar__sectionTitle,
+  .bcvb-sidebar__sectionTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.72);
+  }
+
+  .sidebar-link,
+  .app-sidebar__link,
+  .bcvb-sidebar__link {
+    display: grid;
+    grid-template-columns: 38px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 58px;
+    padding: 10px 12px;
+    border-radius: 18px;
+    color: rgba(255,255,255,0.86);
+    text-decoration: none;
+  }
+
+  .sidebar-link + .sidebar-link,
+  .app-sidebar__link + .app-sidebar__link,
+  .bcvb-sidebar__link + .bcvb-sidebar__link {
+    margin-top: 4px;
+  }
+
+  .sidebar-link.is-active,
+  .app-sidebar__link.is-active,
+  .bcvb-sidebar__link.is-active,
+  .sidebar-link[aria-current="page"],
+  .app-sidebar__link[aria-current="page"],
+  .bcvb-sidebar__link[aria-current="page"] {
+    background: linear-gradient(135deg, #d60f3c 0%, #9c102f 100%);
+    color: #ffffff;
+    box-shadow: 0 16px 34px rgba(200, 16, 46, 0.38);
+  }
+
+  .sidebar-link-title,
+  .app-sidebar__linkTitle,
+  .bcvb-sidebar__linkTitle {
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.15;
+  }
+
+  .sidebar-link-subtitle,
+  .app-sidebar__linkSubtitle,
+  .bcvb-sidebar__linkSubtitle {
+    margin-top: 3px;
+    font-size: 12px;
+    line-height: 1.2;
+    color: rgba(255,255,255,0.58);
+  }
+
+  .sidebar-link.is-active .sidebar-link-subtitle,
+  .app-sidebar__link.is-active .app-sidebar__linkSubtitle,
+  .bcvb-sidebar__link.is-active .bcvb-sidebar__linkSubtitle {
+    color: rgba(255,255,255,0.78);
+  }
+
+  .sidebar-badge,
+  .app-sidebar__badge,
+  .bcvb-sidebar__badge {
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    color: #fff;
+    background: rgba(255,255,255,0.13);
+    border: 1px solid rgba(255,255,255,0.18);
+  }
+}
+/* =========================================================
+   Cartes premium mobile
+========================================================= */
+
+@media (max-width: 768px) {
+  .dashboard-page,
+  .document-page,
+  .studio-page,
+  .admin-page {
+    padding: 0;
+  }
+
+  .dashboard-page__hero,
+  .document-hero,
+  .studio-hero,
+  .admin-hero {
+    margin: 14px 0 16px;
+    padding: 24px 22px;
+    border-radius: 28px;
+    background:
+      radial-gradient(circle at top right, rgba(200,16,46,0.14), transparent 36%),
+      linear-gradient(145deg, #ffffff 0%, #fff4f6 100%);
+    box-shadow: var(--bcvb-mobile-shadow);
+    border: 1px solid rgba(255,255,255,0.82);
+  }
+
+  .dashboard-page__eyebrow,
+  .document-hero__eyebrow,
+  .studio-hero__eyebrow,
+  .admin-hero__eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 900;
+    color: #c8102e;
+  }
+
+  .dashboard-page__title,
+  .document-hero__title,
+  .studio-hero__title,
+  .admin-hero__title {
+    margin-top: 8px;
+    font-size: clamp(30px, 9vw, 48px);
+    line-height: 0.98;
+    letter-spacing: -0.06em;
+    color: #111827;
+  }
+
+  .dashboard-page__text,
+  .document-hero__text,
+  .studio-hero__text,
+  .admin-hero__text {
+    margin-top: 12px;
+    font-size: 16px;
+    line-height: 1.45;
+    color: #64748b;
+  }
+
+  .dashboard-panelCard,
+  .document-card,
+  .studio-card,
+  .admin-card,
+  .bcvb-card {
+    margin: 14px 0;
+    padding: 20px;
+    border-radius: 24px;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid rgba(226,232,240,0.9);
+    box-shadow: 0 16px 44px rgba(15,23,42,0.08);
+  }
+
+  .dashboard-panelCard__title,
+  .document-card__title,
+  .studio-card__title,
+  .admin-card__title,
+  .bcvb-card__title {
+    font-size: 22px;
+    line-height: 1.1;
+    letter-spacing: -0.035em;
+  }
+
+  .dashboard-panelCard__text,
+  .document-card__text,
+  .studio-card__text,
+  .admin-card__text,
+  .bcvb-card__text {
+    font-size: 15px;
+    line-height: 1.45;
+    color: #64748b;
+  }
+}
+/* =========================================================
+   Bottom action bar mobile
+   Pour le bloc "Configuration synchronisée"
+========================================================= */
+
+@media (max-width: 768px) {
+  .sync-panel,
+  .configuration-sync,
+  .admin-sync-panel,
+  .local-save-panel {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(12px + var(--bcvb-mobile-safe-bottom));
+    z-index: 80;
+
+    padding: 14px;
+    border-radius: 24px;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid rgba(226,232,240,0.92);
+    box-shadow:
+      0 24px 70px rgba(15,23,42,0.22),
+      0 0 0 1px rgba(255,255,255,0.7) inset;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .sync-panel h3,
+  .configuration-sync h3,
+  .admin-sync-panel h3,
+  .local-save-panel h3 {
+    margin: 0;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 900;
+    color: #c8102e;
+  }
+
+  .sync-panel p,
+  .configuration-sync p,
+  .admin-sync-panel p,
+  .local-save-panel p {
+    margin: 3px 0 12px;
+    font-size: 15px;
+    line-height: 1.22;
+    font-weight: 800;
+    color: #111827;
+  }
+
+  .sync-panel__actions,
+  .configuration-sync__actions,
+  .admin-sync-panel__actions,
+  .local-save-panel__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .sync-panel button,
+  .configuration-sync button,
+  .admin-sync-panel button,
+  .local-save-panel button {
+    min-height: 52px;
+    border-radius: 999px;
+    font-size: 16px;
+    font-weight: 900;
+  }
+
+  .page-has-bottom-actions,
+  .admin-page,
+  .studio-page,
+  .dashboard-page {
+    padding-bottom: calc(150px + var(--bcvb-mobile-safe-bottom));
+  }
+}
+
+/* =========================================================
+   Navigation chips mobile
+========================================================= */
+
+@media (max-width: 768px) {
+  .hero-actions,
+  .quick-actions,
+  .chip-list,
+  .dashboard-actions,
+  .studio-actions {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 4px 2px 10px;
+    margin: 18px -2px 0;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .hero-actions::-webkit-scrollbar,
+  .quick-actions::-webkit-scrollbar,
+  .chip-list::-webkit-scrollbar,
+  .dashboard-actions::-webkit-scrollbar,
+  .studio-actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hero-actions a,
+  .hero-actions button,
+  .quick-actions a,
+  .quick-actions button,
+  .chip-list a,
+  .chip-list button,
+  .dashboard-actions a,
+  .dashboard-actions button,
+  .studio-actions a,
+  .studio-actions button {
+    flex: 0 0 auto;
+    min-height: 46px;
+    padding: 0 16px;
+    border-radius: 999px;
+    font-size: 15px;
+    font-weight: 900;
+    white-space: nowrap;
+    border: 1px solid rgba(226,232,240,0.95);
+    background: rgba(255,255,255,0.86);
+    box-shadow: 0 10px 24px rgba(15,23,42,0.07);
+  }
+}
+
+/* =========================================================
+   Stats compactes mobile
+========================================================= */
+
+@media (max-width: 768px) {
+  .stats-grid,
+  .admin-stats,
+  .dashboard-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 14px 0;
+  }
+
+  .stat-card,
+  .admin-stat-card,
+  .dashboard-stat-card {
+    min-height: auto;
+    padding: 18px;
+    border-radius: 22px;
+    background: #ffffff;
+    box-shadow: 0 12px 34px rgba(15,23,42,0.07);
+  }
+
+  .stat-card strong,
+  .admin-stat-card strong,
+  .dashboard-stat-card strong {
+    display: block;
+    font-size: 30px;
+    line-height: 1;
+    letter-spacing: -0.05em;
+    color: #0f172a;
+  }
+
+  .stat-card span,
+  .admin-stat-card span,
+  .dashboard-stat-card span {
+    display: block;
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.2;
+    font-weight: 800;
+    color: #64748b;
+  }
+}
+
+/* =========================================================
+   Sections admin mobile
+========================================================= */
+
+@media (max-width: 768px) {
+  .admin-section,
+  .permission-section,
+  .role-section {
+    padding: 22px;
+    border-radius: 26px;
+    background: #ffffff;
+    box-shadow: 0 16px 44px rgba(15,23,42,0.08);
+  }
+
+  .admin-section__priority,
+  .permission-section__priority,
+  .role-section__priority {
+    font-size: 12px;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #c8102e;
+  }
+
+  .admin-section__title,
+  .permission-section__title,
+  .role-section__title {
+    margin-top: 8px;
+    font-size: 30px;
+    line-height: 1.02;
+    letter-spacing: -0.055em;
+    color: #111827;
+  }
+
+  .admin-section__description,
+  .permission-section__description,
+  .role-section__description {
+    margin-top: 12px;
+    font-size: 17px;
+    line-height: 1.45;
+    color: #64748b;
+  }
+
+  .permission-list,
+  .role-permission-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .permission-item,
+  .role-permission-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    background: rgba(248,250,252,0.95);
+    font-size: 15px;
+    font-weight: 800;
+    color: #334155;
+  }
+
+  .permission-item svg,
+  .role-permission-item svg {
+    flex: 0 0 auto;
+  }
+}
