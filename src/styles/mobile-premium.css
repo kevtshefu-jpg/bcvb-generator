@@ -1,7 +1,11 @@
 /* =========================================================
    BCVB — MOBILE PREMIUM UX
-   Version mobile app-like
-   Objectif : plus dense, plus premium, plus pratique sur iPhone.
+   Version app-like optimisée iPhone / Android
+   Objectif :
+   - navigation mobile compacte
+   - sidebar desktop masquée sur mobile
+   - contenu visible immédiatement
+   - meilleure fluidité Safari
 ========================================================= */
 
 :root {
@@ -17,13 +21,31 @@
   --bcvb-border: rgba(226, 232, 240, 0.9);
 
   --bcvb-mobile-bg: #fff7f9;
-  --bcvb-mobile-card: rgba(255, 255, 255, 0.94);
+  --bcvb-mobile-card: rgba(255, 255, 255, 0.96);
   --bcvb-mobile-dark: #0b0710;
 
   --bcvb-radius-lg: 28px;
   --bcvb-radius-md: 22px;
-  --bcvb-shadow-card: 0 18px 50px rgba(15, 23, 42, 0.10);
-  --bcvb-shadow-soft: 0 12px 34px rgba(15, 23, 42, 0.07);
+
+  --bcvb-shadow-soft: 0 10px 28px rgba(15, 23, 42, 0.08);
+  --bcvb-shadow-card: 0 16px 42px rgba(15, 23, 42, 0.1);
+}
+
+/* =========================================================
+   DESKTOP SAFETY
+   La navigation mobile est cachée sur desktop.
+========================================================= */
+
+.mobile-nav,
+.mobile-nav-panel {
+  display: none;
+}
+
+@media (min-width: 769px) {
+  .mobile-nav,
+  .mobile-nav-panel {
+    display: none !important;
+  }
 }
 
 /* =========================================================
@@ -34,8 +56,8 @@
   html,
   body,
   #root {
-    min-height: 100%;
     width: 100%;
+    min-height: 100%;
     overflow-x: hidden;
   }
 
@@ -47,8 +69,9 @@
     margin: 0;
     color: var(--bcvb-ink);
     background:
-      radial-gradient(circle at top left, rgba(200, 16, 46, 0.10), transparent 30%),
+      radial-gradient(circle at top left, rgba(200, 16, 46, 0.1), transparent 30%),
       linear-gradient(180deg, #fff8fa 0%, #f8fafc 52%, #ffffff 100%);
+    overscroll-behavior-y: none;
   }
 
   * {
@@ -78,246 +101,390 @@
 }
 
 /* =========================================================
-   LAYOUT GLOBAL
+   LAYOUT GLOBAL MOBILE
 ========================================================= */
 
 @media (max-width: 768px) {
   .app-shell,
+  .public-shell,
   .dashboard-layout,
   .referentiel-layout,
   .studio-layout,
   .admin-layout {
-    display: block;
+    display: block !important;
     width: 100%;
     min-height: 100dvh;
     background: transparent;
   }
 
+  /*
+    La sidebar desktop est masquée sur téléphone.
+    La navigation mobile prend le relais.
+  */
+  .sidebar,
+  .app-sidebar,
+  .bcvb-sidebar {
+    display: none !important;
+  }
+
   .main-content,
+  .public-main,
   .dashboard-main,
   .referentiel-main,
   .studio-main,
   .admin-main {
     width: 100%;
     min-width: 0;
-    padding: 14px 14px calc(112px + var(--bcvb-mobile-safe-bottom));
+    padding: 12px 14px calc(104px + var(--bcvb-mobile-safe-bottom));
   }
 
+  .public-content,
   .dashboard-page,
   .document-page,
   .studio-page,
   .admin-page {
     width: 100%;
+    min-width: 0;
     padding: 0;
+  }
+
+  /*
+    Si TopBar desktop reste visible et gêne le mobile,
+    ces classes la masquent sans casser le desktop.
+  */
+  .topbar,
+  .top-bar,
+  .public-topbar,
+  .desktop-topbar {
+    display: none !important;
   }
 }
 
 /* =========================================================
-   SIDEBAR MOBILE — MODE PREMIUM COMPACT
-   Ne plus afficher une énorme sidebar verticale en haut.
+   MOBILE NAV — HEADER COMPACT
 ========================================================= */
 
 @media (max-width: 768px) {
-  .sidebar,
-  .app-sidebar,
-  .bcvb-sidebar {
+  .mobile-nav {
     position: sticky;
     top: 0;
-    z-index: 70;
+    z-index: 100;
 
+    display: block;
     width: 100%;
-    max-height: none;
-    padding: calc(10px + var(--bcvb-mobile-safe-top)) 14px 12px;
 
-    border-radius: 0 0 26px 26px;
+    padding: calc(10px + var(--bcvb-mobile-safe-top)) 14px 10px;
+
+    color: #ffffff;
     background:
-      radial-gradient(circle at top left, rgba(200, 16, 46, 0.34), transparent 32%),
-      linear-gradient(145deg, #240711 0%, #12070d 58%, #050712 100%);
-    box-shadow: 0 18px 44px rgba(15, 23, 42, 0.30);
-    overflow: hidden;
+      radial-gradient(circle at top left, rgba(200, 16, 46, 0.28), transparent 36%),
+      linear-gradient(145deg, #240711 0%, #0c0710 100%);
+    border-radius: 0 0 24px 24px;
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.26);
   }
 
-  .sidebar::after,
-  .app-sidebar::after,
-  .bcvb-sidebar::after {
-    content: "";
-    position: absolute;
-    left: 22px;
-    right: 22px;
-    bottom: 0;
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.32),
-      transparent
-    );
-  }
-
-  /* Header compact */
-  .sidebar-header,
-  .app-sidebar__header,
-  .bcvb-sidebar__header {
+  .mobile-nav__top {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 12px;
-    margin: 0 0 10px;
   }
 
-  .sidebar-logo,
-  .app-sidebar__logo,
-  .bcvb-sidebar__logo {
+  .mobile-nav__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .mobile-nav__logoImage {
     width: 44px;
     height: 44px;
-    border-radius: 15px;
     flex: 0 0 auto;
-    object-fit: cover;
+    object-fit: contain;
+    border-radius: 15px;
     background: #ffffff;
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
   }
 
-  .sidebar-title,
-  .app-sidebar__title,
-  .bcvb-sidebar__title {
+  .mobile-nav__brandText {
+    min-width: 0;
+  }
+
+  .mobile-nav__brandText p {
     margin: 0;
-    font-size: 17px;
+    font-size: 12px;
+    line-height: 1.1;
+    color: rgba(255, 255, 255, 0.66);
+  }
+
+  .mobile-nav__brandText strong {
+    display: block;
+    max-width: 190px;
+    margin-top: 2px;
+
+    font-size: 16px;
     line-height: 1.08;
     font-weight: 900;
+
     color: #ffffff;
-  }
-
-  .sidebar-subtitle,
-  .app-sidebar__subtitle,
-  .bcvb-sidebar__subtitle {
-    margin-top: 2px;
-    max-width: 260px;
-    font-size: 11px;
-    line-height: 1.25;
-    color: rgba(255, 255, 255, 0.62);
-  }
-
-  /*
-    Sections : passage en navigation horizontale.
-    Cela évite la longue sidebar qui prend tout l’écran.
-  */
-  .sidebar-section,
-  .app-sidebar__section,
-  .bcvb-sidebar__section {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .sidebar-section-title,
-  .app-sidebar__sectionTitle,
-  .bcvb-sidebar__sectionTitle {
-    margin: 0 0 8px;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    font-weight: 900;
-    color: rgba(255, 255, 255, 0.58);
-  }
-
-  /*
-    Chaque section devient un rail horizontal.
-    Les liens ne doivent plus occuper toute la hauteur.
-  */
-  .sidebar-section,
-  .app-sidebar__section,
-  .bcvb-sidebar__section {
+    white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .sidebar-section > div,
-  .app-sidebar__section > div,
-  .bcvb-sidebar__section > div {
+  .mobile-nav__button {
+    min-height: 42px;
+    padding: 0 15px;
+    flex: 0 0 auto;
+
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.1);
+
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 900;
+  }
+
+  .mobile-nav__button:active {
+    transform: scale(0.98);
+  }
+}
+
+/* =========================================================
+   MOBILE NAV — QUICK LINKS
+========================================================= */
+
+@media (max-width: 768px) {
+  .mobile-nav__quickLinks {
     display: flex;
     gap: 8px;
+    margin-top: 10px;
+    padding: 2px 0 1px;
+
     overflow-x: auto;
-    padding-bottom: 3px;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
   }
 
-  .sidebar-section > div::-webkit-scrollbar,
-  .app-sidebar__section > div::-webkit-scrollbar,
-  .bcvb-sidebar__section > div::-webkit-scrollbar {
+  .mobile-nav__quickLinks::-webkit-scrollbar {
     display: none;
   }
 
-  .sidebar-link,
-  .app-sidebar__link,
-  .bcvb-sidebar__link {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
+  .mobile-nav__quickLink {
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
 
-    width: auto;
-    min-width: max-content;
-    min-height: 42px;
-    padding: 8px 12px;
+    min-height: 36px;
+    padding: 0 11px;
+    flex: 0 0 auto;
 
     border-radius: 999px;
-    color: rgba(255, 255, 255, 0.82);
     text-decoration: none;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-  }
 
-  .sidebar-link + .sidebar-link,
-  .app-sidebar__link + .app-sidebar__link,
-  .bcvb-sidebar__link + .bcvb-sidebar__link {
-    margin-top: 0;
-  }
+    color: rgba(255, 255, 255, 0.82);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 
-  .sidebar-link.is-active,
-  .app-sidebar__link.is-active,
-  .bcvb-sidebar__link.is-active,
-  .sidebar-link[aria-current="page"],
-  .app-sidebar__link[aria-current="page"],
-  .bcvb-sidebar__link[aria-current="page"] {
-    background: linear-gradient(135deg, #f43f5e 0%, #c8102e 48%, #721428 100%);
-    color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.16);
-    box-shadow: 0 12px 26px rgba(200, 16, 46, 0.34);
-  }
-
-  .sidebar-link-title,
-  .app-sidebar__linkTitle,
-  .bcvb-sidebar__linkTitle {
-    display: block;
-    max-width: 210px;
     font-size: 13px;
     font-weight: 850;
+  }
+
+  .mobile-nav__quickLink span {
+    white-space: nowrap;
+  }
+
+  .mobile-nav__quickLink--active {
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--bcvb-red-soft), var(--bcvb-red));
+    border-color: transparent;
+    box-shadow: 0 10px 22px rgba(200, 16, 46, 0.26);
+  }
+}
+
+/* =========================================================
+   MOBILE NAV PANEL
+========================================================= */
+
+@media (max-width: 768px) {
+  .mobile-nav-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+
+    display: block;
+    padding:
+      calc(82px + var(--bcvb-mobile-safe-top))
+      14px
+      calc(22px + var(--bcvb-mobile-safe-bottom));
+
+    background: rgba(5, 7, 18, 0.72);
+  }
+
+  .mobile-nav-panel__content {
+    width: 100%;
+    max-height: calc(100dvh - 110px);
+    overflow-y: auto;
+
+    padding: 12px;
+    border-radius: 26px;
+
+    background:
+      radial-gradient(circle at top right, rgba(200, 16, 46, 0.22), transparent 38%),
+      linear-gradient(160deg, #170713 0%, #070914 100%);
+    box-shadow: 0 22px 56px rgba(0, 0, 0, 0.34);
+
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-nav-panel__content::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-nav-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    padding: 6px 6px 14px;
+    margin-bottom: 6px;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .mobile-nav-panel__header p {
+    margin: 0;
+    font-size: 12px;
     line-height: 1.1;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.58);
+  }
+
+  .mobile-nav-panel__header strong {
+    display: block;
+    max-width: 210px;
+    margin-top: 3px;
+
+    font-size: 16px;
+    line-height: 1.15;
+    font-weight: 900;
+
+    color: #ffffff;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .sidebar-link-subtitle,
-  .app-sidebar__linkSubtitle,
-  .bcvb-sidebar__linkSubtitle {
-    display: none;
+  .mobile-nav-panel__close {
+    min-height: 38px;
+    padding: 0 13px;
+
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 900;
   }
 
-  .sidebar-badge,
-  .app-sidebar__badge,
-  .bcvb-sidebar__badge {
-    padding: 4px 8px;
-    border-radius: 999px;
-    font-size: 9px;
-    font-weight: 900;
-    letter-spacing: 0.04em;
+  .mobile-nav-panel__links {
+    display: grid;
+    gap: 4px;
+  }
+
+  .mobile-nav-panel__link {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+
+    min-height: 60px;
+    padding: 10px 12px;
+
+    border-radius: 18px;
+    text-decoration: none;
+
+    color: rgba(255, 255, 255, 0.84);
+    background: transparent;
+  }
+
+  .mobile-nav-panel__link:active {
+    transform: scale(0.99);
+  }
+
+  .mobile-nav-panel__link--active {
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.14);
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: linear-gradient(135deg, #f43f5e 0%, #c8102e 58%, #6b1225 100%);
+    box-shadow: 0 14px 30px rgba(200, 16, 46, 0.28);
+  }
+
+  .mobile-nav-panel__icon {
+    width: 40px;
+    height: 40px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.09);
+  }
+
+  .mobile-nav-panel__text {
+    min-width: 0;
+  }
+
+  .mobile-nav-panel__text strong {
+    display: block;
+
+    font-size: 16px;
+    line-height: 1.12;
+    font-weight: 900;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-nav-panel__text small {
+    display: block;
+    margin-top: 3px;
+
+    font-size: 12px;
+    line-height: 1.2;
+    font-weight: 700;
+
+    color: rgba(255, 255, 255, 0.58);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-nav-panel__link--active .mobile-nav-panel__text small {
+    color: rgba(255, 255, 255, 0.78);
+  }
+
+  .mobile-nav-panel__badge {
+    padding: 5px 9px;
+
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.13);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 950;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
 }
+
 /* =========================================================
-   HERO MOBILE — PLUS DENSE, MOINS VIDE
+   HERO MOBILE — PLUS DENSE
 ========================================================= */
 
 @media (max-width: 768px) {
@@ -329,15 +496,17 @@
   .page-hero {
     position: relative;
     min-height: auto !important;
+
     margin: 12px 0 14px;
     padding: 20px 18px !important;
-    border-radius: 26px;
 
+    border-radius: 26px;
     background:
-      radial-gradient(circle at top right, rgba(200, 16, 46, 0.14), transparent 36%),
+      radial-gradient(circle at top right, rgba(200, 16, 46, 0.13), transparent 36%),
       linear-gradient(145deg, #ffffff 0%, #fff4f6 100%);
     border: 1px solid rgba(255, 255, 255, 0.84);
-    box-shadow: 0 18px 46px rgba(15, 23, 42, 0.10);
+    box-shadow: var(--bcvb-shadow-soft);
+
     overflow: hidden;
   }
 
@@ -356,11 +525,12 @@
   .admin-hero__eyebrow,
   .hero-eyebrow {
     margin: 0;
+
+    color: var(--bcvb-red);
     font-size: 11px;
+    font-weight: 950;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    font-weight: 950;
-    color: var(--bcvb-red);
   }
 
   .dashboard-page__title,
@@ -369,10 +539,11 @@
   .admin-hero__title,
   .hero-title {
     margin: 6px 0 0;
+
+    color: #111827;
     font-size: clamp(28px, 8vw, 38px);
     line-height: 1.02;
     letter-spacing: -0.055em;
-    color: #111827;
   }
 
   .dashboard-page__text,
@@ -381,14 +552,12 @@
   .admin-hero__text,
   .hero-text {
     margin: 10px 0 0;
+
+    color: var(--bcvb-muted);
     font-size: 15px;
     line-height: 1.38;
-    color: var(--bcvb-muted);
   }
 
-  /*
-    Bloc session active : il ne doit plus créer un grand espace vide.
-  */
   .dashboard-page__badge,
   .document-hero__badge,
   .studio-hero__badge,
@@ -396,13 +565,16 @@
   .session-badge,
   .active-session-card {
     position: static !important;
+
     display: inline-flex;
     align-items: center;
     gap: 8px;
+
     width: auto;
     max-width: 100%;
     margin-top: 14px;
     padding: 9px 12px;
+
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.72);
     border: 1px solid rgba(226, 232, 240, 0.9);
@@ -412,15 +584,16 @@
   .dashboard-page__badgeLabel,
   .session-badge__label,
   .active-session-card__label {
+    color: var(--bcvb-red);
     font-size: 10px;
+    font-weight: 900;
     letter-spacing: 0.09em;
     text-transform: uppercase;
-    font-weight: 900;
-    color: var(--bcvb-red);
   }
 }
+
 /* =========================================================
-   CHIPS / ACTIONS MOBILE
+   ACTION CHIPS MOBILE
 ========================================================= */
 
 @media (max-width: 768px) {
@@ -432,9 +605,11 @@
   .document-actions {
     display: flex;
     gap: 8px;
+
     overflow-x: auto;
     padding: 2px 2px 8px;
     margin: 14px -2px 0;
+
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
   }
@@ -460,17 +635,19 @@
   .studio-actions button,
   .document-actions a,
   .document-actions button {
-    flex: 0 0 auto;
     min-height: 40px;
     padding: 0 13px;
+    flex: 0 0 auto;
+
     border-radius: 999px;
-    font-size: 14px;
-    font-weight: 900;
-    white-space: nowrap;
-    color: #111827;
     border: 1px solid rgba(226, 232, 240, 0.92);
     background: rgba(255, 255, 255, 0.88);
     box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+
+    color: #111827;
+    font-size: 14px;
+    font-weight: 900;
+    white-space: nowrap;
   }
 
   .hero-actions a.is-active,
@@ -480,12 +657,13 @@
   .chip-list a.is-active,
   .chip-list button.is-active {
     color: #ffffff;
-    background: linear-gradient(135deg, #f43f5e, #c8102e);
+    background: linear-gradient(135deg, var(--bcvb-red-soft), var(--bcvb-red));
     border-color: transparent;
   }
 }
+
 /* =========================================================
-   CARTES CONTENU MOBILE
+   CONTENT CARDS MOBILE
 ========================================================= */
 
 @media (max-width: 768px) {
@@ -498,10 +676,11 @@
   .feature-card {
     margin: 12px 0;
     padding: 18px;
+
     border-radius: 24px;
-    background: rgba(255, 255, 255, 0.94);
-    border: 1px solid rgba(226, 232, 240, 0.9);
-    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+    background: var(--bcvb-mobile-card);
+    border: 1px solid var(--bcvb-border);
+    box-shadow: var(--bcvb-shadow-soft);
   }
 
   .dashboard-panelCard__title,
@@ -512,10 +691,11 @@
   .faq-card__title,
   .feature-card__title {
     margin: 0;
+
+    color: var(--bcvb-ink);
     font-size: 22px;
     line-height: 1.08;
     letter-spacing: -0.035em;
-    color: var(--bcvb-ink);
   }
 
   .dashboard-panelCard__text,
@@ -526,14 +706,12 @@
   .faq-card__text,
   .feature-card__text {
     margin-top: 8px;
+
+    color: var(--bcvb-muted);
     font-size: 15px;
     line-height: 1.42;
-    color: var(--bcvb-muted);
   }
 
-  /*
-    Grandes cartes foncées type FAQ / centre aide
-  */
   .dark-card,
   .hero-dark-card,
   .faq-hero-card,
@@ -541,9 +719,9 @@
     padding: 24px 20px !important;
     border-radius: 26px !important;
     background:
-      radial-gradient(circle at top right, rgba(200, 16, 46, 0.32), transparent 38%),
+      radial-gradient(circle at top right, rgba(200, 16, 46, 0.3), transparent 38%),
       linear-gradient(145deg, #080b14 0%, #210711 100%) !important;
-    box-shadow: 0 18px 48px rgba(15, 23, 42, 0.22);
+    box-shadow: 0 16px 38px rgba(15, 23, 42, 0.2);
   }
 
   .dark-card h1,
@@ -580,8 +758,10 @@
     display: grid !important;
     grid-template-columns: 1fr !important;
     gap: 10px !important;
+
     width: 100% !important;
     padding: 14px !important;
+
     border-radius: 22px !important;
   }
 
@@ -591,7 +771,9 @@
   .active-user-card button {
     width: 100%;
     min-height: 48px;
+
     border-radius: 16px;
+
     font-size: 15px;
     font-weight: 900;
   }
@@ -602,6 +784,7 @@
   .active-user-card strong {
     display: block;
     max-width: 100%;
+
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -609,7 +792,7 @@
 }
 
 /* =========================================================
-   BREADCRUMB / TITRES
+   BREADCRUMB / TITRES MOBILE
 ========================================================= */
 
 @media (max-width: 768px) {
@@ -618,10 +801,13 @@
     display: flex;
     align-items: center;
     gap: 7px;
+
     overflow-x: auto;
     white-space: nowrap;
+
     padding: 4px 0 8px;
     margin: 8px 0 10px;
+
     font-size: 14px;
     scrollbar-width: none;
   }
@@ -633,8 +819,8 @@
 
   .breadcrumb a,
   .page-breadcrumb a {
-    font-weight: 900;
     color: var(--bcvb-red);
+    font-weight: 900;
     text-decoration: none;
   }
 
@@ -642,6 +828,7 @@
   .document-title,
   .section-title {
     margin: 4px 0 8px;
+
     font-size: clamp(26px, 7vw, 34px);
     line-height: 1.05;
     letter-spacing: -0.04em;
@@ -651,9 +838,10 @@
   .document-description,
   .section-description {
     margin: 0 0 14px;
+
+    color: var(--bcvb-muted);
     font-size: 16px;
     line-height: 1.42;
-    color: var(--bcvb-muted);
   }
 }
 
@@ -679,14 +867,11 @@
     gap: 10px;
 
     padding: 10px 12px;
+
     border-radius: 20px;
-    background: rgba(255, 255, 255, 0.92);
+    background: rgba(255, 255, 255, 0.95);
     border: 1px solid rgba(226, 232, 240, 0.92);
-    box-shadow:
-      0 20px 54px rgba(15, 23, 42, 0.20),
-      0 0 0 1px rgba(255, 255, 255, 0.70) inset;
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 16px 38px rgba(15, 23, 42, 0.18);
   }
 
   .admin-save-bar__content,
@@ -701,11 +886,12 @@
   .admin-save-bar h3,
   .admin-save-bar__status {
     margin: 0;
+
+    color: var(--bcvb-red);
     font-size: 10px;
+    font-weight: 950;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    font-weight: 950;
-    color: var(--bcvb-red);
   }
 
   .sync-panel p,
@@ -715,10 +901,12 @@
   .admin-save-bar p,
   .admin-save-bar__message {
     margin: 2px 0 0;
+
+    color: #111827;
     font-size: 12px;
     line-height: 1.2;
     font-weight: 800;
-    color: #111827;
+
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -740,7 +928,9 @@
   .admin-save-bar button {
     min-height: 42px;
     padding: 0 14px;
+
     border-radius: 999px;
+
     font-size: 13px;
     font-weight: 900;
   }
@@ -759,12 +949,34 @@
 
 @media (max-width: 390px) {
   .main-content,
+  .public-main,
   .dashboard-main,
   .referentiel-main,
   .studio-main,
   .admin-main {
     padding-left: 10px;
     padding-right: 10px;
+  }
+
+  .mobile-nav__brandText strong {
+    max-width: 155px;
+    font-size: 15px;
+  }
+
+  .mobile-nav__button {
+    padding: 0 12px;
+  }
+
+  .mobile-nav-panel {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .mobile-nav-panel__link {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    gap: 10px;
+    min-height: 58px;
+    padding: 9px 10px;
   }
 
   .dashboard-page__hero,
@@ -785,12 +997,6 @@
     font-size: clamp(27px, 8vw, 36px);
   }
 
-  .sidebar-link-title,
-  .app-sidebar__linkTitle,
-  .bcvb-sidebar__linkTitle {
-    max-width: 165px;
-  }
-
   .sync-panel,
   .configuration-sync,
   .admin-sync-panel,
@@ -806,149 +1012,5 @@
   .admin-save-bar__actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
-  }
-}
-
-/* =========================================================
-   BCVB — MOBILE PERFORMANCE FIX
-   À placer EN FIN de mobile-premium.css
-========================================================= */
-
-@media (max-width: 768px) {
-  * {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-
-  html,
-  body {
-    overscroll-behavior-y: none;
-  }
-
-  body {
-    background: #fff7f9 !important;
-  }
-
-  .sidebar,
-  .app-sidebar,
-  .bcvb-sidebar {
-    position: relative !important;
-    top: auto !important;
-    z-index: 1 !important;
-    max-height: none !important;
-    overflow: visible !important;
-    box-shadow: none !important;
-    border-radius: 0 0 28px 28px !important;
-  }
-
-  .main-content,
-  .dashboard-main,
-  .referentiel-main,
-  .studio-main,
-  .admin-main {
-    position: relative;
-    z-index: 2;
-  }
-
-  .dashboard-page__hero,
-  .document-hero,
-  .studio-hero,
-  .admin-hero,
-  .bcvb-hero,
-  .page-hero,
-  .dashboard-panelCard,
-  .document-card,
-  .studio-card,
-  .admin-card,
-  .bcvb-card {
-    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08) !important;
-  }
-
-  .sidebar-link,
-  .app-sidebar__link,
-  .bcvb-sidebar__link,
-  button,
-  a {
-    cursor: pointer;
-    pointer-events: auto;
-  }
-}
-
-/* =========================================================
-   BCVB — MOBILE SIDEBAR COMPACTE
-   Objectif : ne plus bloquer tout l’écran avec le menu
-========================================================= */
-
-@media (max-width: 768px) {
-  .sidebar,
-  .app-sidebar,
-  .bcvb-sidebar {
-    padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 14px !important;
-    background:
-      radial-gradient(circle at top left, rgba(200, 16, 46, 0.26), transparent 32%),
-      linear-gradient(145deg, #210713 0%, #08070d 100%) !important;
-  }
-
-  .sidebar-header,
-  .app-sidebar__header,
-  .bcvb-sidebar__header {
-    margin-bottom: 14px !important;
-  }
-
-  .sidebar-logo,
-  .app-sidebar__logo,
-  .bcvb-sidebar__logo {
-    width: 46px !important;
-    height: 46px !important;
-    border-radius: 16px !important;
-  }
-
-  .sidebar-title,
-  .app-sidebar__title,
-  .bcvb-sidebar__title {
-    font-size: 18px !important;
-    line-height: 1.05 !important;
-  }
-
-  .sidebar-subtitle,
-  .app-sidebar__subtitle,
-  .bcvb-sidebar__subtitle {
-    font-size: 12px !important;
-    line-height: 1.25 !important;
-  }
-
-  /*
-    On masque les sections longues par défaut.
-    Cela évite que le menu prenne tout l’écran.
-  */
-  .sidebar-section,
-  .app-sidebar__section,
-  .bcvb-sidebar__section {
-    margin-top: 12px !important;
-    padding-top: 12px !important;
-  }
-
-  /*
-    Sur mobile, les liens deviennent plus compacts.
-  */
-  .sidebar-link,
-  .app-sidebar__link,
-  .bcvb-sidebar__link {
-    min-height: 48px !important;
-    padding: 9px 12px !important;
-    border-radius: 16px !important;
-  }
-
-  .sidebar-link-title,
-  .app-sidebar__linkTitle,
-  .bcvb-sidebar__linkTitle {
-    font-size: 15px !important;
-    line-height: 1.1 !important;
-  }
-
-  .sidebar-link-subtitle,
-  .app-sidebar__linkSubtitle,
-  .bcvb-sidebar__linkSubtitle {
-    font-size: 11px !important;
   }
 }
