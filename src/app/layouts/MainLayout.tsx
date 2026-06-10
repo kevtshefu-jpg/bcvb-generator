@@ -5,6 +5,7 @@ import '../../styles/base.css'
 import '../../styles/layout.css'
 import '../../styles/referentiel.css'
 import '../../styles/mobile-premium.css'
+import '../../styles/mobile-components.css'
 
 import { Sidebar } from '../../components/navigation/Sidebar'
 import { TopBar } from '../../components/navigation/TopBar'
