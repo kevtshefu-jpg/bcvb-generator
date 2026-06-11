@@ -448,3 +448,307 @@
     display: block;
   }
 }
+/* =========================================================
+   BCVB — LIBRARY MOBILE-FIRST
+========================================================= */
+
+.library-mobile-first {
+  display: none;
+}
+
+.library-desktop-first {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .library-mobile-first {
+    display: block;
+  }
+
+  .library-desktop-first {
+    display: none !important;
+  }
+
+  .library-mobile-shell {
+    padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .library-mobile-search-card {
+    display: grid;
+    gap: 10px;
+
+    padding: 16px;
+    border-radius: 24px;
+
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(226, 232, 240, 0.92);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.07);
+  }
+
+  .library-mobile-search-card label {
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .library-mobile-search-card__field {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+
+    min-height: 50px;
+    padding: 0 12px;
+
+    border-radius: 18px;
+    background: #f8fafc;
+    border: 1px solid rgba(226, 232, 240, 0.95);
+  }
+
+  .library-mobile-search-card__field span {
+    font-size: 18px;
+  }
+
+  .library-mobile-search-card__field input {
+    width: 100%;
+    min-width: 0;
+
+    border: 0;
+    outline: 0;
+    background: transparent;
+
+    color: #0f172a;
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  .library-mobile-search-card__field input::placeholder {
+    color: #94a3b8;
+    font-weight: 700;
+  }
+
+  .library-mobile-search-card__field button {
+    min-height: 34px;
+    padding: 0 10px;
+
+    border: 0;
+    border-radius: 999px;
+
+    background: rgba(200, 16, 46, 0.1);
+    color: #c8102e;
+
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .library-mobile-empty {
+    display: grid;
+    place-items: center;
+    text-align: center;
+    gap: 8px;
+
+    padding: 28px 18px;
+    border-radius: 24px;
+
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px dashed rgba(148, 163, 184, 0.45);
+  }
+
+  .library-mobile-empty span {
+    font-size: 30px;
+  }
+
+  .library-mobile-empty h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 22px;
+    line-height: 1.1;
+    letter-spacing: -0.035em;
+  }
+
+  .library-mobile-empty p {
+    max-width: 280px;
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+}
+
+@media (min-width: 769px) {
+  .library-mobile-first {
+    display: none !important;
+  }
+
+  .library-desktop-first {
+    display: block;
+  }
+}
+
+/* =========================================================
+   BCVB — LIBRARY MOBILE-FIRST
+========================================================= */
+
+.library-mobile-first {
+  display: none;
+}
+
+.library-desktop-first {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .library-mobile-first {
+    display: block;
+  }
+
+  .library-desktop-first {
+    display: none !important;
+  }
+
+  .library-mobile-shell {
+    padding-bottom: calc(98px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .library-mobile-search-card {
+    display: grid;
+    gap: 10px;
+    padding: 16px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(226, 232, 240, 0.92);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.07);
+  }
+
+  .library-mobile-search-card label {
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 950;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .library-mobile-search-card__field {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 50px;
+    padding: 0 12px;
+    border-radius: 18px;
+    background: #f8fafc;
+    border: 1px solid rgba(226, 232, 240, 0.95);
+  }
+
+  .library-mobile-search-card__field span {
+    font-size: 18px;
+  }
+
+  .library-mobile-search-card__field input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #0f172a;
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  .library-mobile-search-card__field input::placeholder {
+    color: #94a3b8;
+    font-weight: 700;
+  }
+
+  .library-mobile-search-card__field button {
+    min-height: 34px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(200, 16, 46, 0.1);
+    color: #c8102e;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .library-mobile-empty {
+    display: grid;
+    place-items: center;
+    text-align: center;
+    gap: 8px;
+    padding: 28px 18px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px dashed rgba(148, 163, 184, 0.45);
+  }
+
+  .library-mobile-empty span {
+    font-size: 30px;
+  }
+
+  .library-mobile-empty h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 22px;
+    line-height: 1.1;
+    letter-spacing: -0.035em;
+  }
+
+  .library-mobile-empty p {
+    max-width: 300px;
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .library-mobile-admin-actions {
+    display: grid;
+    gap: 10px;
+    padding: 16px;
+    border-radius: 24px;
+    background:
+      radial-gradient(circle at top right, rgba(200, 16, 46, 0.12), transparent 36%),
+      linear-gradient(145deg, #ffffff 0%, #fff5f7 100%);
+    border: 1px solid rgba(226, 232, 240, 0.92);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.07);
+  }
+
+  .library-mobile-admin-actions h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 18px;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+  }
+
+  .library-mobile-admin-actions__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .library-mobile-admin-actions__grid button {
+    min-height: 46px;
+    padding: 0 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(226, 232, 240, 0.92);
+    background: rgba(255, 255, 255, 0.92);
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 900;
+    text-align: left;
+  }
+}
+
+@media (min-width: 769px) {
+  .library-mobile-first {
+    display: none !important;
+  }
+
+  .library-desktop-first {
+    display: block;
+  }
+}
