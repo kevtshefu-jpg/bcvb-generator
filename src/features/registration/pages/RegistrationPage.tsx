@@ -1,5 +1,7 @@
 import { FormEvent, useMemo, useState } from 'react'
+
 import { supabase } from '../../../lib/supabase'
+import { createProfileRequest } from '../../admin/services/profileRequestService'
 
 type RegistrationFormState = {
   first_name: string
@@ -11,6 +13,19 @@ type RegistrationFormState = {
   role_requested: string
   requested_team: string
   notes: string
+}
+
+type LegacyRegistrationPayload = {
+  first_name: string
+  last_name: string
+  email: string
+  phone: string | null
+  birth_year: number
+  category_requested: string
+  role_requested: string
+  requested_team: string | null
+  notes: string | null
+  status: 'pending'
 }
 
 const initialForm: RegistrationFormState = {
@@ -90,6 +105,38 @@ function getBirthYearError(value: string) {
   return null
 }
 
+function getRoleLabel(value: string) {
+  return roleOptions.find((role) => role.value === value)?.label || value
+}
+
+async function createLegacyRegistrationRequest(payload: LegacyRegistrationPayload) {
+  const { error } = await supabase
+    .from('registration_requests')
+    .insert([payload])
+
+  if (error) {
+    throw new Error(error.message)
+  }
+}
+
+async function notifyAdminByEmail(payload: {
+  fullName: string
+  email: string
+  requestedRole: string
+  requestedCategoryId: string
+  requestedTeam: string | null
+  phone: string | null
+  message: string | null
+}) {
+  const { error } = await supabase.functions.invoke('notify-profile-request', {
+    body: payload,
+  })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+}
+
 export default function RegistrationPage() {
   const [form, setForm] = useState<RegistrationFormState>(initialForm)
   const [loading, setLoading] = useState(false)
@@ -119,75 +166,10 @@ export default function RegistrationPage() {
     }))
   }
 
-  async function createLegacyRegistrationRequest(payload: {
-    first_name: string
-    last_name: string
-    email: string
-    phone: string | null
-    birth_year: number
-    category_requested: string
-    role_requested: string
-    requested_team: string | null
-    notes: string | null
-    status: string
-  }) {
-    const { error } = await supabase
-      .from('registration_requests')
-      .insert([payload])
-
-    if (error) {
-      throw new Error(error.message)
-    }
-  }
-
-  async function createAdminProfileRequest(payload: {
-    email: string
-    full_name: string
-    requested_role: string
-    requested_category_id: string
-    requested_team: string | null
-    phone: string | null
-    motivation: string | null
-    message: string | null
-  }) {
-    const { error } = await supabase
-      .from('profile_requests')
-      .insert([
-        {
-          user_id: null,
-          email: payload.email,
-          full_name: payload.full_name,
-          requested_role: payload.requested_role,
-          requested_category_id: payload.requested_category_id,
-          requested_team: payload.requested_team,
-          phone: payload.phone,
-          motivation: payload.motivation,
-          message: payload.message,
-          status: 'pending',
-        },
-      ])
-
-    if (error) {
-      throw new Error(error.message)
-    }
-  }
-
-  async function notifyAdminByEmail(payload: {
-    fullName: string
-    email: string
-    requestedRole: string
-    requestedCategoryId: string
-    requestedTeam: string | null
-    phone: string | null
-    message: string | null
-  }) {
-    const { error } = await supabase.functions.invoke('notify-profile-request', {
-      body: payload,
-    })
-
-    if (error) {
-      throw new Error(error.message)
-    }
+  function resetForm() {
+    setForm(initialForm)
+    setSuccessMessage(null)
+    setErrorMessage(null)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -205,30 +187,31 @@ export default function RegistrationPage() {
     const trimmedLastName = normalizeText(form.last_name)
     const trimmedEmail = normalizeEmail(form.email)
     const trimmedPhone = normalizeText(form.phone)
-    const trimmedNotes = normalizeText(form.notes)
-    const trimmedTeam = normalizeText(form.requested_team)
+    const trimmedBirthYear = normalizeText(form.birth_year)
     const trimmedCategory = normalizeText(form.category_requested)
     const trimmedRole = normalizeText(form.role_requested)
+    const trimmedTeam = normalizeText(form.requested_team)
+    const trimmedNotes = normalizeText(form.notes)
+    const finalFullName = `${trimmedFirstName} ${trimmedLastName}`.trim()
 
     if (!isValidEmail(trimmedEmail)) {
       setErrorMessage('Merci de renseigner une adresse email valide.')
       return
     }
 
-    const birthYearError = getBirthYearError(form.birth_year)
+    const birthYearError = getBirthYearError(trimmedBirthYear)
 
     if (birthYearError) {
       setErrorMessage(birthYearError)
       return
     }
 
-    const parsedBirthYear = Number(form.birth_year)
-    const finalFullName = `${trimmedFirstName} ${trimmedLastName}`.trim()
+    const parsedBirthYear = Number(trimmedBirthYear)
 
     try {
       setLoading(true)
 
-      const legacyPayload = {
+      await createLegacyRegistrationRequest({
         first_name: trimmedFirstName,
         last_name: trimmedLastName,
         email: trimmedEmail,
@@ -239,16 +222,15 @@ export default function RegistrationPage() {
         requested_team: trimmedTeam || null,
         notes: trimmedNotes || null,
         status: 'pending',
-      }
+      })
 
-      await createLegacyRegistrationRequest(legacyPayload)
-
-      await createAdminProfileRequest({
+      await createProfileRequest({
+        userId: null,
         email: trimmedEmail,
-        full_name: finalFullName,
-        requested_role: trimmedRole,
-        requested_category_id: trimmedCategory,
-        requested_team: trimmedTeam || null,
+        fullName: finalFullName,
+        requestedRole: trimmedRole,
+        requestedCategoryId: trimmedCategory,
+        requestedTeam: trimmedTeam || null,
         phone: trimmedPhone || null,
         motivation: trimmedNotes || null,
         message: trimmedNotes || null,
@@ -493,8 +475,9 @@ export default function RegistrationPage() {
           <div className="registration-form__summary">
             <strong>Demande préparée</strong>
             <p>
-              {fullName || 'Nom du demandeur'} · {form.role_requested || 'rôle'} ·{' '}
+              {fullName || 'Nom du demandeur'} · {getRoleLabel(form.role_requested)} ·{' '}
               {form.category_requested || 'catégorie à choisir'}
+              {form.requested_team ? ` · ${form.requested_team}` : ''}
             </p>
           </div>
 
@@ -511,11 +494,7 @@ export default function RegistrationPage() {
               type="button"
               className="bcvb-btn"
               disabled={loading}
-              onClick={() => {
-                setForm(initialForm)
-                setSuccessMessage(null)
-                setErrorMessage(null)
-              }}
+              onClick={resetForm}
             >
               Réinitialiser
             </button>
