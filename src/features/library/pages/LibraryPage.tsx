@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
   archiveLibraryDocument,
@@ -9,7 +9,9 @@ import {
 } from '../services/libraryService'
 
 import { DocumentPreviewModal } from '../components/DocumentPreviewModal'
-import LibraryMobileExperience from '../components/LibraryMobileExperience'
+import LibraryMobileExperience, {
+  type LibraryMobileDocument,
+} from '../components/LibraryMobileExperience'
 
 import { canAccessDocument, canTransformDocument } from '../utils/libraryPermissions'
 import { useSafeLoading } from '../../../hooks/useSafeLoading'
@@ -75,6 +77,10 @@ const defaultFilters: LibraryFilters = {
   viewMode: 'grid',
 }
 
+/* =========================================================
+   HELPERS
+========================================================= */
+
 function normalize(value?: string | string[] | number | null) {
   if (Array.isArray(value)) {
     return value.filter(Boolean).join(', ').trim()
@@ -83,7 +89,7 @@ function normalize(value?: string | string[] | number | null) {
   return String(value ?? '').trim()
 }
 
-function lower(value?: string | null) {
+function lower(value?: string | string[] | number | null) {
   return normalize(value).toLowerCase()
 }
 
@@ -104,6 +110,17 @@ function optionUnion(values: string[], existing: string[]) {
   return Array.from(new Set([...values, ...existing].filter(Boolean))).sort((a, b) =>
     a.localeCompare(b),
   )
+}
+
+function getOptionLabel(value: string) {
+  const labels: Record<string, string> = {
+    all: 'Tous',
+    active: 'Actifs',
+    archived: 'Archivés',
+    deleted: 'Supprimés',
+  }
+
+  return labels[value] || value
 }
 
 function getFamily(doc: LibraryDocumentRow) {
@@ -177,6 +194,42 @@ function getPublicationLevel(doc: LibraryDocumentRow) {
   )
 }
 
+function getDocumentTitle(doc: LibraryDocumentRow) {
+  return normalize(doc.title) || 'Document BCVB'
+}
+
+function getDocumentDescription(doc: LibraryDocumentRow) {
+  return (
+    normalize(doc.description) ||
+    normalize(doc.summary) ||
+    'Document sans description, affiché avec métadonnées minimales.'
+  )
+}
+
+function getVersion(doc: LibraryDocumentRow) {
+  return normalize(String(doc.version ?? '1.0'))
+}
+
+function getSafeDateLabel(value?: string | null) {
+  const date = new Date(value || '')
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Date inconnue'
+  }
+
+  return date.toLocaleDateString('fr-FR')
+}
+
+function getMobileUpdatedLabel(doc: LibraryDocumentRow) {
+  const date = getSafeDateLabel(doc.updated_at || doc.created_at)
+
+  if (date !== 'Date inconnue') {
+    return date
+  }
+
+  return getSeason(doc)
+}
+
 function hasPdf(doc: LibraryDocumentRow) {
   return Boolean(
     doc.pdf_url ||
@@ -205,10 +258,6 @@ function canGeneratePdf(doc: LibraryDocumentRow) {
   return Boolean(doc.content?.trim() || doc.source_markdown?.trim())
 }
 
-function getVersion(doc: LibraryDocumentRow) {
-  return normalize(String(doc.version ?? '1.0'))
-}
-
 function hasVersions(doc: LibraryDocumentRow) {
   return Boolean(
     (doc.versions_count || 0) > 1 ||
@@ -220,21 +269,11 @@ function hasVersions(doc: LibraryDocumentRow) {
 }
 
 function isArchived(doc: LibraryDocumentRow) {
-  return Boolean(doc.isArchived || doc.is_archived || doc.status === 'archived')
+  return Boolean(doc.isArchived || doc.is_archived || lower(doc.status) === 'archived')
 }
 
 function isDeleted(doc: LibraryDocumentRow) {
-  return Boolean(doc.isDeleted || doc.is_deleted || doc.status === 'deleted')
-}
-
-function getSafeDateLabel(value?: string | null) {
-  const date = new Date(value || '')
-
-  if (Number.isNaN(date.getTime())) {
-    return 'Date inconnue'
-  }
-
-  return date.toLocaleDateString('fr-FR')
+  return Boolean(doc.isDeleted || doc.is_deleted || lower(doc.status) === 'deleted')
 }
 
 function isRecentDocument(doc: LibraryDocumentRow) {
@@ -248,36 +287,42 @@ function isRecentDocument(doc: LibraryDocumentRow) {
 }
 
 function buildSearchText(doc: LibraryDocumentRow) {
-  return normalizeSearch([
-    doc.title,
-    doc.description,
-    doc.summary,
-    doc.category,
-    doc.subcategory,
-    doc.subCategory,
-    doc.sub_category,
-    doc.theme,
-    doc.category_code,
-    doc.theme_code,
-    doc.sportCategory,
-    doc.sport_category,
-    doc.team_code,
-    doc.audience,
-    doc.season,
-    doc.status,
-    doc.quality_status,
-    doc.publication_level,
-    doc.level,
-    ...(doc.tags || []),
-    doc.content?.slice(0, 800),
-  ].join(' '))
+  return normalizeSearch(
+    [
+      doc.title,
+      doc.description,
+      doc.summary,
+      doc.category,
+      doc.subcategory,
+      doc.subCategory,
+      doc.sub_category,
+      doc.theme,
+      doc.category_code,
+      doc.theme_code,
+      doc.sportCategory,
+      doc.sport_category,
+      doc.team_code,
+      doc.audience,
+      doc.season,
+      doc.status,
+      doc.quality_status,
+      doc.publication_level,
+      doc.level,
+      ...(doc.tags || []),
+      doc.content?.slice(0, 800),
+    ].join(' '),
+  )
 }
 
 function loadSavedFilters() {
   try {
+    const raw = window.localStorage.getItem(FILTER_STORAGE_KEY)
+
+    if (!raw) return defaultFilters
+
     return {
       ...defaultFilters,
-      ...JSON.parse(window.localStorage.getItem(FILTER_STORAGE_KEY) || '{}'),
+      ...JSON.parse(raw),
     } as LibraryFilters
   } catch {
     return defaultFilters
@@ -296,49 +341,84 @@ function loadLocalDraftDocuments(): LibraryDocumentRow[] {
       savedAt?: string
     }>
 
-    return drafts.map((draft, index) => ({
-      id: `local-draft-${index}-${draft.savedAt || 'now'}`,
-      title: draft.title || 'Brouillon bibliothèque',
-      description: 'Brouillon enregistré depuis le Studio éditorial.',
-      document_type: 'markdown',
-      file_ext: 'md',
-      bucket_name: '',
-      storage_path: '',
-      category: draft.family || 'Studio éditorial',
-      family: draft.family || 'Fiche à thème',
-      subcategory: draft.family || 'Document transformé',
-      subCategory: 'Brouillon',
-      theme: 'Transformation BCVB',
-      sportCategory: 'Toutes catégories',
-      category_code: draft.family || 'Studio',
-      theme_code: 'Brouillon',
-      team_code: null,
-      audience: 'Admin',
-      season: null,
-      tags: ['BCVB', 'brouillon', 'studio'],
-      content: draft.content,
-      status: (draft.score || 0) >= 95 ? 'publiable' : 'à corriger',
-      quality_status: (draft.score || 0) >= 95 ? 'Prêt à publier' : 'À corriger',
-      publication_level: 'Brouillon',
-      visibility: 'private',
-      allowedRoles: ['admin'],
-      is_active: true,
-      is_featured: false,
-      is_ai_generated: true,
-      isArchived: false,
-      isDeleted: false,
-      uploaded_by: null,
-      source_document_id: null,
-      generation_request_id: null,
-      version: '1.0',
-      is_latest_version: true,
-      created_at: draft.savedAt || new Date().toISOString(),
-      updated_at: draft.savedAt || new Date().toISOString(),
-    }))
+    return drafts.map((draft, index) => {
+      const savedAt = draft.savedAt || new Date().toISOString()
+      const score = draft.score || 0
+
+      return {
+        id: `local-draft-${index}-${savedAt}`,
+        title: draft.title || 'Brouillon bibliothèque',
+        description: 'Brouillon enregistré depuis le Studio éditorial.',
+        document_type: 'markdown',
+        file_ext: 'md',
+        bucket_name: '',
+        storage_path: '',
+        category: draft.family || 'Studio éditorial',
+        family: draft.family || 'Fiche à thème',
+        subcategory: draft.family || 'Document transformé',
+        subCategory: 'Brouillon',
+        theme: 'Transformation BCVB',
+        sportCategory: 'Toutes catégories',
+        category_code: draft.family || 'Studio',
+        theme_code: 'Brouillon',
+        team_code: null,
+        audience: 'Admin',
+        season: null,
+        tags: ['BCVB', 'brouillon', 'studio'],
+        content: draft.content,
+        status: score >= 95 ? 'publiable' : 'à corriger',
+        quality_status: score >= 95 ? 'Prêt à publier' : 'À corriger',
+        publication_level: 'Brouillon',
+        visibility: 'private',
+        allowedRoles: ['admin'],
+        is_active: true,
+        is_featured: false,
+        is_ai_generated: true,
+        isArchived: false,
+        isDeleted: false,
+        uploaded_by: null,
+        source_document_id: null,
+        generation_request_id: null,
+        version: '1.0',
+        is_latest_version: true,
+        created_at: savedAt,
+        updated_at: savedAt,
+      }
+    })
   } catch {
     return []
   }
 }
+
+function mapDocumentToMobileDocument(
+  doc: LibraryDocumentRow,
+  canTransform: boolean,
+): LibraryMobileDocument {
+  return {
+    id: doc.id,
+    title: getDocumentTitle(doc),
+    description: getDocumentDescription(doc),
+    family: getFamily(doc),
+    mainCategory: getCategory(doc),
+    subCategory: getSubCategory(doc),
+    theme: getTheme(doc),
+    audience: getAudience(doc),
+    type: getFileType(doc),
+    status: getStatus(doc),
+    publicationLevel: getPublicationLevel(doc),
+    updatedAt: getMobileUpdatedLabel(doc),
+    createdAt: doc.created_at,
+    to: doc.content?.trim() ? `/documents/${doc.id}` : '/bibliotheque',
+    locked: false,
+    canPreview: true,
+    canDownload: hasSource(doc) || hasPdf(doc),
+    canTransform: canTransform && hasSource(doc),
+  }
+}
+
+/* =========================================================
+   PAGE
+========================================================= */
 
 export default function LibraryPage() {
   const { user, profile } = useAuth()
@@ -368,6 +448,31 @@ export default function LibraryPage() {
     [user?.id, profile?.role, profile?.category_id],
   )
 
+  const transformAllowed = canTransformDocument(libraryUser)
+
+  const loadDocuments = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const rows = await fetchLibraryDocuments()
+      setDocuments([...rows, ...loadLocalDraftDocuments()])
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Erreur lors du chargement de la bibliothèque.',
+      )
+      setDocuments(loadLocalDraftDocuments())
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadDocuments()
+  }, [loadDocuments])
+
   useEffect(() => {
     const scrollY = Number(window.localStorage.getItem(SCROLL_STORAGE_KEY) || 0)
 
@@ -392,40 +497,15 @@ export default function LibraryPage() {
   }, [filters])
 
   useEffect(() => {
-    let active = true
+    if (!actionMessage && !downloadError) return
 
-    async function load() {
-      try {
-        setLoading(true)
-        setError(null)
+    const timeout = window.setTimeout(() => {
+      setActionMessage(null)
+      setDownloadError(null)
+    }, 4500)
 
-        const rows = await fetchLibraryDocuments()
-
-        if (active) {
-          setDocuments([...rows, ...loadLocalDraftDocuments()])
-        }
-      } catch (err) {
-        if (active) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : 'Erreur lors du chargement de la bibliothèque.',
-          )
-          setDocuments(loadLocalDraftDocuments())
-        }
-      } finally {
-        if (active) {
-          setLoading(false)
-        }
-      }
-    }
-
-    load()
-
-    return () => {
-      active = false
-    }
-  }, [])
+    return () => window.clearTimeout(timeout)
+  }, [actionMessage, downloadError])
 
   const visibleDocuments = useMemo(
     () =>
@@ -440,22 +520,6 @@ export default function LibraryPage() {
         return true
       }),
     [documents, filters.lifecycle, libraryUser, isAdminRole],
-  )
-
-  const mobileDocuments = useMemo(
-    () =>
-      visibleDocuments.map((doc) => ({
-        id: doc.id,
-        title: doc.title || 'Document BCVB',
-        description: doc.description || doc.summary || 'Document disponible dans la bibliothèque BCVB.',
-        category: getFamily(doc),
-        audience: getAudience(doc),
-        type: getFileType(doc),
-        updatedAt: getSeason(doc) || getSafeDateLabel(doc.updated_at || doc.created_at),
-        to: doc.content?.trim() ? `/documents/${doc.id}` : '/bibliotheque',
-        locked: false,
-      })),
-    [visibleDocuments],
   )
 
   const filterOptions = useMemo(
@@ -478,38 +542,54 @@ export default function LibraryPage() {
   const filteredDocuments = useMemo(() => {
     const search = normalizeSearch(filters.search)
 
-    return visibleDocuments.filter((doc) => {
-      const matchesSearch = !search || buildSearchText(doc).includes(search)
-      const matchesFamily = filters.family === 'all' || getFamily(doc) === filters.family
-      const matchesCategory = filters.category === 'all' || getCategory(doc) === filters.category
-      const matchesSubCategory = filters.subCategory === 'all' || getSubCategory(doc) === filters.subCategory
-      const matchesTheme = filters.theme === 'all' || getTheme(doc) === filters.theme
-      const matchesSportCategory =
-        filters.sportCategory === 'all' || getSportCategory(doc) === filters.sportCategory
-      const matchesAudience = filters.audience === 'all' || getAudience(doc) === filters.audience
-      const matchesSeason = filters.season === 'all' || getSeason(doc) === filters.season
-      const matchesStatus = filters.status === 'all' || getStatus(doc) === filters.status
-      const matchesFileType = filters.fileType === 'all' || getFileType(doc) === filters.fileType
-      const matchesPublicationLevel =
-        filters.publicationLevel === 'all' || getPublicationLevel(doc) === filters.publicationLevel
-      const matchesTag = filters.tag === 'all' || (doc.tags || []).includes(filters.tag)
+    return visibleDocuments
+      .filter((doc) => {
+        const matchesSearch = !search || buildSearchText(doc).includes(search)
+        const matchesFamily = filters.family === 'all' || getFamily(doc) === filters.family
+        const matchesCategory = filters.category === 'all' || getCategory(doc) === filters.category
+        const matchesSubCategory = filters.subCategory === 'all' || getSubCategory(doc) === filters.subCategory
+        const matchesTheme = filters.theme === 'all' || getTheme(doc) === filters.theme
+        const matchesSportCategory =
+          filters.sportCategory === 'all' || getSportCategory(doc) === filters.sportCategory
+        const matchesAudience = filters.audience === 'all' || getAudience(doc) === filters.audience
+        const matchesSeason = filters.season === 'all' || getSeason(doc) === filters.season
+        const matchesStatus = filters.status === 'all' || getStatus(doc) === filters.status
+        const matchesFileType = filters.fileType === 'all' || getFileType(doc) === filters.fileType
+        const matchesPublicationLevel =
+          filters.publicationLevel === 'all' || getPublicationLevel(doc) === filters.publicationLevel
+        const matchesTag = filters.tag === 'all' || (doc.tags || []).includes(filters.tag)
 
-      return (
-        matchesSearch &&
-        matchesFamily &&
-        matchesCategory &&
-        matchesSubCategory &&
-        matchesTheme &&
-        matchesSportCategory &&
-        matchesAudience &&
-        matchesSeason &&
-        matchesStatus &&
-        matchesFileType &&
-        matchesPublicationLevel &&
-        matchesTag
-      )
-    })
+        return (
+          matchesSearch &&
+          matchesFamily &&
+          matchesCategory &&
+          matchesSubCategory &&
+          matchesTheme &&
+          matchesSportCategory &&
+          matchesAudience &&
+          matchesSeason &&
+          matchesStatus &&
+          matchesFileType &&
+          matchesPublicationLevel &&
+          matchesTag
+        )
+      })
+      .sort((a, b) => {
+        if (Boolean(b.is_featured) !== Boolean(a.is_featured)) {
+          return Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured))
+        }
+
+        const dateA = new Date(a.updated_at || a.created_at || '').getTime()
+        const dateB = new Date(b.updated_at || b.created_at || '').getTime()
+
+        return (Number.isNaN(dateB) ? 0 : dateB) - (Number.isNaN(dateA) ? 0 : dateA)
+      })
   }, [filters, visibleDocuments])
+
+  const mobileDocuments = useMemo(
+    () => visibleDocuments.map((doc) => mapDocumentToMobileDocument(doc, transformAllowed)),
+    [visibleDocuments, transformAllowed],
+  )
 
   const stats = useMemo(
     () => ({
@@ -521,28 +601,45 @@ export default function LibraryPage() {
         /corriger|draft|brouillon|review|à contrôler/i.test(`${doc.status} ${doc.quality_status}`),
       ).length,
       withoutPdf: filteredDocuments.filter((doc) => !hasPdf(doc)).length,
-      transformable: filteredDocuments.filter((doc) => canTransformDocument(libraryUser) && hasSource(doc)).length,
+      transformable: filteredDocuments.filter((doc) => transformAllowed && hasSource(doc)).length,
       recent: filteredDocuments.filter(isRecentDocument).length,
       archived: filteredDocuments.filter(isArchived).length,
     }),
-    [filteredDocuments, libraryUser],
+    [filteredDocuments, transformAllowed],
   )
 
-  function patchFilters(patch: Partial<LibraryFilters>) {
+  const activeFilterCount = useMemo(() => {
+    const ignoredKeys: Array<keyof LibraryFilters> = ['viewMode']
+    const entries = Object.entries(filters) as Array<[keyof LibraryFilters, string]>
+
+    return entries.filter(([key, value]) => {
+      if (ignoredKeys.includes(key)) return false
+      if (key === 'lifecycle') return value !== 'active'
+      return value !== 'all' && value !== ''
+    }).length
+  }, [filters])
+
+  const patchFilters = useCallback((patch: Partial<LibraryFilters>) => {
     setFilters((current) => ({
       ...current,
       ...patch,
     }))
-  }
+  }, [])
 
-  function resetFilters() {
+  const resetFilters = useCallback(() => {
     setFilters(defaultFilters)
     setActionMessage('Filtres réinitialisés.')
-  }
+  }, [])
+
+  const findDocumentById = useCallback(
+    (documentId: string) => documents.find((document) => document.id === documentId),
+    [documents],
+  )
 
   async function handleOpenDocument(doc: LibraryDocumentRow) {
     try {
       setError(null)
+      setDownloadError(null)
       setOpeningId(doc.id)
 
       if (doc.content?.trim()) {
@@ -640,14 +737,14 @@ export default function LibraryPage() {
 
     saveEditorialStudioState({
       ...defaultEditorialStudioState,
-      targetDocument: `${doc.title} - version BCVB`,
+      targetDocument: `${getDocumentTitle(doc)} - version BCVB`,
       family: getFamily(doc),
       category: getCategory(doc),
       audience: getAudience(doc),
       season: getSeason(doc),
       sourceText: source,
       sourceDocumentId: doc.id,
-      transformedFromTitle: doc.title,
+      transformedFromTitle: getDocumentTitle(doc),
       transformationDate: now,
       transformationMode: 'bcvb_upgrade',
       createdFromDocumentId: doc.id,
@@ -672,7 +769,7 @@ export default function LibraryPage() {
     if (!isAdminRole) return
 
     const confirmed = window.confirm(
-      `Archiver "${doc.title}" ? Le document sera retiré de la vue active sans être supprimé définitivement.`,
+      `Archiver "${getDocumentTitle(doc)}" ? Le document sera retiré de la vue active sans être supprimé définitivement.`,
     )
 
     if (!confirmed) return
@@ -708,7 +805,7 @@ export default function LibraryPage() {
   async function handleSoftDelete(doc: LibraryDocumentRow) {
     if (!isAdminRole) return
 
-    const reason = window.prompt(`Motif de suppression douce pour "${doc.title}" :`)
+    const reason = window.prompt(`Motif de suppression douce pour "${getDocumentTitle(doc)}" :`)
 
     if (!reason?.trim()) {
       setActionMessage('Suppression annulée : le motif est obligatoire.')
@@ -745,7 +842,42 @@ export default function LibraryPage() {
     }
   }
 
+  const handleMobilePreviewDocument = useCallback(
+    (documentId: string) => {
+      const selectedDocument = findDocumentById(documentId)
+
+      if (!selectedDocument) return
+
+      setPreviewDocument(selectedDocument)
+    },
+    [findDocumentById],
+  )
+
+  const handleMobileDownloadDocument = useCallback(
+    async (documentId: string) => {
+      const selectedDocument = findDocumentById(documentId)
+
+      if (!selectedDocument) return
+
+      await handleDownloadSource(selectedDocument)
+    },
+    [findDocumentById],
+  )
+
+  const handleMobileTransformDocument = useCallback(
+    (documentId: string) => {
+      const selectedDocument = findDocumentById(documentId)
+
+      if (!selectedDocument) return
+
+      handleTransform(selectedDocument)
+    },
+    [findDocumentById],
+  )
+
   function renderSelect(label: string, key: keyof LibraryFilters, values: string[]) {
+    const cleanedValues = values.filter((value) => value !== 'all')
+
     return (
       <label className="library-filter">
         <span>{label}</span>
@@ -759,9 +891,10 @@ export default function LibraryPage() {
           }
         >
           <option value="all">Tous</option>
-          {values.map((value) => (
+
+          {cleanedValues.map((value) => (
             <option value={value} key={value}>
-              {value}
+              {getOptionLabel(value)}
             </option>
           ))}
         </select>
@@ -775,13 +908,22 @@ export default function LibraryPage() {
         documents={mobileDocuments}
         isAdmin={isAdminRole}
         isCoach={isCoachRole}
+        isLoading={safeLoading}
+        error={error}
+        onPreviewDocument={handleMobilePreviewDocument}
+        onDownloadDocument={handleMobileDownloadDocument}
+        onTransformDocument={handleMobileTransformDocument}
       />
 
       <div className="library-desktop-first">
         <section className="library-hero">
           <div>
-            <p className="bcvb-eyebrow">Bibliothèque documentaire</p>
+            <p className="bcvb-eyebrow">
+              {PRESENTATION_MODE ? 'Mode présentation' : 'Bibliothèque documentaire'}
+            </p>
+
             <h1>Centre de ressources BCVB</h1>
+
             <p>
               Consulter, rechercher, ouvrir, prévisualiser, télécharger et transformer les documents du club selon les droits du profil connecté.
             </p>
@@ -836,6 +978,13 @@ export default function LibraryPage() {
             <span>Récents</span>
             <strong>{stats.recent}</strong>
           </article>
+
+          {isAdminRole ? (
+            <article>
+              <span>Archivés</span>
+              <strong>{stats.archived}</strong>
+            </article>
+          ) : null}
         </section>
 
         <section className="library-toolbar">
@@ -849,10 +998,23 @@ export default function LibraryPage() {
             />
           </label>
 
-          <button type="button" onClick={resetFilters}>
-            Réinitialiser filtres
-          </button>
+          <div className="library-toolbar__actions">
+            <button type="button" onClick={resetFilters}>
+              Réinitialiser filtres
+            </button>
+
+            <button type="button" onClick={loadDocuments}>
+              Recharger
+            </button>
+          </div>
         </section>
+
+        {activeFilterCount > 0 ? (
+          <p className="library-action-message">
+            {activeFilterCount} filtre{activeFilterCount > 1 ? 's' : ''} actif
+            {activeFilterCount > 1 ? 's' : ''}.
+          </p>
+        ) : null}
 
         <div className="library-layout">
           <aside className="library-filters">
@@ -897,6 +1059,10 @@ export default function LibraryPage() {
                     ? 'La bibliothèque reste disponible dès que la connexion aux données répond.'
                     : error}
                 </p>
+
+                <button type="button" onClick={loadDocuments}>
+                  Réessayer
+                </button>
               </div>
             ) : null}
 
@@ -922,14 +1088,13 @@ export default function LibraryPage() {
                 const sourceAvailable = hasSource(doc)
                 const pdfAvailable = hasPdf(doc)
                 const canPdf = pdfAvailable || canGeneratePdf(doc)
-                const transformAllowed = canTransformDocument(libraryUser)
 
                 return (
                   <article className="library-card" key={doc.id}>
                     <header>
                       <div>
                         <p className="bcvb-eyebrow">{getFamily(doc)}</p>
-                        <h2>{doc.title || 'Document BCVB'}</h2>
+                        <h2>{getDocumentTitle(doc)}</h2>
                       </div>
 
                       <span
@@ -944,9 +1109,7 @@ export default function LibraryPage() {
                     </header>
 
                     <p className="library-card__description">
-                      {doc.description ||
-                        doc.summary ||
-                        'Document sans description, affiché avec métadonnées minimales.'}
+                      {getDocumentDescription(doc)}
                     </p>
 
                     <div className="library-card__meta">
@@ -961,7 +1124,7 @@ export default function LibraryPage() {
                     </div>
 
                     <div className="library-card__tags">
-                      {(doc.tags || ['BCVB']).slice(0, 6).map((tag) => (
+                      {(doc.tags?.length ? doc.tags : ['BCVB']).slice(0, 6).map((tag) => (
                         <span key={tag}>{tag}</span>
                       ))}
                     </div>
@@ -1003,7 +1166,7 @@ export default function LibraryPage() {
                         disabled={!canPdf}
                         title={!canPdf ? 'PDF à générer, mais aucune source exploitable.' : undefined}
                       >
-                        {pdfAvailable ? 'Télécharger PDF' : canGeneratePdf(doc) ? 'Générer PDF' : 'PDF à générer'}
+                        {pdfAvailable ? 'Télécharger PDF' : canGeneratePdf(doc) ? 'Générer PDF' : 'PDF indisponible'}
                       </button>
 
                       <button
@@ -1021,7 +1184,7 @@ export default function LibraryPage() {
                         disabled={!canGeneratePdf(doc)}
                         title={!canGeneratePdf(doc) ? 'Source Markdown indisponible.' : undefined}
                       >
-                        Télécharger source Markdown
+                        Markdown
                       </button>
 
                       {transformAllowed ? (
@@ -1031,7 +1194,7 @@ export default function LibraryPage() {
                           disabled={!sourceAvailable}
                           title={!sourceAvailable ? 'Transformation impossible : source indisponible.' : undefined}
                         >
-                          Transformer en document BCVB
+                          Transformer BCVB
                         </button>
                       ) : (
                         <span className="library-card__hint">
@@ -1068,16 +1231,18 @@ export default function LibraryPage() {
         </div>
       </div>
 
-      <DocumentPreviewModal
-        document={previewDocument}
-        canTransform={canTransformDocument(libraryUser)}
-        onClose={() => setPreviewDocument(null)}
-        onOpen={handleOpenDocument}
-        onDownloadPdf={handleDownloadPdf}
-        onDownloadSource={handleDownloadSource}
-        onTransform={handleTransform}
-        onCopySource={handleCopySource}
-      />
+      {previewDocument ? (
+        <DocumentPreviewModal
+          document={previewDocument}
+          canTransform={transformAllowed}
+          onClose={() => setPreviewDocument(null)}
+          onOpen={handleOpenDocument}
+          onDownloadPdf={handleDownloadPdf}
+          onDownloadSource={handleDownloadSource}
+          onTransform={handleTransform}
+          onCopySource={handleCopySource}
+        />
+      ) : null}
     </section>
   )
 }
