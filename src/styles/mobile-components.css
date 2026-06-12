@@ -752,3 +752,98 @@
     display: block;
   }
 }
+/* =========================================================
+   BCVB — ADMIN MOBILE-FIRST FIX
+========================================================= */
+
+.admin-action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 18px 0;
+}
+
+.admin-action-card {
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+  border-radius: 24px;
+  text-decoration: none;
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.07);
+}
+
+.admin-action-card span {
+  color: #c8102e;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.admin-action-card strong {
+  font-size: 22px;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.admin-action-card p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.admin-action-card--urgent {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.22), transparent 34%),
+    linear-gradient(145deg, #c8102e 0%, #7f1028 100%);
+  color: #ffffff;
+}
+
+.admin-action-card--urgent span,
+.admin-action-card--urgent p {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+@media (max-width: 768px) {
+  .admin-action-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin: 14px 0;
+  }
+
+  .admin-action-card {
+    min-height: 112px;
+    padding: 18px;
+    border-radius: 24px;
+  }
+
+  .admin-action-card strong {
+    font-size: 24px;
+  }
+
+  .admin-action-card p {
+    font-size: 15px;
+  }
+
+  .admin-page .dashboard-panelCard,
+  .admin-page .bcvb-card,
+  .admin-page article {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .admin-page table {
+    min-width: 640px;
+  }
+
+  .admin-page table,
+  .admin-page .table-wrapper,
+  .admin-page .admin-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
