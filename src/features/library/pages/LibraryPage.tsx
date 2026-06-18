@@ -7,6 +7,7 @@ import {
   softDeleteLibraryDocument,
   type LibraryDocumentRow,
 } from '../services/libraryService'
+import { fetchDocumentVersions } from '../services/documentVersionService'
 
 import { DocumentPreviewModal } from '../components/DocumentPreviewModal'
 import LibraryMobileExperience, {
@@ -668,6 +669,7 @@ export default function LibraryPage() {
   async function handleDownloadPdf(doc: LibraryDocumentRow) {
     try {
       setDownloadError(null)
+      setActionMessage(null)
 
       if (hasPdf(doc) && (doc.pdf_url || doc.pdf_storage_path || lower(doc.file_ext).includes('pdf'))) {
         await downloadSourceDocument({
@@ -681,6 +683,7 @@ export default function LibraryPage() {
       await downloadPdfDocument({
         ...doc,
         content: doc.content || doc.source_markdown,
+        source_markdown: doc.source_markdown,
       })
 
       setActionMessage('PDF généré depuis la source disponible.')
@@ -692,10 +695,12 @@ export default function LibraryPage() {
   async function handleDownloadSource(doc: LibraryDocumentRow) {
     try {
       setDownloadError(null)
+      setActionMessage(null)
 
       await downloadSourceDocument({
         ...doc,
         content: doc.content || doc.source_markdown,
+        source_markdown: doc.source_markdown,
       })
     } catch (err) {
       setDownloadError(err instanceof Error ? err.message : 'Source indisponible.')
@@ -705,10 +710,12 @@ export default function LibraryPage() {
   async function handleDownloadMarkdown(doc: LibraryDocumentRow) {
     try {
       setDownloadError(null)
+      setActionMessage(null)
 
       await downloadMarkdownDocument({
         ...doc,
         content: doc.content || doc.source_markdown,
+        source_markdown: doc.source_markdown,
       })
     } catch (err) {
       setDownloadError(err instanceof Error ? err.message : 'Source Markdown indisponible.')
@@ -763,6 +770,36 @@ export default function LibraryPage() {
     })
 
     window.location.href = '/admin/documents/transformer'
+  }
+
+  async function handleShowVersions(doc: LibraryDocumentRow) {
+    try {
+      setDownloadError(null)
+
+      const versions = await fetchDocumentVersions(doc.id)
+      const declaredCount = Number(doc.versions_count || 0)
+
+      if (versions.length > 0) {
+        const latestVersion = versions.find((version) => version.isLatestVersion) ?? versions[0]
+        setActionMessage(
+          `Version actuelle ${latestVersion.version}. ${versions.length} version(s) locale(s) conservée(s). Dernière sauvegarde : ${getSafeDateLabel(latestVersion.createdAt)}.`,
+        )
+        return
+      }
+
+      if (declaredCount > 1) {
+        setActionMessage(
+          `Version actuelle ${getVersion(doc)}. ${declaredCount} version(s) déclarée(s) côté bibliothèque ; l’historique détaillé sera branché au stockage documentaire.`,
+        )
+        return
+      }
+
+      setActionMessage(
+        `Version actuelle ${getVersion(doc)}. Versions à venir : aucun historique détaillé n’est encore disponible pour ce document.`,
+      )
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Historique de versions indisponible.')
+    }
   }
 
   async function handleArchive(doc: LibraryDocumentRow) {
@@ -1130,21 +1167,19 @@ export default function LibraryPage() {
                     </div>
 
                     <div className="library-card__version">
-                      <span>Version {getVersion(doc)}</span>
+                      <span>Version actuelle {getVersion(doc)}</span>
                       <span>Modifié le {getSafeDateLabel(doc.updated_at || doc.created_at)}</span>
 
                       {hasVersions(doc) ? (
                         <button
                           type="button"
-                          onClick={() =>
-                            setActionMessage(
-                              'Versionnage détaillé à venir. Version actuelle conservée.',
-                            )
-                          }
+                          onClick={() => handleShowVersions(doc)}
                         >
                           Voir versions
                         </button>
-                      ) : null}
+                      ) : (
+                        <span className="library-card__version-note">Versions à venir</span>
+                      )}
                     </div>
 
                     <div className="library-card__actions">

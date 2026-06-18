@@ -22,7 +22,7 @@ function getQualityStatus(document: LibraryDocumentRow) {
 
 function getPreviewKind(document: LibraryDocumentRow) {
   const extension = (document.file_ext || document.document_type || '').toLowerCase()
-  if (document.content?.trim()) return 'rich'
+  if (document.content?.trim() || document.source_markdown?.trim()) return 'rich'
   if (extension.includes('pdf')) return 'pdf'
   if (extension.includes('image') || ['jpg', 'jpeg', 'png', 'webp'].includes(extension)) return 'image'
   if (extension.includes('doc') || extension.includes('text') || extension.includes('md')) return 'source'
@@ -31,6 +31,30 @@ function getPreviewKind(document: LibraryDocumentRow) {
 
 function formatAudience(value: LibraryDocumentRow['audience']) {
   return Array.isArray(value) ? value.join(', ') : value || 'Audience non renseignée'
+}
+
+function canDownloadPdf(document: LibraryDocumentRow) {
+  return Boolean(
+    document.pdf_url ||
+      document.pdf_storage_path ||
+      document.pdfPath ||
+      document.pdf_path ||
+      document.content?.trim() ||
+      document.source_markdown?.trim(),
+  )
+}
+
+function canDownloadSource(document: LibraryDocumentRow) {
+  return Boolean(
+    document.content?.trim() ||
+      document.source_markdown?.trim() ||
+      document.file_url ||
+      document.storage_path ||
+      document.sourcePath ||
+      document.source_path ||
+      document.sourceDownloadUrl ||
+      document.source_download_url,
+  )
 }
 
 export function DocumentPreviewModal({
@@ -47,6 +71,9 @@ export function DocumentPreviewModal({
 
   const tags = document.tags || []
   const previewKind = getPreviewKind(document)
+  const pdfAvailable = canDownloadPdf(document)
+  const sourceAvailable = canDownloadSource(document)
+  const sourceText = document.content?.trim() || document.source_markdown?.trim()
 
   return (
     <div className="library-preview-backdrop" role="presentation" onClick={onClose}>
@@ -78,8 +105,8 @@ export function DocumentPreviewModal({
         )}
 
         <div className={`library-preview-modal__content library-preview-modal__content--${previewKind}`}>
-          {previewKind === 'rich' && document.content ? (
-            <BCVBRichDocumentRenderer content={document.content} document={document} />
+          {previewKind === 'rich' && sourceText ? (
+            <BCVBRichDocumentRenderer content={sourceText} document={document} />
           ) : (
             <article>
               <h3>{previewKind === 'pdf' ? 'Aperçu PDF' : previewKind === 'image' ? 'Aperçu image' : previewKind === 'scan' ? 'Document scanné / OCR' : 'Source texte'}</h3>
@@ -96,9 +123,23 @@ export function DocumentPreviewModal({
 
         <footer className="library-preview-modal__actions">
           <button type="button" onClick={() => onOpen(document)}>Ouvrir</button>
-          <button type="button" onClick={() => onDownloadPdf(document)}>Télécharger PDF</button>
-          <button type="button" onClick={() => onDownloadSource(document)}>Télécharger source</button>
-          <button type="button" onClick={() => onCopySource(document)} disabled={!document.content?.trim()} title={!document.content?.trim() ? 'Source Markdown indisponible.' : undefined}>
+          <button
+            type="button"
+            onClick={() => onDownloadPdf(document)}
+            disabled={!pdfAvailable}
+            title={!pdfAvailable ? 'PDF impossible : aucune source exploitable.' : undefined}
+          >
+            {pdfAvailable ? 'Télécharger PDF' : 'PDF indisponible'}
+          </button>
+          <button
+            type="button"
+            onClick={() => onDownloadSource(document)}
+            disabled={!sourceAvailable}
+            title={!sourceAvailable ? 'Source indisponible.' : undefined}
+          >
+            {sourceAvailable ? 'Télécharger source' : 'Source indisponible'}
+          </button>
+          <button type="button" onClick={() => onCopySource(document)} disabled={!sourceText} title={!sourceText ? 'Source Markdown indisponible.' : undefined}>
             Copier source
           </button>
           {canTransform && (

@@ -248,6 +248,11 @@
   color: #1d4ed8;
 }
 
+.library-card__version .library-card__version-note {
+  background: rgba(20, 24, 31, 0.06);
+  color: rgba(20, 24, 31, 0.58);
+}
+
 .library-action-message,
 .library-empty {
   padding: 18px;

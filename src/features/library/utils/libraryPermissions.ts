@@ -7,9 +7,9 @@ export type LibraryUser = {
 }
 
 const visibilityRoles: Record<string, string[]> = {
-  public: ['admin', 'responsable_technique', 'technical_manager', 'coach', 'dirigeant', 'parent_referent', 'team_staff', 'membre', 'member', 'joueur', 'parent'],
-  club: ['admin', 'responsable_technique', 'technical_manager', 'coach', 'dirigeant', 'parent_referent', 'team_staff', 'membre', 'member', 'joueur', 'parent'],
-  coaches: ['admin', 'responsable_technique', 'technical_manager', 'coach'],
+  public: ['admin', 'responsable_technique', 'coach', 'dirigeant', 'parent_referent', 'team_staff', 'member', 'joueur', 'parent', 'benevole', 'arbitre', 'otm'],
+  club: ['admin', 'responsable_technique', 'coach', 'dirigeant', 'parent_referent', 'team_staff', 'member', 'joueur', 'parent', 'benevole', 'arbitre', 'otm'],
+  coaches: ['admin', 'responsable_technique', 'coach', 'team_staff'],
   leaders: ['admin', 'responsable_technique', 'technical_manager', 'dirigeant'],
   parents_ref: ['admin', 'responsable_technique', 'technical_manager', 'parent_referent', 'team_staff'],
   private: ['admin', 'responsable_technique', 'technical_manager'],
@@ -17,6 +17,7 @@ const visibilityRoles: Record<string, string[]> = {
 
 function normalizeRole(role?: string | null) {
   if (role === 'membre') return 'member'
+  if (role === 'technical_manager') return 'responsable_technique'
   return role || 'member'
 }
 
@@ -34,8 +35,8 @@ function inferVisibility(document: LibraryDocumentRow) {
 
 export function getDocumentAllowedRoles(document: LibraryDocumentRow) {
   const explicitRoles = document.allowedRoles || document.allowed_roles
-  if (explicitRoles?.length) return explicitRoles
-  return visibilityRoles[inferVisibility(document)] || visibilityRoles.club
+  if (explicitRoles?.length) return explicitRoles.map(normalizeRole)
+  return (visibilityRoles[inferVisibility(document)] || visibilityRoles.club).map(normalizeRole)
 }
 
 export function canAccessDocument(user: LibraryUser | null | undefined, document: LibraryDocumentRow) {

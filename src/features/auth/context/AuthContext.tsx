@@ -8,11 +8,16 @@ export type UserRole =
   | 'admin'
   | 'dirigeant'
   | 'responsable_technique'
+  | 'technical_manager'
   | 'coach'
   | 'team_staff'
   | 'parent_referent'
   | 'joueur'
   | 'parent'
+  | 'benevole'
+  | 'arbitre'
+  | 'otm'
+  | 'membre'
   | 'member'
 
 type Profile = {

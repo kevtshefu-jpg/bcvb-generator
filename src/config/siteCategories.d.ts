@@ -7,6 +7,9 @@ export type SiteRole =
   | 'team_staff'
   | 'joueur'
   | 'parent'
+  | 'benevole'
+  | 'arbitre'
+  | 'otm'
   | 'member'
   | 'membre'
 

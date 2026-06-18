@@ -5,16 +5,20 @@ import {
   isAdmin,
   isDirigeant,
   isCoach,
-  isParentReferent
+  isParentReferent,
+  isTeamStaff,
+  normalizeRole,
 } from '../../config/roles'
 import { useAuth } from '../../features/auth/context/AuthContext'
 
 type AllowedRole =
   | 'admin'
+  | 'responsable_technique'
   | 'dirigeant'
   | 'coach'
   | 'parent_referent'
   | 'team_staff'
+  | 'member'
 
 type RequireRoleProps = {
   role?: string | null
@@ -24,10 +28,12 @@ type RequireRoleProps = {
 
 export function RequireRole({ role, allow, children }: RequireRoleProps) {
   const { profile } = useAuth()
-  const currentRole = role ?? profile?.role
+  const currentRole = normalizeRole(role ?? profile?.role)
   const authorized =
     allow === 'admin'
       ? isAdmin(currentRole)
+      : allow === 'responsable_technique'
+        ? currentRole === 'responsable_technique' || isAdmin(currentRole)
       : allow === 'dirigeant'
         ? isDirigeant(currentRole)
         : allow === 'coach'
@@ -35,7 +41,9 @@ export function RequireRole({ role, allow, children }: RequireRoleProps) {
           : allow === 'parent_referent'
             ? isParentReferent(currentRole)
             : allow === 'team_staff'
-              ? ['admin', 'dirigeant', 'coach', 'team_staff', 'parent_referent'].includes(currentRole || '')
+              ? isTeamStaff(currentRole)
+              : allow === 'member'
+                ? Boolean(currentRole)
               : false
 
   if (!authorized) {

@@ -7,13 +7,16 @@ export const SITE_ROLES = [
   'team_staff',
   'joueur',
   'parent',
+  'benevole',
+  'arbitre',
+  'otm',
   'member',
   'membre',
 ]
 
 const allRoles = SITE_ROLES
 const adminOnly = ['admin']
-const helpRoles = ['admin', 'coach', 'dirigeant', 'responsable_technique', 'parent_referent', 'team_staff', 'joueur', 'parent', 'member', 'membre']
+const helpRoles = ['admin', 'coach', 'dirigeant', 'responsable_technique', 'parent_referent', 'team_staff', 'joueur', 'parent', 'benevole', 'arbitre', 'otm', 'member', 'membre']
 const libraryRoles = helpRoles
 const coachRoles = ['admin', 'coach', 'responsable_technique']
 
@@ -263,6 +266,7 @@ export const SITE_CATEGORIES = [
 
 export function normalizeSiteRole(role) {
   if (role === 'membre') return 'member'
+  if (role === 'technical_manager') return 'responsable_technique'
   return role || 'member'
 }
 
