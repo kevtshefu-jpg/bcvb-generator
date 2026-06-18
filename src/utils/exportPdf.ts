@@ -49,6 +49,9 @@ export async function exportElementToPdf(
  */
 export type ExportNodeToPdfOptions = {
   orientation?: "portrait" | "landscape";
+  title?: string;
+  marginMm?: number;
+  includePageNumbers?: boolean;
 }
 
 export async function exportNodeToPdf(
@@ -66,6 +69,11 @@ export async function exportNodeToPdf(
   });
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
+  const margin = options.marginMm ?? 0;
+  const contentWidth = Math.max(10, pageWidth - margin * 2);
+  const contentHeight = Math.max(10, pageHeight - margin * 2);
+  const footerHeight = options.includePageNumbers ? 6 : 0;
+  const usableHeight = Math.max(10, contentHeight - footerHeight);
 
   // Reconstruct pixel dimensions from the data URL to compute ratio
   const img = new Image();
@@ -77,15 +85,25 @@ export async function exportNodeToPdf(
   const canvasWidth = img.naturalWidth;
   const canvasHeight = img.naturalHeight;
 
-  const imgWidth = pageWidth;
+  const imgWidth = contentWidth;
   const imgHeight = (canvasHeight * imgWidth) / canvasWidth;
 
-  if (imgHeight <= pageHeight) {
-    pdf.addImage(imageData, "PNG", 0, 0, imgWidth, imgHeight);
+  function addFooter(pageIndex: number) {
+    if (!options.includePageNumbers) return;
+    pdf.setFontSize(8);
+    pdf.setTextColor(90, 90, 90);
+    const label = `${options.title || filename.replace(/\.pdf$/i, "")} · page ${pageIndex}`;
+    pdf.text(label, margin, pageHeight - 5, { baseline: "bottom" });
+  }
+
+  if (imgHeight <= usableHeight) {
+    pdf.addImage(imageData, "PNG", margin, margin, imgWidth, imgHeight);
+    addFooter(1);
   } else {
-    const ratio = pageWidth / canvasWidth;
-    const pageHeightPx = pageHeight / ratio;
+    const ratio = contentWidth / canvasWidth;
+    const pageHeightPx = usableHeight / ratio;
     let renderedHeightPx = 0;
+    let pageIndex = 1;
 
     while (renderedHeightPx < canvasHeight) {
       const sliceHeightPx = Math.min(pageHeightPx, canvasHeight - renderedHeightPx);
@@ -109,14 +127,16 @@ export async function exportNodeToPdf(
       );
 
       const pageData = pageCanvas.toDataURL("image/png");
-      const pageImgHeight = sliceHeightPx * ratio;
+      const pageImgHeight = Math.min(sliceHeightPx * ratio, usableHeight);
 
       if (renderedHeightPx > 0) {
         pdf.addPage();
       }
 
-      pdf.addImage(pageData, "PNG", 0, 0, pageWidth, pageImgHeight);
+      pdf.addImage(pageData, "PNG", margin, margin, contentWidth, pageImgHeight);
+      addFooter(pageIndex);
       renderedHeightPx += sliceHeightPx;
+      pageIndex += 1;
     }
   }
 

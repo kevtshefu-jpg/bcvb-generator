@@ -1,5 +1,6 @@
 import { exportNodeToPdf } from "../../../utils/exportPdf";
-import { preparePrintLayout, type PrintOrientation } from "./printLayoutService";
+import type { PdfExportResult } from "../types/export.types";
+import { analyzePrintReadiness, preparePrintLayout, type PrintOrientation } from "./printLayoutService";
 
 export async function exportDocumentToPdf(input: {
   documentId: string;
@@ -7,11 +8,12 @@ export async function exportDocumentToPdf(input: {
   contentElementId: string;
   fileName?: string;
   orientation?: PrintOrientation;
-}): Promise<void> {
+}): Promise<PdfExportResult> {
   const element = document.getElementById(input.contentElementId);
   if (!element) throw new Error(`Élément ${input.contentElementId} introuvable pour export PDF.`);
 
-  const orientation = input.orientation ?? "portrait";
+  const readiness = analyzePrintReadiness(element);
+  const orientation = input.orientation ?? readiness.recommendedOrientation;
   const cleanup = preparePrintLayout(input.contentElementId, orientation);
   const fileName =
     input.fileName ??
@@ -24,10 +26,31 @@ export async function exportDocumentToPdf(input: {
       .concat(".pdf");
 
   try {
-    await exportNodeToPdf(element, fileName, { orientation });
+    await exportNodeToPdf(element, fileName, {
+      orientation,
+      title: input.title,
+      marginMm: 10,
+      includePageNumbers: true,
+    });
+    return {
+      engine: "jspdf_html2canvas",
+      fileName,
+      orientation,
+      exportedAt: new Date().toISOString(),
+      fallbackUsed: false,
+      warnings: readiness.warnings,
+    };
   } catch (error) {
     console.warn("Export jsPDF indisponible, fallback window.print :", error);
     window.print();
+    return {
+      engine: "browser_print_fallback",
+      fileName,
+      orientation,
+      exportedAt: new Date().toISOString(),
+      fallbackUsed: true,
+      warnings: readiness.warnings,
+    };
   } finally {
     window.setTimeout(cleanup, 300);
   }

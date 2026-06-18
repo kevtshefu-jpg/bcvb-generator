@@ -378,6 +378,7 @@
 .correction-actions-list,
 .correction-log,
 .export-actions,
+.export-warning-list,
 .version-history-list {
   display: grid;
   gap: 8px;
@@ -399,6 +400,7 @@
 .quality-evidence-list article,
 .correction-actions-list article,
 .export-warning,
+.export-readiness-grid article,
 .version-history-list article {
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -414,6 +416,18 @@
   border-color: rgba(176, 24, 39, 0.28);
   color: #7f1d1d;
   background: #fff1f2;
+}
+
+.export-warning--info {
+  border-color: rgba(14, 165, 233, 0.28);
+  color: #075985;
+  background: #f0f9ff;
+}
+
+.export-warning--warning {
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #78350f;
+  background: #fffbeb;
 }
 
 .quality-warning--warning {
@@ -688,6 +702,36 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.export-readiness-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.export-readiness-grid article {
+  display: grid;
+  gap: 4px;
+}
+
+.export-readiness-grid span {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.export-readiness-grid strong {
+  color: #0f172a;
+  font-size: 1.22rem;
+}
+
+.export-result-note {
+  margin: 10px 0 0;
+  color: #475569;
+  font-size: 0.82rem;
+}
+
 .version-history-panel__empty {
   color: #64748b;
 }
@@ -709,13 +753,56 @@
 
 .version-history-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .version-history-actions button:nth-child(2),
+.version-history-actions button:nth-child(3),
 .quality-editor-actions button:nth-child(2) {
   color: #0f172a;
   background: #e2e8f0;
+}
+
+.version-diff-panel {
+  display: grid;
+  gap: 9px;
+  margin-top: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px;
+  background: #f8fafc;
+}
+
+.version-diff-panel > strong {
+  color: #0f172a;
+}
+
+.version-diff-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.version-diff-summary span {
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: #ffffff;
+  background: #0f172a;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.version-diff-panel pre {
+  overflow: auto;
+  max-height: 180px;
+  margin: 0;
+  border-radius: 8px;
+  padding: 10px;
+  color: #e2e8f0;
+  background: #0f172a;
+  font-size: 0.76rem;
+  white-space: pre-wrap;
 }
 
 .quality-preview-scroll {
@@ -922,6 +1009,7 @@
   .correction-preview-grid,
   .correction-result-summary,
   .export-actions,
+  .export-readiness-grid,
   .quality-structure-grid {
     grid-template-columns: 1fr;
   }

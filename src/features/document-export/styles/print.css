@@ -4,6 +4,11 @@
 }
 
 @media print {
+  html[data-print-orientation="landscape"] .bcvb-document-export-root,
+  html[data-print-orientation="landscape"] .bcvb-print-exporting {
+    max-width: none !important;
+  }
+
   body {
     background: #ffffff !important;
     color: #111111 !important;
@@ -47,8 +52,12 @@
   .bcvb-document-export-root,
   .bcvb-print-exporting {
     width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
     color: #111111 !important;
     background: #ffffff !important;
+    box-shadow: none !important;
   }
 
   .bcvb-block,
@@ -81,6 +90,17 @@
     border: 1px solid #cfd4dc !important;
     padding: 5pt !important;
     color: #111111 !important;
+    background: #ffffff !important;
+  }
+
+  .bcvb-table th {
+    color: #ffffff !important;
+    background: #111111 !important;
+  }
+
+  .bcvb-table-block__warnings,
+  .bcvb-table-block__caption span {
+    display: none !important;
   }
 
   .bcvb-rich-document__hero {
