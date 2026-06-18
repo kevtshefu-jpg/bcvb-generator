@@ -220,7 +220,18 @@ export default function QualityExportsPage() {
   async function handleCorrectionApplied(result: MassiveCorrectionResult) {
     const correctedSource = result.correctedSource;
     const nextScore = result.newScore ?? scoreDocument({ contentSource: correctedSource, family });
-    const parentId = versions[0]?.id;
+    let parentId = versions[0]?.id;
+
+    if (!parentId) {
+      const originalVersion = await saveDocumentVersion({
+        documentId,
+        content_source: contentSource,
+        content_rendered: contentSource,
+        qualityScore: result.previousScore ?? score,
+        changeLog: [`Source initiale conservée avant ${result.summary}`],
+      });
+      parentId = originalVersion.id;
+    }
 
     setContentSource(correctedSource);
     await saveDocumentVersion({

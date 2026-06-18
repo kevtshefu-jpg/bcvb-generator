@@ -1,5 +1,6 @@
 import type { CorrectionPlan, DocumentFamily, MassiveCorrectionResult } from "../types/quality.types";
 import { scoreDocument } from "./qualityScorer";
+import { getCorrectionModeLabel } from "./massiveCorrectionPlanner";
 
 function ensureSection(content: string, title: string, body: string) {
   if (new RegExp(`^##\\s+${title}`, "im").test(content)) return content;
@@ -82,6 +83,7 @@ Contraintes :
 Famille : ${input.family}
 Score actuel : ${input.correctionPlan.currentScore}
 Objectif : ${input.correctionPlan.targetScore}
+Niveau demandé : ${getCorrectionModeLabel(input.correctionPlan.mode)}
 Actions :
 ${input.correctionPlan.actions.map((action) => `- ${action.type}: ${action.description}`).join("\n")}
 
@@ -98,6 +100,7 @@ export async function applyMassiveCorrection(input: {
   const previousScore = scoreDocument({ contentSource: input.contentSource, family: input.family });
   let correctedSource = input.contentSource.trim();
   const changeLog: string[] = [];
+  const modeLabel = getCorrectionModeLabel(input.correctionPlan.mode);
 
   for (const action of input.correctionPlan.actions) {
     if (action.type === "add_bcvb_identity") {
@@ -140,8 +143,13 @@ export async function applyMassiveCorrection(input: {
   }
 
   return {
+    mode: input.correctionPlan.mode,
     correctedSource,
     changeLog,
+    summary: `${modeLabel} préparée : ancien score ${previousScore.globalScore}/100, nouveau score ${newScore.globalScore}/100, gain ${Math.max(
+      0,
+      newScore.globalScore - previousScore.globalScore
+    )} point(s).`,
     previousScore,
     newScore,
   };
