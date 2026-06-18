@@ -5,15 +5,23 @@ type TableBlockProps = {
 };
 
 export default function TableBlock({ table }: TableBlockProps) {
+  const hasWarnings = table.warnings.length > 0;
+
   return (
     <figure
       className={[
         "bcvb-table-block",
         table.compact ? "bcvb-table-block--compact" : "",
         table.fullWidth ? "bcvb-table-block--full" : "",
+        hasWarnings ? "bcvb-table-block--warning" : "",
       ].filter(Boolean).join(" ")}
     >
-      {table.caption && <figcaption>{table.caption}</figcaption>}
+      <figcaption className="bcvb-table-block__caption">
+        <strong>{table.caption || "Tableau BCVB"}</strong>
+        <span>
+          {table.source === "ocr" ? "OCR à vérifier" : "Markdown normalisé"} · {table.headers.length} colonne(s)
+        </span>
+      </figcaption>
       <div className="bcvb-table-block__scroll">
         <table className="bcvb-table">
           <thead>

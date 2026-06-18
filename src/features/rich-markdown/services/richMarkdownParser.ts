@@ -38,6 +38,14 @@ export function parseRichMarkdown(content: string): RichMarkdownSegment[] {
       continue;
     }
 
+    if (/^(?:tableau|table)\s*(?:[:\-–]\s*)?.+/i.test(trimmed)) {
+      const nextLine = lines[index + 1]?.trim() ?? "";
+      if (nextLine.includes("|") || /(\t|\s{2,})/.test(nextLine)) {
+        flushParagraph();
+        continue;
+      }
+    }
+
     const remaining = lines.slice(index).join("\n");
     const matchingRaw = Array.from(tableRaws).find((raw) => remaining.startsWith(raw));
     if (matchingRaw) {
