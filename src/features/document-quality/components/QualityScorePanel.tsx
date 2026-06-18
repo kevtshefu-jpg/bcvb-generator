@@ -41,6 +41,23 @@ export default function QualityScorePanel({ score, onImprove }: QualityScorePane
 
       <QualityBreakdown score={score} />
 
+      <section className="quality-evidence-list">
+        <strong>Preuves métier détectées</strong>
+        {score.evidence.length === 0 ? (
+          <span>Aucune exigence spécifique à cette famille documentaire.</span>
+        ) : (
+          score.evidence.map((item) => (
+            <article className={item.passed ? "is-done" : "is-missing"} key={item.id}>
+              <span>{item.passed ? "OK" : "À vérifier"}</span>
+              <div>
+                <strong>{item.label}</strong>
+                <p>{item.detail}</p>
+              </div>
+            </article>
+          ))
+        )}
+      </section>
+
       <div className="quality-warning-list">
         <strong>Warnings critiques et points de vigilance</strong>
         {score.warnings.length === 0 ? (

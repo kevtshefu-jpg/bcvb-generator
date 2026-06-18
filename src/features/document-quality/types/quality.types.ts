@@ -34,6 +34,13 @@ export interface QualityRecommendation {
   fixAction: string;
 }
 
+export interface QualityEvidence {
+  id: string;
+  label: string;
+  passed: boolean;
+  detail: string;
+}
+
 export interface QualityScore {
   globalScore: number;
   status: PublicationStatus;
@@ -49,8 +56,14 @@ export interface QualityScore {
   exportReadinessScore: number;
   warnings: QualityWarning[];
   recommendations: QualityRecommendation[];
+  evidence: QualityEvidence[];
   createdAt: string;
 }
+
+export type CorrectionMode =
+  | "micro_correction"
+  | "strong_improvement"
+  | "publication_rebuild";
 
 export interface CorrectionAction {
   id: string;
@@ -68,16 +81,22 @@ export interface CorrectionAction {
 }
 
 export interface CorrectionPlan {
+  mode: CorrectionMode;
   targetScore: number;
   currentScore: number;
   actions: CorrectionAction[];
   estimatedGain: number;
   riskLevel: "low" | "medium" | "high";
+  preservedItems: string[];
+  restructuredItems: string[];
+  risks: string[];
 }
 
 export interface MassiveCorrectionResult {
+  mode: CorrectionMode;
   correctedSource: string;
   changeLog: string[];
+  summary: string;
   previousScore?: QualityScore;
   newScore?: QualityScore;
 }

@@ -44,12 +44,12 @@ export function buildQualityRecommendations(warnings: QualityWarning[]): Quality
       });
     }
 
-    if (warning.category === "field") {
+    if (warning.category === "field" || warning.category === "pedagogy") {
       add({
         id: "improve-field-use",
         priority: "high",
         title: "Rendre le document exploitable terrain",
-        description: "Ajouter objectifs, organisation, consignes, critères observables et évolutions.",
+        description: "Ajouter objectifs, organisation, consignes, progression, critères observables et évolutions.",
         expectedGain: 12,
         fixAction: "improve_situations",
       });
