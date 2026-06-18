@@ -207,11 +207,14 @@ export default function QualityExportsPage() {
     const parentId = versions[0]?.id;
     await saveDocumentVersion({
       documentId,
+      title,
+      family,
       content_source: contentSource,
       content_rendered: contentSource,
       parentId,
       qualityScore: scoreOverride,
       changeLog,
+      savedReason: changeLog[0] ?? "Version source enregistrée",
     });
     await refreshVersions();
     setMessage("Version enregistrée : source et rendu conservés pour restauration.");
@@ -225,10 +228,13 @@ export default function QualityExportsPage() {
     if (!parentId) {
       const originalVersion = await saveDocumentVersion({
         documentId,
+        title,
+        family,
         content_source: contentSource,
         content_rendered: contentSource,
         qualityScore: result.previousScore ?? score,
         changeLog: [`Source initiale conservée avant ${result.summary}`],
+        savedReason: "Source initiale avant correction",
       });
       parentId = originalVersion.id;
     }
@@ -236,11 +242,14 @@ export default function QualityExportsPage() {
     setContentSource(correctedSource);
     await saveDocumentVersion({
       documentId,
+      title,
+      family,
       content_source: correctedSource,
       content_rendered: correctedSource,
       parentId,
       qualityScore: nextScore,
       changeLog: result.changeLog,
+      savedReason: result.summary,
     });
     await refreshVersions();
     setMessage("Correction massive appliquée dans une nouvelle version, sans écraser la source initiale.");
@@ -253,12 +262,16 @@ export default function QualityExportsPage() {
 
   async function handleExportPdf() {
     setMessage("Export PDF lancé depuis la barre d’actions persistante.");
-    await exportDocumentToPdf({
+    const result = await exportDocumentToPdf({
       documentId,
       title,
       contentElementId: EXPORT_ELEMENT_ID,
-      orientation: "portrait",
     });
+    setMessage(
+      `Export terminé : ${result.fileName} · ${result.orientation === "landscape" ? "A4 paysage" : "A4 portrait"}${
+        result.fallbackUsed ? " · impression navigateur" : ""
+      }.`
+    );
   }
 
   const activeStepLabel = workflowSteps.find((step) => step.id === activeStep)?.label ?? "Source";
