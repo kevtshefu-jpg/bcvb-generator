@@ -1,0 +1,280 @@
+.coach-tool-mode-shell {
+  display: grid;
+  gap: 16px;
+  max-width: 1440px;
+  margin: 0 auto 18px;
+}
+
+.coach-tool-mode-shell--expert {
+  gap: 10px;
+}
+
+.coach-mode-toggle {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(226, 232, 240, 0.88);
+  border-radius: 8px;
+  padding: 16px;
+  background: #ffffff;
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
+}
+
+.coach-mode-toggle--novice {
+  border-color: rgba(176, 24, 39, 0.34);
+  background:
+    linear-gradient(135deg, rgba(176, 24, 39, 0.08), rgba(255, 255, 255, 0.96)),
+    #ffffff;
+}
+
+.coach-mode-toggle--expert {
+  color: #ffffff;
+  border-color: rgba(15, 23, 42, 0.42);
+  background: linear-gradient(135deg, #070b18, #111827 58%, #b01827);
+}
+
+.coach-mode-toggle--compact {
+  padding: 12px;
+}
+
+.coach-mode-toggle__content {
+  min-width: 0;
+}
+
+.coach-mode-toggle__eyebrow,
+.coach-guidance-panel__eyebrow {
+  margin: 0 0 4px;
+  color: #b01827;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.coach-mode-toggle--expert .coach-mode-toggle__eyebrow {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.coach-mode-toggle__title {
+  margin: 0;
+  color: inherit;
+  font-size: 1.22rem;
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+
+.coach-mode-toggle__text {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 0.92rem;
+}
+
+.coach-mode-toggle--expert .coach-mode-toggle__text {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.coach-mode-toggle__button {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 8px;
+  padding: 11px 14px;
+  color: #ffffff;
+  background: #b01827;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.coach-mode-toggle--expert .coach-mode-toggle__button {
+  color: #0f172a;
+  background: #ffffff;
+}
+
+.coach-workflow-stepper {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.coach-workflow-stepper__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 8px;
+  padding: 10px;
+  color: #334155;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.coach-workflow-stepper__item--active {
+  border-color: rgba(176, 24, 39, 0.42);
+  color: #7f1d1d;
+  background: #fff1f2;
+}
+
+.coach-workflow-stepper__number {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #0f172a;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.coach-workflow-stepper__item--active .coach-workflow-stepper__number {
+  background: #b01827;
+}
+
+.coach-workflow-stepper__label {
+  min-width: 0;
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.coach-guidance-panel,
+.coach-novice-help-card {
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  border-radius: 8px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.09);
+}
+
+.coach-guidance-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.42fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.coach-guidance-panel--novice {
+  border-left: 5px solid #b01827;
+}
+
+.coach-guidance-panel--expert {
+  grid-template-columns: 1fr;
+  padding: 12px 14px;
+  background: #f8fafc;
+  box-shadow: none;
+}
+
+.coach-guidance-panel__title {
+  margin: 0 0 7px;
+  color: #0f172a;
+  font-size: 1.15rem;
+  letter-spacing: 0;
+}
+
+.coach-guidance-panel__text {
+  margin: 0;
+  color: #475569;
+  line-height: 1.55;
+}
+
+.coach-guidance-panel__list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.coach-guidance-panel__list li {
+  border-radius: 8px;
+  padding: 9px 10px;
+  color: #334155;
+  background: #f8fafc;
+  font-weight: 800;
+}
+
+.coach-novice-help-card {
+  display: grid;
+  gap: 7px;
+}
+
+.coach-novice-help-card strong {
+  color: inherit;
+  font-size: 0.96rem;
+}
+
+.coach-novice-help-card p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.coach-novice-help-card--red {
+  color: #7f1d1d;
+  border-color: rgba(176, 24, 39, 0.3);
+  background: #fff1f2;
+}
+
+.coach-novice-help-card--dark {
+  color: #ffffff;
+  border-color: rgba(15, 23, 42, 0.35);
+  background: #0f172a;
+}
+
+.coach-novice-help-card--light {
+  color: #334155;
+  background: #ffffff;
+}
+
+.session-builder-page--expert .coach-workflow-stepper,
+.planning-builder-page--expert .coach-workflow-stepper {
+  display: none;
+}
+
+.session-builder-page--expert .session-step-nav,
+.planning-builder-page--expert .planning-layout {
+  margin-top: 8px;
+}
+
+@media (max-width: 1180px) {
+  .coach-workflow-stepper {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .coach-guidance-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .coach-tool-mode-shell {
+    gap: 12px;
+  }
+
+  .coach-mode-toggle {
+    display: grid;
+  }
+
+  .coach-mode-toggle__button {
+    width: 100%;
+  }
+
+  .coach-workflow-stepper {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scroll-snap-type: x mandatory;
+  }
+
+  .coach-workflow-stepper__item {
+    flex: 0 0 min(280px, 82vw);
+    scroll-snap-align: start;
+  }
+
+  .coach-guidance-panel,
+  .coach-novice-help-card {
+    padding: 14px;
+  }
+}

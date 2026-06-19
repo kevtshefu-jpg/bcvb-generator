@@ -1,0 +1,205 @@
+.coach-session-template-picker {
+  display: grid;
+  gap: 16px;
+  max-width: 1440px;
+  margin: 0 auto 20px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 8px;
+  padding: 18px;
+  background:
+    linear-gradient(135deg, rgba(176, 24, 39, 0.08), rgba(255, 255, 255, 0.98) 46%),
+    #ffffff;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.1);
+}
+
+.coach-session-template-picker__header {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.coach-session-template-picker__header h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.45rem;
+  letter-spacing: 0;
+}
+
+.coach-session-template-picker__header p:not(.bcvb-eyebrow) {
+  max-width: 780px;
+  margin: 7px 0 0;
+  color: #475569;
+  line-height: 1.55;
+}
+
+.coach-session-template-picker__header > span {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 8px 11px;
+  color: #7f1d1d;
+  background: #fff1f2;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.coach-session-template-picker__filters {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.coach-session-template-picker__filters button {
+  flex: 0 0 auto;
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  border-radius: 999px;
+  padding: 9px 12px;
+  color: #334155;
+  background: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.coach-session-template-picker__filters button.is-active {
+  color: #ffffff;
+  border-color: #b01827;
+  background: #b01827;
+}
+
+.coach-session-template-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.coach-session-template-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  border-radius: 8px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.coach-session-template-card__topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.coach-session-template-card__topline span {
+  border-radius: 999px;
+  padding: 6px 9px;
+  color: #0f172a;
+  background: #f1f5f9;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.coach-session-template-card h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.04rem;
+  letter-spacing: 0;
+}
+
+.coach-session-template-card > p {
+  margin: 0;
+  color: #475569;
+  line-height: 1.48;
+}
+
+.coach-session-template-card__meta {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.coach-session-template-card__meta div {
+  border-radius: 8px;
+  padding: 9px;
+  background: #f8fafc;
+}
+
+.coach-session-template-card__meta dt {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.coach-session-template-card__meta dd {
+  margin: 3px 0 0;
+  color: #1e293b;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.coach-session-template-card__blocks {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.coach-session-template-card__blocks li {
+  position: relative;
+  padding-left: 14px;
+  color: #475569;
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.coach-session-template-card__blocks li::before {
+  position: absolute;
+  top: 0.62em;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #b01827;
+  content: '';
+}
+
+.coach-session-template-card button {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  padding: 11px 12px;
+  color: #ffffff;
+  background: #0f172a;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.coach-session-template-card button:hover {
+  background: #b01827;
+}
+
+@media (max-width: 1180px) {
+  .coach-session-template-picker__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .coach-session-template-picker {
+    padding: 14px;
+  }
+
+  .coach-session-template-picker__header {
+    display: grid;
+  }
+
+  .coach-session-template-picker__header > span {
+    width: fit-content;
+  }
+
+  .coach-session-template-picker__grid {
+    grid-template-columns: 1fr;
+  }
+}

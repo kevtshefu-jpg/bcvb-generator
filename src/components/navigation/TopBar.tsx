@@ -5,6 +5,8 @@ import { PRESENTATION_LABELS } from '../../config/presentationMode'
 import CurrentModuleContext from '../../features/ux/components/CurrentModuleContext'
 import { Breadcrumbs } from './Breadcrumbs'
 import { PrimaryNavigation } from './PrimaryNavigation'
+import AdminNotificationBell from '../../features/admin/components/AdminNotificationBell'
+import { isAdmin } from '../../features/auth/utils/roles'
 
 function getRoleIcon(role?: string | null): string {
   switch (role) {
@@ -26,6 +28,8 @@ function getRoleIcon(role?: string | null): string {
 export function TopBar() {
   const { profile, user, signOut } = useAuth()
   const navigate = useNavigate()
+  const role = profile?.role ?? 'member'
+  const adminEnabled = isAdmin(role) || role === 'responsable_technique'
 
   async function handleLogout() {
     try {
@@ -105,6 +109,7 @@ export function TopBar() {
     <div className="topbar-context" aria-label="Contexte de navigation">
       <Breadcrumbs role={profile?.role} />
       <CurrentModuleContext role={profile?.role} />
+      <AdminNotificationBell enabled={adminEnabled} />
     </div>
   </>
 )

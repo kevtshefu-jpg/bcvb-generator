@@ -8,6 +8,7 @@ export const FIBA_COURT = {
   freeThrowLine: 5.8,
   freeThrowCircleRadius: 1.8,
   rimFromBaseline: 1.575,
+  backboardFromBaseline: 1.2,
   rimRadius: 0.225,
   threePointRadius: 6.75,
   restrictedAreaRadius: 1.25,

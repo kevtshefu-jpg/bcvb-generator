@@ -21,7 +21,10 @@ function WoodTexture({ theme }: { theme: ReturnType<typeof getCourtTheme> }) {
 }
 
 function Rim({ x, y, side, theme }: { x: number; y: number; side: 'left' | 'right'; theme: ReturnType<typeof getCourtTheme> }) {
-  const boardX = side === 'left' ? toSvgX(x, 'full') + 42 : toSvgX(x, 'full') - 42
+  const boardX = toSvgX(
+    side === 'left' ? FIBA_DIMENSIONS.backboardFromBaseline : FIBA_DIMENSIONS.full.length - FIBA_DIMENSIONS.backboardFromBaseline,
+    'full',
+  )
   return (
     <g className="fiba-rim">
       <line x1={boardX} y1={toSvgY(y, 'full') - 72} x2={boardX} y2={toSvgY(y, 'full') + 72} stroke={theme.lineDark} strokeWidth="10" />
@@ -80,7 +83,10 @@ function HalfCourtLines({ courtType, theme }: { courtType: CourtType; theme: Ret
   const arcOffset = Math.sqrt((FIBA_DIMENSIONS.threePointRadius ** 2) - ((7.5 - 0.9) ** 2))
   const arcX = side === 'left' ? rim.x + arcOffset : rim.x - arcOffset
   const arcSweep = side === 'left' ? 1 : 0
-  const backboardX = side === 'left' ? toSvgX(rim.x + 0.42, courtType) : toSvgX(rim.x - 0.42, courtType)
+  const backboardX = toSvgX(
+    side === 'left' ? FIBA_DIMENSIONS.backboardFromBaseline : dimensions.length - FIBA_DIMENSIONS.backboardFromBaseline,
+    courtType,
+  )
 
   return (
     <g>

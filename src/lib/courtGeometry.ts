@@ -12,7 +12,7 @@ export const FIBA_COURT = {
   noChargeRadius: 1.25,
   rimFromBaseline: 1.575,
   rimRadius: 0.225,
-  backboardOffset: 0.42,
+  backboardFromBaseline: 1.2,
   backboardHalfHeight: 0.72,
 } as const;
 

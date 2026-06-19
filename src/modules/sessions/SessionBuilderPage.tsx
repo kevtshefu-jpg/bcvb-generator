@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../features/auth/context/AuthContext'
+import CoachGuidancePanel from '../../features/coach/components/CoachGuidancePanel'
+import CoachModeToggle from '../../features/coach/components/CoachModeToggle'
+import CoachNoviceHelpCard from '../../features/coach/components/CoachNoviceHelpCard'
+import CoachWorkflowStepper from '../../features/coach/components/CoachWorkflowStepper'
+import { useCoachToolMode } from '../../features/coach/hooks/useCoachToolMode'
+import CoachSessionTemplatePicker from '../../features/coach/session-templates/CoachSessionTemplatePicker'
+import type {
+  CoachCategory,
+  CoachSessionTemplate,
+} from '../../features/coach/session-templates/coachSessionTemplates'
 import { SessionClassificationPanel } from './SessionClassificationPanel'
 import { SessionHeaderForm } from './SessionHeaderForm'
 import { SessionImportPanel } from './SessionImportPanel'
@@ -15,6 +25,7 @@ import {
   createSession,
   createSituation,
   normalizeSession,
+  type SessionCategory,
   type SessionSituation,
   type TrainingSessionV2,
 } from './sessionModels'
@@ -39,6 +50,7 @@ import { buildSessionUpgradePrompt } from './sessionTransformer'
 import '../../styles/sessions.css'
 import '../../styles/courts.css'
 import '../../styles/print-session.css'
+import '../../features/coach/styles/coach-tools-mode.css'
 
 type PreviewMode = 'edition' | 'coach' | 'print'
 type AutoFixMode = 'all' | 'bcvb' | 'courts'
@@ -61,6 +73,16 @@ const SESSION_SECTION_IDS: SessionSectionId[] = [
   'session-preview',
   'session-export',
 ]
+
+const SESSION_NOVICE_STEP_BY_SECTION: Record<SessionSectionId, number> = {
+  'session-infos': 1,
+  'session-resume': 2,
+  'session-situations': 3,
+  'session-bilan': 4,
+  'session-library': 3,
+  'session-preview': 4,
+  'session-export': 5,
+}
 
 function buildInitialSession() {
   const draft = loadSessionDraft()
@@ -133,6 +155,19 @@ function getQualityLabel(score: number) {
   return 'à compléter'
 }
 
+function getCoachCategoryFromSession(category: SessionCategory): CoachCategory | undefined {
+  if (category === 'Seniors') return 'SENIORS'
+  if (['U7', 'U9', 'U11', 'U13', 'U15', 'U18'].includes(category)) {
+    return category as CoachCategory
+  }
+
+  return undefined
+}
+
+function getSessionCategoryFromCoach(category: CoachCategory): SessionCategory {
+  return category === 'SENIORS' ? 'Seniors' : category
+}
+
 /**
  * IMPORTANT :
  * Cette fonction ne vide plus les objets.
@@ -151,10 +186,6 @@ function createCorrectedSessionCourtFrame(
   })
 }
 
-/**
- * Nettoyage volontaire uniquement quand Kevin clique sur “Nettoyer terrains”.
- * À ne pas utiliser pour créer les terrains par défaut.
- */
 function clearCourtFrameObjects(
   frame: ReturnType<typeof createCourtFrame>
 ): ReturnType<typeof createCourtFrame> {
@@ -192,6 +223,7 @@ export default function SessionBuilderPage() {
   }
 
   const isAdmin = currentUser.role === 'admin'
+  const { mode, isNovice, isExpert, toggleMode } = useCoachToolMode()
 
   const [session, setSession] = useState<TrainingSessionV2>(() => buildInitialSession())
   const [showTemplates, setShowTemplates] = useState(false)
@@ -288,6 +320,26 @@ export default function SessionBuilderPage() {
         updatedAt: new Date().toISOString(),
       })
     )
+  }
+
+  function applyCoachSessionTemplate(template: CoachSessionTemplate) {
+    updateSession({
+      ...session,
+      title: template.title,
+      category: getSessionCategoryFromCoach(template.category),
+      durationMinutes: template.duration,
+      theme: template.title,
+      objectives: [template.objective],
+      bcvbObjectives: [template.bcvbPillar, template.pedagogicalStep],
+      keyFocus: [template.level, template.bcvbPillar, template.pedagogicalStep],
+      sessionFlow: template.blocks,
+      summary: template.description,
+      notes:
+        session.notes ||
+        `Modèle coach appliqué : ${template.title}. Ajuster les situations et les rotations selon le groupe.`,
+    })
+
+    setMessage(`Modèle "${template.title}" appliqué. Tu peux maintenant adapter les situations.`)
   }
 
   function newSession() {
@@ -793,6 +845,40 @@ export default function SessionBuilderPage() {
           )}
         </div>
       </section>
+
+      <section
+        className={[
+          'coach-tool-mode-shell',
+          isExpert ? 'coach-tool-mode-shell--expert' : '',
+        ].filter(Boolean).join(' ')}
+      >
+        <CoachModeToggle mode={mode} onToggle={toggleMode} />
+
+        {isNovice && (
+          <CoachWorkflowStepper
+            variant="session"
+            currentStep={SESSION_NOVICE_STEP_BY_SECTION[activeSection]}
+          />
+        )}
+
+        <CoachGuidancePanel mode={mode} tool="session" />
+
+        {isNovice && (
+          <CoachNoviceHelpCard title="Conseil jeune coach" tone="red">
+            <p>
+              Pars d’un modèle, garde un objectif prioritaire, puis vérifie que chaque situation
+              permet de courir, défendre fort ou partager la balle.
+            </p>
+          </CoachNoviceHelpCard>
+        )}
+      </section>
+
+      {isNovice && (
+        <CoachSessionTemplatePicker
+          selectedCategory={getCoachCategoryFromSession(session.category)}
+          onSelectTemplate={applyCoachSessionTemplate}
+        />
+      )}
 
       {showTemplates && (
         <SessionTemplatePicker

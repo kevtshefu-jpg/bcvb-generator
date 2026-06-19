@@ -15,7 +15,11 @@ function WoodTexture({ mode }) {
 }
 
 function Rim({ rim, side, mode }) {
-  const boardX = side === 'left' ? meterToSvgX(rim.x + 0.42, mode) : meterToSvgX(rim.x - 0.42, mode)
+  const size = getCourtSize(mode)
+  const boardX = meterToSvgX(
+    side === 'left' ? FIBA_COURT.backboardFromBaseline : size.width - FIBA_COURT.backboardFromBaseline,
+    mode,
+  )
   return (
     <g>
       <line x1={boardX} y1={meterToSvgY(rim.y - 0.72, mode)} x2={boardX} y2={meterToSvgY(rim.y + 0.72, mode)} stroke={courtTokens.courtLineDark} strokeWidth="6" />
