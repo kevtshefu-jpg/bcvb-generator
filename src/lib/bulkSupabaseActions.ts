@@ -13,6 +13,8 @@ export type BulkRowsOptions = {
   statusColumn?: string
   deletedStatusValue?: string
   archivedStatusValue?: string
+  fallbackPatch?: Record<string, unknown>
+  fallbackError?: string
 }
 
 const defaultOptions = {
@@ -34,6 +36,19 @@ function getErrorMessage(error: unknown) {
     return String((error as { message?: unknown }).message)
   }
   return 'Action groupée impossible.'
+}
+
+function isMissingColumnError(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase()
+  return (
+    message.includes('schema cache') ||
+    message.includes('could not find') ||
+    (message.includes('column') && message.includes('does not exist'))
+  )
+}
+
+function getSchemaFallbackError(action: string) {
+  return `${action} impossible avec le schéma actuel. Le système a tenté une action simplifiée. Si le problème persiste, vérifier les colonnes deleted_at, archived_at ou status.`
 }
 
 export async function updateRowsByIds(
@@ -59,6 +74,27 @@ export async function updateRowsByIds(
     .in(mergedOptions.idColumn, cleanIds)
 
   if (error) {
+    if (mergedOptions.fallbackPatch && isMissingColumnError(error)) {
+      const { error: fallbackError } = await supabase
+        .from(table)
+        .update(mergedOptions.fallbackPatch)
+        .in(mergedOptions.idColumn, cleanIds)
+
+      if (!fallbackError) {
+        return { ok: true, count: cleanIds.length }
+      }
+
+      const baseError =
+        mergedOptions.fallbackError ||
+        `${getSchemaFallbackError('Action groupée')}`
+
+      return {
+        ok: false,
+        count: 0,
+        error: `${baseError} Détail Supabase : ${getErrorMessage(fallbackError)}`,
+      }
+    }
+
     return { ok: false, count: 0, error: getErrorMessage(error) }
   }
 
@@ -78,9 +114,14 @@ export async function softDeleteRows(
     ids,
     {
       [mergedOptions.deletedAtColumn]: now,
-      [mergedOptions.statusColumn]: mergedOptions.deletedStatusValue,
     },
-    mergedOptions,
+    {
+      ...mergedOptions,
+      fallbackPatch: {
+        [mergedOptions.statusColumn]: mergedOptions.deletedStatusValue,
+      },
+      fallbackError: `${getSchemaFallbackError('Suppression')} Détail Supabase : colonne ${mergedOptions.deletedAtColumn} ou ${mergedOptions.statusColumn} indisponible.`,
+    },
   )
 }
 
@@ -97,9 +138,14 @@ export async function archiveRows(
     ids,
     {
       [mergedOptions.archivedAtColumn]: now,
-      [mergedOptions.statusColumn]: mergedOptions.archivedStatusValue,
     },
-    mergedOptions,
+    {
+      ...mergedOptions,
+      fallbackPatch: {
+        [mergedOptions.statusColumn]: mergedOptions.archivedStatusValue,
+      },
+      fallbackError: `${getSchemaFallbackError('Archivage')} Détail Supabase : colonne ${mergedOptions.archivedAtColumn} ou ${mergedOptions.statusColumn} indisponible.`,
+    },
   )
 }
 

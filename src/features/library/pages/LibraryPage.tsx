@@ -2,11 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
   archiveLibraryDocument,
-  archiveLibraryDocuments,
+  bulkArchiveLibraryDocuments,
+  bulkDeleteLibraryDocuments,
   fetchLibraryDocuments,
   createLibraryDocumentSignedUrl,
   softDeleteLibraryDocument,
-  softDeleteLibraryDocuments,
   type LibraryDocumentRow,
 } from '../services/libraryService'
 import { fetchDocumentVersions } from '../services/documentVersionService'
@@ -278,11 +278,23 @@ function hasVersions(doc: LibraryDocumentRow) {
 }
 
 function isArchived(doc: LibraryDocumentRow) {
-  return Boolean(doc.isArchived || doc.is_archived || lower(doc.status) === 'archived')
+  return Boolean(
+    doc.isArchived ||
+      doc.is_archived ||
+      doc.archivedAt ||
+      doc.archived_at ||
+      lower(doc.status) === 'archived'
+  )
 }
 
 function isDeleted(doc: LibraryDocumentRow) {
-  return Boolean(doc.isDeleted || doc.is_deleted || lower(doc.status) === 'deleted')
+  return Boolean(
+    doc.isDeleted ||
+      doc.is_deleted ||
+      doc.deletedAt ||
+      doc.deleted_at ||
+      lower(doc.status) === 'deleted'
+  )
 }
 
 function isRecentDocument(doc: LibraryDocumentRow) {
@@ -887,7 +899,6 @@ export default function LibraryPage() {
             ? {
                 ...item,
                 is_deleted: true,
-                delete_reason: reason.trim(),
                 status: 'deleted',
                 is_active: false,
                 updated_at: new Date().toISOString(),
@@ -923,7 +934,7 @@ export default function LibraryPage() {
         .map((doc) => doc.id)
 
       if (remoteIds.length > 0) {
-        const result = await archiveLibraryDocuments(remoteIds, user?.id)
+        const result = await bulkArchiveLibraryDocuments(remoteIds)
 
         if (!result.ok) {
           throw new Error(result.error || 'Archivage groupé impossible.')
@@ -972,6 +983,7 @@ export default function LibraryPage() {
     )
 
     if (reason === null) return
+    // TODO: stocker le motif lorsque la colonne delete_reason sera ajoutée.
 
     try {
       setBulkActionLoading(true)
@@ -983,11 +995,7 @@ export default function LibraryPage() {
         .map((doc) => doc.id)
 
       if (remoteIds.length > 0) {
-        const result = await softDeleteLibraryDocuments(
-          remoteIds,
-          user?.id,
-          reason.trim() || 'Suppression groupée depuis la bibliothèque BCVB',
-        )
+        const result = await bulkDeleteLibraryDocuments(remoteIds)
 
         if (!result.ok) {
           throw new Error(result.error || 'Suppression groupée impossible.')
@@ -1005,7 +1013,6 @@ export default function LibraryPage() {
                 is_deleted: true,
                 isDeleted: true,
                 is_active: false,
-                delete_reason: reason.trim() || 'Suppression groupée depuis la bibliothèque BCVB',
                 status: 'deleted',
                 updated_at: now,
               }
@@ -1256,7 +1263,7 @@ export default function LibraryPage() {
             {downloadError ? (
               <ActionFeedback
                 type="error"
-                title="Action indisponible"
+                title="Action groupée"
                 message={downloadError}
                 onClose={() => setDownloadError(null)}
               />

@@ -1,5 +1,5 @@
 import { supabase } from '../../../lib/supabase'
-import { updateRowsByIds } from '../../../lib/bulkSupabaseActions'
+import { updateRowsByIds, type BulkActionResult } from '../../../lib/bulkSupabaseActions'
 
 export type LibraryDocumentRow = {
   id: string
@@ -77,10 +77,6 @@ export type LibraryDocumentRow = {
   is_deleted?: boolean | null
   deletedAt?: string | null
   deleted_at?: string | null
-  deletedBy?: string | null
-  deleted_by?: string | null
-  deleteReason?: string | null
-  delete_reason?: string | null
   is_active: boolean
   is_featured: boolean
   is_ai_generated: boolean | null
@@ -144,6 +140,11 @@ async function updateLibraryDocumentWithFallback(
   return fallbackData
 }
 
+function getLibrarySchemaFallbackError(action: 'Archivage' | 'Suppression') {
+  const dateColumn = action === 'Archivage' ? 'archived_at' : 'deleted_at'
+  return `${action} impossible avec le schéma actuel. Le système a tenté une ${action.toLowerCase()} simplifiée. Si le problème persiste, vérifier les colonnes ${dateColumn} ou status.`
+}
+
 export async function archiveLibraryDocument(documentId: string, userId?: string | null) {
   const now = new Date().toISOString()
   return updateLibraryDocumentWithFallback(
@@ -163,63 +164,67 @@ export async function archiveLibraryDocument(documentId: string, userId?: string
   )
 }
 
-export async function archiveLibraryDocuments(documentIds: string[], userId?: string | null) {
+export async function archiveLibraryDocuments(documentIds: string[], _userId?: string | null) {
   const now = new Date().toISOString()
   return updateRowsByIds(
     'library_documents',
     documentIds,
     {
-      is_archived: true,
       archived_at: now,
-      archived_by: userId ?? null,
-      status: 'archived',
-      updated_at: now,
+    },
+    {
+      fallbackPatch: {
+        status: 'archived',
+      },
+      fallbackError: getLibrarySchemaFallbackError('Archivage'),
     },
   )
 }
 
+export async function bulkArchiveLibraryDocuments(documentIds: string[]) {
+  return archiveLibraryDocuments(documentIds)
+}
+
 export async function softDeleteLibraryDocument(
   documentId: string,
-  userId: string | null | undefined,
-  deleteReason: string
+  _userId: string | null | undefined,
+  _deleteReason: string
 ) {
   const now = new Date().toISOString()
+  // TODO: stocker le motif lorsque la colonne delete_reason sera ajoutée.
   return updateLibraryDocumentWithFallback(
     documentId,
     {
-      is_deleted: true,
       deleted_at: now,
-      deleted_by: userId ?? null,
-      delete_reason: deleteReason,
-      is_active: false,
-      status: 'deleted',
-      updated_at: now,
     },
     {
-      is_active: false,
       status: 'deleted',
-      updated_at: now,
     }
   )
 }
 
 export async function softDeleteLibraryDocuments(
   documentIds: string[],
-  userId: string | null | undefined,
-  deleteReason: string
-) {
+  _userId: string | null | undefined,
+  _deleteReason: string
+): Promise<BulkActionResult> {
   const now = new Date().toISOString()
+  // TODO: stocker le motif lorsque la colonne delete_reason sera ajoutée.
   return updateRowsByIds(
     'library_documents',
     documentIds,
     {
-      is_deleted: true,
       deleted_at: now,
-      deleted_by: userId ?? null,
-      delete_reason: deleteReason,
-      is_active: false,
-      status: 'deleted',
-      updated_at: now,
+    },
+    {
+      fallbackPatch: {
+        status: 'deleted',
+      },
+      fallbackError: getLibrarySchemaFallbackError('Suppression'),
     },
   )
+}
+
+export async function bulkDeleteLibraryDocuments(documentIds: string[]) {
+  return softDeleteLibraryDocuments(documentIds, null, '')
 }
