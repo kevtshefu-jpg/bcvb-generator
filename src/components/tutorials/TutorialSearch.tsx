@@ -28,7 +28,7 @@ export default function TutorialSearch({
   onAudienceChange,
 }: TutorialSearchProps) {
   return (
-    <section className="tutorial-search-panel" aria-label="Recherche tutoriels">
+    <section className="tutorial-search-panel platform-tutorial-filters" aria-label="Recherche tutoriels">
       <label className="tutorial-search-field">
         <span>Recherche</span>
         <input
@@ -39,10 +39,15 @@ export default function TutorialSearch({
         />
       </label>
 
-      <div className="tutorial-filter-row" aria-label="Catégories tutoriels">
+      <div className="tutorial-filter-row platform-tutorial-filterRow" aria-label="Catégories tutoriels">
         <button
           type="button"
-          className={category === "all" ? "tutorial-chip tutorial-chip--active" : "tutorial-chip"}
+          className={
+            category === "all"
+              ? "tutorial-chip tutorial-chip--active platform-tutorial-filterButton is-red"
+              : "tutorial-chip platform-tutorial-filterButton"
+          }
+          aria-pressed={category === "all"}
           onClick={() => onCategoryChange("all")}
         >
           Tous
@@ -51,7 +56,12 @@ export default function TutorialSearch({
           <button
             type="button"
             key={categoryId}
-            className={category === categoryId ? "tutorial-chip tutorial-chip--active" : "tutorial-chip"}
+            className={
+              category === categoryId
+                ? "tutorial-chip tutorial-chip--active platform-tutorial-filterButton is-red"
+                : "tutorial-chip platform-tutorial-filterButton"
+            }
+            aria-pressed={category === categoryId}
             onClick={() => onCategoryChange(categoryId)}
           >
             {tutorialCategoryLabels[categoryId]}
@@ -59,10 +69,15 @@ export default function TutorialSearch({
         ))}
       </div>
 
-      <div className="tutorial-filter-row" aria-label="Audiences tutoriels">
+      <div className="tutorial-filter-row platform-tutorial-filterRow" aria-label="Audiences tutoriels">
         <button
           type="button"
-          className={audience === "all" ? "tutorial-chip tutorial-chip--dark" : "tutorial-chip"}
+          className={
+            audience === "all"
+              ? "tutorial-chip tutorial-chip--dark platform-tutorial-filterButton is-active"
+              : "tutorial-chip platform-tutorial-filterButton"
+          }
+          aria-pressed={audience === "all"}
           onClick={() => onAudienceChange("all")}
         >
           Tous rôles
@@ -71,7 +86,12 @@ export default function TutorialSearch({
           <button
             type="button"
             key={audienceId}
-            className={audience === audienceId ? "tutorial-chip tutorial-chip--dark" : "tutorial-chip"}
+            className={
+              audience === audienceId
+                ? "tutorial-chip tutorial-chip--dark platform-tutorial-filterButton is-active"
+                : "tutorial-chip platform-tutorial-filterButton"
+            }
+            aria-pressed={audience === audienceId}
             onClick={() => onAudienceChange(audienceId)}
           >
             {tutorialAudienceLabels[audienceId]}
@@ -79,7 +99,7 @@ export default function TutorialSearch({
         ))}
       </div>
 
-      <p className="tutorial-search-count">
+      <p className="tutorial-search-count platform-tutorial-results">
         {visibleCount} tutoriel{visibleCount > 1 ? "s" : ""} affiché{visibleCount > 1 ? "s" : ""} sur {totalCount}
       </p>
     </section>

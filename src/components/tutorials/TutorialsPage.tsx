@@ -126,24 +126,24 @@ export default function TutorialsPage({ initialCategory, initialTutorialId }: Tu
   }
 
   return (
-    <main className="bcvb-page tutorials-page">
-      <section className="tutorial-hero">
-        <div className="tutorial-hero__content">
-          <p className="bcvb-eyebrow">Aide intégrée BCVB</p>
-          <h1>Tutoriels d’utilisation</h1>
-          <p>
+    <main className="bcvb-page tutorials-page platform-tutorial-page">
+      <section className="tutorial-hero platform-tutorial-hero">
+        <div className="tutorial-hero__content platform-tutorial-hero__content">
+          <p className="bcvb-eyebrow platform-tutorial-hero__eyebrow">Aide intégrée BCVB</p>
+          <h1 className="platform-tutorial-hero__title">Tutoriels d’utilisation</h1>
+          <p className="platform-tutorial-hero__text">
             Des parcours courts pour produire des documents, préparer les séances, importer les effectifs,
             suivre les joueurs, comprendre les droits et utiliser les exports sans se perdre dans la plateforme.
           </p>
-          <div className="tutorial-current-role">
+          <div className="tutorial-current-role platform-tutorial-hero__profile">
             <span>Profil détecté</span>
             <strong>{tutorialAudienceLabels[currentAudience]}</strong>
           </div>
         </div>
 
-        <div className="tutorial-hero__stats">
+        <div className="tutorial-hero__stats platform-tutorial-stats">
           {stats.map((stat) => (
-            <article key={stat.label}>
+            <article key={stat.label} className="platform-tutorial-stat">
               <strong>{stat.value}</strong>
               <span>{stat.label}</span>
             </article>
@@ -164,14 +164,14 @@ export default function TutorialsPage({ initialCategory, initialTutorialId }: Tu
         onAudienceChange={setAudience}
       />
 
-      <section className="tutorial-workspace">
+      <section className="tutorial-workspace platform-tutorial-section">
         <aside className="tutorial-list-panel">
           <div className="tutorial-section-heading">
             <p>Guides disponibles</p>
             <h2>Choisir un tutoriel</h2>
           </div>
 
-          <div className="tutorial-card-list">
+          <div className="tutorial-card-list platform-tutorial-section">
             {visibleTutorials.map((tutorial) => (
               <TutorialCard
                 key={tutorial.id}
