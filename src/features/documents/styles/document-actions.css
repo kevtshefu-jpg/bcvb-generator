@@ -1,0 +1,87 @@
+.document-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.document-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  border: 1px solid rgba(20, 24, 31, 0.14);
+  border-radius: 999px;
+  padding: 0 14px;
+  color: #14181f;
+  background: #ffffff;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.document-action-button--primary {
+  color: #ffffff;
+  border-color: #a32035;
+  background: #a32035;
+}
+
+.document-action-button--ghost {
+  color: #14181f;
+  background: #ffffff;
+}
+
+.document-action-button--danger {
+  color: #a32035;
+  border-color: rgba(163, 32, 53, 0.22);
+  background: rgba(163, 32, 53, 0.1);
+}
+
+.document-action-button--loading {
+  cursor: progress;
+  opacity: 0.72;
+}
+
+.document-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.54;
+}
+
+.document-export-feedback {
+  border-radius: 18px;
+  padding: 14px 16px;
+  font-weight: 900;
+  line-height: 1.45;
+}
+
+.document-export-feedback--error {
+  color: #7f1d1d;
+  background: #fff1f2;
+  border: 1px solid rgba(163, 32, 53, 0.22);
+}
+
+.document-export-feedback--success {
+  color: #14532d;
+  background: #f0fdf4;
+  border: 1px solid rgba(34, 197, 94, 0.24);
+}
+
+.document-export-feedback--loading,
+.document-export-feedback--info {
+  color: #172554;
+  background: #eff6ff;
+  border: 1px solid rgba(37, 99, 235, 0.22);
+}
+
+@media (max-width: 680px) {
+  .document-action-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .document-action-button {
+    width: 100%;
+    min-height: 42px;
+    padding: 0 10px;
+    font-size: 0.86rem;
+  }
+}

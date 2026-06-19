@@ -88,3 +88,29 @@
 - [ ] Membre : accès bibliothèque autorisée, tutoriels et FAQ
 - [ ] Arbitre / OTM / bénévole : accès aux contenus publics ou club autorisés
 
+## Exports et téléchargements rapides
+- [ ] Générer PDF depuis un document riche
+- [ ] Générer PDF depuis un document simple
+- [ ] Télécharger source disponible
+- [ ] Télécharger Markdown fallback
+- [ ] Tester double clic sur Générer PDF
+- [ ] Vérifier le message de chargement
+- [ ] Vérifier l’erreur si aucune source disponible
+
+## Suppression groupée
+- [ ] Bibliothèque : sélectionner plusieurs documents
+- [ ] Bibliothèque : annuler sélection
+- [ ] Bibliothèque : supprimer avec confirmation
+- [ ] Bibliothèque : vérifier rechargement
+- [ ] Séances : sélectionner plusieurs séances si disponible
+- [ ] Situations : sélectionner plusieurs situations si disponible
+- [ ] Admin inscriptions : archiver/supprimer plusieurs demandes
+- [ ] Admin profils : archiver/supprimer plusieurs demandes
+- [ ] Vérifier mobile
+- [ ] Vérifier desktop
+
+## Sécurité actions groupées
+- [ ] Aucun élément supprimé sans confirmation
+- [ ] Les erreurs Supabase sont visibles
+- [ ] Les demandes pending ont une confirmation renforcée
+- [ ] Les actions groupées sont réservées aux bons rôles

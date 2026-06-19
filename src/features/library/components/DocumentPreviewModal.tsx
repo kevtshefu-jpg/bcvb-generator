@@ -10,6 +10,8 @@ type DocumentPreviewModalProps = {
   onDownloadSource: (document: LibraryDocumentRow) => void
   onTransform: (document: LibraryDocumentRow) => void
   onCopySource: (document: LibraryDocumentRow) => void
+  exportLoadingId?: string | null
+  exportLoadingType?: 'pdf' | 'source' | 'markdown' | null
 }
 
 function getDocumentFamily(document: LibraryDocumentRow) {
@@ -66,6 +68,8 @@ export function DocumentPreviewModal({
   onDownloadSource,
   onTransform,
   onCopySource,
+  exportLoadingId = null,
+  exportLoadingType = null,
 }: DocumentPreviewModalProps) {
   if (!document) return null
 
@@ -74,6 +78,7 @@ export function DocumentPreviewModal({
   const pdfAvailable = canDownloadPdf(document)
   const sourceAvailable = canDownloadSource(document)
   const sourceText = document.content?.trim() || document.source_markdown?.trim()
+  const isExportLoading = exportLoadingId === document.id
 
   return (
     <div className="library-preview-backdrop" role="presentation" onClick={onClose}>
@@ -126,18 +131,22 @@ export function DocumentPreviewModal({
           <button
             type="button"
             onClick={() => onDownloadPdf(document)}
-            disabled={!pdfAvailable}
+            disabled={!pdfAvailable || isExportLoading}
             title={!pdfAvailable ? 'PDF impossible : aucune source exploitable.' : undefined}
           >
-            {pdfAvailable ? 'Télécharger PDF' : 'PDF indisponible'}
+            {isExportLoading && exportLoadingType === 'pdf'
+              ? 'Préparation PDF...'
+              : pdfAvailable ? 'Télécharger PDF' : 'PDF indisponible'}
           </button>
           <button
             type="button"
             onClick={() => onDownloadSource(document)}
-            disabled={!sourceAvailable}
+            disabled={!sourceAvailable || isExportLoading}
             title={!sourceAvailable ? 'Source indisponible.' : undefined}
           >
-            {sourceAvailable ? 'Télécharger source' : 'Source indisponible'}
+            {isExportLoading && exportLoadingType === 'source'
+              ? 'Téléchargement...'
+              : sourceAvailable ? 'Télécharger source' : 'Source indisponible'}
           </button>
           <button type="button" onClick={() => onCopySource(document)} disabled={!sourceText} title={!sourceText ? 'Source Markdown indisponible.' : undefined}>
             Copier source

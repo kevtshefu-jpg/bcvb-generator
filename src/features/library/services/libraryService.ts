@@ -1,4 +1,5 @@
 import { supabase } from '../../../lib/supabase'
+import { updateRowsByIds } from '../../../lib/bulkSupabaseActions'
 
 export type LibraryDocumentRow = {
   id: string
@@ -162,6 +163,21 @@ export async function archiveLibraryDocument(documentId: string, userId?: string
   )
 }
 
+export async function archiveLibraryDocuments(documentIds: string[], userId?: string | null) {
+  const now = new Date().toISOString()
+  return updateRowsByIds(
+    'library_documents',
+    documentIds,
+    {
+      is_archived: true,
+      archived_at: now,
+      archived_by: userId ?? null,
+      status: 'archived',
+      updated_at: now,
+    },
+  )
+}
+
 export async function softDeleteLibraryDocument(
   documentId: string,
   userId: string | null | undefined,
@@ -184,5 +200,26 @@ export async function softDeleteLibraryDocument(
       status: 'deleted',
       updated_at: now,
     }
+  )
+}
+
+export async function softDeleteLibraryDocuments(
+  documentIds: string[],
+  userId: string | null | undefined,
+  deleteReason: string
+) {
+  const now = new Date().toISOString()
+  return updateRowsByIds(
+    'library_documents',
+    documentIds,
+    {
+      is_deleted: true,
+      deleted_at: now,
+      deleted_by: userId ?? null,
+      delete_reason: deleteReason,
+      is_active: false,
+      status: 'deleted',
+      updated_at: now,
+    },
   )
 }

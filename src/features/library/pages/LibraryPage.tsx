@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
   archiveLibraryDocument,
+  archiveLibraryDocuments,
   fetchLibraryDocuments,
   createLibraryDocumentSignedUrl,
   softDeleteLibraryDocument,
+  softDeleteLibraryDocuments,
   type LibraryDocumentRow,
 } from '../services/libraryService'
 import { fetchDocumentVersions } from '../services/documentVersionService'
@@ -17,11 +19,14 @@ import LibraryMobileExperience, {
 import { canAccessDocument, canTransformDocument } from '../utils/libraryPermissions'
 import { useSafeLoading } from '../../../hooks/useSafeLoading'
 import { PRESENTATION_MODE } from '../../../config/presentationMode'
+import ActionFeedback from '../../../components/feedback/ActionFeedback'
 import {
-  downloadMarkdownDocument,
-  downloadPdfDocument,
-  downloadSourceDocument,
-} from '../../../lib/downloadDocument'
+  BulkSelectableCard,
+  BulkSelectionToolbar,
+  useBulkSelection,
+} from '../../../components/bulk'
+import { useDocumentExportActions } from '../../documents/hooks/useDocumentExportActions'
+import { canExportDocument } from '../../documents/services/documentExportService'
 import { useAuth } from '../../auth/context/AuthContext'
 import {
   saveEditorialStudioState,
@@ -38,6 +43,7 @@ import {
 } from '../../../config/documentModel.js'
 
 import './LibraryPage.css'
+import '../../documents/styles/document-actions.css'
 
 type LibraryViewMode = 'grid' | 'list'
 
@@ -251,7 +257,9 @@ function hasSource(doc: LibraryDocumentRow) {
       doc.sourcePath ||
       doc.source_path ||
       doc.sourceDownloadUrl ||
-      doc.source_download_url,
+      doc.source_download_url ||
+      doc.downloadUrl ||
+      doc.download_url,
   )
 }
 
@@ -417,6 +425,22 @@ function mapDocumentToMobileDocument(
   }
 }
 
+function toExportableDocument(doc: LibraryDocumentRow) {
+  return {
+    id: doc.id,
+    title: getDocumentTitle(doc),
+    content: doc.content || doc.source_markdown,
+    source_markdown: doc.source_markdown,
+    file_url: doc.file_url || doc.download_url || doc.downloadUrl,
+    source_download_url: doc.source_download_url,
+    sourceDownloadUrl: doc.sourceDownloadUrl,
+    pdf_url: doc.pdf_url,
+    bucket_name: doc.bucket_name,
+    storage_path: doc.storage_path,
+    updated_at: doc.updated_at,
+  }
+}
+
 /* =========================================================
    PAGE
 ========================================================= */
@@ -433,6 +457,18 @@ export default function LibraryPage() {
   const [previewDocument, setPreviewDocument] = useState<LibraryDocumentRow | null>(null)
   const [downloadError, setDownloadError] = useState<string | null>(null)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
+  const [bulkActionLoading, setBulkActionLoading] = useState(false)
+  const {
+    exportLoadingId,
+    exportLoadingType,
+    exportLoadingMessage,
+    error: exportError,
+    success: exportSuccess,
+    generatePdf,
+    downloadSource,
+    downloadMarkdown,
+    clearExportFeedback,
+  } = useDocumentExportActions()
 
   const { safeLoading, hasTimedOut } = useSafeLoading(loading, 2500)
 
@@ -609,6 +645,23 @@ export default function LibraryPage() {
     [filteredDocuments, transformAllowed],
   )
 
+  const {
+    selectedIds,
+    selectedCount,
+    isSelected,
+    toggleSelected,
+    selectAll,
+    clearSelection,
+    selectionMode,
+    toggleSelectionMode,
+    disableSelectionMode,
+  } = useBulkSelection(filteredDocuments)
+
+  const selectedDocuments = useMemo(
+    () => filteredDocuments.filter((doc) => selectedIds.has(doc.id)),
+    [filteredDocuments, selectedIds],
+  )
+
   const activeFilterCount = useMemo(() => {
     const ignoredKeys: Array<keyof LibraryFilters> = ['viewMode']
     const entries = Object.entries(filters) as Array<[keyof LibraryFilters, string]>
@@ -667,59 +720,31 @@ export default function LibraryPage() {
   }
 
   async function handleDownloadPdf(doc: LibraryDocumentRow) {
-    try {
-      setDownloadError(null)
-      setActionMessage(null)
+    setDownloadError(null)
+    setActionMessage(null)
 
-      if (hasPdf(doc) && (doc.pdf_url || doc.pdf_storage_path || lower(doc.file_ext).includes('pdf'))) {
-        await downloadSourceDocument({
-          ...doc,
-          file_url: doc.pdf_url || doc.file_url,
-          storage_path: doc.pdf_storage_path || doc.storage_path,
-        })
-        return
-      }
-
-      await downloadPdfDocument({
-        ...doc,
-        content: doc.content || doc.source_markdown,
-        source_markdown: doc.source_markdown,
+    if (hasPdf(doc) && (doc.pdf_url || doc.pdf_storage_path || lower(doc.file_ext).includes('pdf'))) {
+      await downloadSource({
+        ...toExportableDocument(doc),
+        file_url: doc.pdf_url || doc.file_url,
+        storage_path: doc.pdf_storage_path || doc.storage_path,
       })
-
-      setActionMessage('PDF généré depuis la source disponible.')
-    } catch (err) {
-      setDownloadError(err instanceof Error ? err.message : 'Téléchargement PDF impossible.')
+      return
     }
+
+    await generatePdf(toExportableDocument(doc))
   }
 
   async function handleDownloadSource(doc: LibraryDocumentRow) {
-    try {
-      setDownloadError(null)
-      setActionMessage(null)
-
-      await downloadSourceDocument({
-        ...doc,
-        content: doc.content || doc.source_markdown,
-        source_markdown: doc.source_markdown,
-      })
-    } catch (err) {
-      setDownloadError(err instanceof Error ? err.message : 'Source indisponible.')
-    }
+    setDownloadError(null)
+    setActionMessage(null)
+    await downloadSource(toExportableDocument(doc))
   }
 
   async function handleDownloadMarkdown(doc: LibraryDocumentRow) {
-    try {
-      setDownloadError(null)
-      setActionMessage(null)
-
-      await downloadMarkdownDocument({
-        ...doc,
-        content: doc.content || doc.source_markdown,
-        source_markdown: doc.source_markdown,
-      })
-    } catch (err) {
-      setDownloadError(err instanceof Error ? err.message : 'Source Markdown indisponible.')
-    }
+    setDownloadError(null)
+    setActionMessage(null)
+    await downloadMarkdown(toExportableDocument(doc))
   }
 
   async function handleCopySource(doc: LibraryDocumentRow) {
@@ -876,6 +901,125 @@ export default function LibraryPage() {
       setDownloadError(err instanceof Error ? err.message : 'Suppression sécurisée impossible.')
     } finally {
       setAdminActionId(null)
+    }
+  }
+
+  async function handleArchiveSelectedDocuments() {
+    if (!isAdminRole || selectedDocuments.length === 0) return
+
+    const confirmed = window.confirm(
+      `Archiver ${selectedDocuments.length} document(s) ? Ils seront retirés de la vue active sans suppression définitive.`,
+    )
+
+    if (!confirmed) return
+
+    try {
+      setBulkActionLoading(true)
+      setDownloadError(null)
+      setActionMessage(null)
+
+      const remoteIds = selectedDocuments
+        .filter((doc) => !doc.id.startsWith('local-draft-'))
+        .map((doc) => doc.id)
+
+      if (remoteIds.length > 0) {
+        const result = await archiveLibraryDocuments(remoteIds, user?.id)
+
+        if (!result.ok) {
+          throw new Error(result.error || 'Archivage groupé impossible.')
+        }
+      }
+
+      const selectedSet = new Set(selectedDocuments.map((doc) => doc.id))
+      const now = new Date().toISOString()
+
+      setDocuments((current) =>
+        current.map((item) =>
+          selectedSet.has(item.id)
+            ? {
+                ...item,
+                is_archived: true,
+                isArchived: true,
+                status: 'archived',
+                updated_at: now,
+              }
+            : item,
+        ),
+      )
+
+      clearSelection()
+      setActionMessage(`${selectedDocuments.length} document(s) archivé(s).`)
+      await loadDocuments()
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Archivage groupé impossible.')
+    } finally {
+      setBulkActionLoading(false)
+    }
+  }
+
+  async function handleDeleteSelectedDocuments() {
+    if (!isAdminRole || selectedDocuments.length === 0) return
+
+    const confirmed = window.confirm(
+      `Supprimer ${selectedDocuments.length} document(s) ? Cette action peut être irréversible selon la configuration.`,
+    )
+
+    if (!confirmed) return
+
+    const reason = window.prompt(
+      'Motif de suppression groupée :',
+      'Suppression groupée depuis la bibliothèque BCVB',
+    )
+
+    if (reason === null) return
+
+    try {
+      setBulkActionLoading(true)
+      setDownloadError(null)
+      setActionMessage(null)
+
+      const remoteIds = selectedDocuments
+        .filter((doc) => !doc.id.startsWith('local-draft-'))
+        .map((doc) => doc.id)
+
+      if (remoteIds.length > 0) {
+        const result = await softDeleteLibraryDocuments(
+          remoteIds,
+          user?.id,
+          reason.trim() || 'Suppression groupée depuis la bibliothèque BCVB',
+        )
+
+        if (!result.ok) {
+          throw new Error(result.error || 'Suppression groupée impossible.')
+        }
+      }
+
+      const selectedSet = new Set(selectedDocuments.map((doc) => doc.id))
+      const now = new Date().toISOString()
+
+      setDocuments((current) =>
+        current.map((item) =>
+          selectedSet.has(item.id)
+            ? {
+                ...item,
+                is_deleted: true,
+                isDeleted: true,
+                is_active: false,
+                delete_reason: reason.trim() || 'Suppression groupée depuis la bibliothèque BCVB',
+                status: 'deleted',
+                updated_at: now,
+              }
+            : item,
+        ),
+      )
+
+      clearSelection()
+      setActionMessage(`${selectedDocuments.length} document(s) supprimé(s) de façon sécurisée.`)
+      await loadDocuments()
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Suppression groupée impossible.')
+    } finally {
+      setBulkActionLoading(false)
     }
   }
 
@@ -1036,6 +1180,12 @@ export default function LibraryPage() {
           </label>
 
           <div className="library-toolbar__actions">
+            {isAdminRole ? (
+              <button type="button" onClick={toggleSelectionMode}>
+                {selectionMode ? 'Quitter sélection' : 'Sélection multiple'}
+              </button>
+            ) : null}
+
             <button type="button" onClick={resetFilters}>
               Réinitialiser filtres
             </button>
@@ -1104,14 +1254,63 @@ export default function LibraryPage() {
             ) : null}
 
             {downloadError ? (
-              <div className="bcvb-demo-fallback">
-                <p className="bcvb-eyebrow">Téléchargement</p>
-                <h2>Action indisponible</h2>
-                <p>{downloadError}</p>
-              </div>
+              <ActionFeedback
+                type="error"
+                title="Action indisponible"
+                message={downloadError}
+                onClose={() => setDownloadError(null)}
+              />
             ) : null}
 
-            {actionMessage ? <p className="library-action-message">{actionMessage}</p> : null}
+            {exportLoadingId && exportLoadingMessage ? (
+              <ActionFeedback
+                type="loading"
+                title="Export documentaire"
+                message={exportLoadingMessage}
+              />
+            ) : null}
+
+            {exportError ? (
+              <ActionFeedback
+                type="error"
+                title="Export impossible"
+                message={exportError}
+                onClose={clearExportFeedback}
+              />
+            ) : null}
+
+            {exportSuccess ? (
+              <ActionFeedback
+                type="success"
+                title="Export terminé"
+                message={exportSuccess}
+                onClose={clearExportFeedback}
+              />
+            ) : null}
+
+            {actionMessage ? (
+              <ActionFeedback
+                type="success"
+                title="Bibliothèque"
+                message={actionMessage}
+                onClose={() => setActionMessage(null)}
+              />
+            ) : null}
+
+            {selectionMode && isAdminRole ? (
+              <BulkSelectionToolbar
+                selectedCount={selectedCount}
+                totalCount={filteredDocuments.length}
+                onSelectAll={selectAll}
+                onClear={clearSelection}
+                onArchiveSelected={handleArchiveSelectedDocuments}
+                onDeleteSelected={handleDeleteSelectedDocuments}
+                onCancel={disableSelectionMode}
+                archiveLabel="Archiver sélection"
+                deleteLabel="Supprimer sélection"
+                isDeleting={bulkActionLoading}
+              />
+            ) : null}
 
             {!safeLoading && filteredDocuments.length === 0 ? (
               <article className="library-empty">
@@ -1125,9 +1324,28 @@ export default function LibraryPage() {
                 const sourceAvailable = hasSource(doc)
                 const pdfAvailable = hasPdf(doc)
                 const canPdf = pdfAvailable || canGeneratePdf(doc)
+                const exportableDoc = toExportableDocument(doc)
+                const markdownAvailable = canExportDocument(exportableDoc, 'markdown')
+                const isCurrentExportLoading = exportLoadingId === doc.id
+                const pdfLabel =
+                  isCurrentExportLoading && exportLoadingType === 'pdf'
+                    ? 'Préparation PDF...'
+                    : isCurrentExportLoading && exportLoadingType === 'source'
+                      ? 'Téléchargement...'
+                      : pdfAvailable
+                        ? 'Télécharger PDF'
+                        : canGeneratePdf(doc)
+                          ? 'Générer PDF'
+                          : 'PDF indisponible'
 
                 return (
-                  <article className="library-card" key={doc.id}>
+                  <BulkSelectableCard
+                    key={doc.id}
+                    selected={isSelected(doc.id)}
+                    selectionMode={selectionMode && isAdminRole}
+                    onToggleSelected={() => toggleSelected(doc.id)}
+                  >
+                  <article className="library-card">
                     <header>
                       <div>
                         <p className="bcvb-eyebrow">{getFamily(doc)}</p>
@@ -1182,49 +1400,78 @@ export default function LibraryPage() {
                       )}
                     </div>
 
-                    <div className="library-card__actions">
+                    <div className="library-card__actions document-action-row">
                       <button
                         type="button"
+                        className="document-action-button document-action-button--primary"
                         onClick={() => handleOpenDocument(doc)}
                         disabled={openingId === doc.id}
                       >
                         {openingId === doc.id ? 'Ouverture...' : 'Ouvrir'}
                       </button>
 
-                      <button type="button" onClick={() => setPreviewDocument(doc)}>
+                      <button
+                        type="button"
+                        className="document-action-button document-action-button--ghost"
+                        onClick={() => setPreviewDocument(doc)}
+                      >
                         Prévisualiser
                       </button>
 
                       <button
                         type="button"
+                        className={[
+                          'document-action-button',
+                          pdfAvailable ? 'document-action-button--ghost' : 'document-action-button--primary',
+                          isCurrentExportLoading ? 'document-action-button--loading' : '',
+                        ].filter(Boolean).join(' ')}
                         onClick={() => handleDownloadPdf(doc)}
-                        disabled={!canPdf}
+                        disabled={!canPdf || isCurrentExportLoading}
                         title={!canPdf ? 'PDF à générer, mais aucune source exploitable.' : undefined}
                       >
-                        {pdfAvailable ? 'Télécharger PDF' : canGeneratePdf(doc) ? 'Générer PDF' : 'PDF indisponible'}
+                        {pdfLabel}
                       </button>
 
                       <button
                         type="button"
+                        className={[
+                          'document-action-button',
+                          'document-action-button--ghost',
+                          isCurrentExportLoading && exportLoadingType === 'source'
+                            ? 'document-action-button--loading'
+                            : '',
+                        ].filter(Boolean).join(' ')}
                         onClick={() => handleDownloadSource(doc)}
-                        disabled={!sourceAvailable}
+                        disabled={!sourceAvailable || isCurrentExportLoading}
                         title={!sourceAvailable ? 'Source indisponible.' : undefined}
                       >
-                        {sourceAvailable ? 'Télécharger source' : 'Source indisponible'}
+                        {isCurrentExportLoading && exportLoadingType === 'source'
+                          ? 'Téléchargement...'
+                          : sourceAvailable ? 'Télécharger source' : 'Source indisponible'}
                       </button>
 
                       <button
                         type="button"
+                        className={[
+                          'document-action-button',
+                          'document-action-button--ghost',
+                          isCurrentExportLoading && exportLoadingType === 'markdown'
+                            ? 'document-action-button--loading'
+                            : '',
+                        ].filter(Boolean).join(' ')}
                         onClick={() => handleDownloadMarkdown(doc)}
-                        disabled={!canGeneratePdf(doc)}
-                        title={!canGeneratePdf(doc) ? 'Source Markdown indisponible.' : undefined}
+                        disabled={!markdownAvailable || isCurrentExportLoading}
+                        title={!markdownAvailable ? 'Source Markdown indisponible.' : undefined}
                       >
-                        Markdown
+                        {isCurrentExportLoading && exportLoadingType === 'markdown'
+                          ? 'Préparation Markdown...'
+                          : 'Markdown'}
                       </button>
 
                       {transformAllowed ? (
                         <button
                           type="button"
+                          className="document-action-button document-action-button--ghost"
                           onClick={() => handleTransform(doc)}
                           disabled={!sourceAvailable}
                           title={!sourceAvailable ? 'Transformation impossible : source indisponible.' : undefined}
@@ -1241,6 +1488,7 @@ export default function LibraryPage() {
                         <>
                           <button
                             type="button"
+                            className="document-action-button document-action-button--ghost"
                             onClick={() => handleArchive(doc)}
                             disabled={adminActionId === doc.id || isArchived(doc) || isDeleted(doc)}
                           >
@@ -1249,7 +1497,7 @@ export default function LibraryPage() {
 
                           <button
                             type="button"
-                            className="library-card__danger"
+                            className="document-action-button document-action-button--danger library-card__danger"
                             onClick={() => handleSoftDelete(doc)}
                             disabled={adminActionId === doc.id || isDeleted(doc)}
                           >
@@ -1259,6 +1507,7 @@ export default function LibraryPage() {
                       ) : null}
                     </div>
                   </article>
+                  </BulkSelectableCard>
                 )
               })}
             </div>
@@ -1276,6 +1525,8 @@ export default function LibraryPage() {
           onDownloadSource={handleDownloadSource}
           onTransform={handleTransform}
           onCopySource={handleCopySource}
+          exportLoadingId={exportLoadingId}
+          exportLoadingType={exportLoadingType}
         />
       ) : null}
     </section>

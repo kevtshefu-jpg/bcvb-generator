@@ -1,0 +1,118 @@
+.bulk-selection-toolbar {
+  position: sticky;
+  top: 12px;
+  z-index: 12;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(20, 24, 31, 0.12);
+  border-radius: 20px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 16px 34px rgba(16, 24, 39, 0.12);
+  backdrop-filter: blur(12px);
+}
+
+.bulk-selection-toolbar strong {
+  color: #14181f;
+}
+
+.bulk-selection-toolbar span {
+  color: rgba(20, 24, 31, 0.64);
+  font-weight: 850;
+}
+
+.bulk-selection-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bulk-selection-toolbar button {
+  min-height: 36px;
+  border: 1px solid rgba(20, 24, 31, 0.14);
+  border-radius: 999px;
+  padding: 0 12px;
+  color: #14181f;
+  background: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.bulk-selection-toolbar button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.bulk-selection-toolbar__danger {
+  color: #ffffff !important;
+  border-color: #a32035 !important;
+  background: #a32035 !important;
+}
+
+.bulk-selectable-card {
+  position: relative;
+  min-width: 0;
+}
+
+.bulk-selectable-card.is-selected > .library-card {
+  border-color: rgba(163, 32, 53, 0.48);
+  box-shadow: 0 18px 42px rgba(163, 32, 53, 0.14);
+}
+
+.bulk-selectable-card__checkbox {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 3;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  border-radius: 999px;
+  padding: 8px 10px;
+  color: #14181f;
+  background: #ffffff;
+  box-shadow: 0 10px 22px rgba(16, 24, 39, 0.16);
+  font-size: 0.82rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.bulk-selectable-card__checkbox input {
+  width: 18px;
+  height: 18px;
+  accent-color: #a32035;
+}
+
+.bulk-selectable-card .bulk-selectable-card__checkbox + .library-card {
+  padding-top: 58px;
+}
+
+@media (max-width: 680px) {
+  .bulk-selection-toolbar {
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    left: 12px;
+    display: grid;
+  }
+
+  .bulk-selection-toolbar__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bulk-selection-toolbar button {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .bulk-selectable-card__checkbox {
+    top: 10px;
+    left: 10px;
+    min-height: 42px;
+  }
+}
