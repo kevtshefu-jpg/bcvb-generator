@@ -117,3 +117,15 @@
 - [ ] Les erreurs Supabase sont visibles
 - [ ] Les demandes pending ont une confirmation renforcée
 - [ ] Les actions groupées sont réservées aux bons rôles
+
+## Anti-débordement visuel
+- [ ] Les badges ne débordent pas dans `/bibliotheque`
+- [ ] Les tags documents ne sortent pas des cartes
+- [ ] Les statuts OK / critique / à surveiller restent lisibles
+- [ ] Les cartes dirigeants ne débordent pas
+- [ ] Les cartes club/pilotage ne débordent pas
+- [ ] Les filtres tutoriels scrollent correctement
+- [ ] Les onglets longs scrollent ou sont tronqués proprement
+- [ ] Les boutons longs ne cassent pas la toolbar
+- [ ] Aucun scroll horizontal global sur mobile
+- [ ] Aucun scroll horizontal global sur MacBook Air

@@ -297,45 +297,145 @@ export default function EditorialStudioPage() {
     },
   ]
 
+  const nextStudioAction = (() => {
+    if (!state.sourceText.trim()) {
+      return {
+        eyebrow: 'Prochaine action',
+        title: 'Ajouter une source exploitable',
+        text: 'Commence par coller un prompt, un texte OCR, une note admin ou un fichier afin de nourrir la production documentaire.',
+        actionLabel: 'Aller à la source',
+        action: () => scrollToStudioBlock('studio-source'),
+        secondaryLabel: 'Générer un prompt',
+        secondaryAction: () => generatePrompt('chatgpt'),
+      }
+    }
+
+    if (!state.editorialPlan.trim()) {
+      return {
+        eyebrow: 'Prochaine action',
+        title: 'Construire le plan éditorial',
+        text: 'Transforme la source en structure BCVB claire : intention, progression, situations, critères et publication.',
+        actionLabel: 'Générer le plan',
+        action: () => patch({ editorialPlan: buildPlanDraft(state) }),
+        secondaryLabel: 'Ouvrir l’éditeur',
+        secondaryAction: () => scrollToStudioBlock('studio-editor'),
+      }
+    }
+
+    if (!finalDocumentExists) {
+      return {
+        eyebrow: 'Prochaine action',
+        title: 'Produire le document final',
+        text: 'Génère ou colle la réponse IA, puis analyse-la pour alimenter le document BCVB Rich Markdown.',
+        actionLabel: 'Analyser la réponse',
+        action: analyzeResponse,
+        secondaryLabel: 'Prompt fusion',
+        secondaryAction: () => generatePrompt('fusion'),
+      }
+    }
+
+    if (state.qualityScore < 95) {
+      return {
+        eyebrow: 'Prochaine action',
+        title: 'Améliorer la qualité avant publication',
+        text: 'Le document existe : il faut maintenant renforcer sa structure, son identité BCVB et sa lisibilité terrain.',
+        actionLabel: 'Améliorer fortement',
+        action: () => generatePrompt('massive-correction'),
+        secondaryLabel: 'Voir les warnings',
+        secondaryAction: () => scrollToStudioBlock('studio-assistance'),
+      }
+    }
+
+    return {
+      eyebrow: 'Prochaine action',
+      title: 'Document prêt pour relecture finale',
+      text: 'Le score est haut : relis l’aperçu, conserve la source et prépare la diffusion depuis les actions existantes.',
+      actionLabel: 'Prévisualiser',
+      action: () => scrollToStudioBlock('studio-preview'),
+      secondaryLabel: 'Enregistrer',
+      secondaryAction: saveStudioNow,
+    }
+  })()
+
   return (
-    <main className="editorial-studio-page bcvb-page">
-      <section className="editorial-studio-hero">
+    <main className="editorial-studio-page editorial-studio-premium bcvb-page bcvb-premium-page">
+      <section className="editorial-studio-hero bcvb-premium-hero">
         <div>
-          <p className="bcvb-eyebrow">Studio éditorial documentaire</p>
-          <h1>Produire, transformer, contrôler, exporter</h1>
-          <p>
+          <p className="bcvb-eyebrow bcvb-premium-hero__eyebrow">Studio éditorial documentaire</p>
+          <h1 className="bcvb-premium-hero__title">Produire, transformer, contrôler, exporter</h1>
+          <p className="bcvb-premium-hero__text">
             Un outil de production documentaire BCVB pensé pour la publication club,
             avec prompts spécialisés, contrôle qualité et reprise de travail automatique.
           </p>
         </div>
-        <div className="editorial-studio-hero__actions">
-          <button type="button" onClick={resumeWork}>Reprendre mon travail</button>
-          <button type="button" onClick={resetStudio}>Réinitialiser le studio</button>
-          <Link to="/admin/ia-documentaire">Ancien studio avancé</Link>
+        <div className="editorial-studio-hero__actions bcvb-premium-actions">
+          <button className="bcvb-premium-button bcvb-premium-button--primary" type="button" onClick={resumeWork}>Reprendre mon travail</button>
+          <button className="bcvb-premium-button bcvb-premium-button--danger" type="button" onClick={resetStudio}>Réinitialiser le studio</button>
+          <Link className="bcvb-premium-button bcvb-premium-button--ghost" to="/admin/ia-documentaire">Ancien studio avancé</Link>
         </div>
       </section>
 
       <section className="editorial-stepper">
-        {EDITORIAL_STUDIO_STEPS.map((step) => (
-          <article className={`editorial-step editorial-step--${getStepStatus(step.id).replace(/\s+/g, '-')}`} key={step.id}>
-            <span>{step.label}</span>
-            <strong>{getStepStatus(step.id)}</strong>
-          </article>
-        ))}
+        {EDITORIAL_STUDIO_STEPS.map((step) => {
+          const stepStatus = getStepStatus(step.id)
+          const premiumStatusClass =
+            stepStatus === 'validé'
+              ? 'bcvb-premium-status--done'
+              : stepStatus === 'à corriger'
+                ? 'bcvb-premium-status--warning'
+                : stepStatus === 'en cours'
+                  ? 'bcvb-premium-status--progress'
+                  : 'bcvb-premium-status--pending'
+
+          return (
+            <article
+              className={[
+                'editorial-step',
+                'editorial-step-card',
+                stepStatus !== 'non démarré' ? 'editorial-step-card--active' : '',
+                `editorial-step--${stepStatus.replace(/\s+/g, '-')}`,
+              ].filter(Boolean).join(' ')}
+              key={step.id}
+            >
+              <span>{step.label}</span>
+              <strong className={`bcvb-premium-status ${premiumStatusClass}`}>{stepStatus}</strong>
+            </article>
+          )
+        })}
       </section>
 
-      <section className="editorial-top-toolbar">
-        <button type="button" onClick={saveStudioNow}>Sauvegarder</button>
-        <button type="button" onClick={() => { analyzeResponse(); scrollToStudioBlock('studio-preview') }}>Prévisualiser</button>
-        <button type="button" onClick={analyzeResponse}>Scorer</button>
-        <button type="button" onClick={() => generatePrompt('massive-correction')}>Améliorer</button>
-        <button type="button" onClick={exportPdf}>Exporter</button>
-        <button type="button" onClick={resumeWork}>Historique</button>
+      <section className="editorial-top-toolbar editorial-action-bar bcvb-premium-toolbar bcvb-toolbar-safe">
+        <div className="bcvb-premium-toolbar__main bcvb-action-row-safe">
+          <button className="bcvb-premium-button bcvb-premium-button--primary" type="button" onClick={saveStudioNow}>Sauvegarder</button>
+          <button className="bcvb-premium-button bcvb-premium-button--secondary" type="button" onClick={() => { analyzeResponse(); scrollToStudioBlock('studio-preview') }}>Prévisualiser</button>
+          <button className="bcvb-premium-button bcvb-premium-button--secondary" type="button" onClick={analyzeResponse}>Scorer</button>
+          <button className="bcvb-premium-button bcvb-premium-button--primary" type="button" onClick={() => generatePrompt('massive-correction')}>Améliorer</button>
+        </div>
+        <div className="bcvb-premium-toolbar__secondary bcvb-action-row-safe">
+          <button className="bcvb-premium-button bcvb-premium-button--ghost" type="button" onClick={exportPdf}>Exporter</button>
+          <button className="bcvb-premium-button bcvb-premium-button--ghost" type="button" onClick={resumeWork}>Historique</button>
+        </div>
       </section>
 
-      <div className="editorial-studio-layout editorial-studio-layout--workbench">
-        <aside className="editorial-source-column" id="studio-source">
-          <section className="editorial-panel">
+      <section className="editorial-next-step bcvb-premium-card bcvb-premium-card--priority bcvb-card-safe">
+        <div>
+          <p className="bcvb-premium-card__eyebrow bcvb-tag-safe">{nextStudioAction.eyebrow}</p>
+          <h2 className="bcvb-premium-card__title bcvb-text-clamp-2">{nextStudioAction.title}</h2>
+          <p className="bcvb-premium-card__text bcvb-text-clamp-3">{nextStudioAction.text}</p>
+        </div>
+        <div className="bcvb-premium-actions bcvb-action-row-safe">
+          <button className="bcvb-premium-button bcvb-premium-button--primary" type="button" onClick={nextStudioAction.action}>
+            {nextStudioAction.actionLabel}
+          </button>
+          <button className="bcvb-premium-button bcvb-premium-button--ghost" type="button" onClick={nextStudioAction.secondaryAction}>
+            {nextStudioAction.secondaryLabel}
+          </button>
+        </div>
+      </section>
+
+      <div className="editorial-studio-layout editorial-studio-layout--workbench editorial-workbench">
+        <aside className="editorial-source-column editorial-workbench__side" id="studio-source">
+          <section className="editorial-panel editorial-step-card">
             <header>
               <p className="bcvb-eyebrow">Source</p>
               <h2>Prompt initial</h2>
@@ -354,7 +454,7 @@ export default function EditorialStudioPage() {
             {copied && <p className="editorial-message">{copied}</p>}
           </section>
 
-          <section className="editorial-panel">
+          <section className="editorial-panel editorial-step-card">
             <header>
               <p className="bcvb-eyebrow">OCR / texte brut</p>
               <h2>Sources importées</h2>
@@ -378,7 +478,7 @@ export default function EditorialStudioPage() {
             />
           </section>
 
-          <section className="editorial-panel">
+          <section className="editorial-panel editorial-step-card">
             <header>
               <p className="bcvb-eyebrow">Notes admin</p>
               <h2>Cadrage et métadonnées</h2>
@@ -413,8 +513,8 @@ export default function EditorialStudioPage() {
           </section>
         </aside>
 
-        <section className="editorial-editor-column" id="studio-editor">
-          <section className="editorial-panel editorial-editor-shell">
+        <section className="editorial-editor-column editorial-workbench__main" id="studio-editor">
+          <section className="editorial-panel editorial-step-card editorial-editor-shell">
             <header>
               <p className="bcvb-eyebrow">Éditeur</p>
               <h2>BCVB Rich Markdown</h2>
@@ -436,7 +536,7 @@ export default function EditorialStudioPage() {
             />
           </section>
 
-          <section className="editorial-panel">
+          <section className="editorial-panel editorial-step-card">
             <header>
               <p className="bcvb-eyebrow">Structure</p>
               <h2>Plan et production IA</h2>
@@ -466,7 +566,7 @@ export default function EditorialStudioPage() {
             </div>
           </section>
 
-          <section className="editorial-panel">
+          <section className="editorial-panel editorial-step-card">
             <header>
               <p className="bcvb-eyebrow">Réponses IA</p>
               <h2>Comparer et analyser</h2>
@@ -487,7 +587,7 @@ export default function EditorialStudioPage() {
             </div>
           </section>
 
-          <section className="editorial-panel editorial-preview" id="studio-preview">
+          <section className="editorial-panel editorial-step-card editorial-preview" id="studio-preview">
             <header>
               <p className="bcvb-eyebrow">Aperçu / Export</p>
               <h2>Document final</h2>
@@ -509,8 +609,8 @@ export default function EditorialStudioPage() {
           </section>
         </section>
 
-        <aside className="editorial-assistance-column">
-          <section className="editorial-status-sidebar">
+        <aside className="editorial-assistance-column editorial-workbench__side" id="studio-assistance">
+          <section className="editorial-status-sidebar editorial-quality-panel bcvb-premium-card">
             <p className="bcvb-eyebrow">Assistance</p>
             <h2>{state.targetDocument}</h2>
             <div className="editorial-quality-summary editorial-quality-summary--compact">
@@ -530,7 +630,7 @@ export default function EditorialStudioPage() {
             <p className="editorial-message">{message}</p>
           </section>
 
-          <section className="editorial-panel editorial-assist-panel">
+          <section className="editorial-panel editorial-step-card editorial-assist-panel">
             <header>
               <p className="bcvb-eyebrow">Recommandations</p>
               <h2>À améliorer</h2>
@@ -542,7 +642,7 @@ export default function EditorialStudioPage() {
             </ul>
           </section>
 
-          <section className="editorial-panel editorial-assist-panel">
+          <section className="editorial-panel editorial-step-card editorial-assist-panel">
             <header>
               <p className="bcvb-eyebrow">Warnings</p>
               <h2>Points à relire</h2>
@@ -554,7 +654,7 @@ export default function EditorialStudioPage() {
             </ul>
           </section>
 
-          <section className="editorial-panel editorial-assist-panel">
+          <section className="editorial-panel editorial-step-card editorial-assist-panel">
             <header>
               <p className="bcvb-eyebrow">Actions rapides</p>
               <h2>Améliorer sans chercher</h2>
@@ -568,7 +668,7 @@ export default function EditorialStudioPage() {
             </div>
           </section>
 
-          <section className="editorial-panel editorial-assist-panel">
+          <section className="editorial-panel editorial-step-card editorial-assist-panel">
             <header>
               <p className="bcvb-eyebrow">Checklist publication</p>
               <h2>Avant diffusion</h2>

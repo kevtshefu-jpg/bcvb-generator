@@ -1,0 +1,615 @@
+/* Defensive overflow rules.
+   This file is presentation-only: no component structure or business logic depends on it. */
+
+:where(html, body, #root) {
+  max-width: 100%;
+}
+
+body {
+  overflow-x: clip;
+}
+
+.bcvb-no-overflow {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.bcvb-text-balance {
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.bcvb-text-clamp-1,
+.bcvb-text-clamp-2,
+.bcvb-text-clamp-3 {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.bcvb-text-clamp-1 {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.bcvb-text-clamp-2,
+.bcvb-text-clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+}
+
+.bcvb-text-clamp-2 {
+  -webkit-line-clamp: 2;
+}
+
+.bcvb-text-clamp-3 {
+  -webkit-line-clamp: 3;
+}
+
+.bcvb-chip-safe,
+.bcvb-tag-safe,
+.bcvb-badge-safe,
+.bcvb-status-safe,
+.bcvb-theme-chip-safe,
+.bcvb-tab-safe,
+.bcvb-action-button-safe {
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.25;
+}
+
+.bcvb-card-safe {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.bcvb-card-safe > * {
+  min-width: 0;
+}
+
+.bcvb-grid-safe {
+  min-width: 0;
+  max-width: 100%;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+}
+
+.bcvb-grid-safe > * {
+  min-width: 0;
+}
+
+.bcvb-scroll-row,
+.bcvb-toolbar-safe,
+.bcvb-action-row-safe,
+.bcvb-tabs-safe {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bcvb-scroll-row,
+.bcvb-action-row-safe,
+.bcvb-tabs-safe {
+  display: flex;
+  gap: 8px;
+}
+
+.bcvb-scroll-row > *,
+.bcvb-action-row-safe > *,
+.bcvb-tabs-safe > * {
+  flex: 0 0 auto;
+  max-width: min(100%, 260px);
+}
+
+:where(
+  .bcvb-page,
+  .bcvb-premium-page,
+  .dashboard-page,
+  .document-page,
+  .library-page,
+  .studio-page,
+  .editorial-studio-page,
+  .platform-tutorial-page,
+  .coach-page,
+  .coach-tool-page,
+  .session-builder-page,
+  .planning-builder-page,
+  .directors-page,
+  .parent-referent-page,
+  .admin-page,
+  .app-main,
+  .main-content
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+:where(
+  .app-shell,
+  .public-shell,
+  .member-shell,
+  .public-main,
+  .member-main,
+  .public-content,
+  .member-main__content,
+  .topbar,
+  .topbar-context,
+  .topbar__left,
+  .topbar__right,
+  .topbar__brandLine,
+  .topbar__brandText,
+  .topbar__identityCard,
+  .primary-navigation,
+  .sidebar,
+  .sidebar__section,
+  .sidebar__sectionLinks,
+  .member-sidebar,
+  .member-nav,
+  .mobile-nav,
+  .mobile-nav-panel,
+  .mobile-nav-panel__content
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+:where(
+  .topbar__title,
+  .topbar__subtitle,
+  .topbar__eyebrow,
+  .topbar__name,
+  .topbar__role,
+  .sidebar__link,
+  .sidebar__linkText,
+  .sidebar__linkLabel,
+  .sidebar__linkHint,
+  .member-nav__link,
+  .member-user-card,
+  .member-user-card__name,
+  .member-user-card__meta,
+  .mobile-nav-panel__link,
+  .mobile-nav-panel__text,
+  .mobile-nav__quickLink
+) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+:where(
+  .bcvb-card,
+  .bcvb-tool-card,
+  .bcvb-premium-card,
+  .v33-card,
+  .v33-panel,
+  .library-card,
+  .director-card,
+  .director-kpi,
+  .role-dashboard-card,
+  .parent-referent-kpi-grid article,
+  .editorial-panel,
+  .editorial-step,
+  .session-card,
+  .session-dock-card,
+  .session-library-card,
+  .session-situation-card,
+  .court-card,
+  .faq-card,
+  .tutorial-card,
+  .admin-card,
+  .module-card,
+  .dashboard-card,
+  .bulk-selectable-card
+) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+:where(
+  .bcvb-card *,
+  .bcvb-tool-card *,
+  .bcvb-premium-card *,
+  .v33-card *,
+  .v33-panel *,
+  .library-card *,
+  .director-card *,
+  .role-dashboard-card *,
+  .editorial-panel *,
+  .editorial-step *,
+  .session-card *,
+  .session-dock-card *,
+  .session-library-card *,
+  .court-card *
+) {
+  min-width: 0;
+}
+
+:where(
+  .bcvb-status-pill,
+  .bcvb-premium-status,
+  .library-card__status,
+  .director-readonly-badge,
+  .director-status-badge,
+  .library-card__tags span,
+  .library-card__meta span,
+  .library-card__version span,
+  .library-preview-modal__meta span,
+  .mobile-nav-panel__badge,
+  .sidebar__adminBadge,
+  .session-resume-badge,
+  .session-status-strip span,
+  .session-dock-card__label,
+  .v33-sectionHead__badge,
+  .tag,
+  .badge,
+  .chip
+) {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.25;
+}
+
+:where(
+  button,
+  .button,
+  .bcvb-button,
+  .bcvb-premium-button,
+  .document-action-button,
+  .bulk-selection-toolbar button,
+  .library-toolbar button,
+  .library-view-toggle button,
+  .editorial-actions button,
+  .editorial-top-toolbar button,
+  .session-actions button,
+  .session-hero-btn,
+  .session-more-actions button,
+  .session-dock-actions button,
+  .topbar__logout,
+  .secondary-button,
+  [role='button']
+) {
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  text-align: center;
+}
+
+:where(
+  .tabs,
+  .tab-list,
+  .tabbar,
+  .bcvb-tabs,
+  .library-view-toggle,
+  .editorial-mode-grid,
+  .session-step-nav,
+  .session-status-strip,
+  .session-fixed-dock__scroll,
+  .mobile-nav__quickLinks,
+  .primary-navigation,
+  [role='tablist'],
+  [class*='tabs'],
+  [class*='Tabs'],
+  [class*='tab-list'],
+  [class*='TabList']
+) {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
+:where(
+  .tabs > *,
+  .tab-list > *,
+  .tabbar > *,
+  .bcvb-tabs > *,
+  .library-view-toggle > *,
+  .editorial-mode-grid > *,
+  .session-step-nav > *,
+  .session-status-strip > *,
+  .session-fixed-dock__scroll > *,
+  .mobile-nav__quickLinks > *,
+  .primary-navigation > *,
+  [role='tablist'] > *
+) {
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+
+:where(
+  .bcvb-premium-grid,
+  .bcvb-grid-4,
+  .v33-grid,
+  .role-dashboard-grid,
+  .library-documents,
+  .director-kpi-grid,
+  .directors-grid,
+  .session-layout,
+  .session-workspace,
+  .session-editor-layout,
+  .session-resume-layout,
+  .session-form-grid,
+  .session-court-layout,
+  .parent-referent-layout,
+  .editorial-workbench,
+  .library-layout,
+  .platform-tutorial-section
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+:where(
+  .library-preview-backdrop,
+  .library-preview-modal,
+  .modal,
+  .dialog,
+  [role='dialog']
+) {
+  max-width: 100%;
+  min-width: 0;
+}
+
+:where(
+  .app-shell,
+  .public-shell,
+  .bcvb-premium-page,
+  .dashboard-page,
+  .admin-page,
+  .document-page,
+  .library-page,
+  .studio-page,
+  .editorial-studio-page,
+  .platform-tutorial-page,
+  .coach-page,
+  .coach-tool-page,
+  .session-builder-page,
+  .planning-builder-page
+) :where(
+  [class*='card'],
+  [class*='Card'],
+  [class*='panel'],
+  [class*='Panel'],
+  [class*='module'],
+  [class*='Module']
+) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+:where(
+  .app-shell,
+  .public-shell,
+  .bcvb-premium-page,
+  .dashboard-page,
+  .admin-page,
+  .document-page,
+  .library-page,
+  .studio-page,
+  .editorial-studio-page,
+  .platform-tutorial-page,
+  .coach-page,
+  .coach-tool-page,
+  .session-builder-page,
+  .planning-builder-page
+) :where(
+  [class*='badge'],
+  [class*='Badge'],
+  [class*='tag'],
+  [class*='Tag'],
+  [class*='chip'],
+  [class*='Chip'],
+  [class*='status'],
+  [class*='Status'],
+  [class*='pill'],
+  [class*='Pill'],
+  [class*='label'],
+  [class*='Label']
+) {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.25;
+}
+
+:where(
+  .app-shell,
+  .public-shell,
+  .bcvb-premium-page,
+  .dashboard-page,
+  .admin-page,
+  .document-page,
+  .library-page,
+  .studio-page,
+  .editorial-studio-page,
+  .platform-tutorial-page,
+  .coach-page,
+  .coach-tool-page,
+  .session-builder-page,
+  .planning-builder-page
+) :where(
+  [class*='grid'],
+  [class*='Grid'],
+  [class*='layout'],
+  [class*='Layout']
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+:where(
+  .app-shell,
+  .public-shell,
+  .bcvb-premium-page,
+  .dashboard-page,
+  .admin-page,
+  .document-page,
+  .library-page,
+  .studio-page,
+  .editorial-studio-page,
+  .platform-tutorial-page,
+  .coach-page,
+  .coach-tool-page,
+  .session-builder-page,
+  .planning-builder-page
+) :where(
+  [class*='tab'],
+  [class*='Tab'],
+  [class*='theme'],
+  [class*='Theme']
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+:where(
+  img,
+  svg,
+  canvas,
+  video,
+  iframe,
+  table,
+  pre,
+  code
+) {
+  max-width: 100%;
+}
+
+:where(img, video, canvas, iframe) {
+  height: auto;
+}
+
+:where(svg) {
+  flex-shrink: 0;
+}
+
+:where(pre, code) {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+:where(table) {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+:where(input, select, textarea) {
+  max-width: 100%;
+  min-width: 0;
+}
+
+:where(
+  .bcvb-court-svg,
+  .court-editor,
+  .court-card,
+  .court-shell,
+  .session-court-layout,
+  .session-court-panel,
+  .session-preview,
+  .session-fixed-dock,
+  .session-fixed-dock__inner
+) {
+  max-width: 100%;
+  min-width: 0;
+}
+
+:where(
+  .session-fixed-dock,
+  .mobile-nav,
+  .mobile-nav-panel
+) {
+  max-width: 100vw;
+}
+
+:where(
+  .document-action-row,
+  .library-card__actions,
+  .library-card__action-group,
+  .bcvb-premium-actions,
+  .editorial-actions,
+  .session-actions,
+  .session-hero-actions,
+  .session-more-actions__group,
+  .bulk-selection-toolbar__actions
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  :where(
+    .bcvb-premium-actions,
+    .document-action-row,
+    .library-card__actions,
+    .library-toolbar__actions,
+    .bulk-selection-toolbar__actions,
+    .editorial-actions,
+    .editorial-top-toolbar,
+    .session-actions,
+    .session-hero-actions,
+    .session-more-actions__group,
+    .session-dock-actions
+  ) {
+    min-width: 0;
+  }
+
+  :where(
+    button,
+    .button,
+    .bcvb-button,
+    .bcvb-premium-button,
+    .document-action-button,
+    .session-hero-btn,
+    .topbar__logout,
+    [role='button']
+  ) {
+    min-height: 40px;
+    padding-inline: 10px;
+  }
+
+  :where(
+    .public-content,
+    .member-main__content,
+    .bcvb-page,
+    .dashboard-page,
+    .library-page,
+    .editorial-studio-page,
+    .coach-tool-page
+  ) {
+    width: 100%;
+  }
+
+  :where(
+    .topbar__identityCard,
+    .topbar__right,
+    .member-topbar__right,
+    .sidebar__linkHint,
+    .mobile-nav-panel__text small
+  ) {
+    overflow-wrap: anywhere;
+  }
+}

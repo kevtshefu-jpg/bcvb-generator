@@ -121,6 +121,7 @@
 
 .platform-tutorial-filterButton {
   flex: 0 0 auto;
+  max-width: min(260px, 78vw);
   min-height: 42px;
   padding: 0 16px;
   border-radius: 999px;
@@ -130,6 +131,8 @@
   font-size: 14px;
   font-weight: 950;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .platform-tutorial-filterButton.is-active {
@@ -193,6 +196,8 @@
   font-size: 12px;
   font-weight: 950;
   text-transform: uppercase;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .platform-tutorial-card__priority.is-medium {
@@ -231,10 +236,13 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  min-width: 0;
+  max-width: 100%;
   color: #475569;
   font-size: 12px;
   font-weight: 950;
   text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
 .platform-tutorial-card__roles {
@@ -252,6 +260,7 @@
 
 .platform-tutorial-card__role {
   flex: 0 0 auto;
+  max-width: min(220px, 72vw);
   min-height: 30px;
   display: inline-flex;
   align-items: center;
@@ -263,6 +272,8 @@
   font-weight: 950;
   text-transform: uppercase;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .platform-tutorial-card__progress {

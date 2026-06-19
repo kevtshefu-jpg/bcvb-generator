@@ -1091,7 +1091,7 @@ export default function LibraryPage() {
   }
 
   return (
-    <section className="library-page bcvb-page">
+    <section className="library-page bcvb-page bcvb-premium-page">
       <LibraryMobileExperience
         documents={mobileDocuments}
         isAdmin={isAdminRole}
@@ -1104,23 +1104,23 @@ export default function LibraryPage() {
       />
 
       <div className="library-desktop-first">
-        <section className="library-hero">
+        <section className="library-hero bcvb-premium-hero">
           <div>
-            <p className="bcvb-eyebrow">
+            <p className="bcvb-eyebrow bcvb-premium-hero__eyebrow">
               {PRESENTATION_MODE ? 'Mode présentation' : 'Bibliothèque documentaire'}
             </p>
 
-            <h1>Centre de ressources BCVB</h1>
+            <h1 className="bcvb-premium-hero__title">Centre de ressources BCVB</h1>
 
-            <p>
+            <p className="bcvb-premium-hero__text">
               Consulter, rechercher, ouvrir, prévisualiser, télécharger et transformer les documents du club selon les droits du profil connecté.
             </p>
           </div>
 
-          <div className="library-view-toggle">
+          <div className="library-view-toggle bcvb-premium-actions bcvb-scroll-row bcvb-tabs-safe">
             <button
               type="button"
-              className={filters.viewMode === 'grid' ? 'is-active' : ''}
+              className={`bcvb-premium-button ${filters.viewMode === 'grid' ? 'is-active bcvb-premium-button--primary' : 'bcvb-premium-button--ghost'}`}
               onClick={() => patchFilters({ viewMode: 'grid' })}
             >
               Grille
@@ -1128,7 +1128,7 @@ export default function LibraryPage() {
 
             <button
               type="button"
-              className={filters.viewMode === 'list' ? 'is-active' : ''}
+              className={`bcvb-premium-button ${filters.viewMode === 'list' ? 'is-active bcvb-premium-button--primary' : 'bcvb-premium-button--ghost'}`}
               onClick={() => patchFilters({ viewMode: 'list' })}
             >
               Liste
@@ -1136,46 +1136,46 @@ export default function LibraryPage() {
           </div>
         </section>
 
-        <section className="library-stats">
-          <article>
-            <span>Documents visibles</span>
-            <strong>{stats.total}</strong>
+        <section className="library-stats bcvb-premium-grid bcvb-premium-grid--4 bcvb-grid-safe">
+          <article className="bcvb-premium-kpi">
+            <span className="bcvb-premium-kpi__label">Documents visibles</span>
+            <strong className="bcvb-premium-kpi__value">{stats.total}</strong>
           </article>
 
-          <article>
-            <span>Publiables</span>
-            <strong>{stats.publishable}</strong>
+          <article className="bcvb-premium-kpi">
+            <span className="bcvb-premium-kpi__label">Publiables</span>
+            <strong className="bcvb-premium-kpi__value">{stats.publishable}</strong>
           </article>
 
-          <article>
-            <span>À corriger</span>
-            <strong>{stats.toFix}</strong>
+          <article className="bcvb-premium-kpi">
+            <span className="bcvb-premium-kpi__label">À corriger</span>
+            <strong className="bcvb-premium-kpi__value">{stats.toFix}</strong>
           </article>
 
-          <article>
-            <span>Sans PDF</span>
-            <strong>{stats.withoutPdf}</strong>
+          <article className="bcvb-premium-kpi">
+            <span className="bcvb-premium-kpi__label">Sans PDF</span>
+            <strong className="bcvb-premium-kpi__value">{stats.withoutPdf}</strong>
           </article>
 
-          <article>
-            <span>Transformables</span>
-            <strong>{stats.transformable}</strong>
+          <article className="bcvb-premium-kpi">
+            <span className="bcvb-premium-kpi__label">Transformables</span>
+            <strong className="bcvb-premium-kpi__value">{stats.transformable}</strong>
           </article>
 
-          <article>
-            <span>Récents</span>
-            <strong>{stats.recent}</strong>
+          <article className="bcvb-premium-kpi">
+            <span className="bcvb-premium-kpi__label">Récents</span>
+            <strong className="bcvb-premium-kpi__value">{stats.recent}</strong>
           </article>
 
           {isAdminRole ? (
-            <article>
-              <span>Archivés</span>
-              <strong>{stats.archived}</strong>
+            <article className="bcvb-premium-kpi">
+              <span className="bcvb-premium-kpi__label">Archivés</span>
+              <strong className="bcvb-premium-kpi__value">{stats.archived}</strong>
             </article>
           ) : null}
         </section>
 
-        <section className="library-toolbar">
+        <section className="library-toolbar bcvb-premium-toolbar bcvb-toolbar-safe">
           <label className="library-search">
             <span>Recherche texte / sémantique simple</span>
 
@@ -1186,18 +1186,18 @@ export default function LibraryPage() {
             />
           </label>
 
-          <div className="library-toolbar__actions">
+          <div className="library-toolbar__actions bcvb-premium-toolbar__secondary bcvb-action-row-safe">
             {isAdminRole ? (
-              <button type="button" onClick={toggleSelectionMode}>
+              <button className="bcvb-premium-button bcvb-premium-button--secondary" type="button" onClick={toggleSelectionMode}>
                 {selectionMode ? 'Quitter sélection' : 'Sélection multiple'}
               </button>
             ) : null}
 
-            <button type="button" onClick={resetFilters}>
+            <button className="bcvb-premium-button bcvb-premium-button--ghost" type="button" onClick={resetFilters}>
               Réinitialiser filtres
             </button>
 
-            <button type="button" onClick={loadDocuments}>
+            <button className="bcvb-premium-button bcvb-premium-button--primary" type="button" onClick={loadDocuments}>
               Recharger
             </button>
           </div>
@@ -1211,7 +1211,7 @@ export default function LibraryPage() {
         ) : null}
 
         <div className="library-layout">
-          <aside className="library-filters">
+          <aside className="library-filters bcvb-premium-card bcvb-premium-card--muted bcvb-card-safe">
             <h2>Classement</h2>
 
             {renderSelect('Famille documentaire', 'family', filterOptions.families)}
@@ -1326,7 +1326,7 @@ export default function LibraryPage() {
               </article>
             ) : null}
 
-            <div className={`library-documents library-documents--${filters.viewMode}`}>
+            <div className={`library-documents library-documents--${filters.viewMode} bcvb-grid-safe`}>
               {filteredDocuments.map((doc) => {
                 const sourceAvailable = hasSource(doc)
                 const pdfAvailable = hasPdf(doc)
@@ -1334,6 +1334,10 @@ export default function LibraryPage() {
                 const exportableDoc = toExportableDocument(doc)
                 const markdownAvailable = canExportDocument(exportableDoc, 'markdown')
                 const isCurrentExportLoading = exportLoadingId === doc.id
+                const rawTags = doc.tags?.length ? doc.tags : ['BCVB']
+                const visibleTags = rawTags.slice(0, 6)
+                const hiddenTagCount = Math.max(0, rawTags.length - visibleTags.length)
+                const statusWarning = /corriger|draft|brouillon/i.test(getStatus(doc))
                 const pdfLabel =
                   isCurrentExportLoading && exportLoadingType === 'pdf'
                     ? 'Préparation PDF...'
@@ -1352,48 +1356,52 @@ export default function LibraryPage() {
                     selectionMode={selectionMode && isAdminRole}
                     onToggleSelected={() => toggleSelected(doc.id)}
                   >
-                  <article className="library-card">
+                    <article className="library-card bcvb-premium-card bcvb-card-safe">
                     <header>
                       <div>
-                        <p className="bcvb-eyebrow">{getFamily(doc)}</p>
-                        <h2>{getDocumentTitle(doc)}</h2>
+                        <p className="bcvb-eyebrow bcvb-premium-card__eyebrow bcvb-tag-safe">{getFamily(doc)}</p>
+                        <h2 className="bcvb-premium-card__title bcvb-text-clamp-2">{getDocumentTitle(doc)}</h2>
                       </div>
 
                       <span
-                        className={`library-card__status ${
-                          /corriger|draft|brouillon/i.test(getStatus(doc))
-                            ? 'is-warning'
-                            : 'is-ready'
-                        }`}
+                        className={[
+                          'library-card__status',
+                          'bcvb-premium-status',
+                          'bcvb-status-safe',
+                          statusWarning ? 'is-warning bcvb-premium-status--warning' : 'is-ready bcvb-premium-status--ok',
+                        ].join(' ')}
                       >
                         {getStatus(doc)}
                       </span>
                     </header>
 
-                    <p className="library-card__description">
+                    <p className="library-card__description bcvb-premium-card__text bcvb-text-clamp-3">
                       {getDocumentDescription(doc)}
                     </p>
 
-                    <div className="library-card__meta">
-                      <span>{getCategory(doc)}</span>
-                      <span>{getSubCategory(doc)}</span>
-                      <span>{getTheme(doc)}</span>
-                      <span>{getSportCategory(doc)}</span>
-                      <span>{getAudience(doc)}</span>
-                      <span>{getSeason(doc)}</span>
-                      <span>{getFileType(doc)}</span>
-                      <span>{getPublicationLevel(doc)}</span>
+                    <div className="library-card__meta bcvb-scroll-row">
+                      <span className="bcvb-badge-safe">{getCategory(doc)}</span>
+                      <span className="bcvb-badge-safe">{getSubCategory(doc)}</span>
+                      <span className="bcvb-theme-chip-safe">{getTheme(doc)}</span>
+                      <span className="bcvb-badge-safe">{getSportCategory(doc)}</span>
+                      <span className="bcvb-badge-safe">{getAudience(doc)}</span>
+                      <span className="bcvb-badge-safe">{getSeason(doc)}</span>
+                      <span className="bcvb-badge-safe">{getFileType(doc)}</span>
+                      <span className="bcvb-badge-safe">{getPublicationLevel(doc)}</span>
                     </div>
 
-                    <div className="library-card__tags">
-                      {(doc.tags?.length ? doc.tags : ['BCVB']).slice(0, 6).map((tag) => (
-                        <span key={tag}>{tag}</span>
+                    <div className="library-card__tags bcvb-scroll-row">
+                      {visibleTags.map((tag) => (
+                        <span className="bcvb-tag-safe" key={tag}>{tag}</span>
                       ))}
+                      {hiddenTagCount > 0 ? (
+                        <span className="library-card__tag-more bcvb-tag-safe">+{hiddenTagCount}</span>
+                      ) : null}
                     </div>
 
-                    <div className="library-card__version">
-                      <span>Version actuelle {getVersion(doc)}</span>
-                      <span>Modifié le {getSafeDateLabel(doc.updated_at || doc.created_at)}</span>
+                    <div className="library-card__version bcvb-scroll-row">
+                      <span className="bcvb-badge-safe">Version actuelle {getVersion(doc)}</span>
+                      <span className="bcvb-badge-safe">Modifié le {getSafeDateLabel(doc.updated_at || doc.created_at)}</span>
 
                       {hasVersions(doc) ? (
                         <button
@@ -1403,117 +1411,121 @@ export default function LibraryPage() {
                           Voir versions
                         </button>
                       ) : (
-                        <span className="library-card__version-note">Versions à venir</span>
+                        <span className="library-card__version-note bcvb-badge-safe">Versions à venir</span>
                       )}
                     </div>
 
-                    <div className="library-card__actions document-action-row">
-                      <button
-                        type="button"
-                        className="document-action-button document-action-button--primary"
-                        onClick={() => handleOpenDocument(doc)}
-                        disabled={openingId === doc.id}
-                      >
-                        {openingId === doc.id ? 'Ouverture...' : 'Ouvrir'}
-                      </button>
+                    <div className="library-card__actions">
+                      <div className="library-card__action-group library-card__action-group--primary document-action-row bcvb-action-row-safe">
+                        <button
+                          type="button"
+                          className="document-action-button document-action-button--primary"
+                          onClick={() => handleOpenDocument(doc)}
+                          disabled={openingId === doc.id}
+                        >
+                          {openingId === doc.id ? 'Ouverture...' : 'Ouvrir'}
+                        </button>
 
-                      <button
-                        type="button"
-                        className="document-action-button document-action-button--ghost"
-                        onClick={() => setPreviewDocument(doc)}
-                      >
-                        Prévisualiser
-                      </button>
-
-                      <button
-                        type="button"
-                        className={[
-                          'document-action-button',
-                          pdfAvailable ? 'document-action-button--ghost' : 'document-action-button--primary',
-                          isCurrentExportLoading ? 'document-action-button--loading' : '',
-                        ].filter(Boolean).join(' ')}
-                        onClick={() => handleDownloadPdf(doc)}
-                        disabled={!canPdf || isCurrentExportLoading}
-                        title={!canPdf ? 'PDF à générer, mais aucune source exploitable.' : undefined}
-                      >
-                        {pdfLabel}
-                      </button>
-
-                      <button
-                        type="button"
-                        className={[
-                          'document-action-button',
-                          'document-action-button--ghost',
-                          isCurrentExportLoading && exportLoadingType === 'source'
-                            ? 'document-action-button--loading'
-                            : '',
-                        ].filter(Boolean).join(' ')}
-                        onClick={() => handleDownloadSource(doc)}
-                        disabled={!sourceAvailable || isCurrentExportLoading}
-                        title={!sourceAvailable ? 'Source indisponible.' : undefined}
-                      >
-                        {isCurrentExportLoading && exportLoadingType === 'source'
-                          ? 'Téléchargement...'
-                          : sourceAvailable ? 'Télécharger source' : 'Source indisponible'}
-                      </button>
-
-                      <button
-                        type="button"
-                        className={[
-                          'document-action-button',
-                          'document-action-button--ghost',
-                          isCurrentExportLoading && exportLoadingType === 'markdown'
-                            ? 'document-action-button--loading'
-                            : '',
-                        ].filter(Boolean).join(' ')}
-                        onClick={() => handleDownloadMarkdown(doc)}
-                        disabled={!markdownAvailable || isCurrentExportLoading}
-                        title={!markdownAvailable ? 'Source Markdown indisponible.' : undefined}
-                      >
-                        {isCurrentExportLoading && exportLoadingType === 'markdown'
-                          ? 'Préparation Markdown...'
-                          : 'Markdown'}
-                      </button>
-
-                      {transformAllowed ? (
                         <button
                           type="button"
                           className="document-action-button document-action-button--ghost"
-                          onClick={() => handleTransform(doc)}
-                          disabled={!sourceAvailable}
-                          title={!sourceAvailable ? 'Transformation impossible : source indisponible.' : undefined}
+                          onClick={() => setPreviewDocument(doc)}
                         >
-                          Transformer BCVB
+                          Prévisualiser
                         </button>
-                      ) : (
-                        <span className="library-card__hint">
-                          Transformation réservée admin.
-                        </span>
-                      )}
+                      </div>
 
-                      {isAdminRole ? (
-                        <>
+                      <div className="library-card__action-group document-action-row bcvb-action-row-safe">
+                        <button
+                          type="button"
+                          className={[
+                            'document-action-button',
+                            pdfAvailable ? 'document-action-button--ghost' : 'document-action-button--primary',
+                            isCurrentExportLoading ? 'document-action-button--loading' : '',
+                          ].filter(Boolean).join(' ')}
+                          onClick={() => handleDownloadPdf(doc)}
+                          disabled={!canPdf || isCurrentExportLoading}
+                          title={!canPdf ? 'PDF à générer, mais aucune source exploitable.' : undefined}
+                        >
+                          {pdfLabel}
+                        </button>
+
+                        <button
+                          type="button"
+                          className={[
+                            'document-action-button',
+                            'document-action-button--ghost',
+                            isCurrentExportLoading && exportLoadingType === 'source'
+                              ? 'document-action-button--loading'
+                              : '',
+                          ].filter(Boolean).join(' ')}
+                          onClick={() => handleDownloadSource(doc)}
+                          disabled={!sourceAvailable || isCurrentExportLoading}
+                          title={!sourceAvailable ? 'Source indisponible.' : undefined}
+                        >
+                          {isCurrentExportLoading && exportLoadingType === 'source'
+                            ? 'Téléchargement...'
+                            : sourceAvailable ? 'Télécharger source' : 'Source indisponible'}
+                        </button>
+
+                        <button
+                          type="button"
+                          className={[
+                            'document-action-button',
+                            'document-action-button--ghost',
+                            isCurrentExportLoading && exportLoadingType === 'markdown'
+                              ? 'document-action-button--loading'
+                              : '',
+                          ].filter(Boolean).join(' ')}
+                          onClick={() => handleDownloadMarkdown(doc)}
+                          disabled={!markdownAvailable || isCurrentExportLoading}
+                          title={!markdownAvailable ? 'Source Markdown indisponible.' : undefined}
+                        >
+                          {isCurrentExportLoading && exportLoadingType === 'markdown'
+                            ? 'Préparation Markdown...'
+                            : 'Markdown'}
+                        </button>
+
+                        {transformAllowed ? (
                           <button
                             type="button"
                             className="document-action-button document-action-button--ghost"
-                            onClick={() => handleArchive(doc)}
-                            disabled={adminActionId === doc.id || isArchived(doc) || isDeleted(doc)}
+                            onClick={() => handleTransform(doc)}
+                            disabled={!sourceAvailable}
+                            title={!sourceAvailable ? 'Transformation impossible : source indisponible.' : undefined}
                           >
-                            {isArchived(doc) ? 'Archivé' : 'Archiver'}
+                            Transformer BCVB
                           </button>
+                        ) : (
+                          <span className="library-card__hint bcvb-badge-safe">
+                            Transformation réservée admin.
+                          </span>
+                        )}
+                      </div>
 
-                          <button
-                            type="button"
-                            className="document-action-button document-action-button--danger library-card__danger"
-                            onClick={() => handleSoftDelete(doc)}
-                            disabled={adminActionId === doc.id || isDeleted(doc)}
-                          >
-                            {isDeleted(doc) ? 'Supprimé' : 'Supprimer'}
-                          </button>
-                        </>
+                      {isAdminRole ? (
+                        <div className="library-card__action-group library-card__action-group--admin document-action-row bcvb-action-row-safe">
+                            <button
+                              type="button"
+                              className="document-action-button document-action-button--ghost"
+                              onClick={() => handleArchive(doc)}
+                              disabled={adminActionId === doc.id || isArchived(doc) || isDeleted(doc)}
+                            >
+                              {isArchived(doc) ? 'Archivé' : 'Archiver'}
+                            </button>
+
+                            <button
+                              type="button"
+                              className="document-action-button document-action-button--danger library-card__danger"
+                              onClick={() => handleSoftDelete(doc)}
+                              disabled={adminActionId === doc.id || isDeleted(doc)}
+                            >
+                              {isDeleted(doc) ? 'Supprimé' : 'Supprimer'}
+                            </button>
+                        </div>
                       ) : null}
                     </div>
-                  </article>
+                    </article>
                   </BulkSelectableCard>
                 )
               })}

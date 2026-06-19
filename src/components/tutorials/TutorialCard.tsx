@@ -22,31 +22,31 @@ export default function TutorialCard({ tutorial, active, completion, onSelect }:
       type="button"
       className={
         active
-          ? "tutorial-card tutorial-card--active platform-tutorial-card"
-          : "tutorial-card platform-tutorial-card"
+          ? "tutorial-card tutorial-card--active platform-tutorial-card bcvb-card-safe"
+          : "tutorial-card platform-tutorial-card bcvb-card-safe"
       }
       onClick={() => onSelect(tutorial.id)}
       aria-pressed={active}
     >
-      <span className="tutorial-card__category platform-tutorial-card__category">
+      <span className="tutorial-card__category platform-tutorial-card__category bcvb-tag-safe">
         {tutorialCategoryLabels[tutorial.category]}
       </span>
-      <span className={`tutorial-card__priority tutorial-card__priority--${tutorial.priority} platform-tutorial-card__priority ${priorityClass}`}>
+      <span className={`tutorial-card__priority tutorial-card__priority--${tutorial.priority} platform-tutorial-card__priority bcvb-badge-safe bcvb-status-safe ${priorityClass}`}>
         {getPriorityLabel(tutorial.priority)}
       </span>
 
-      <strong className="platform-tutorial-card__title">{tutorial.title}</strong>
-      <span className="tutorial-card__subtitle platform-tutorial-card__description">
+      <strong className="platform-tutorial-card__title bcvb-text-clamp-2">{tutorial.title}</strong>
+      <span className="tutorial-card__subtitle platform-tutorial-card__description bcvb-text-clamp-3">
         {tutorial.subtitle}
       </span>
 
-      <span className="tutorial-card__meta platform-tutorial-card__meta">
+      <span className="tutorial-card__meta platform-tutorial-card__meta bcvb-no-overflow">
         {tutorial.estimatedTime} · {tutorial.level} · impact {tutorial.impact}
       </span>
 
-      <span className="tutorial-card__audiences platform-tutorial-card__roles">
+      <span className="tutorial-card__audiences platform-tutorial-card__roles bcvb-scroll-row">
         {tutorial.audience.map((audience) => (
-          <span className="platform-tutorial-card__role" key={audience}>
+          <span className="platform-tutorial-card__role bcvb-badge-safe" key={audience}>
             {tutorialAudienceLabels[audience]}
           </span>
         ))}

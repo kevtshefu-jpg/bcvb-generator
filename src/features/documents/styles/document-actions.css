@@ -8,6 +8,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  max-width: 100%;
   min-height: 38px;
   border: 1px solid rgba(20, 24, 31, 0.14);
   border-radius: 999px;
@@ -15,7 +16,10 @@
   color: #14181f;
   background: #ffffff;
   font-weight: 900;
+  line-height: 1.15;
+  text-align: center;
   text-decoration: none;
+  white-space: normal;
   cursor: pointer;
 }
 

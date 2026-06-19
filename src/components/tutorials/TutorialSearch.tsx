@@ -28,7 +28,7 @@ export default function TutorialSearch({
   onAudienceChange,
 }: TutorialSearchProps) {
   return (
-    <section className="tutorial-search-panel platform-tutorial-filters" aria-label="Recherche tutoriels">
+    <section className="tutorial-search-panel platform-tutorial-filters bcvb-card-safe" aria-label="Recherche tutoriels">
       <label className="tutorial-search-field">
         <span>Recherche</span>
         <input
@@ -39,13 +39,13 @@ export default function TutorialSearch({
         />
       </label>
 
-      <div className="tutorial-filter-row platform-tutorial-filterRow" aria-label="Catégories tutoriels">
+      <div className="tutorial-filter-row platform-tutorial-filterRow bcvb-scroll-row bcvb-tabs-safe" aria-label="Catégories tutoriels">
         <button
           type="button"
           className={
             category === "all"
-              ? "tutorial-chip tutorial-chip--active platform-tutorial-filterButton is-red"
-              : "tutorial-chip platform-tutorial-filterButton"
+              ? "tutorial-chip tutorial-chip--active platform-tutorial-filterButton bcvb-chip-safe bcvb-tab-safe is-red"
+              : "tutorial-chip platform-tutorial-filterButton bcvb-chip-safe bcvb-tab-safe"
           }
           aria-pressed={category === "all"}
           onClick={() => onCategoryChange("all")}
@@ -58,8 +58,8 @@ export default function TutorialSearch({
             key={categoryId}
             className={
               category === categoryId
-                ? "tutorial-chip tutorial-chip--active platform-tutorial-filterButton is-red"
-                : "tutorial-chip platform-tutorial-filterButton"
+                ? "tutorial-chip tutorial-chip--active platform-tutorial-filterButton bcvb-chip-safe bcvb-tab-safe is-red"
+                : "tutorial-chip platform-tutorial-filterButton bcvb-chip-safe bcvb-tab-safe"
             }
             aria-pressed={category === categoryId}
             onClick={() => onCategoryChange(categoryId)}
@@ -69,13 +69,13 @@ export default function TutorialSearch({
         ))}
       </div>
 
-      <div className="tutorial-filter-row platform-tutorial-filterRow" aria-label="Audiences tutoriels">
+      <div className="tutorial-filter-row platform-tutorial-filterRow bcvb-scroll-row bcvb-tabs-safe" aria-label="Audiences tutoriels">
         <button
           type="button"
           className={
             audience === "all"
-              ? "tutorial-chip tutorial-chip--dark platform-tutorial-filterButton is-active"
-              : "tutorial-chip platform-tutorial-filterButton"
+              ? "tutorial-chip tutorial-chip--dark platform-tutorial-filterButton bcvb-chip-safe bcvb-tab-safe is-active"
+              : "tutorial-chip platform-tutorial-filterButton bcvb-chip-safe bcvb-tab-safe"
           }
           aria-pressed={audience === "all"}
           onClick={() => onAudienceChange("all")}
@@ -88,8 +88,8 @@ export default function TutorialSearch({
             key={audienceId}
             className={
               audience === audienceId
-                ? "tutorial-chip tutorial-chip--dark platform-tutorial-filterButton is-active"
-                : "tutorial-chip platform-tutorial-filterButton"
+                ? "tutorial-chip tutorial-chip--dark platform-tutorial-filterButton bcvb-chip-safe bcvb-tab-safe is-active"
+                : "tutorial-chip platform-tutorial-filterButton bcvb-chip-safe bcvb-tab-safe"
             }
             aria-pressed={audience === audienceId}
             onClick={() => onAudienceChange(audienceId)}
