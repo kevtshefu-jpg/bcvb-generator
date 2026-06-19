@@ -14,8 +14,11 @@
 ## Inscription publique
 - [ ] Ouvrir `/inscription`
 - [ ] Soumettre une demande publique complète
+- [ ] Tester une demande avec équipe/groupe renseigné
 - [ ] Vérifier la ligne `registration_requests`
+- [ ] Vérifier `registration_requests` si la table contient `requested_team`
 - [ ] Vérifier la ligne `profile_requests`
+- [ ] Vérifier que l’erreur legacy ne bloque pas le visiteur
 - [ ] Vérifier que l’échec éventuel du mail ne bloque pas la demande
 - [ ] Vérifier le message succès utilisateur
 
