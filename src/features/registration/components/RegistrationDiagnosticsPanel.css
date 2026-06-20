@@ -67,6 +67,92 @@
   opacity: 0.58;
 }
 
+.registration-diagnostics-panel__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.registration-diagnostics-panel__summary div {
+  min-width: 0;
+}
+
+.registration-diagnostics-panel__summary span {
+  display: block;
+  color: #0f172a;
+  font-weight: 950;
+  line-height: 1.15;
+}
+
+.registration-diagnostics-panel__summary p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.registration-diagnostics-panel__summary--ok {
+  border-color: rgba(22, 163, 74, 0.24);
+  background: rgba(22, 163, 74, 0.08);
+}
+
+.registration-diagnostics-panel__summary--warning {
+  border-color: rgba(234, 179, 8, 0.32);
+  background: rgba(234, 179, 8, 0.1);
+}
+
+.registration-diagnostics-panel__summary--error {
+  border-color: rgba(200, 16, 46, 0.24);
+  background: rgba(200, 16, 46, 0.08);
+}
+
+.registration-diagnostics-panel__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.registration-diagnostics-panel__actions button {
+  min-height: 36px;
+  max-width: 100%;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 12px;
+  color: #ffffff;
+  background: #c8102e;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.registration-diagnostics-panel__actions code {
+  max-width: 100%;
+  padding: 7px 9px;
+  border-radius: 999px;
+  color: #334155;
+  background: rgba(255, 255, 255, 0.82);
+  font-size: 12px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.registration-diagnostics-panel__feedback {
+  margin: 0;
+  color: #166534;
+  font-size: 13px;
+  font-weight: 900;
+}
+
 .registration-diagnostics-panel__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -125,11 +211,29 @@
 
 .registration-diagnostic-card p,
 .registration-diagnostics-panel__empty,
-.registration-diagnostics-panel__error {
+.registration-diagnostics-panel__error,
+.registration-diagnostic-card__hint {
   margin: 0;
   color: #64748b;
   line-height: 1.45;
   font-weight: 780;
+}
+
+.registration-diagnostic-card__hint {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 14px;
+  color: #334155;
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+}
+
+.registration-diagnostic-card__hint strong {
+  color: #0f172a;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .registration-diagnostics-panel__error {
@@ -145,6 +249,19 @@
   }
 
   .registration-diagnostics-panel__header button {
+    width: 100%;
+  }
+
+  .registration-diagnostics-panel__summary {
+    display: grid;
+  }
+
+  .registration-diagnostics-panel__actions {
+    justify-content: stretch;
+  }
+
+  .registration-diagnostics-panel__actions button,
+  .registration-diagnostics-panel__actions code {
     width: 100%;
   }
 

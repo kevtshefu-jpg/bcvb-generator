@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 
+import { ROLE_LABELS, normalizeRole } from '../../../config/roles'
 import { useAuth } from '../../auth/context/AuthContext'
 import RegistrationDiagnosticsPanel from '../components/RegistrationDiagnosticsPanel'
 import { useRegistrationRequests } from '../hooks/useRegistrationRequests'
@@ -7,6 +8,21 @@ import { useRegistrationRequests } from '../hooks/useRegistrationRequests'
 import './AdminRegistrationRequestsPage.css'
 
 type RegistrationStatus = 'pending' | 'approved' | 'rejected' | string
+type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected'
+type SortMode = 'pending-first' | 'newest-first' | 'oldest-first'
+
+const APPROVAL_ROLE_OPTIONS = [
+  'member',
+  'coach',
+  'dirigeant',
+  'responsable_technique',
+  'parent_referent',
+  'team_staff',
+  'benevole',
+  'arbitre',
+  'otm',
+  'admin',
+] as const
 
 type RegistrationRequestLike = {
   id: string
@@ -61,6 +77,13 @@ function getRequestedRole(item: RegistrationRequestLike) {
   return normalizeText(item.role_requested || item.requested_role || 'member')
 }
 
+function getRoleLabel(role: string) {
+  const value = normalizeRole(role)
+  const label = ROLE_LABELS[value as keyof typeof ROLE_LABELS]
+
+  return label || role || 'Membre'
+}
+
 function formatDate(value?: string | null) {
   if (!value) return '—'
 
@@ -85,12 +108,46 @@ function getReadableError(error?: string | null) {
   return error
 }
 
+function getRequestTimestamp(item: RegistrationRequestLike) {
+  if (!item.created_at) return 0
+
+  const date = new Date(item.created_at)
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime()
+}
+
+function matchesSearch(item: RegistrationRequestLike, searchTerm: string) {
+  const query = normalizeText(searchTerm).toLowerCase()
+
+  if (!query) return true
+
+  const searchable = [
+    getFullName(item),
+    item.email,
+    item.phone,
+    item.birth_year,
+    getRequestedCategory(item),
+    getRequestedRole(item),
+    item.requested_team,
+    item.notes,
+    item.status,
+  ]
+    .map((value) => normalizeText(value).toLowerCase())
+    .join(' ')
+
+  return searchable.includes(query)
+}
+
 export default function AdminRegistrationRequestsPage() {
   const { user } = useAuth()
   const { requests, loading, error, approve, reject, lastCreatedPassword } =
     useRegistrationRequests(user?.id)
 
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending')
+  const [roleFilter, setRoleFilter] = useState('all')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [sortMode, setSortMode] = useState<SortMode>('pending-first')
+  const [roleOverrides, setRoleOverrides] = useState<Record<string, string>>({})
 
   const readableError = getReadableError(error)
 
@@ -111,19 +168,75 @@ export default function AdminRegistrationRequestsPage() {
     [requests],
   )
 
+  const availableRoles = useMemo(() => {
+    const roles = new Set<string>()
+
+    requests.forEach((item) => {
+      const role = getRequestedRole(item)
+      if (role) roles.add(role)
+    })
+
+    return Array.from(roles).sort((a, b) =>
+      getRoleLabel(a).localeCompare(getRoleLabel(b), 'fr'),
+    )
+  }, [requests])
+
+  const visibleRequests = useMemo(() => {
+    return requests
+      .filter((item) => {
+        if (statusFilter !== 'all' && item.status !== statusFilter) return false
+        if (roleFilter !== 'all' && getRequestedRole(item) !== roleFilter) return false
+
+        return matchesSearch(item, searchTerm)
+      })
+      .sort((a, b) => {
+        if (sortMode === 'pending-first') {
+          const aPending = a.status === 'pending' ? 0 : 1
+          const bPending = b.status === 'pending' ? 0 : 1
+
+          if (aPending !== bPending) return aPending - bPending
+        }
+
+        const aTime = getRequestTimestamp(a)
+        const bTime = getRequestTimestamp(b)
+
+        if (sortMode === 'oldest-first') return aTime - bTime
+
+        return bTime - aTime
+      })
+  }, [requests, roleFilter, searchTerm, sortMode, statusFilter])
+
+  const hasActiveFilters =
+    statusFilter !== 'all' || roleFilter !== 'all' || normalizeText(searchTerm) !== ''
+
+  function resetFilters() {
+    setStatusFilter('all')
+    setRoleFilter('all')
+    setSearchTerm('')
+    setSortMode('pending-first')
+  }
+
+  function getFinalRole(item: RegistrationRequestLike) {
+    return normalizeRole(roleOverrides[item.id] || getRequestedRole(item))
+  }
+
   async function handleApprove(item: RegistrationRequestLike) {
     const fullName = getFullName(item)
-    const requestedRole = getRequestedRole(item)
+    const finalRole = getFinalRole(item)
 
     const confirmed = window.confirm(
-      `Valider la demande de ${fullName} et créer son compte avec le rôle "${requestedRole}" ?`,
+      `Valider la demande de ${fullName} et créer son compte avec le rôle "${getRoleLabel(finalRole)}" ?`,
     )
 
     if (!confirmed) return
 
     try {
       setActionLoadingId(item.id)
-      await approve(item)
+      await approve({
+        ...item,
+        role_requested: finalRole,
+        requested_role: finalRole,
+      })
     } finally {
       setActionLoadingId(null)
     }
@@ -208,6 +321,78 @@ export default function AdminRegistrationRequestsPage() {
 
       <RegistrationDiagnosticsPanel />
 
+      <section className="admin-registration-controls" aria-label="Filtres demandes inscription">
+        <div className="admin-registration-controls__top">
+          <label>
+            <span>Recherche</span>
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Nom, email, équipe, note…"
+            />
+          </label>
+
+          <label>
+            <span>Rôle</span>
+            <select
+              value={roleFilter}
+              onChange={(event) => setRoleFilter(event.target.value)}
+            >
+              <option value="all">Tous les rôles</option>
+              {availableRoles.map((role) => (
+                <option key={role} value={role}>
+                  {getRoleLabel(role)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            <span>Tri</span>
+            <select
+              value={sortMode}
+              onChange={(event) => setSortMode(event.target.value as SortMode)}
+            >
+              <option value="pending-first">En attente d’abord</option>
+              <option value="newest-first">Plus récentes</option>
+              <option value="oldest-first">Plus anciennes</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="admin-registration-controls__bottom">
+          <div className="admin-registration-controls__filters">
+            {[
+              ['all', 'Toutes', totalCount],
+              ['pending', 'En attente', pendingCount],
+              ['approved', 'Approuvées', approvedCount],
+              ['rejected', 'Refusées', rejectedCount],
+            ].map(([value, label, count]) => (
+              <button
+                type="button"
+                className={statusFilter === value ? 'is-active' : ''}
+                key={String(value)}
+                onClick={() => setStatusFilter(value as StatusFilter)}
+              >
+                {label}
+                <span>{count}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="admin-registration-controls__result">
+            <strong>{visibleRequests.length}</strong>
+            <span>affichée{visibleRequests.length > 1 ? 's' : ''}</span>
+            {hasActiveFilters ? (
+              <button type="button" onClick={resetFilters}>
+                Réinitialiser
+              </button>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
       {loading ? (
         <article className="admin-registration-page__empty">
           Chargement des demandes d’inscription…
@@ -216,14 +401,20 @@ export default function AdminRegistrationRequestsPage() {
         <article className="admin-registration-page__empty">
           Aucune demande d’inscription pour le moment.
         </article>
+      ) : visibleRequests.length === 0 ? (
+        <article className="admin-registration-page__empty">
+          Aucune demande ne correspond aux filtres actuels.
+        </article>
       ) : (
         <div className="admin-registration-page__grid">
-          {requests.map((item) => {
+          {visibleRequests.map((item) => {
             const fullName = getFullName(item)
             const statusClass = getStatusClass(item.status)
             const statusLabel = getStatusLabel(item.status)
             const isPending = item.status === 'pending'
             const isActionLoading = actionLoadingId === item.id
+            const requestedRole = getRequestedRole(item)
+            const finalRole = getFinalRole(item)
 
             return (
               <article className="admin-registration-card" key={item.id}>
@@ -238,6 +429,13 @@ export default function AdminRegistrationRequestsPage() {
                 </div>
 
                 <h2>{fullName}</h2>
+
+                {isPending ? (
+                  <p className="admin-registration-card__nextAction">
+                    Action suivante : vérifier la catégorie puis créer le compte{' '}
+                    {getRoleLabel(finalRole)}.
+                  </p>
+                ) : null}
 
                 <dl className="admin-registration-card__details">
                   <div>
@@ -261,9 +459,34 @@ export default function AdminRegistrationRequestsPage() {
                   </div>
 
                   <div>
-                    <dt>Type</dt>
-                    <dd>{getRequestedRole(item)}</dd>
+                    <dt>Rôle demandé</dt>
+                    <dd>{getRoleLabel(requestedRole)}</dd>
                   </div>
+
+                  {isPending ? (
+                    <div>
+                      <dt>Rôle final</dt>
+                      <dd>
+                        <select
+                          className="admin-registration-card__roleSelect"
+                          value={finalRole}
+                          disabled={isActionLoading}
+                          onChange={(event) =>
+                            setRoleOverrides((current) => ({
+                              ...current,
+                              [item.id]: event.target.value,
+                            }))
+                          }
+                        >
+                          {APPROVAL_ROLE_OPTIONS.map((role) => (
+                            <option key={role} value={role}>
+                              {getRoleLabel(role)}
+                            </option>
+                          ))}
+                        </select>
+                      </dd>
+                    </div>
+                  ) : null}
 
                   <div>
                     <dt>Équipe / groupe</dt>
@@ -277,6 +500,15 @@ export default function AdminRegistrationRequestsPage() {
                 </dl>
 
                 <div className="admin-registration-card__actions">
+                  {item.email ? (
+                    <a
+                      className="admin-registration-card__link"
+                      href={`mailto:${item.email}`}
+                    >
+                      Contacter
+                    </a>
+                  ) : null}
+
                   {isPending ? (
                     <>
                       <button
