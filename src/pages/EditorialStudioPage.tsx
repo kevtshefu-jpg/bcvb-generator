@@ -565,13 +565,14 @@ export default function EditorialStudioPage() {
             <div className="editorial-attachment-row">
               <label>
                 <span>Importer PDF, image, DOCX ou texte</span>
+                <small>Ajoute une source brute. Le texte extrait reste modifiable avant transformation.</small>
                 <input
                   type="file"
                   accept=".pdf,.doc,.docx,.txt,.md,.csv,image/*"
                   onChange={(event) => handleAttachment(event.target.files?.[0] ?? null)}
                 />
               </label>
-              <Link to="/admin/ocr-pieces-jointes">OCR avancé</Link>
+              <Link to="/admin/ocr-pieces-jointes">Ouvrir OCR avancé</Link>
             </div>
             <textarea
               className="editorial-textarea"
