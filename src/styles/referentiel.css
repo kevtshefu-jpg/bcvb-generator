@@ -552,6 +552,17 @@
   color: #9f1239;
 }
 
+.registration-page__debug {
+  display: block;
+  margin-top: 8px;
+  color: currentColor;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.78rem;
+  font-weight: 750;
+  opacity: 0.78;
+  overflow-wrap: anywhere;
+}
+
 .registration-form {
   display: grid;
   gap: 18px;

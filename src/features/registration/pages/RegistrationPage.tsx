@@ -103,6 +103,7 @@ export default function RegistrationPage() {
   const [loading, setLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [debugMessage, setDebugMessage] = useState<string | null>(null)
 
   const fullName = useMemo(() => getFullName(form), [form])
 
@@ -131,6 +132,7 @@ export default function RegistrationPage() {
     setForm(initialForm)
     setSuccessMessage(null)
     setErrorMessage(null)
+    setDebugMessage(null)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -138,6 +140,7 @@ export default function RegistrationPage() {
 
     setSuccessMessage(null)
     setErrorMessage(null)
+    setDebugMessage(null)
 
     if (!canSubmit) {
       setErrorMessage('Merci de compléter les champs obligatoires.')
@@ -183,22 +186,23 @@ export default function RegistrationPage() {
         notes: trimmedNotes || undefined,
       })
 
-      if (!result.ok) {
-        setErrorMessage(getPublicRegistrationErrorMessage(result.warning))
-        return
-      }
-
       setSuccessMessage(
         'Votre demande a bien été envoyée. Un responsable du BCVB va l’étudier et reviendra vers vous.',
       )
+      if (import.meta.env.DEV && result.warnings.length > 0) {
+        setDebugMessage(`Inscription enregistrée avec avertissements : ${result.warnings.join(' | ')}`)
+      }
 
       setForm(initialForm)
     } catch (error) {
-      console.error('Erreur inscription :', error)
+      console.error('[RegistrationPage] submit failed:', error)
 
       setErrorMessage(
-        getPublicRegistrationErrorMessage(error),
+        getPublicRegistrationErrorMessage(),
       )
+      if (import.meta.env.DEV) {
+        setDebugMessage(error instanceof Error ? error.message : String(error))
+      }
     } finally {
       setLoading(false)
     }
@@ -239,12 +243,22 @@ export default function RegistrationPage() {
         {successMessage ? (
           <div className="registration-page__message registration-page__message--success">
             {successMessage}
+            {import.meta.env.DEV && debugMessage ? (
+              <small className="registration-page__debug">
+                Diagnostic dev : {debugMessage}
+              </small>
+            ) : null}
           </div>
         ) : null}
 
         {errorMessage ? (
           <div className="registration-page__message registration-page__message--error">
             {errorMessage}
+            {import.meta.env.DEV && debugMessage ? (
+              <small className="registration-page__debug">
+                Diagnostic dev : {debugMessage}
+              </small>
+            ) : null}
           </div>
         ) : null}
 

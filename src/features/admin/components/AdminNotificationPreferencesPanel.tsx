@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import {
+  DEFAULT_ADMIN_NOTIFICATION_PREFERENCES,
   ensureDefaultAdminNotificationPreferences,
   fetchAdminNotificationPreferences,
   updateAdminNotificationPreference,
@@ -27,10 +28,26 @@ export default function AdminNotificationPreferencesPanel() {
       setMessage('Préférences chargées.')
     } catch (err) {
       console.warn('Chargement préférences notifications impossible :', err)
-      setError('Impossible de charger les préférences. Le fallback local reste disponible.')
+      const message = err instanceof Error ? err.message : 'Impossible de charger les préférences.'
+      setError(
+        message.includes('Table de préférences absente')
+          ? 'Table de préférences absente. Exécute le SQL d’installation.'
+          : 'Impossible de charger les préférences. Le fallback local reste disponible.',
+      )
 
-      const rows = await fetchAdminNotificationPreferences()
-      setPreferences(rows)
+      try {
+        const rows = await fetchAdminNotificationPreferences()
+        setPreferences(rows)
+      } catch {
+        const now = new Date().toISOString()
+        setPreferences(
+          DEFAULT_ADMIN_NOTIFICATION_PREFERENCES.map((preference) => ({
+            ...preference,
+            created_at: preference.created_at || now,
+            updated_at: preference.updated_at || now,
+          })),
+        )
+      }
     } finally {
       setLoading(false)
     }

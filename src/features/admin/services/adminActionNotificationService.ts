@@ -36,20 +36,38 @@ async function insertNotification(
   payload: CreateAdminActionNotificationPayload,
   recipientRole: string,
 ) {
+  const basePayload = {
+    type: payload.eventType,
+    title: payload.title,
+    message: payload.message,
+    action_url: payload.actionUrl || null,
+  }
+
   const { error } = await supabase
     .from('admin_notifications')
     .insert({
-      type: payload.eventType,
-      title: payload.title,
-      message: payload.message,
-      action_url: payload.actionUrl || null,
+      ...basePayload,
       metadata: payload.metadata || {},
       recipient_role: recipientRole,
     })
 
-  if (error) {
+  if (!error) return
+
+  const value = error.message.toLowerCase()
+  const isMissingColumn =
+    value.includes('could not find') ||
+    value.includes('schema cache') ||
+    (value.includes('column') && value.includes('does not exist'))
+
+  if (!isMissingColumn) {
     throw new Error(error.message)
   }
+
+  const { error: fallbackError } = await supabase
+    .from('admin_notifications')
+    .insert(basePayload)
+
+  if (fallbackError) throw new Error(fallbackError.message)
 }
 
 export async function createAdminActionNotification(

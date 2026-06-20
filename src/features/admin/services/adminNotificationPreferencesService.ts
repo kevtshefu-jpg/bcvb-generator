@@ -164,6 +164,17 @@ function saveLocalPreferences(preferences: AdminNotificationPreference[]) {
   }
 }
 
+function isRelationMissingError(message: string) {
+  const value = message.toLowerCase()
+
+  return (
+    value.includes('relation') && value.includes('does not exist') ||
+    value.includes('table') && value.includes('does not exist') ||
+    value.includes('could not find the table') ||
+    value.includes('pgrst205')
+  )
+}
+
 function normalizePreference(row: Partial<AdminNotificationPreference>): AdminNotificationPreference {
   const fallback =
     DEFAULT_ADMIN_NOTIFICATION_PREFERENCES.find((item) => item.event_type === row.event_type) ??
@@ -207,6 +218,9 @@ export async function fetchAdminNotificationPreferences() {
 
   if (error) {
     console.warn('Préférences notifications admin indisponibles, fallback local :', error.message)
+    if (isRelationMissingError(error.message)) {
+      throw new Error('Table de préférences absente. Exécute le SQL d’installation.')
+    }
     return readLocalPreferences()
   }
 
@@ -240,6 +254,9 @@ export async function ensureDefaultAdminNotificationPreferences() {
 
   if (error) {
     console.warn('Initialisation préférences notifications admin impossible :', error.message)
+    if (isRelationMissingError(error.message)) {
+      throw new Error('Table de préférences absente. Exécute le SQL d’installation.')
+    }
     const local = readLocalPreferences()
     saveLocalPreferences(local)
     return local
