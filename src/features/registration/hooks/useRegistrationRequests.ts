@@ -5,6 +5,12 @@ import {
   rejectRegistrationRequest,
 } from '../services/registrationApprovalService'
 
+type RegistrationRequestActionInput = {
+  id: string
+  role_requested?: string | null
+  requested_role?: string | null
+}
+
 export function useRegistrationRequests(approvedBy?: string) {
   const [requests, setRequests] = useState<RegistrationRequestRow[]>([])
   const [loading, setLoading] = useState(false)
@@ -36,14 +42,17 @@ export function useRegistrationRequests(approvedBy?: string) {
     }
   }, [])
 
-  async function approve(item: RegistrationRequestRow) {
+  async function approve(item: RegistrationRequestActionInput) {
     try {
       setError(null)
       setLastCreatedPassword(null)
 
-      const result = await approveRegistrationAndCreateUser(item.id)
+      const result = await approveRegistrationAndCreateUser(
+        item.id,
+        item.role_requested || item.requested_role || undefined,
+      )
 
-      setLastCreatedPassword(result.temporary_password)
+      setLastCreatedPassword(result.temporary_password || result.passwordResetLink || result.message || null)
 
       const rows = await fetchRegistrationRequests()
       setRequests(rows)
@@ -52,7 +61,7 @@ export function useRegistrationRequests(approvedBy?: string) {
     }
   }
 
-  async function reject(item: RegistrationRequestRow) {
+  async function reject(item: RegistrationRequestActionInput) {
     try {
       setError(null)
       await rejectRegistrationRequest(item.id, approvedBy)

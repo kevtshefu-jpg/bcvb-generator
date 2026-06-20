@@ -4,6 +4,7 @@ export type AdminSettingsSection =
   | "standards"
   | "referentials"
   | "exports"
+  | "notifications"
   | "security";
 
 type AdminSettingsSidebarProps = {
@@ -42,6 +43,12 @@ const sections: Array<{ id: AdminSettingsSection; label: string; text: string; p
     label: "Exports",
     text: "PDF, source, marges, logo et pied de page.",
     priority: "Moyenne",
+  },
+  {
+    id: "notifications",
+    label: "Notifications admin",
+    text: "Événements utilisateurs et destinataires alertés.",
+    priority: "Haute",
   },
   {
     id: "security",

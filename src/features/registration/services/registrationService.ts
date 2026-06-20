@@ -9,11 +9,14 @@ export type RegistrationRequestRow = {
   phone: string | null
   birth_year: number | null
   category_requested: string
+  requested_category?: string | null
   role_requested: string
+  requested_role?: string | null
+  requested_team?: string | null
   notes: string | null
   status: 'pending' | 'approved' | 'rejected'
-  approved_by: string | null
-  approved_at: string | null
+  approved_by?: string | null
+  approved_at?: string | null
 }
 
 export type CreateRegistrationRequestInput = {
@@ -77,6 +80,25 @@ export async function updateRegistrationRequestStatus(
     .select('*')
     .single()
 
-  if (error) throw error
+  if (error) {
+    const value = error.message.toLowerCase()
+    const isMissingColumn =
+      value.includes('could not find') ||
+      value.includes('schema cache') ||
+      (value.includes('column') && value.includes('does not exist'))
+
+    if (!isMissingColumn) throw error
+
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('registration_requests')
+      .update({ status })
+      .eq('id', id)
+      .select('*')
+      .single()
+
+    if (fallbackError) throw fallbackError
+    return fallbackData as RegistrationRequestRow
+  }
+
   return data as RegistrationRequestRow
 }

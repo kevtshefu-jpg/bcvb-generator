@@ -1,7 +1,9 @@
 import { FormEvent, useMemo, useState } from 'react'
 
-import { supabase } from '../../../lib/supabase'
-import { createProfileRequest } from '../../admin/services/profileRequestService'
+import {
+  getPublicRegistrationErrorMessage,
+  submitPublicRegistration,
+} from '../services/publicRegistrationService'
 
 type RegistrationFormState = {
   first_name: string
@@ -14,21 +16,6 @@ type RegistrationFormState = {
   requested_team: string
   notes: string
 }
-
-type LegacyRegistrationPayload = {
-  first_name: string
-  last_name: string
-  email: string
-  phone: string | null
-  birth_year: number
-  category_requested: string
-  role_requested: string
-  requested_team: string | null
-  notes: string | null
-  status: 'pending'
-}
-
-type LegacyRegistrationMinimalPayload = Omit<LegacyRegistrationPayload, 'requested_team'>
 
 const initialForm: RegistrationFormState = {
   first_name: '',
@@ -111,80 +98,6 @@ function getRoleLabel(value: string) {
   return roleOptions.find((role) => role.value === value)?.label || value
 }
 
-function isMissingColumnError(errorMessage: string) {
-  const message = errorMessage.toLowerCase()
-  return (
-    message.includes('could not find') ||
-    message.includes('schema cache') ||
-    (message.includes('column') && message.includes('does not exist'))
-  )
-}
-
-function getLegacyRegistrationFallbackPayload(
-  payload: LegacyRegistrationPayload,
-): LegacyRegistrationMinimalPayload {
-  return {
-    first_name: payload.first_name,
-    last_name: payload.last_name,
-    email: payload.email,
-    phone: payload.phone,
-    birth_year: payload.birth_year,
-    category_requested: payload.category_requested,
-    role_requested: payload.role_requested,
-    notes: payload.notes,
-    status: payload.status,
-  }
-}
-
-async function createLegacyRegistrationRequest(payload: LegacyRegistrationPayload) {
-  const { error } = await supabase
-    .from('registration_requests')
-    .insert([payload])
-
-  if (!error) return
-
-  if (isMissingColumnError(error.message)) {
-    console.warn(
-      'Insertion legacy registration_requests incomplète, tentative fallback sans colonne optionnelle :',
-      error.message,
-    )
-
-    // TODO: ajouter requested_team à registration_requests côté Supabase si l’historique d’inscription doit conserver cette information.
-    const { error: fallbackError } = await supabase
-      .from('registration_requests')
-      .insert([getLegacyRegistrationFallbackPayload(payload)])
-
-    if (fallbackError) {
-      console.warn(
-        'Insertion legacy registration_requests ignorée après fallback :',
-        fallbackError.message,
-      )
-    }
-
-    return
-  }
-
-  console.warn('Insertion legacy registration_requests ignorée :', error.message)
-}
-
-async function notifyAdminByEmail(payload: {
-  fullName: string
-  email: string
-  requestedRole: string
-  requestedCategoryId: string
-  requestedTeam: string | null
-  phone: string | null
-  message: string | null
-}) {
-  const { error } = await supabase.functions.invoke('notify-profile-request', {
-    body: payload,
-  })
-
-  if (error) {
-    throw new Error(error.message)
-  }
-}
-
 export default function RegistrationPage() {
   const [form, setForm] = useState<RegistrationFormState>(initialForm)
   const [loading, setLoading] = useState(false)
@@ -240,7 +153,6 @@ export default function RegistrationPage() {
     const trimmedRole = normalizeText(form.role_requested)
     const trimmedTeam = normalizeText(form.requested_team)
     const trimmedNotes = normalizeText(form.notes)
-    const finalFullName = `${trimmedFirstName} ${trimmedLastName}`.trim()
 
     if (!isValidEmail(trimmedEmail)) {
       setErrorMessage('Merci de renseigner une adresse email valide.')
@@ -259,47 +171,25 @@ export default function RegistrationPage() {
     try {
       setLoading(true)
 
-      await createProfileRequest({
-        userId: null,
+      const result = await submitPublicRegistration({
+        firstName: trimmedFirstName,
+        lastName: trimmedLastName,
         email: trimmedEmail,
-        fullName: finalFullName,
-        requestedRole: trimmedRole,
-        requestedCategoryId: trimmedCategory,
-        requestedTeam: trimmedTeam || null,
-        phone: trimmedPhone || null,
-        motivation: trimmedNotes || null,
-        message: trimmedNotes || null,
+        phone: trimmedPhone || undefined,
+        birthYear: parsedBirthYear,
+        categoryRequested: trimmedCategory,
+        roleRequested: trimmedRole,
+        requestedTeam: trimmedTeam || undefined,
+        notes: trimmedNotes || undefined,
       })
 
-      await createLegacyRegistrationRequest({
-        first_name: trimmedFirstName,
-        last_name: trimmedLastName,
-        email: trimmedEmail,
-        phone: trimmedPhone || null,
-        birth_year: parsedBirthYear,
-        category_requested: trimmedCategory,
-        role_requested: trimmedRole,
-        requested_team: trimmedTeam || null,
-        notes: trimmedNotes || null,
-        status: 'pending',
-      })
-
-      try {
-        await notifyAdminByEmail({
-          fullName: finalFullName,
-          email: trimmedEmail,
-          requestedRole: trimmedRole,
-          requestedCategoryId: trimmedCategory,
-          requestedTeam: trimmedTeam || null,
-          phone: trimmedPhone || null,
-          message: trimmedNotes || null,
-        })
-      } catch (notificationError) {
-        console.warn('Notification email admin non envoyée :', notificationError)
+      if (!result.ok) {
+        setErrorMessage(getPublicRegistrationErrorMessage(result.warning))
+        return
       }
 
       setSuccessMessage(
-        'Votre demande a bien été envoyée. Un responsable du BCVB va l’étudier et valider ou non votre accès à la plateforme.',
+        'Votre demande a bien été envoyée. Un responsable du BCVB va l’étudier et reviendra vers vous.',
       )
 
       setForm(initialForm)
@@ -307,7 +197,7 @@ export default function RegistrationPage() {
       console.error('Erreur inscription :', error)
 
       setErrorMessage(
-        "Impossible d’envoyer la demande pour le moment. Merci de vérifier les champs puis de réessayer, ou de contacter un responsable du BCVB.",
+        getPublicRegistrationErrorMessage(error),
       )
     } finally {
       setLoading(false)

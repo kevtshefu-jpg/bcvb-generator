@@ -6,6 +6,7 @@ import AdminSettingsSidebar from "./AdminSettingsSidebar";
 import type { AdminSettingsSection } from "./AdminSettingsSidebar";
 import DocumentStandardsPanel from "./DocumentStandardsPanel";
 import ExportSettingsPanel from "./ExportSettingsPanel";
+import AdminNotificationPreferencesPanel from "../../features/admin/components/AdminNotificationPreferencesPanel";
 import PlatformSecurityPanel from "./PlatformSecurityPanel";
 import ReferentialsPanel from "./ReferentialsPanel";
 import RolePermissionsPanel from "./RolePermissionsPanel";
@@ -91,6 +92,10 @@ export default function AdminSettingsPage() {
           onChange={(exports) => updateConfig({ ...config, exports })}
         />
       );
+    }
+
+    if (activeSection === "notifications") {
+      return <AdminNotificationPreferencesPanel />;
     }
 
     return <PlatformSecurityPanel config={config} />;
