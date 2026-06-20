@@ -1,5 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { DocumentModeToggle } from '../features/documents/workflow/DocumentModeToggle'
+import { DocumentNextStepCard } from '../features/documents/workflow/DocumentNextStepCard'
+import { DocumentWorkflowGuide } from '../features/documents/workflow/DocumentWorkflowGuide'
+import { DocumentWorkflowStepper } from '../features/documents/workflow/DocumentWorkflowStepper'
+import {
+  getCurrentDocumentStep,
+  getDocumentWorkflowSteps,
+  getNextDocumentStep,
+  type DocumentWorkflowMode,
+  type DocumentWorkflowStep,
+  type DocumentWorkflowStepKey,
+} from '../features/documents/workflow/documentWorkflow'
 import {
   EDITORIAL_AI_MODES,
   EDITORIAL_DOCUMENT_FAMILIES,
@@ -17,6 +29,7 @@ import {
   saveEditorialStudioState,
   type EditorialStudioState,
 } from '../utils/editorialStudioStorage.js'
+import '../features/documents/workflow/document-workflow.css'
 import './EditorialStudioPage.css'
 
 function computeSteps(state: EditorialStudioState) {
@@ -64,8 +77,22 @@ function downloadText(filename: string, content: string) {
   URL.revokeObjectURL(url)
 }
 
+const WORKFLOW_STEP_TARGETS: Record<DocumentWorkflowStepKey, string> = {
+  source: 'studio-source',
+  classification: 'studio-classification',
+  structure: 'studio-structure',
+  production: 'studio-production',
+  preview: 'studio-preview',
+  quality: 'studio-assistance',
+  correction: 'studio-assistance',
+  validation: 'studio-preview',
+  export: 'studio-export',
+  archive: 'studio-assistance',
+}
+
 export default function EditorialStudioPage() {
   const [state, setState] = useState<EditorialStudioState>(() => loadEditorialStudioState() ?? defaultEditorialStudioState)
+  const [workflowMode, setWorkflowMode] = useState<DocumentWorkflowMode>('creation')
   const [copied, setCopied] = useState('')
   const [message, setMessage] = useState('Studio prêt.')
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(state.updatedAt)
@@ -73,6 +100,43 @@ export default function EditorialStudioPage() {
   const finalDocumentExists = Boolean(state.finalDocument.trim())
 
   const savedState = useMemo(() => ({ ...state, steps: computeSteps(state) }), [state])
+  const documentWorkflowState = useMemo(() => ({
+    hasSource: Boolean(state.sourceText.trim() || state.activePrompt.trim() || state.transformedFromTitle),
+    hasClassification: Boolean(
+      state.targetDocument.trim() &&
+      state.family.trim() &&
+      state.category.trim() &&
+      state.audience.trim()
+    ),
+    hasStructure: Boolean(state.editorialPlan.trim()),
+    hasContent: Boolean(state.finalDocument.trim() || state.analyzedResponse.trim()),
+    hasPreview: finalDocumentExists,
+    qualityScore: finalDocumentExists ? state.qualityScore : null,
+    isValidated: finalDocumentExists && state.qualityScore >= 95,
+    isExported: false,
+  }), [
+    finalDocumentExists,
+    state.activePrompt,
+    state.analyzedResponse,
+    state.audience,
+    state.category,
+    state.editorialPlan,
+    state.family,
+    state.finalDocument,
+    state.qualityScore,
+    state.sourceText,
+    state.targetDocument,
+    state.transformedFromTitle,
+  ])
+  const workflowSteps = useMemo(
+    () => getDocumentWorkflowSteps(workflowMode, documentWorkflowState),
+    [documentWorkflowState, workflowMode]
+  )
+  const currentWorkflowStepKey = useMemo(
+    () => getCurrentDocumentStep(documentWorkflowState, workflowMode),
+    [documentWorkflowState, workflowMode]
+  )
+  const nextWorkflowStep = useMemo(() => getNextDocumentStep(workflowSteps), [workflowSteps])
   const qualityActions = useMemo(() => {
     if (!finalDocumentExists) {
       return [
@@ -217,6 +281,33 @@ export default function EditorialStudioPage() {
     }, 0)
   }
 
+  function handleWorkflowStepClick(step: DocumentWorkflowStep) {
+    scrollToStudioBlock(WORKFLOW_STEP_TARGETS[step.key] ?? 'studio-editor')
+  }
+
+  function handleWorkflowPrimaryAction() {
+    if (!nextWorkflowStep) {
+      scrollToStudioBlock('studio-export')
+      return
+    }
+
+    if (nextWorkflowStep.key === 'structure' && !state.editorialPlan.trim()) {
+      patch({ editorialPlan: buildPlanDraft(state) })
+      setMessage('Plan éditorial généré depuis le workflow guidé.')
+      scrollToStudioBlock('studio-structure')
+      return
+    }
+
+    if (
+      nextWorkflowStep.key === 'quality' &&
+      (state.finalDocument.trim() || state.analyzedResponse.trim() || state.chatGptResponse.trim() || state.claudeResponse.trim())
+    ) {
+      analyzeResponse()
+    }
+
+    scrollToStudioBlock(WORKFLOW_STEP_TARGETS[nextWorkflowStep.key] ?? 'studio-editor')
+  }
+
   function saveStudioNow() {
     const nextState = saveEditorialStudioState(savedState)
     setLastSavedAt(nextState.updatedAt)
@@ -297,66 +388,6 @@ export default function EditorialStudioPage() {
     },
   ]
 
-  const nextStudioAction = (() => {
-    if (!state.sourceText.trim()) {
-      return {
-        eyebrow: 'Prochaine action',
-        title: 'Ajouter une source exploitable',
-        text: 'Commence par coller un prompt, un texte OCR, une note admin ou un fichier afin de nourrir la production documentaire.',
-        actionLabel: 'Aller à la source',
-        action: () => scrollToStudioBlock('studio-source'),
-        secondaryLabel: 'Générer un prompt',
-        secondaryAction: () => generatePrompt('chatgpt'),
-      }
-    }
-
-    if (!state.editorialPlan.trim()) {
-      return {
-        eyebrow: 'Prochaine action',
-        title: 'Construire le plan éditorial',
-        text: 'Transforme la source en structure BCVB claire : intention, progression, situations, critères et publication.',
-        actionLabel: 'Générer le plan',
-        action: () => patch({ editorialPlan: buildPlanDraft(state) }),
-        secondaryLabel: 'Ouvrir l’éditeur',
-        secondaryAction: () => scrollToStudioBlock('studio-editor'),
-      }
-    }
-
-    if (!finalDocumentExists) {
-      return {
-        eyebrow: 'Prochaine action',
-        title: 'Produire le document final',
-        text: 'Génère ou colle la réponse IA, puis analyse-la pour alimenter le document BCVB Rich Markdown.',
-        actionLabel: 'Analyser la réponse',
-        action: analyzeResponse,
-        secondaryLabel: 'Prompt fusion',
-        secondaryAction: () => generatePrompt('fusion'),
-      }
-    }
-
-    if (state.qualityScore < 95) {
-      return {
-        eyebrow: 'Prochaine action',
-        title: 'Améliorer la qualité avant publication',
-        text: 'Le document existe : il faut maintenant renforcer sa structure, son identité BCVB et sa lisibilité terrain.',
-        actionLabel: 'Améliorer fortement',
-        action: () => generatePrompt('massive-correction'),
-        secondaryLabel: 'Voir les warnings',
-        secondaryAction: () => scrollToStudioBlock('studio-assistance'),
-      }
-    }
-
-    return {
-      eyebrow: 'Prochaine action',
-      title: 'Document prêt pour relecture finale',
-      text: 'Le score est haut : relis l’aperçu, conserve la source et prépare la diffusion depuis les actions existantes.',
-      actionLabel: 'Prévisualiser',
-      action: () => scrollToStudioBlock('studio-preview'),
-      secondaryLabel: 'Enregistrer',
-      secondaryAction: saveStudioNow,
-    }
-  })()
-
   return (
     <main className="editorial-studio-page editorial-studio-premium bcvb-page bcvb-premium-page">
       <section className="editorial-studio-hero bcvb-premium-hero">
@@ -372,6 +403,28 @@ export default function EditorialStudioPage() {
           <button className="bcvb-premium-button bcvb-premium-button--primary" type="button" onClick={resumeWork}>Reprendre mon travail</button>
           <button className="bcvb-premium-button bcvb-premium-button--danger" type="button" onClick={resetStudio}>Réinitialiser le studio</button>
           <Link className="bcvb-premium-button bcvb-premium-button--ghost" to="/admin/ia-documentaire">Ancien studio avancé</Link>
+        </div>
+      </section>
+
+      <section className="editorial-document-workbench" aria-label="Workflow documentaire guidé">
+        <div className="editorial-document-workbench__header">
+          <DocumentModeToggle mode={workflowMode} onChange={setWorkflowMode} />
+          <DocumentNextStepCard
+            step={nextWorkflowStep}
+            mode={workflowMode}
+            onPrimaryAction={handleWorkflowPrimaryAction}
+          />
+        </div>
+
+        <div className="editorial-document-workbench__main">
+          <DocumentWorkflowStepper
+            steps={workflowSteps}
+            currentStepKey={currentWorkflowStepKey}
+            onStepClick={handleWorkflowStepClick}
+          />
+          <div className="editorial-document-workbench__side">
+            <DocumentWorkflowGuide mode={workflowMode} />
+          </div>
         </div>
       </section>
 
@@ -414,22 +467,6 @@ export default function EditorialStudioPage() {
         <div className="bcvb-premium-toolbar__secondary bcvb-action-row-safe">
           <button className="bcvb-premium-button bcvb-premium-button--ghost" type="button" onClick={exportPdf}>Exporter</button>
           <button className="bcvb-premium-button bcvb-premium-button--ghost" type="button" onClick={resumeWork}>Historique</button>
-        </div>
-      </section>
-
-      <section className="editorial-next-step bcvb-premium-card bcvb-premium-card--priority bcvb-card-safe">
-        <div>
-          <p className="bcvb-premium-card__eyebrow bcvb-tag-safe">{nextStudioAction.eyebrow}</p>
-          <h2 className="bcvb-premium-card__title bcvb-text-clamp-2">{nextStudioAction.title}</h2>
-          <p className="bcvb-premium-card__text bcvb-text-clamp-3">{nextStudioAction.text}</p>
-        </div>
-        <div className="bcvb-premium-actions bcvb-action-row-safe">
-          <button className="bcvb-premium-button bcvb-premium-button--primary" type="button" onClick={nextStudioAction.action}>
-            {nextStudioAction.actionLabel}
-          </button>
-          <button className="bcvb-premium-button bcvb-premium-button--ghost" type="button" onClick={nextStudioAction.secondaryAction}>
-            {nextStudioAction.secondaryLabel}
-          </button>
         </div>
       </section>
 
@@ -478,7 +515,7 @@ export default function EditorialStudioPage() {
             />
           </section>
 
-          <section className="editorial-panel editorial-step-card">
+          <section className="editorial-panel editorial-step-card" id="studio-classification">
             <header>
               <p className="bcvb-eyebrow">Notes admin</p>
               <h2>Cadrage et métadonnées</h2>
@@ -536,7 +573,7 @@ export default function EditorialStudioPage() {
             />
           </section>
 
-          <section className="editorial-panel editorial-step-card">
+          <section className="editorial-panel editorial-step-card" id="studio-structure">
             <header>
               <p className="bcvb-eyebrow">Structure</p>
               <h2>Plan et production IA</h2>
@@ -566,7 +603,7 @@ export default function EditorialStudioPage() {
             </div>
           </section>
 
-          <section className="editorial-panel editorial-step-card">
+          <section className="editorial-panel editorial-step-card" id="studio-production">
             <header>
               <p className="bcvb-eyebrow">Réponses IA</p>
               <h2>Comparer et analyser</h2>

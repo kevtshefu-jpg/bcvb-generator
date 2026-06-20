@@ -1,0 +1,345 @@
+.editorial-document-workbench {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.editorial-document-workbench__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.42fr);
+  gap: 16px;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.editorial-document-workbench__main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.32fr);
+  gap: 16px;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.editorial-document-workbench__side,
+.editorial-document-workbench__section,
+.editorial-document-workbench__actions {
+  min-width: 0;
+}
+
+.document-mode-toggle {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(20, 24, 31, 0.1);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 18px 50px rgba(16, 24, 39, 0.06);
+}
+
+.document-mode-toggle__button {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  min-height: 68px;
+  border: 1px solid rgba(20, 24, 31, 0.12);
+  border-radius: 14px;
+  padding: 12px;
+  color: #14181f;
+  background: #f7f1ee;
+  text-align: left;
+  cursor: pointer;
+}
+
+.document-mode-toggle__button strong,
+.document-mode-toggle__button span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.document-mode-toggle__button strong {
+  font-size: 0.92rem;
+  line-height: 1.1;
+}
+
+.document-mode-toggle__button span {
+  color: rgba(20, 24, 31, 0.64);
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.document-mode-toggle__button--active {
+  border-color: #a32035;
+  color: #ffffff;
+  background: linear-gradient(135deg, #14181f, #a32035);
+}
+
+.document-mode-toggle__button--active span {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.document-next-step-card,
+.document-workflow-guide {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  border: 1px solid rgba(20, 24, 31, 0.1);
+  border-radius: 18px;
+  padding: 18px;
+  background: #ffffff;
+  box-shadow: 0 18px 50px rgba(16, 24, 39, 0.06);
+}
+
+.document-next-step-card {
+  color: #ffffff;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 34%),
+    linear-gradient(135deg, #101827, #a32035);
+}
+
+.document-next-step-card__eyebrow,
+.document-workflow-guide__eyebrow {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.document-workflow-guide__eyebrow {
+  color: #a32035;
+}
+
+.document-next-step-card__title,
+.document-workflow-guide__title {
+  margin: 0;
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.document-next-step-card__title {
+  color: #ffffff;
+  font-size: 1.35rem;
+  text-transform: uppercase;
+}
+
+.document-workflow-guide__title {
+  color: #14181f;
+  font-size: 1.2rem;
+}
+
+.document-next-step-card__text,
+.document-workflow-guide__text {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.document-next-step-card__text {
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 700;
+}
+
+.document-workflow-guide__text,
+.document-workflow-guide__list {
+  color: rgba(20, 24, 31, 0.72);
+  font-weight: 800;
+}
+
+.document-next-step-card__button {
+  justify-self: start;
+  min-height: 42px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 16px;
+  color: #14181f;
+  background: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.document-workflow-guide__list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.4;
+}
+
+.document-workflow-stepper--guided {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  border: 1px solid rgba(20, 24, 31, 0.1);
+  border-radius: 18px;
+  padding: 16px;
+  background: #ffffff;
+  box-shadow: 0 18px 50px rgba(16, 24, 39, 0.06);
+}
+
+.document-workflow-stepper--guided.document-workflow-stepper--compact {
+  padding: 12px;
+}
+
+.document-workflow-stepper--guided .document-workflow-stepper__progress {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eceef1;
+}
+
+.document-workflow-stepper--guided .document-workflow-stepper__progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #a32035, #14181f);
+  transition: width 180ms ease;
+}
+
+.document-workflow-stepper--guided .document-workflow-stepper__steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(168px, 100%), 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.document-workflow-stepper__item {
+  min-width: 0;
+}
+
+.document-workflow-stepper__item > button,
+.document-workflow-stepper__item > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  width: 100%;
+  min-height: 100%;
+  border: 1px solid rgba(20, 24, 31, 0.1);
+  border-top: 4px solid rgba(20, 24, 31, 0.18);
+  border-radius: 14px;
+  padding: 12px;
+  color: #14181f;
+  background: #fbfbfc;
+  text-align: left;
+}
+
+.document-workflow-stepper__item > button {
+  cursor: pointer;
+}
+
+.document-workflow-stepper__item--current > button,
+.document-workflow-stepper__item--current > div {
+  border-color: rgba(163, 32, 53, 0.34);
+  border-top-color: #a32035;
+  background: rgba(163, 32, 53, 0.07);
+}
+
+.document-workflow-stepper__item--done > button,
+.document-workflow-stepper__item--done > div {
+  border-top-color: #3a8960;
+}
+
+.document-workflow-stepper__item--warning > button,
+.document-workflow-stepper__item--warning > div {
+  border-top-color: #e59b2f;
+  background: rgba(229, 155, 47, 0.08);
+}
+
+.document-workflow-stepper__item--blocked > button,
+.document-workflow-stepper__item--blocked > div {
+  opacity: 0.72;
+  border-top-color: rgba(20, 24, 31, 0.24);
+}
+
+.document-workflow-stepper__number {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #14181f;
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.document-workflow-stepper__content {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.document-workflow-stepper__status {
+  color: #a32035;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.document-workflow-stepper__title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #14181f;
+  font-size: 0.94rem;
+  line-height: 1.1;
+}
+
+.document-workflow-stepper__description {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: rgba(20, 24, 31, 0.64);
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+@media (max-width: 1280px) {
+  .editorial-document-workbench__header,
+  .editorial-document-workbench__main {
+    grid-template-columns: 1fr;
+  }
+
+  .document-mode-toggle {
+    grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+  }
+}
+
+@media (max-width: 1024px) {
+  .document-workflow-stepper--guided .document-workflow-stepper__steps {
+    grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .document-mode-toggle,
+  .document-workflow-stepper--guided .document-workflow-stepper__steps {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .document-mode-toggle__button {
+    flex: 0 0 min(74vw, 210px);
+  }
+
+  .document-workflow-stepper__item {
+    flex: 0 0 min(82vw, 280px);
+  }
+
+  .document-next-step-card,
+  .document-workflow-guide,
+  .document-workflow-stepper--guided {
+    border-radius: 16px;
+    padding: 14px;
+  }
+}

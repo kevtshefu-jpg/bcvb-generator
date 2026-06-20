@@ -10,14 +10,17 @@ export default function ModulePlaceholder({
   description = 'Ce module est en cours de construction. Il sera prochainement disponible pour votre rôle.',
 }: ModulePlaceholderProps) {
   return (
-    <main className="bcvb-page">
-      <section className="bcvb-dashboard-hero">
+    <main className="bcvb-page bcvb-premium-page">
+      <section className="bcvb-dashboard-hero bcvb-premium-hero bcvb-card-safe">
         <div>
-          <p className="bcvb-eyebrow">BCVB Référentiel</p>
-          <h1 className="bcvb-title-xl">{title}</h1>
-          <p className="bcvb-subtitle">{description}</p>
+          <p className="bcvb-eyebrow bcvb-premium-hero__eyebrow bcvb-text-safe">BCVB Référentiel</p>
+          <h1 className="bcvb-title-xl bcvb-premium-hero__title bcvb-text-clamp-2">{title}</h1>
+          <p className="bcvb-subtitle bcvb-premium-hero__text bcvb-text-clamp-4">{description}</p>
         </div>
-        <Link className="bcvb-button-secondary" to="/dashboard">
+        <Link
+          className="bcvb-button-secondary bcvb-premium-button bcvb-premium-button--ghost bcvb-action-button-safe"
+          to="/dashboard"
+        >
           Retour tableau de bord
         </Link>
       </section>

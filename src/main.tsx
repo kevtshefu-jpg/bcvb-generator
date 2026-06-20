@@ -10,6 +10,7 @@ import './features/ai-document/styles/aiDocumentStudio.css'
 import './styles/premium-ui-system.css'
 import './styles/mobile-premium.css'
 import './styles/overflow-safety.css'
+import './styles/responsive-density.css'
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },

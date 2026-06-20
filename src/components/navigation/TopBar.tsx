@@ -37,75 +37,75 @@ export function TopBar() {
   }
 
   return (
-  <>
-    <header className="topbar topbar--v33" role="banner">
-      <div className="topbar__left">
-        <div className="topbar__brandLine">
-          <img
-            src="/logo_bcvb copie.png"
-            alt="Logo BCVB"
-            className="topbar__logo"
-          />
+    <>
+      <header className="topbar topbar--v33" role="banner">
+        <div className="topbar__left">
+          <div className="topbar__brandLine">
+            <img
+              src="/logo_bcvb copie.png"
+              alt="Logo BCVB"
+              className="topbar__logo"
+            />
 
-          <div className="topbar__brandText">
-            <div className="topbar__eyebrowLine">
-            <span className="topbar__emojiBadge" aria-hidden="true">
-              🏀
-            </span>
+            <div className="topbar__brandText bcvb-text-safe">
+              <div className="topbar__eyebrowLine">
+                <span className="topbar__emojiBadge" aria-hidden="true">
+                  🏀
+                </span>
 
-            <p className="topbar__eyebrow">
-              {PRESENTATION_LABELS.appTitle}
-            </p>
-          </div>
+                <p className="topbar__eyebrow bcvb-text-safe">
+                  {PRESENTATION_LABELS.appTitle}
+                </p>
+              </div>
 
-            <h1 className="topbar__title">
-              Studio documentaire BCVB
-            </h1>
+              <h1 className="topbar__title bcvb-text-clamp-2">
+                Studio documentaire BCVB
+              </h1>
 
-            <p className="topbar__subtitle">
-              {getRoleHomeLabel(profile?.role)} · {PRESENTATION_LABELS.appSubtitle}
-            </p>
+              <p className="topbar__subtitle bcvb-text-clamp-2">
+                {getRoleHomeLabel(profile?.role)} · {PRESENTATION_LABELS.appSubtitle}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <PrimaryNavigation role={profile?.role} />
+        <PrimaryNavigation role={profile?.role} />
 
-      <div className="topbar__right" aria-label="Informations utilisateur">
-        <div className="topbar__identityCard">
-          <span className="topbar__identityLabel">
-            👤 Session active
-          </span>
-
-          <span className="topbar__name">
-            {profile?.full_name || profile?.email || user?.email || 'Membre'}
-          </span>
-
-          <span className="topbar__role">
-            <span className="topbar__roleIcon" aria-hidden="true">
-              {getRoleIcon(profile?.role)}
+        <div className="topbar__right" aria-label="Informations utilisateur">
+          <div className="topbar__identityCard bcvb-card-safe">
+            <span className="topbar__identityLabel bcvb-text-safe">
+              👤 Session active
             </span>
-            {formatRole(profile?.role)}
-          </span>
+
+            <span className="topbar__name bcvb-text-clamp-2">
+              {profile?.full_name || profile?.email || user?.email || 'Membre'}
+            </span>
+
+            <span className="topbar__role bcvb-badge-safe">
+              <span className="topbar__roleIcon" aria-hidden="true">
+                {getRoleIcon(profile?.role)}
+              </span>
+              {formatRole(profile?.role)}
+            </span>
+          </div>
+
+          {user && (
+            <button
+              type="button"
+              className="topbar__logout bcvb-action-button-safe"
+              onClick={handleLogout}
+              aria-label="Se déconnecter du Studio documentaire BCVB"
+            >
+              Déconnexion
+            </button>
+          )}
         </div>
+      </header>
 
-        {user && (
-          <button
-            type="button"
-            className="topbar__logout"
-            onClick={handleLogout}
-            aria-label="Se déconnecter du Studio documentaire BCVB"
-          >
-            Déconnexion
-          </button>
-        )}
+      <div className="topbar-context" aria-label="Contexte de navigation">
+        <Breadcrumbs role={profile?.role} />
+        <CurrentModuleContext role={profile?.role} />
       </div>
-    </header>
-
-    <div className="topbar-context" aria-label="Contexte de navigation">
-      <Breadcrumbs role={profile?.role} />
-      <CurrentModuleContext role={profile?.role} />
-    </div>
-  </>
-)
+    </>
+  )
 }

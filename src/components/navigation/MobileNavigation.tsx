@@ -111,8 +111,8 @@ function MobileNavLink({
       onClick={onNavigate}
       className={({ isActive }) =>
         isActive
-          ? 'mobile-nav-panel__link mobile-nav-panel__link--active'
-          : 'mobile-nav-panel__link'
+          ? 'mobile-nav-panel__link mobile-nav-panel__link--active bcvb-card-safe'
+          : 'mobile-nav-panel__link bcvb-card-safe'
       }
       aria-label={item.subtitle ? `${item.label} — ${item.subtitle}` : item.label}
     >
@@ -121,12 +121,12 @@ function MobileNavLink({
       </span>
 
       <span className="mobile-nav-panel__text">
-        <strong>{item.label}</strong>
-        {item.subtitle ? <small>{item.subtitle}</small> : null}
+        <strong className="bcvb-text-clamp-2">{item.label}</strong>
+        {item.subtitle ? <small className="bcvb-text-clamp-2">{item.subtitle}</small> : null}
       </span>
 
       {item.adminOnly ? (
-        <span className="mobile-nav-panel__badge">ADMIN</span>
+        <span className="mobile-nav-panel__badge bcvb-badge-safe">ADMIN</span>
       ) : null}
     </NavLink>
   )
@@ -145,11 +145,13 @@ function QuickLink({
       end={item.to === '/'}
       onClick={onNavigate}
       className={({ isActive }) =>
-        isActive ? 'mobile-nav__quickLink mobile-nav__quickLink--active' : 'mobile-nav__quickLink'
+        isActive
+          ? 'mobile-nav__quickLink mobile-nav__quickLink--active bcvb-action-button-safe'
+          : 'mobile-nav__quickLink bcvb-action-button-safe'
       }
     >
       <BcvbSectionIcon name={item.icon} size="sm" variant={item.variant} />
-      <span>{item.label}</span>
+      <span className="bcvb-text-clamp-2">{item.label}</span>
     </NavLink>
   )
 }
@@ -255,14 +257,14 @@ export default function MobileNavigation() {
             />
 
             <div className="mobile-nav__brandText">
-              <p>{PRESENTATION_LABELS.appTitle}</p>
-              <strong>Plateforme club</strong>
+              <p className="bcvb-text-clamp-2">{PRESENTATION_LABELS.appTitle}</p>
+              <strong className="bcvb-text-safe">Plateforme club</strong>
             </div>
           </div>
 
           <button
             type="button"
-            className="mobile-nav__button"
+            className="mobile-nav__button bcvb-action-button-safe"
             onClick={toggleMenu}
             aria-expanded={open}
             aria-controls="mobile-navigation-panel"
@@ -294,13 +296,13 @@ export default function MobileNavigation() {
           >
             <div className="mobile-nav-panel__header">
               <div>
-                <p>Menu BCVB</p>
-                <strong>{user ? profile?.full_name || user.email : 'Espace public'}</strong>
+                <p className="bcvb-text-safe">Menu BCVB</p>
+                <strong className="bcvb-text-clamp-2">{user ? profile?.full_name || user.email : 'Espace public'}</strong>
               </div>
 
               <button
                 type="button"
-                className="mobile-nav-panel__close"
+                className="mobile-nav-panel__close bcvb-action-button-safe"
                 onClick={closeMenu}
               >
                 Fermer

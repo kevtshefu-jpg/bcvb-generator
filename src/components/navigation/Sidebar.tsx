@@ -23,6 +23,7 @@ function normalizeText(value: string) {
 function linkClass(isActive: boolean, color?: string) {
   return [
     'sidebar__link',
+    'bcvb-card-safe',
     isActive ? 'sidebar__link--active' : '',
     color ? `sidebar__link--${color}` : '',
   ]
@@ -172,15 +173,15 @@ function SidebarLink({
       </span>
 
       <span className="sidebar__linkText">
-        <span className="sidebar__linkLabel">{item.label}</span>
+        <span className="sidebar__linkLabel bcvb-text-clamp-2">{item.label}</span>
 
         {mainAction ? (
-          <small className="sidebar__linkHint">{mainAction}</small>
+          <small className="sidebar__linkHint bcvb-text-clamp-2">{mainAction}</small>
         ) : null}
       </span>
 
       {item.adminOnly ? (
-        <span className="sidebar__adminBadge">Admin</span>
+        <span className="sidebar__adminBadge bcvb-badge-safe">Admin</span>
       ) : null}
     </NavLink>
   )
@@ -205,8 +206,8 @@ function AuthLinks() {
           </span>
 
           <span className="sidebar__linkText">
-            <span className="sidebar__linkLabel">Connexion</span>
-            <small className="sidebar__linkHint">Accéder à votre espace</small>
+            <span className="sidebar__linkLabel bcvb-text-clamp-2">Connexion</span>
+            <small className="sidebar__linkHint bcvb-text-clamp-2">Accéder à votre espace</small>
           </span>
         </NavLink>
 
@@ -220,8 +221,8 @@ function AuthLinks() {
           </span>
 
           <span className="sidebar__linkText">
-            <span className="sidebar__linkLabel">Inscription</span>
-            <small className="sidebar__linkHint">Créer un accès</small>
+            <span className="sidebar__linkLabel bcvb-text-clamp-2">Inscription</span>
+            <small className="sidebar__linkHint bcvb-text-clamp-2">Créer un accès</small>
           </span>
         </NavLink>
       </div>
@@ -249,9 +250,9 @@ export function Sidebar() {
         />
 
         <div className="sidebar__brandText">
-          <p className="sidebar__eyebrow">BCVB Référentiel</p>
-          <h1 className="sidebar__title">{PRESENTATION_LABELS.appTitle}</h1>
-          <p className="sidebar__subtitle">{PRESENTATION_LABELS.appSubtitle}</p>
+          <p className="sidebar__eyebrow bcvb-text-safe">BCVB Référentiel</p>
+          <h1 className="sidebar__title bcvb-text-clamp-2">{PRESENTATION_LABELS.appTitle}</h1>
+          <p className="sidebar__subtitle bcvb-text-clamp-3">{PRESENTATION_LABELS.appSubtitle}</p>
         </div>
       </div>
 
@@ -264,7 +265,7 @@ export function Sidebar() {
                 size="sm"
                 variant={getSectionVariant(section)}
               />
-              <span>{section}</span>
+              <span className="bcvb-text-clamp-2">{section}</span>
             </div>
 
             <div className="sidebar__sectionLinks">
@@ -284,8 +285,8 @@ export function Sidebar() {
         </div>
 
         <div>
-          <p className="sidebar__footerTitle">Cadre BCVB</p>
-          <p className="sidebar__footerText">
+          <p className="sidebar__footerTitle bcvb-text-safe">Cadre BCVB</p>
+          <p className="sidebar__footerText bcvb-text-clamp-3">
             Défendre fort • Courir • Partager la balle
           </p>
         </div>

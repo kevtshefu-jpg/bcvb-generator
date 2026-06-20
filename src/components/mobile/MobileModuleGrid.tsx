@@ -25,16 +25,16 @@ export default function MobileModuleGrid({
   if (!cards.length) return null
 
   return (
-    <section className={`mobile-module-section ${className}`.trim()}>
+    <section className={`mobile-module-section bcvb-card-safe ${className}`.trim()}>
       {title ? (
-        <h2 className="mobile-module-section__title">
+        <h2 className="mobile-module-section__title bcvb-text-clamp-2">
           {title}
         </h2>
       ) : null}
 
-      <div className="mobile-module-grid">
+      <div className="mobile-module-grid bcvb-grid-safe">
         {cards.map((card) => {
-          const className = `mobile-module-card${card.locked ? ' mobile-module-card--locked' : ''}`
+          const cardClassName = `mobile-module-card bcvb-card-safe${card.locked ? ' mobile-module-card--locked' : ''}`
 
           const content = (
             <>
@@ -46,24 +46,24 @@ export default function MobileModuleGrid({
                 ) : null}
 
                 {card.badge ? (
-                  <span className="mobile-module-card__badge">
+                  <span className="mobile-module-card__badge bcvb-badge-safe">
                     {card.badge}
                   </span>
                 ) : null}
               </div>
 
-              <strong className="mobile-module-card__title">
+              <strong className="mobile-module-card__title bcvb-text-clamp-2">
                 {card.title}
               </strong>
 
               {card.description ? (
-                <p className="mobile-module-card__description">
+                <p className="mobile-module-card__description bcvb-text-clamp-4">
                   {card.description}
                 </p>
               ) : null}
 
               {card.meta ? (
-                <small className="mobile-module-card__meta">
+                <small className="mobile-module-card__meta bcvb-text-safe">
                   {card.meta}
                 </small>
               ) : null}
@@ -75,7 +75,7 @@ export default function MobileModuleGrid({
               <Link
                 key={`${card.title}-${card.to}`}
                 to={card.to}
-                className={className}
+                className={cardClassName}
               >
                 {content}
               </Link>
@@ -86,7 +86,7 @@ export default function MobileModuleGrid({
             <button
               key={card.title}
               type="button"
-              className={className}
+              className={cardClassName}
               onClick={card.onClick}
               disabled={card.locked}
             >

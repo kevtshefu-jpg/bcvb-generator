@@ -1,0 +1,248 @@
+/* Responsive density polish.
+   Presentation-only overrides for small desktop and mobile comfort. */
+
+:root {
+  --bcvb-density-card-min: 220px;
+  --bcvb-density-compact-min: 180px;
+}
+
+:where(
+  .dirigeant-block-map,
+  .dirigeant-kpi-grid,
+  .planning-dashboard,
+  .teams-dashboard-strip,
+  .tutorial-quickstart,
+  .coach-workflow-stepper,
+  .ai-studio-stepper,
+  .document-workflow-stepper__steps,
+  .editorial-stepper,
+  .evaluations-metrics,
+  .library-stats,
+  .parent-referent-kpi-grid
+) {
+  grid-template-columns: repeat(auto-fit, minmax(min(var(--bcvb-density-card-min), 100%), 1fr));
+}
+
+:where(
+  .coach-workflow-stepper,
+  .ai-studio-stepper,
+  .document-workflow-stepper__steps,
+  .editorial-stepper
+) {
+  align-items: stretch;
+}
+
+:where(
+  .coach-workflow-stepper__item,
+  .ai-studio-stepper__item,
+  .document-workflow-card,
+  .editorial-step
+) {
+  min-width: 0;
+}
+
+:where(
+  .teams-filters,
+  .team-doc-toolbar,
+  .session-form-grid,
+  .team-form-grid,
+  .roster-form-grid,
+  .attendance-filter-grid,
+  .mobile-module-grid
+) {
+  grid-template-columns: repeat(auto-fit, minmax(min(var(--bcvb-density-compact-min), 100%), 1fr));
+}
+
+:where(
+  .mobile-module-section,
+  .mobile-module-card,
+  .mobile-module-card__top,
+  .mobile-module-card__title,
+  .mobile-module-card__description,
+  .mobile-module-card__meta
+) {
+  min-width: 0;
+}
+
+:where(.mobile-module-card) {
+  height: 100%;
+  max-width: 100%;
+}
+
+:where(.mobile-module-card__top) {
+  align-items: flex-start;
+  gap: 8px;
+}
+
+:where(.mobile-module-card__badge) {
+  max-width: 100%;
+}
+
+:where(
+  .dirigeant-hero,
+  .planning-hero,
+  .tutorial-hero,
+  .editorial-studio-hero,
+  .teams-header,
+  .teams-profile-header,
+  .evaluations-hero,
+  .library-hero
+) {
+  min-width: 0;
+}
+
+:where(
+  .dirigeant-hero__actions,
+  .planning-hero-actions,
+  .planning-cycle-actions,
+  .teams-header-actions,
+  .session-hero-actions,
+  .ai-studio-actions,
+  .document-workflow-card__actions
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 1280px) {
+  :where(
+    .dirigeant-block-map,
+    .dirigeant-kpi-grid,
+    .planning-dashboard,
+    .teams-dashboard-strip,
+    .tutorial-quickstart,
+    .coach-workflow-stepper,
+    .ai-studio-stepper,
+    .document-workflow-stepper__steps,
+    .editorial-stepper,
+    .evaluations-metrics
+  ) {
+    grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  }
+
+  :where(
+    .dirigeant-layout,
+    .planning-layout,
+    .evaluations-layout,
+    .ai-studio-layout,
+    .library-layout,
+    .editorial-workbench,
+    .session-editor-layout,
+    .parent-referent-layout
+  ) {
+    grid-template-columns: 1fr;
+  }
+
+  :where(
+    .dirigeant-sidebar,
+    .planning-sidebar,
+    .evaluations-sidebar,
+    .ai-studio-sidebar,
+    .library-filters,
+    .editorial-assistance-column,
+    .parent-referent-sidebar
+  ) {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  :where(.teams-filters) {
+    grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
+  }
+}
+
+@media (max-width: 1024px) {
+  :where(
+    .dirigeant-hero,
+    .planning-hero,
+    .tutorial-hero,
+    .editorial-studio-hero,
+    .teams-header,
+    .teams-profile-header,
+    .evaluations-hero,
+    .library-hero
+  ) {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  :where(
+    .dirigeant-hero__actions,
+    .planning-hero-actions,
+    .teams-header-actions,
+    .session-hero-actions
+  ) {
+    justify-content: flex-start;
+  }
+
+  :where(
+    .document-workflow-stepper__header,
+    .session-resume-layout,
+    .teams-profile-layout,
+    .team-profile-layout
+  ) {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  :where(
+    .dirigeant-block-map,
+    .dirigeant-kpi-grid,
+    .planning-dashboard,
+    .teams-dashboard-strip,
+    .tutorial-quickstart,
+    .coach-workflow-stepper,
+    .ai-studio-stepper,
+    .document-workflow-stepper__steps,
+    .editorial-stepper,
+    .evaluations-metrics,
+    .library-stats,
+    .parent-referent-kpi-grid
+  ) {
+    grid-template-columns: 1fr;
+  }
+
+  :where(
+    .coach-workflow-stepper,
+    .ai-studio-stepper,
+    .document-workflow-stepper__steps,
+    .editorial-stepper,
+    .session-step-nav
+  ) {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  :where(
+    .coach-workflow-stepper > *,
+    .ai-studio-stepper > *,
+    .document-workflow-stepper__steps > *,
+    .editorial-stepper > *,
+    .session-step-nav > *
+  ) {
+    flex: 0 0 min(78vw, 260px);
+  }
+
+  :where(.teams-filters, .mobile-module-grid) {
+    grid-template-columns: 1fr;
+  }
+
+  :where(
+    .bcvb-sticky-actions,
+    .document-actions-bar,
+    .editorial-sticky-actions,
+    .studio-action-bar,
+    .library-bulk-actions
+  ) {
+    position: static;
+    inset: auto;
+    max-width: 100%;
+  }
+}
