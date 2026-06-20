@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { DocumentModeToggle } from '../features/documents/workflow/DocumentModeToggle'
 import { DocumentNextStepCard } from '../features/documents/workflow/DocumentNextStepCard'
+import { DocumentWorkflowAssistantCard } from '../features/documents/workflow/DocumentWorkflowAssistantCard'
 import { DocumentWorkflowGuide } from '../features/documents/workflow/DocumentWorkflowGuide'
 import { DocumentWorkflowStepper } from '../features/documents/workflow/DocumentWorkflowStepper'
 import {
@@ -423,6 +424,14 @@ export default function EditorialStudioPage() {
             onStepClick={handleWorkflowStepClick}
           />
           <div className="editorial-document-workbench__side">
+            <DocumentWorkflowAssistantCard
+              steps={workflowSteps}
+              mode={workflowMode}
+              currentStepKey={currentWorkflowStepKey}
+              nextStep={nextWorkflowStep}
+              onPrimaryAction={handleWorkflowPrimaryAction}
+              onOpenStep={handleWorkflowStepClick}
+            />
             <DocumentWorkflowGuide mode={workflowMode} />
           </div>
         </div>
