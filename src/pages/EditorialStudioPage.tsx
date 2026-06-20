@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import type { DocumentFamily, PublicationStatus } from '../features/document-quality/types/quality.types'
+import { buildPublicationChecklist, buildQualityDecisionItems } from '../features/document-quality/services/qualityDecisionView'
+import { statusLabel } from '../features/document-quality/services/qualityRules'
+import { scoreDocument } from '../features/document-quality/services/qualityScorer'
 import { DocumentModeToggle } from '../features/documents/workflow/DocumentModeToggle'
 import { DocumentNextStepCard } from '../features/documents/workflow/DocumentNextStepCard'
 import { DocumentWorkflowAssistantCard } from '../features/documents/workflow/DocumentWorkflowAssistantCard'
@@ -44,14 +48,21 @@ function computeSteps(state: EditorialStudioState) {
   }
 }
 
-function computeQualityScore(content: string) {
-  if (!content.trim()) return 72
-  const situationCount = (content.match(/situation|exercice|atelier/gi) || []).length
-  const diagramCount = (content.match(/terrain|schéma|players|arrows|zones|ball/gi) || []).length
-  const evaluationCount = (content.match(/évaluation|critères|observables|quantifiables/gi) || []).length
-  const planningCount = (content.match(/planification|cycle|progression|séance/gi) || []).length
-  const rawTablePenalty = /\|.+\|/.test(content) ? 8 : 0
-  return Math.max(50, Math.min(100, 70 + situationCount + diagramCount + evaluationCount + planningCount - rawTablePenalty))
+function resolveQualityFamily(familyId: string): DocumentFamily {
+  if (familyId === 'technical-book') return 'cahier_technique'
+  if (familyId === 'coach-guide') return 'guide_coach'
+  if (familyId === 'practice-session') return 'fiche_seance'
+  if (familyId === 'theme-sheet') return 'situation_pedagogique'
+  if (familyId === 'training-plan') return 'guide_coach'
+
+  return 'unknown'
+}
+
+function getQualityStatusTone(status: PublicationStatus) {
+  if (status === 'premium' || status === 'publiable') return 'ready'
+  if (status === 'publiable_avec_reserves') return 'reserve'
+  if (status === 'a_corriger') return 'warning'
+  return 'blocked'
 }
 
 function buildPlanDraft(state: EditorialStudioState) {
@@ -138,6 +149,23 @@ export default function EditorialStudioPage() {
     [documentWorkflowState, workflowMode]
   )
   const nextWorkflowStep = useMemo(() => getNextDocumentStep(workflowSteps), [workflowSteps])
+  const qualityReport = useMemo(() => {
+    const content = state.finalDocument || state.analyzedResponse || state.sourceText
+
+    return scoreDocument({
+      contentSource: content,
+      family: resolveQualityFamily(state.family),
+    })
+  }, [state.analyzedResponse, state.family, state.finalDocument, state.sourceText])
+  const qualityDecisionItems = useMemo(
+    () => buildQualityDecisionItems(qualityReport),
+    [qualityReport],
+  )
+  const publicationChecklist = useMemo(
+    () => buildPublicationChecklist(qualityReport),
+    [qualityReport],
+  )
+  const criticalWarnings = qualityReport.warnings.filter((warning) => warning.level === 'critical')
   const qualityActions = useMemo(() => {
     if (!finalDocumentExists) {
       return [
@@ -201,7 +229,10 @@ export default function EditorialStudioPage() {
 
   function analyzeResponse() {
     const source = state.analyzedResponse || state.chatGptResponse || state.claudeResponse
-    const score = computeQualityScore(source)
+    const score = scoreDocument({
+      contentSource: source,
+      family: resolveQualityFamily(state.family),
+    }).globalScore
     patch({
       finalDocument: source,
       qualityScore: score,
@@ -320,11 +351,37 @@ export default function EditorialStudioPage() {
     const nextDocument = `${base ? `${base}\n\n` : ''}${snippet}`.trim()
     patch({
       finalDocument: nextDocument,
-      qualityScore: computeQualityScore(nextDocument),
+      qualityScore: scoreDocument({
+        contentSource: nextDocument,
+        family: resolveQualityFamily(state.family),
+      }).globalScore,
       recommendedAction: 'Bloc ajouté. Relance le score puis vérifie le rendu.',
     })
     setMessage(`${label} ajouté au document.`)
     scrollToStudioBlock('studio-editor')
+  }
+
+  function handleQualityAction(actionLabel: string) {
+    const actions: Record<string, () => void> = {
+      'Compléter les sections': () => scrollToStudioBlock('studio-structure'),
+      'Ajouter identité BCVB': () => appendToFinalDocument('Identité BCVB', ':::bcvb-identity\ntitle: Identité BCVB\ncontent: Défendre Fort, Courir et Partager la Balle. Défense Homme à Homme, intensité, agressivité maîtrisée, maîtrise et jeu collectif.\n:::'),
+      'Ajouter objectifs': () => appendToFinalDocument('Objectifs', '## Objectifs\n- Objectif principal : à préciser.\n- Objectif terrain : action observable à obtenir.\n- Objectif BCVB : relier Défendre Fort, Courir ou Partager la Balle.'),
+      'Renforcer terrain': () => appendToFinalDocument('Utilité terrain', '## Exploitation terrain\n- Organisation : espace, joueurs, matériel.\n- Consignes coach : formulation courte et observable.\n- Critère terrain : décision ou comportement attendu.\n- Régulation : simplifier, complexifier, transférer en match.'),
+      'Corriger les tableaux': () => appendToFinalDocument('Tableau corrigé', '## Tableau de synthèse\n| Élément | Intention | Critère | Point de vigilance |\n| --- | --- | --- | --- |\n| À compléter | À préciser | Observable | À relire |'),
+      'Ajouter situation': () => appendToFinalDocument('Situation pédagogique', ':::bcvb-situation\ntitle: Situation à compléter\nobjectif: Relier l’objectif à une action terrain.\norganisation: Espace, joueurs, matériel, rotations.\nconsignes_joueurs: Défendre Fort, Courir, Partager la Balle.\ncriteres_reussite: Critères observables et mesurables.\nevolution_1: Simplifier ou complexifier.\n:::'),
+      'Ajouter schémas': () => appendToFinalDocument('Schémas terrain', '## Schémas terrain\n- Terrain 1 : organisation de départ.\n- Flèches : déplacements, passes, dribbles ou écrans.\n- Zones : espaces à occuper ou à protéger.\n- Point de lecture : décision attendue.'),
+      'Améliorer style': () => generatePrompt('massive-correction'),
+      'Préparer export': () => scrollToStudioBlock('studio-export'),
+    }
+
+    const action = actions[actionLabel]
+
+    if (action) {
+      action()
+      return
+    }
+
+    scrollToStudioBlock('studio-assistance')
   }
 
   const studioWarnings = useMemo(() => {
@@ -577,7 +634,13 @@ export default function EditorialStudioPage() {
             <textarea
               className="editorial-markdown-editor"
               value={state.finalDocument}
-              onChange={(event) => patch({ finalDocument: event.target.value, qualityScore: computeQualityScore(event.target.value) })}
+              onChange={(event) => patch({
+                finalDocument: event.target.value,
+                qualityScore: scoreDocument({
+                  contentSource: event.target.value,
+                  family: resolveQualityFamily(state.family),
+                }).globalScore,
+              })}
               placeholder="Écris ou colle ici le document final BCVB Rich Markdown. Les actions rapides à droite ajoutent des blocs prêts à relire."
             />
           </section>
@@ -659,10 +722,22 @@ export default function EditorialStudioPage() {
           <section className="editorial-status-sidebar editorial-quality-panel bcvb-premium-card">
             <p className="bcvb-eyebrow">Assistance</p>
             <h2>{state.targetDocument}</h2>
+            <div className={`editorial-publication-status editorial-publication-status--${getQualityStatusTone(qualityReport.status)}`}>
+              <span>{statusLabel(qualityReport.status)}</span>
+              <small>
+                {criticalWarnings.length > 0
+                  ? `${criticalWarnings.length} warning critique`
+                  : 'Décision qualité calculée'}
+              </small>
+            </div>
             <div className="editorial-quality-summary editorial-quality-summary--compact">
-              <strong>{state.qualityScore}/100</strong>
+              <strong>{qualityReport.globalScore}/100</strong>
               <div>
-                <p>{state.recommendedAction}</p>
+                <p>
+                  {criticalWarnings.length > 0
+                    ? 'Publication bloquée tant que les warnings critiques ne sont pas traités.'
+                    : state.recommendedAction}
+                </p>
               </div>
             </div>
             <dl>
@@ -674,6 +749,27 @@ export default function EditorialStudioPage() {
               <div><dt>Export</dt><dd>{savedState.steps.export}</dd></div>
             </dl>
             <p className="editorial-message">{message}</p>
+          </section>
+
+          <section className="editorial-panel editorial-step-card editorial-assist-panel">
+            <header>
+              <p className="bcvb-eyebrow">Sous-scores</p>
+              <h2>Score actionnable</h2>
+            </header>
+            <div className="editorial-quality-breakdown">
+              {qualityDecisionItems.map((item) => (
+                <article className={item.value >= 75 ? 'is-ok' : 'is-low'} key={item.key}>
+                  <div>
+                    <span>{item.label}</span>
+                    <strong>{item.value}/100</strong>
+                  </div>
+                  <p>{item.explanation}</p>
+                  <button type="button" onClick={() => handleQualityAction(item.action)}>
+                    {item.action}
+                  </button>
+                </article>
+              ))}
+            </div>
           </section>
 
           <section className="editorial-panel editorial-step-card editorial-assist-panel">
@@ -720,11 +816,12 @@ export default function EditorialStudioPage() {
               <h2>Avant diffusion</h2>
             </header>
             <ul className="editorial-checklist">
-              <li>Source conservée et compréhensible.</li>
-              <li>Objectifs et critères de réussite visibles.</li>
-              <li>Tableaux, situations et encarts relus.</li>
-              <li>Score qualité contrôlé par l’admin.</li>
-              <li>Export PDF testé avant publication.</li>
+              {publicationChecklist.map((item) => (
+                <li className={item.done ? 'is-done' : 'is-missing'} key={item.label}>
+                  <strong>{item.done ? 'OK' : 'À faire'} · {item.label}</strong>
+                  <span>{item.helper}</span>
+                </li>
+              ))}
             </ul>
           </section>
         </aside>
