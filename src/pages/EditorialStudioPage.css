@@ -656,6 +656,214 @@
   overflow-wrap: anywhere;
 }
 
+.editorial-correction-panel {
+  border-top: 5px solid #14181f;
+}
+
+.editorial-correction-target {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.editorial-correction-target > div,
+.editorial-correction-target label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 11px;
+  border-radius: 15px;
+  background: #f7f1ee;
+}
+
+.editorial-correction-target span {
+  color: rgba(20, 24, 31, 0.62);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.editorial-correction-target strong {
+  color: #14181f;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.editorial-correction-target input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(20, 24, 31, 0.14);
+  border-radius: 10px;
+  padding: 8px;
+  color: #14181f;
+  background: #ffffff;
+  font: inherit;
+  font-weight: 900;
+}
+
+.editorial-correction-safety {
+  display: grid;
+  gap: 8px;
+}
+
+.editorial-correction-safety article {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(20, 24, 31, 0.04);
+}
+
+.editorial-correction-safety strong,
+.editorial-correction-plan strong,
+.editorial-correction-result > strong {
+  color: #14181f;
+  font-size: 0.86rem;
+}
+
+.editorial-correction-safety p {
+  margin: 0;
+  color: rgba(20, 24, 31, 0.68);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.editorial-correction-plan {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 11px;
+  border-radius: 15px;
+  background: rgba(163, 32, 53, 0.08);
+}
+
+.editorial-correction-plan span {
+  color: #7f1d1d;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.editorial-correction-levels,
+.editorial-correction-result__actions {
+  display: grid;
+  gap: 8px;
+}
+
+.editorial-correction-levels button,
+.editorial-correction-result__actions button {
+  width: 100%;
+  min-height: 38px;
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 12px;
+  color: #ffffff;
+  background: #14181f;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.editorial-correction-levels button:nth-child(2) {
+  background: #a32035;
+}
+
+.editorial-correction-levels button:nth-child(3) {
+  background: linear-gradient(135deg, #14181f, #a32035);
+}
+
+.editorial-correction-levels button:disabled,
+.editorial-correction-result__actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.editorial-correction-result {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(22, 163, 74, 0.22);
+  border-radius: 16px;
+  background: rgba(22, 163, 74, 0.08);
+}
+
+.editorial-correction-result > div:first-of-type {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.editorial-correction-result > div:first-of-type span {
+  min-width: 0;
+  padding: 8px;
+  border-radius: 12px;
+  color: #166534;
+  background: rgba(255, 255, 255, 0.78);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.editorial-correction-result ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+  color: #166534;
+  font-size: 0.78rem;
+  font-weight: 820;
+  line-height: 1.35;
+}
+
+.editorial-correction-result details {
+  min-width: 0;
+}
+
+.editorial-correction-result summary {
+  color: #14181f;
+  font-size: 0.8rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.editorial-correction-diff {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.editorial-correction-diff pre {
+  min-width: 0;
+  max-height: 220px;
+  overflow: auto;
+  margin: 0;
+  padding: 10px;
+  border-radius: 12px;
+  color: #334155;
+  background: #ffffff;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.editorial-correction-result__actions button:first-child {
+  background: #166534;
+}
+
+.editorial-correction-result__actions button:last-child {
+  color: #14181f;
+  background: #ffffff;
+}
+
 .editorial-quick-actions {
   display: grid;
   gap: 8px;
@@ -752,6 +960,12 @@
   }
 
   .editorial-quality-breakdown article > div {
+    grid-template-columns: 1fr;
+  }
+
+  .editorial-correction-target,
+  .editorial-correction-result > div:first-of-type,
+  .editorial-correction-diff {
     grid-template-columns: 1fr;
   }
 }

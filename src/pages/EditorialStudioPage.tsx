@@ -1,8 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import type { DocumentFamily, PublicationStatus } from '../features/document-quality/types/quality.types'
+import type {
+  CorrectionAction,
+  CorrectionPlan,
+  DocumentFamily,
+  MassiveCorrectionResult,
+  PublicationStatus,
+} from '../features/document-quality/types/quality.types'
 import { buildPublicationChecklist, buildQualityDecisionItems } from '../features/document-quality/services/qualityDecisionView'
 import { statusLabel } from '../features/document-quality/services/qualityRules'
+import { applyMassiveCorrection } from '../features/document-quality/services/massiveCorrectionAdapter'
+import { createCorrectionPlan } from '../features/document-quality/services/massiveCorrectionPlanner'
 import { scoreDocument } from '../features/document-quality/services/qualityScorer'
 import { DocumentModeToggle } from '../features/documents/workflow/DocumentModeToggle'
 import { DocumentNextStepCard } from '../features/documents/workflow/DocumentNextStepCard'
@@ -102,12 +110,29 @@ const WORKFLOW_STEP_TARGETS: Record<DocumentWorkflowStepKey, string> = {
   archive: 'studio-assistance',
 }
 
+type CorrectionMode = 'micro' | 'strong' | 'rebuild'
+
+type CorrectionReview = {
+  mode: CorrectionMode
+  before: string
+  result: MassiveCorrectionResult
+}
+
+const correctionModeLabels: Record<CorrectionMode, string> = {
+  micro: 'Micro-correction',
+  strong: 'Amélioration forte',
+  rebuild: 'Reconstruction publication club',
+}
+
 export default function EditorialStudioPage() {
   const [state, setState] = useState<EditorialStudioState>(() => loadEditorialStudioState() ?? defaultEditorialStudioState)
   const [workflowMode, setWorkflowMode] = useState<DocumentWorkflowMode>('creation')
   const [copied, setCopied] = useState('')
   const [message, setMessage] = useState('Studio prêt.')
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(state.updatedAt)
+  const [correctionTargetScore, setCorrectionTargetScore] = useState(95)
+  const [correctionRunning, setCorrectionRunning] = useState<CorrectionMode | null>(null)
+  const [correctionReview, setCorrectionReview] = useState<CorrectionReview | null>(null)
   const selectedFamily = EDITORIAL_DOCUMENT_FAMILIES.find((family) => family.id === state.family) ?? EDITORIAL_DOCUMENT_FAMILIES[1]
   const finalDocumentExists = Boolean(state.finalDocument.trim())
 
@@ -166,6 +191,11 @@ export default function EditorialStudioPage() {
     [qualityReport],
   )
   const criticalWarnings = qualityReport.warnings.filter((warning) => warning.level === 'critical')
+  const correctionSource = state.finalDocument || state.analyzedResponse || state.sourceText
+  const correctionPlan = useMemo(
+    () => createCorrectionPlan(qualityReport, correctionTargetScore),
+    [correctionTargetScore, qualityReport],
+  )
   const qualityActions = useMemo(() => {
     if (!finalDocumentExists) {
       return [
@@ -382,6 +412,104 @@ export default function EditorialStudioPage() {
     }
 
     scrollToStudioBlock('studio-assistance')
+  }
+
+  function buildMicroCorrectionResult(content: string): MassiveCorrectionResult {
+    const family = resolveQualityFamily(state.family)
+    const correctedSource = content
+      .trim()
+      .replace(/\r\n/g, '\n')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/[ \t]{2,}/g, ' ')
+
+    return {
+      correctedSource,
+      changeLog: [
+        'Espaces multiples, retours ligne et paragraphes trop espacés normalisés.',
+        'Source documentaire conservée dans la colonne de gauche.',
+        'Version précédente disponible via le bouton restaurer.',
+      ],
+      previousScore: scoreDocument({ contentSource: content, family }),
+      newScore: scoreDocument({ contentSource: correctedSource, family }),
+    }
+  }
+
+  function withRebuildAction(plan: CorrectionPlan): CorrectionPlan {
+    const rebuildAction: CorrectionAction = {
+      id: 'studio-rebuild-publication-club',
+      type: 'restructure',
+      description: 'Réorganisation globale en version publication club avec sections, vigilance, identité BCVB et blocs actionnables.',
+      expectedGain: 18,
+      requiresAi: true,
+    }
+
+    const hasRebuild = plan.actions.some((action) => action.type === 'restructure')
+
+    return {
+      ...plan,
+      targetScore: Math.max(plan.targetScore, 98),
+      riskLevel: 'medium',
+      actions: hasRebuild ? plan.actions : [rebuildAction, ...plan.actions],
+    }
+  }
+
+  async function runControlledCorrection(mode: CorrectionMode) {
+    const before = correctionSource.trim()
+
+    if (!before) {
+      setMessage('Ajoute d’abord une source ou un document final avant correction.')
+      scrollToStudioBlock('studio-source')
+      return
+    }
+
+    setCorrectionRunning(mode)
+
+    try {
+      const family = resolveQualityFamily(state.family)
+      const result =
+        mode === 'micro'
+          ? buildMicroCorrectionResult(before)
+          : await applyMassiveCorrection({
+              contentSource: before,
+              family,
+              correctionPlan:
+                mode === 'rebuild'
+                  ? withRebuildAction(createCorrectionPlan(qualityReport, 98))
+                  : correctionPlan,
+            })
+
+      setCorrectionReview({ mode, before, result })
+      patch({
+        finalDocument: result.correctedSource,
+        qualityScore: result.newScore?.globalScore ?? scoreDocument({ contentSource: result.correctedSource, family }).globalScore,
+        recommendedAction: `${correctionModeLabels[mode]} appliquée. Relis puis valide ou restaure l’ancienne version.`,
+      })
+      setMessage(`${correctionModeLabels[mode]} appliquée. Ancienne version conservée pour restauration.`)
+      scrollToStudioBlock('studio-editor')
+    } finally {
+      setCorrectionRunning(null)
+    }
+  }
+
+  function restoreCorrectionBefore() {
+    if (!correctionReview) return
+
+    const family = resolveQualityFamily(state.family)
+    patch({
+      finalDocument: correctionReview.before,
+      qualityScore: scoreDocument({ contentSource: correctionReview.before, family }).globalScore,
+      recommendedAction: 'Ancienne version restaurée. Relance le score avant publication.',
+    })
+    setMessage('Ancienne version restaurée.')
+    setCorrectionReview(null)
+    scrollToStudioBlock('studio-editor')
+  }
+
+  function validateCorrectionReview() {
+    if (!correctionReview) return
+    setMessage(`${correctionModeLabels[correctionReview.mode]} validée dans l’éditeur.`)
+    setCorrectionReview(null)
   }
 
   const studioWarnings = useMemo(() => {
@@ -771,6 +899,119 @@ export default function EditorialStudioPage() {
                 </article>
               ))}
             </div>
+          </section>
+
+          <section className="editorial-panel editorial-step-card editorial-assist-panel editorial-correction-panel">
+            <header>
+              <p className="bcvb-eyebrow">Correction contrôlée</p>
+              <h2>Améliorer fortement sans perdre la source</h2>
+            </header>
+
+            <div className="editorial-correction-target">
+              <div>
+                <span>Score actuel</span>
+                <strong>{qualityReport.globalScore}/100</strong>
+              </div>
+              <label>
+                <span>Score visé</span>
+                <input
+                  type="number"
+                  min={70}
+                  max={100}
+                  value={correctionTargetScore}
+                  onChange={(event) => setCorrectionTargetScore(Number(event.target.value))}
+                />
+              </label>
+            </div>
+
+            <div className="editorial-correction-safety">
+              <article>
+                <strong>Conservé</strong>
+                <p>Source OCR, prompt, notes admin, métadonnées et ancienne version locale.</p>
+              </article>
+              <article>
+                <strong>Restructuré</strong>
+                <p>Sections faibles, tableaux, identité BCVB, situations, export readiness.</p>
+              </article>
+              <article>
+                <strong>Risque</strong>
+                <p>{correctionPlan.riskLevel === 'medium' ? 'Réorganisation visible : relire avant validation.' : 'Faible : corrections ciblées.'}</p>
+              </article>
+            </div>
+
+            <div className="editorial-correction-plan">
+              <strong>Actions prévues</strong>
+              {correctionPlan.actions.length > 0 ? (
+                correctionPlan.actions.slice(0, 4).map((action) => (
+                  <span key={action.id}>
+                    {action.description} · +{action.expectedGain}
+                  </span>
+                ))
+              ) : (
+                <span>Aucune correction automatique prioritaire. Relecture humaine conseillée.</span>
+              )}
+            </div>
+
+            <div className="editorial-correction-levels">
+              <button
+                type="button"
+                disabled={Boolean(correctionRunning)}
+                onClick={() => runControlledCorrection('micro')}
+              >
+                {correctionRunning === 'micro' ? 'Micro-correction…' : 'Micro-correction'}
+              </button>
+              <button
+                type="button"
+                disabled={Boolean(correctionRunning)}
+                onClick={() => runControlledCorrection('strong')}
+              >
+                {correctionRunning === 'strong' ? 'Amélioration…' : 'Amélioration forte'}
+              </button>
+              <button
+                type="button"
+                disabled={Boolean(correctionRunning)}
+                onClick={() => runControlledCorrection('rebuild')}
+              >
+                {correctionRunning === 'rebuild' ? 'Reconstruction…' : 'Reconstruction publication club'}
+              </button>
+            </div>
+
+            {correctionReview ? (
+              <div className="editorial-correction-result">
+                <strong>{correctionModeLabels[correctionReview.mode]} appliquée</strong>
+                <div>
+                  <span>Avant {correctionReview.result.previousScore?.globalScore ?? qualityReport.globalScore}/100</span>
+                  <span>Après {correctionReview.result.newScore?.globalScore ?? qualityReport.globalScore}/100</span>
+                  <span>
+                    Gain +{Math.max(
+                      0,
+                      (correctionReview.result.newScore?.globalScore ?? 0) -
+                        (correctionReview.result.previousScore?.globalScore ?? 0),
+                    )}
+                  </span>
+                </div>
+                <ul>
+                  {correctionReview.result.changeLog.map((entry) => (
+                    <li key={entry}>{entry}</li>
+                  ))}
+                </ul>
+                <details>
+                  <summary>Comparer avant / après</summary>
+                  <div className="editorial-correction-diff">
+                    <pre>{correctionReview.before.slice(0, 1200)}</pre>
+                    <pre>{correctionReview.result.correctedSource.slice(0, 1200)}</pre>
+                  </div>
+                </details>
+                <div className="editorial-correction-result__actions">
+                  <button type="button" onClick={validateCorrectionReview}>
+                    Valider
+                  </button>
+                  <button type="button" onClick={restoreCorrectionBefore}>
+                    Restaurer ancienne version
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </section>
 
           <section className="editorial-panel editorial-step-card editorial-assist-panel">
