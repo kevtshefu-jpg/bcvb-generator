@@ -1,7 +1,3 @@
--- Copie documentaire.
--- La migration officielle est dans :
--- supabase/migrations/20260621151847_registration_profiles_notifications.sql
-
 create extension if not exists pgcrypto;
 
 create or replace function public.set_updated_at()
