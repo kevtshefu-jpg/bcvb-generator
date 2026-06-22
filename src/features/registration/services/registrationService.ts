@@ -17,6 +17,11 @@ export type RegistrationRequestRow = {
   status: 'pending' | 'approved' | 'rejected'
   approved_by?: string | null
   approved_at?: string | null
+  rejected_by?: string | null
+  rejected_at?: string | null
+  activation_email_sent_at?: string | null
+  activation_email_status?: string | null
+  admin_note?: string | null
 }
 
 export type CreateRegistrationRequestInput = {
@@ -67,11 +72,19 @@ export async function updateRegistrationRequestStatus(
   status: 'approved' | 'rejected',
   approvedBy?: string
 ) {
-  const payload = {
-    status,
-    approved_by: approvedBy ?? null,
-    approved_at: new Date().toISOString(),
-  }
+  const now = new Date().toISOString()
+  const payload =
+    status === 'approved'
+      ? {
+          status,
+          approved_by: approvedBy ?? null,
+          approved_at: now,
+        }
+      : {
+          status,
+          rejected_by: approvedBy ?? null,
+          rejected_at: now,
+        }
 
   const { data, error } = await supabase
     .from('registration_requests')

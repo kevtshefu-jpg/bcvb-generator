@@ -3,12 +3,15 @@ import { supabase } from '../../../lib/supabase'
 export type CreateApprovedUserResult = {
   ok: boolean
   userId?: string
+  user_id?: string
   email?: string
   fullName?: string
+  full_name?: string
   role?: string
   userAlreadyExisted?: boolean
-  passwordResetLink?: string | null
-  temporary_password?: string | null
+  user_already_existed?: boolean
+  email_sent?: boolean
+  activation_email_status?: string | null
   message?: string
   error?: string
 }
@@ -56,7 +59,11 @@ export async function approveRegistrationAndCreateUser(requestId: string, finalR
 
   return {
     ...result,
-    temporary_password: result.passwordResetLink || result.temporary_password || null,
+    message:
+      result.message ||
+      (result.email_sent
+        ? 'Compte créé et email d’activation envoyé.'
+        : 'Compte créé, mais l’email d’activation doit être renvoyé.'),
   }
 }
 
@@ -73,8 +80,8 @@ function isMissingColumnError(message: string) {
 export async function rejectRegistrationRequest(requestId: string, approvedBy?: string) {
   const fullPatch = {
     status: 'rejected',
-    approved_by: approvedBy || null,
-    approved_at: new Date().toISOString(),
+    rejected_by: approvedBy || null,
+    rejected_at: new Date().toISOString(),
   }
 
   const { error } = await supabase

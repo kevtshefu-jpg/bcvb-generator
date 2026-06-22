@@ -100,13 +100,16 @@ function buildFullName(row: RegistrationRequestRow) {
   return fullName || normalizeEmail(row.email) || 'Membre BCVB'
 }
 
-function makeTemporaryPassword() {
-  const values = new Uint32Array(4)
-  crypto.getRandomValues(values)
+function getSiteUrl() {
+  return (
+    normalizeText(Deno.env.get('SITE_URL')) ||
+    normalizeText(Deno.env.get('PUBLIC_SITE_URL')) ||
+    'https://bcvb-generator-ds72.vercel.app'
+  ).replace(/\/+$/, '')
+}
 
-  return `BCVB-${Array.from(values)
-    .map((value) => value.toString(36))
-    .join('-')}!a7`
+function getActivationRedirectUrl() {
+  return `${getSiteUrl()}/reinitialisation-mot-de-passe`
 }
 
 async function findAuthUserByEmail(
@@ -164,18 +167,88 @@ async function assertAdminCaller(
   return userData.user
 }
 
-async function updateRegistrationStatus(
+async function updateRegistrationApprovalStatus(
   supabaseAdmin: ReturnType<typeof createClient>,
   requestId: string,
-  status: 'approved' | 'rejected',
+  approvedBy: string,
 ) {
+  const now = new Date().toISOString()
+  const fullPatch = {
+    status: 'approved',
+    approved_by: approvedBy,
+    approved_at: now,
+    activation_email_sent_at: now,
+    activation_email_status: 'sent',
+  }
+
   const { error } = await supabaseAdmin
     .from('registration_requests')
-    .update({ status })
+    .update(fullPatch)
     .eq('id', requestId)
 
+  if (!error) return
+
+  if (isMissingColumnError(error.message)) {
+    const { error: fallbackError } = await supabaseAdmin
+      .from('registration_requests')
+      .update({ status: 'approved' })
+      .eq('id', requestId)
+
+    if (fallbackError) {
+      throw new Error(`Compte créé, mais demande non mise à jour : ${fallbackError.message}`)
+    }
+
+    return
+  }
+
+  throw new Error(`Compte créé, mais demande non mise à jour : ${error.message}`)
+}
+
+async function upsertProfileWithFallback(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  profilePayload: Record<string, unknown>,
+  optionalPayload: Record<string, unknown>,
+) {
+  const { error } = await supabaseAdmin
+    .from('profiles')
+    .upsert(
+      {
+        ...profilePayload,
+        ...optionalPayload,
+      },
+      { onConflict: 'id' },
+    )
+
+  if (!error) return
+
+  if (!isMissingColumnError(error.message)) {
+    throw new Error(
+      `Compte Auth créé, mais profil club impossible à enregistrer : ${error.message}`,
+    )
+  }
+
+  const { error: fallbackError } = await supabaseAdmin
+    .from('profiles')
+    .upsert(profilePayload, { onConflict: 'id' })
+
+  if (fallbackError) {
+    throw new Error(
+      `Compte Auth créé, mais profil club impossible à enregistrer : ${fallbackError.message}`,
+    )
+  }
+}
+
+async function sendPasswordResetEmail(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  email: string,
+  redirectTo: string,
+) {
+  const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
+    redirectTo,
+  })
+
   if (error) {
-    throw new Error(`Compte créé, mais demande non mise à jour : ${error.message}`)
+    throw new Error(`Compte créé, mais email d’activation non envoyé : ${error.message}`)
   }
 }
 
@@ -245,7 +318,10 @@ Deno.serve(async (request) => {
       },
     })
 
-    await assertAdminCaller(supabaseAdmin, request.headers.get('Authorization'))
+    const adminUser = await assertAdminCaller(
+      supabaseAdmin,
+      request.headers.get('Authorization'),
+    )
 
     const payload = (await request.json()) as CreateApprovedUserPayload
     const requestId = normalizeText(payload.requestId || payload.id)
@@ -288,26 +364,25 @@ Deno.serve(async (request) => {
 
     let userId: string | null = null
     let userAlreadyExisted = false
-    const temporaryPassword = makeTemporaryPassword()
+    const activationRedirectTo = getActivationRedirectUrl()
+    const now = new Date().toISOString()
 
-    const { data: createdUserData, error: createUserError } =
-      await supabaseAdmin.auth.admin.createUser({
-        email,
-        password: temporaryPassword,
-        email_confirm: true,
-        user_metadata: {
+    const { data: invitedUserData, error: inviteUserError } =
+      await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+        redirectTo: activationRedirectTo,
+        data: {
           full_name: fullName,
           role: finalRole,
           source: 'bcvb_registration_approval',
         },
       })
 
-    if (createUserError) {
-      if (!isDuplicateUserError(createUserError.message)) {
+    if (inviteUserError) {
+      if (!isDuplicateUserError(inviteUserError.message)) {
         return jsonResponse(
           {
             ok: false,
-            error: `Création du compte Auth impossible : ${createUserError.message}`,
+            error: `Création du compte Auth ou envoi de l’invitation impossible : ${inviteUserError.message}`,
           },
           500,
         )
@@ -329,8 +404,72 @@ Deno.serve(async (request) => {
       }
 
       userId = existingAuthUser.id
+
+      try {
+        await sendPasswordResetEmail(supabaseAdmin, email, activationRedirectTo)
+      } catch (error) {
+        return jsonResponse(
+          {
+            ok: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Compte créé, mais email d’activation non envoyé.',
+          },
+          500,
+        )
+      }
     } else {
+      userId = invitedUserData.user?.id || null
+    }
+
+    if (!userId) {
+      const existingAuthUser = await findAuthUserByEmail(supabaseAdmin, email)
+      userId = existingAuthUser?.id || null
+      userAlreadyExisted = Boolean(existingAuthUser?.id)
+    }
+
+    /*
+     * inviteUserByEmail envoie l'email d'activation directement.
+     * Aucun mot de passe provisoire n'est généré, retourné ou affiché côté admin.
+     */
+    if (!userId && !userAlreadyExisted) {
+      const { data: createdUserData, error: createUserError } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          user_metadata: {
+            full_name: fullName,
+            role: finalRole,
+            source: 'bcvb_registration_approval',
+          },
+        })
+
+      if (createUserError) {
+        return jsonResponse(
+          {
+            ok: false,
+            error: `Création du compte Auth impossible : ${createUserError.message}`,
+          },
+          500,
+        )
+      }
+
       userId = createdUserData.user?.id || null
+
+      try {
+        await sendPasswordResetEmail(supabaseAdmin, email, activationRedirectTo)
+      } catch (error) {
+        return jsonResponse(
+          {
+            ok: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Compte créé, mais email d’activation non envoyé.',
+          },
+          500,
+        )
+      }
     }
 
     if (!userId) {
@@ -374,46 +513,28 @@ Deno.serve(async (request) => {
       is_active: true,
     }
 
-    const { error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .upsert(profilePayload, { onConflict: 'id' })
+    await upsertProfileWithFallback(supabaseAdmin, profilePayload, {
+      invitation_sent_at: userAlreadyExisted ? null : now,
+      last_password_reset_sent_at: userAlreadyExisted ? now : null,
+      onboarding_completed: false,
+    })
 
-    if (profileError) {
-      return jsonResponse(
-        {
-          ok: false,
-          error: `Compte Auth créé, mais profil club impossible à enregistrer : ${profileError.message}`,
-        },
-        500,
-      )
-    }
-
-    await updateRegistrationStatus(supabaseAdmin, requestId, 'approved')
+    await updateRegistrationApprovalStatus(supabaseAdmin, requestId, adminUser.id)
     await updateProfileRequestStatus(supabaseAdmin, email, 'approved')
-
-    let passwordResetLink: string | null = null
-
-    const { data: linkData, error: linkError } =
-      await supabaseAdmin.auth.admin.generateLink({
-        type: 'recovery',
-        email,
-      })
-
-    if (!linkError && linkData?.properties?.action_link) {
-      passwordResetLink = linkData.properties.action_link
-    }
 
     return jsonResponse({
       ok: true,
+      user_id: userId,
       userId,
       email,
+      full_name: fullName,
       fullName,
       role: finalProfileRole,
+      user_already_existed: userAlreadyExisted,
       userAlreadyExisted,
-      passwordResetLink,
-      message: userAlreadyExisted
-        ? 'Le compte existant a été rattaché et le profil club a été activé.'
-        : 'Le compte utilisateur et le profil club ont été créés.',
+      email_sent: true,
+      activation_email_status: 'sent',
+      message: 'Compte créé et email d’activation envoyé.',
     })
   } catch (error) {
     return jsonResponse(

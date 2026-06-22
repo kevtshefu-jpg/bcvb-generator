@@ -1,0 +1,277 @@
+.registration-page {
+  width: 100%;
+  min-width: 0;
+}
+
+.registration-page *,
+.registration-page *::before,
+.registration-page *::after {
+  box-sizing: border-box;
+}
+
+.registration-page__hero {
+  overflow: hidden;
+}
+
+.registration-page__formCard {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.registration-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+}
+
+.registration-page__required {
+  flex: 0 0 auto;
+  max-width: 100%;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(200, 16, 46, 0.08);
+  color: #c8102e;
+  font-size: 12px;
+  font-weight: 950;
+  overflow-wrap: anywhere;
+}
+
+.registration-step-indicator {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.registration-step-indicator__item {
+  min-width: 0;
+  min-height: 74px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px;
+  border-radius: 20px;
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.registration-step-indicator__item span {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.registration-step-indicator__item strong {
+  min-width: 0;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 950;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.registration-step-indicator__item--active {
+  border-color: rgba(200, 16, 46, 0.28);
+  background: rgba(200, 16, 46, 0.08);
+  color: #9f1239;
+}
+
+.registration-step-indicator__item--active span {
+  background: #c8102e;
+  color: #ffffff;
+}
+
+.registration-step-indicator__item--done {
+  border-color: rgba(22, 163, 74, 0.22);
+  background: rgba(22, 163, 74, 0.08);
+  color: #166534;
+}
+
+.registration-step-indicator__item--done span {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.registration-form,
+.registration-page__stepPanel {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.registration-page__help {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.06), rgba(200, 16, 46, 0.06));
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  color: #475569;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.registration-page__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  min-width: 0;
+}
+
+.registration-page__field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.registration-page__field--wide {
+  grid-column: 1 / -1;
+}
+
+.registration-page__field small {
+  color: #c8102e;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.registration-page textarea {
+  min-height: 122px;
+  resize: vertical;
+}
+
+.registration-page__summaryCard {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+  min-width: 0;
+  padding: 18px;
+  border-radius: 24px;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.registration-page__summaryCard div {
+  min-width: 0;
+  padding: 13px;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.registration-page__summaryCard span {
+  display: block;
+  margin-bottom: 5px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.registration-page__summaryCard strong,
+.registration-page__summaryCard p {
+  min-width: 0;
+  margin: 0;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.registration-page__summaryCardFull {
+  grid-column: 1 / -1;
+}
+
+.registration-page__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.registration-page__actions button {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.registration-page__message {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  color: #475569;
+  font-weight: 850;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.registration-page__message--success {
+  background: rgba(22, 163, 74, 0.08);
+  border: 1px solid rgba(22, 163, 74, 0.22);
+  color: #166534;
+}
+
+.registration-page__message--error {
+  background: #fff5f7;
+  border: 1px solid rgba(200, 16, 46, 0.2);
+  color: #9f1239;
+}
+
+.registration-page__debug {
+  color: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  opacity: 0.78;
+}
+
+@media (max-width: 920px) {
+  .registration-step-indicator {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .registration-page__grid,
+  .registration-page__summaryCard {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .registration-page__header,
+  .registration-page__actions {
+    display: grid;
+    justify-content: stretch;
+  }
+
+  .registration-page__actions button {
+    width: 100%;
+  }
+
+  .registration-step-indicator {
+    grid-template-columns: 1fr;
+  }
+
+  .registration-step-indicator__item {
+    min-height: 62px;
+  }
+}

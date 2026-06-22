@@ -1,6 +1,8 @@
 -- Copie documentaire.
 -- La migration officielle est dans :
 -- supabase/migrations/20260621151847_registration_profiles_notifications.sql
+-- Complément workflow activation :
+-- supabase/migrations/20260622093000_registration_activation_workflow.sql
 
 create extension if not exists pgcrypto;
 
@@ -49,6 +51,11 @@ alter table public.registration_requests
   add column if not exists status text default 'pending',
   add column if not exists approved_by uuid,
   add column if not exists approved_at timestamptz,
+  add column if not exists rejected_by uuid,
+  add column if not exists rejected_at timestamptz,
+  add column if not exists activation_email_sent_at timestamptz,
+  add column if not exists activation_email_status text,
+  add column if not exists admin_note text,
   add column if not exists created_at timestamptz default now(),
   add column if not exists updated_at timestamptz default now();
 
@@ -261,6 +268,9 @@ alter table public.profiles
   add column if not exists profile_status text default 'active',
   add column if not exists category_id text,
   add column if not exists is_active boolean default true,
+  add column if not exists invitation_sent_at timestamptz,
+  add column if not exists last_password_reset_sent_at timestamptz,
+  add column if not exists onboarding_completed boolean default false,
   add column if not exists created_at timestamptz default now(),
   add column if not exists updated_at timestamptz default now();
 
@@ -268,15 +278,18 @@ update public.profiles
 set
   role = coalesce(role, 'member'),
   profile_status = coalesce(profile_status, case when is_active is false then 'inactive' else 'active' end),
-  is_active = coalesce(is_active, true)
+  is_active = coalesce(is_active, true),
+  onboarding_completed = coalesce(onboarding_completed, false)
 where role is null
   or profile_status is null
-  or is_active is null;
+  or is_active is null
+  or onboarding_completed is null;
 
 alter table public.profiles
   alter column role set default 'member',
   alter column profile_status set default 'active',
   alter column is_active set default true,
+  alter column onboarding_completed set default false,
   alter column created_at set default now(),
   alter column updated_at set default now();
 

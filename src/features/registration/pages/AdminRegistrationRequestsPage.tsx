@@ -39,6 +39,10 @@ type RegistrationRequestLike = {
   notes?: string | null
   status?: RegistrationStatus | null
   created_at?: string | null
+  activation_email_sent_at?: string | null
+  activation_email_status?: string | null
+  approved_at?: string | null
+  rejected_at?: string | null
 }
 
 function normalizeText(value: unknown) {
@@ -59,6 +63,22 @@ function getStatusLabel(status?: RegistrationStatus | null) {
   if (status === 'pending') return 'En attente'
 
   return status || 'À traiter'
+}
+
+function getActivationLabel(item: RegistrationRequestLike) {
+  if (item.activation_email_status === 'sent' || item.activation_email_sent_at) {
+    return `Email envoyé${item.activation_email_sent_at ? ` le ${formatDate(item.activation_email_sent_at)}` : ''}`
+  }
+
+  if (item.activation_email_status === 'failed') {
+    return 'Email à renvoyer'
+  }
+
+  if (item.status === 'approved') {
+    return 'Email envoyé si disponible'
+  }
+
+  return 'Non envoyé'
 }
 
 function getStatusClass(status?: RegistrationStatus | null) {
@@ -139,7 +159,7 @@ function matchesSearch(item: RegistrationRequestLike, searchTerm: string) {
 
 export default function AdminRegistrationRequestsPage() {
   const { user } = useAuth()
-  const { requests, loading, error, approve, reject, lastCreatedPassword } =
+  const { requests, loading, error, approve, reject, lastApprovalMessage } =
     useRegistrationRequests(user?.id)
 
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
@@ -165,6 +185,15 @@ export default function AdminRegistrationRequestsPage() {
 
   const rejectedCount = useMemo(
     () => requests.filter((item) => item.status === 'rejected').length,
+    [requests],
+  )
+
+  const activationEmailCount = useMemo(
+    () =>
+      requests.filter(
+        (item) =>
+          item.activation_email_status === 'sent' || Boolean(item.activation_email_sent_at),
+      ).length,
     [requests],
   )
 
@@ -297,7 +326,20 @@ export default function AdminRegistrationRequestsPage() {
           <strong>{rejectedCount}</strong>
           <span>Refusées</span>
         </article>
+
+        <article>
+          <strong>{activationEmailCount}</strong>
+          <span>Email envoyé</span>
+        </article>
       </div>
+
+      <article className="admin-registration-message admin-registration-message--info">
+        <strong>Traitement sécurisé</strong>
+        <p>
+          L’approbation crée le compte utilisateur et envoie un email sécurisé
+          pour définir le mot de passe. Aucun mot de passe n’est transmis en clair.
+        </p>
+      </article>
 
       {readableError ? (
         <article className="admin-registration-message admin-registration-message--error">
@@ -306,16 +348,10 @@ export default function AdminRegistrationRequestsPage() {
         </article>
       ) : null}
 
-      {lastCreatedPassword ? (
+      {lastApprovalMessage ? (
         <article className="admin-registration-message admin-registration-message--success">
-          <strong>Compte créé</strong>
-          <p>
-            Mot de passe temporaire :{' '}
-            <code>{lastCreatedPassword}</code>
-          </p>
-          <p>
-            Transmets-le uniquement par un canal sécurisé au nouvel utilisateur.
-          </p>
+          <strong>Traitement terminé</strong>
+          <p>{lastApprovalMessage}</p>
         </article>
       ) : null}
 
@@ -432,7 +468,7 @@ export default function AdminRegistrationRequestsPage() {
 
                 {isPending ? (
                   <p className="admin-registration-card__nextAction">
-                    Action suivante : vérifier la catégorie puis créer le compte{' '}
+                    Action suivante : vérifier la catégorie puis envoyer l’accès{' '}
                     {getRoleLabel(finalRole)}.
                   </p>
                 ) : null}
@@ -489,6 +525,11 @@ export default function AdminRegistrationRequestsPage() {
                   ) : null}
 
                   <div>
+                    <dt>Activation</dt>
+                    <dd>{getActivationLabel(item)}</dd>
+                  </div>
+
+                  <div>
                     <dt>Équipe / groupe</dt>
                     <dd>{item.requested_team || '—'}</dd>
                   </div>
@@ -518,8 +559,8 @@ export default function AdminRegistrationRequestsPage() {
                         onClick={() => handleApprove(item)}
                       >
                         {isActionLoading
-                          ? 'Création du compte…'
-                          : 'Approuver et créer le compte'}
+                          ? 'Envoi de l’accès…'
+                          : 'Approuver et envoyer l’accès'}
                       </button>
 
                       <button

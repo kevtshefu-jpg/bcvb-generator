@@ -17,6 +17,7 @@ export type PublicRegistrationPayload = {
 export type PublicRegistrationResult = {
   ok: true
   registrationRequestId: string
+  message: string
   warnings: string[]
 }
 
@@ -90,6 +91,9 @@ export function isRlsError(error: unknown) {
 export function getPublicRegistrationErrorMessage() {
   return 'Impossible d’envoyer la demande pour le moment. Merci de réessayer ou de contacter un responsable du BCVB.'
 }
+
+export const PUBLIC_REGISTRATION_SUCCESS_MESSAGE =
+  'Votre demande a bien été envoyée. Un responsable du BCVB va l’étudier. Si elle est validée, vous recevrez un email sécurisé pour créer votre mot de passe.'
 
 function normalizeText(value?: string) {
   return String(value || '').trim()
@@ -408,6 +412,7 @@ export async function submitPublicRegistration(
   return {
     ok: true,
     registrationRequestId,
+    message: PUBLIC_REGISTRATION_SUCCESS_MESSAGE,
     warnings,
   }
 }

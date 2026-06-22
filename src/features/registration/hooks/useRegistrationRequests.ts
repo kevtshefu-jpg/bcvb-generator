@@ -15,7 +15,7 @@ export function useRegistrationRequests(approvedBy?: string) {
   const [requests, setRequests] = useState<RegistrationRequestRow[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [lastCreatedPassword, setLastCreatedPassword] = useState<string | null>(null)
+  const [lastApprovalMessage, setLastApprovalMessage] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
@@ -45,14 +45,19 @@ export function useRegistrationRequests(approvedBy?: string) {
   async function approve(item: RegistrationRequestActionInput) {
     try {
       setError(null)
-      setLastCreatedPassword(null)
+      setLastApprovalMessage(null)
 
       const result = await approveRegistrationAndCreateUser(
         item.id,
         item.role_requested || item.requested_role || undefined,
       )
 
-      setLastCreatedPassword(result.temporary_password || result.passwordResetLink || result.message || null)
+      setLastApprovalMessage(
+        result.message ||
+          (result.email_sent
+            ? 'Compte créé et email d’activation envoyé.'
+            : 'Compte créé, mais l’email d’activation doit être renvoyé.'),
+      )
 
       const rows = await fetchRegistrationRequests()
       setRequests(rows)
@@ -64,6 +69,7 @@ export function useRegistrationRequests(approvedBy?: string) {
   async function reject(item: RegistrationRequestActionInput) {
     try {
       setError(null)
+      setLastApprovalMessage(null)
       await rejectRegistrationRequest(item.id, approvedBy)
       const rows = await fetchRegistrationRequests()
       setRequests(rows)
@@ -78,6 +84,6 @@ export function useRegistrationRequests(approvedBy?: string) {
     error,
     approve,
     reject,
-    lastCreatedPassword,
+    lastApprovalMessage,
   }
 }

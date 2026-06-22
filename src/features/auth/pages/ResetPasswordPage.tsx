@@ -227,10 +227,10 @@ export default function ResetPasswordPage() {
         <div>
           <p className="dashboard-page__eyebrow">Authentification</p>
           <h2 className="dashboard-page__title">
-            Définir un nouveau mot de passe
+            Définir votre mot de passe
           </h2>
           <p className="dashboard-page__text">
-            Choisissez un nouveau mot de passe pour accéder à votre compte BCVB.
+            Définissez votre mot de passe pour activer ou récupérer votre accès BCVB.
           </p>
         </div>
 
