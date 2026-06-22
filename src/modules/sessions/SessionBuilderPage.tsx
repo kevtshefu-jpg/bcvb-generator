@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../features/auth/context/AuthContext'
-import CoachGuidancePanel from '../../features/coach/components/CoachGuidancePanel'
-import CoachModeToggle from '../../features/coach/components/CoachModeToggle'
-import CoachNoviceHelpCard from '../../features/coach/components/CoachNoviceHelpCard'
-import CoachWorkflowStepper from '../../features/coach/components/CoachWorkflowStepper'
+import CoachToolModeGuide from '../../features/coach-tools/mode/CoachToolModeGuide'
+import CoachToolModeToggle from '../../features/coach-tools/mode/CoachToolModeToggle'
 import { useCoachToolMode } from '../../features/coach/hooks/useCoachToolMode'
 import { SessionClassificationPanel } from './SessionClassificationPanel'
 import { SessionHeaderForm } from './SessionHeaderForm'
@@ -44,7 +42,6 @@ import { buildSessionUpgradePrompt } from './sessionTransformer'
 import '../../styles/sessions.css'
 import '../../styles/courts.css'
 import '../../styles/print-session.css'
-import '../../features/coach/styles/coach-tools-mode.css'
 
 type PreviewMode = 'edition' | 'coach' | 'print'
 type AutoFixMode = 'all' | 'bcvb' | 'courts'
@@ -67,16 +64,6 @@ const SESSION_SECTION_IDS: SessionSectionId[] = [
   'session-preview',
   'session-export',
 ]
-
-const SESSION_NOVICE_STEP_BY_SECTION: Record<SessionSectionId, number> = {
-  'session-infos': 1,
-  'session-resume': 2,
-  'session-situations': 3,
-  'session-bilan': 4,
-  'session-library': 5,
-  'session-preview': 5,
-  'session-export': 5,
-}
 
 function buildInitialSession() {
   const draft = loadSessionDraft()
@@ -201,7 +188,7 @@ function clearCourtFrameObjects(
 export default function SessionBuilderPage() {
   const navigate = useNavigate()
   const { profile } = useAuth()
-  const { mode, isNovice, isExpert, toggleMode } = useCoachToolMode()
+  const { mode, isExpert, setMode } = useCoachToolMode()
 
   const currentUser = {
     id: profile?.id || '',
@@ -824,25 +811,8 @@ export default function SessionBuilderPage() {
           isExpert ? 'coach-tool-mode-shell--expert' : '',
         ].filter(Boolean).join(' ')}
       >
-        <CoachModeToggle mode={mode} onToggle={toggleMode} compact={isExpert} />
-
-        {isNovice && (
-          <CoachWorkflowStepper
-            variant="session"
-            currentStep={SESSION_NOVICE_STEP_BY_SECTION[activeSection]}
-          />
-        )}
-
-        <CoachGuidancePanel mode={mode} tool="session" />
-
-        {isNovice && (
-          <CoachNoviceHelpCard title="Conseil jeune coach" tone="red">
-            <p>
-              Une séance réussie doit avoir un objectif simple, beaucoup d’activité, peu
-              d’attente et une situation qui ressemble au match.
-            </p>
-          </CoachNoviceHelpCard>
-        )}
+        <CoachToolModeToggle mode={mode} onChange={setMode} />
+        <CoachToolModeGuide mode={mode} context="session" />
       </section>
 
       {showTemplates && (

@@ -1,0 +1,227 @@
+.coach-tool-mode-shell {
+  width: min(100%, 1440px);
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+  margin: 0 auto 18px;
+}
+
+.coach-tool-mode-shell--expert {
+  gap: 12px;
+}
+
+.coach-mode-toggle,
+.coach-mode-guide {
+  min-width: 0;
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.coach-mode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+}
+
+.coach-mode-toggle__copy {
+  min-width: 0;
+}
+
+.coach-mode-toggle__eyebrow,
+.coach-mode-guide__header p {
+  margin: 0 0 5px;
+  color: #c8102e;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.coach-mode-toggle h2,
+.coach-mode-guide__header h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  line-height: 1.08;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.coach-mode-toggle p,
+.coach-mode-guide__header span {
+  display: block;
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 0.94rem;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.coach-mode-toggle__actions {
+  flex: 0 0 auto;
+  display: inline-flex;
+  gap: 8px;
+  padding: 5px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  border: 1px solid rgba(226, 232, 240, 0.92);
+}
+
+.coach-mode-toggle__button {
+  min-height: 42px;
+  max-width: 100%;
+  border: 0;
+  border-radius: 7px;
+  padding: 0 14px;
+  background: transparent;
+  color: #334155;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 950;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.coach-mode-toggle__button--active {
+  background: #c8102e;
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(200, 16, 46, 0.22);
+}
+
+.coach-mode-guide {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.coach-mode-guide--novice {
+  border-left: 5px solid #c8102e;
+  background:
+    linear-gradient(135deg, rgba(200, 16, 46, 0.07), rgba(255, 255, 255, 0.96)),
+    #ffffff;
+}
+
+.coach-mode-guide--expert {
+  color: #ffffff;
+  border-color: rgba(15, 23, 42, 0.35);
+  background: linear-gradient(135deg, #070b18 0%, #111827 60%, #c8102e 100%);
+}
+
+.coach-mode-guide--expert .coach-mode-guide__header p,
+.coach-mode-guide--expert .coach-mode-guide__header h2,
+.coach-mode-guide--expert .coach-mode-guide__header span {
+  color: #ffffff;
+}
+
+.coach-mode-guide--expert .coach-mode-guide__header span {
+  opacity: 0.78;
+}
+
+.coach-mode-guide__steps {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  padding: 2px 0 4px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+}
+
+.coach-mode-guide__step {
+  flex: 0 0 min(315px, 78vw);
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  scroll-snap-align: start;
+}
+
+.coach-mode-guide__stepNumber {
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.coach-mode-guide__step strong {
+  display: block;
+  color: #0f172a;
+  font-size: 0.96rem;
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+}
+
+.coach-mode-guide__step p {
+  margin: 5px 0 0;
+  color: #334155;
+  font-size: 0.88rem;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.coach-mode-guide__step small {
+  display: block;
+  margin-top: 7px;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.coach-mode-guide__expertList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.coach-mode-guide__expertList li {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+@media (max-width: 760px) {
+  .coach-mode-toggle {
+    display: grid;
+  }
+
+  .coach-mode-toggle__actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .coach-mode-toggle__button {
+    min-width: 0;
+    padding: 0 10px;
+    white-space: normal;
+  }
+
+  .coach-mode-guide {
+    padding: 14px;
+  }
+}
