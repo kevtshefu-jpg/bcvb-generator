@@ -12,11 +12,20 @@ import { statusLabel } from '../features/document-quality/services/qualityRules'
 import { applyMassiveCorrection } from '../features/document-quality/services/massiveCorrectionAdapter'
 import { createCorrectionPlan } from '../features/document-quality/services/massiveCorrectionPlanner'
 import { scoreDocument } from '../features/document-quality/services/qualityScorer'
-import { DocumentModeToggle } from '../features/documents/workflow/DocumentModeToggle'
 import { DocumentNextStepCard } from '../features/documents/workflow/DocumentNextStepCard'
 import { DocumentWorkflowAssistantCard } from '../features/documents/workflow/DocumentWorkflowAssistantCard'
 import { DocumentWorkflowGuide } from '../features/documents/workflow/DocumentWorkflowGuide'
 import { DocumentWorkflowStepper } from '../features/documents/workflow/DocumentWorkflowStepper'
+import { EditorialStudioAssistancePanels } from '../features/editorial-studio/components/EditorialStudioAssistancePanels'
+import { EditorialStudioCorrectionPanel } from '../features/editorial-studio/components/EditorialStudioCorrectionPanel'
+import { EditorialStudioExportActions } from '../features/editorial-studio/components/EditorialStudioExportActions'
+import { EditorialStudioForm } from '../features/editorial-studio/components/EditorialStudioForm'
+import { EditorialStudioHero } from '../features/editorial-studio/components/EditorialStudioHero'
+import { EditorialStudioModeSelector } from '../features/editorial-studio/components/EditorialStudioModeSelector'
+import { EditorialStudioPreview } from '../features/editorial-studio/components/EditorialStudioPreview'
+import { EditorialStudioPromptPanel } from '../features/editorial-studio/components/EditorialStudioPromptPanel'
+import { EditorialStudioQualityPanel } from '../features/editorial-studio/components/EditorialStudioQualityPanel'
+import { EditorialStudioWorkflow } from '../features/editorial-studio/components/EditorialStudioWorkflow'
 import {
   getCurrentDocumentStep,
   getDocumentWorkflowSteps,
@@ -43,6 +52,7 @@ import {
   type EditorialStudioState,
 } from '../utils/editorialStudioStorage.js'
 import '../features/documents/workflow/document-workflow.css'
+import '../features/editorial-studio/components/editorial-studio-components.css'
 import './EditorialStudioPage.css'
 
 function computeSteps(state: EditorialStudioState) {
@@ -574,27 +584,46 @@ export default function EditorialStudioPage() {
     },
   ]
 
+  const compactWorkflowStep =
+    currentWorkflowStepKey === 'source' || currentWorkflowStepKey === 'classification'
+      ? 1
+      : currentWorkflowStepKey === 'structure' || currentWorkflowStepKey === 'production'
+        ? 2
+        : currentWorkflowStepKey === 'preview'
+          ? 3
+          : currentWorkflowStepKey === 'quality' || currentWorkflowStepKey === 'correction' || currentWorkflowStepKey === 'validation'
+            ? 4
+            : 5
+
+  const compactWorkflowCompletedSteps = [
+    documentWorkflowState.hasClassification ? 1 : null,
+    documentWorkflowState.hasContent ? 2 : null,
+    documentWorkflowState.hasPreview ? 3 : null,
+    documentWorkflowState.isValidated ? 4 : null,
+    documentWorkflowState.isExported ? 5 : null,
+  ].filter((step): step is number => step !== null)
+
   return (
     <main className="editorial-studio-page editorial-studio-premium bcvb-page bcvb-premium-page">
-      <section className="editorial-studio-hero bcvb-premium-hero">
-        <div>
-          <p className="bcvb-eyebrow bcvb-premium-hero__eyebrow">Studio éditorial documentaire</p>
-          <h1 className="bcvb-premium-hero__title">Produire, transformer, contrôler, exporter</h1>
-          <p className="bcvb-premium-hero__text">
-            Un outil de production documentaire BCVB pensé pour la publication club,
-            avec prompts spécialisés, contrôle qualité et reprise de travail automatique.
-          </p>
-        </div>
-        <div className="editorial-studio-hero__actions bcvb-premium-actions">
-          <button className="bcvb-premium-button bcvb-premium-button--primary" type="button" onClick={resumeWork}>Reprendre mon travail</button>
-          <button className="bcvb-premium-button bcvb-premium-button--danger" type="button" onClick={resetStudio}>Réinitialiser le studio</button>
-          <Link className="bcvb-premium-button bcvb-premium-button--ghost" to="/admin/ia-documentaire">Ancien studio avancé</Link>
-        </div>
-      </section>
+      <EditorialStudioHero
+        title="Produire, transformer, contrôler, exporter"
+        subtitle="Un outil de production documentaire BCVB pensé pour la publication club, avec prompts spécialisés, contrôle qualité et reprise de travail automatique."
+      >
+        <button className="bcvb-premium-button bcvb-premium-button--primary" type="button" onClick={resumeWork}>Reprendre mon travail</button>
+        <button className="bcvb-premium-button bcvb-premium-button--danger" type="button" onClick={resetStudio}>Réinitialiser le studio</button>
+        <Link className="bcvb-premium-button bcvb-premium-button--ghost" to="/admin/ia-documentaire">Ancien studio avancé</Link>
+      </EditorialStudioHero>
 
       <section className="editorial-document-workbench" aria-label="Workflow documentaire guidé">
+        <EditorialStudioModeSelector
+          mode={workflowMode}
+          onModeChange={(mode) => setWorkflowMode(mode as DocumentWorkflowMode)}
+        />
+        <EditorialStudioWorkflow
+          currentStep={compactWorkflowStep}
+          completedSteps={compactWorkflowCompletedSteps}
+        />
         <div className="editorial-document-workbench__header">
-          <DocumentModeToggle mode={workflowMode} onChange={setWorkflowMode} />
           <DocumentNextStepCard
             step={nextWorkflowStep}
             mode={workflowMode}
@@ -666,83 +695,36 @@ export default function EditorialStudioPage() {
 
       <div className="editorial-studio-layout editorial-studio-layout--workbench editorial-workbench">
         <aside className="editorial-source-column editorial-workbench__side" id="studio-source">
-          <section className="editorial-panel editorial-step-card">
-            <header>
-              <p className="bcvb-eyebrow">Source</p>
-              <h2>Prompt initial</h2>
-            </header>
-            <textarea
-              className="editorial-textarea editorial-textarea--small"
-              value={state.activePrompt}
-              onChange={(event) => patch({ activePrompt: event.target.value })}
-              placeholder="Prompt initial ou prompt généré par le module Créer."
-            />
-            <div className="editorial-actions">
-              <button type="button" onClick={() => generatePrompt('chatgpt')}>Prompt ChatGPT</button>
-              <button type="button" onClick={() => generatePrompt('claude')}>Prompt Claude</button>
-              <button type="button" onClick={copyPrompt}>Copier</button>
-            </div>
-            {copied && <p className="editorial-message">{copied}</p>}
-          </section>
+          <EditorialStudioPromptPanel
+            prompt={state.activePrompt}
+            copiedMessage={copied}
+            onPromptChange={(activePrompt) => patch({ activePrompt })}
+            actions={[
+              { label: 'Prompt ChatGPT', onClick: () => generatePrompt('chatgpt') },
+              { label: 'Prompt Claude', onClick: () => generatePrompt('claude') },
+              { label: 'Copier', onClick: copyPrompt },
+            ]}
+          />
 
-          <section className="editorial-panel editorial-step-card">
-            <header>
-              <p className="bcvb-eyebrow">OCR / texte brut</p>
-              <h2>Sources importées</h2>
-            </header>
-            <div className="editorial-attachment-row">
-              <label>
-                <span>Importer PDF, image, DOCX ou texte</span>
-                <small>Ajoute une source brute. Le texte extrait reste modifiable avant transformation.</small>
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx,.txt,.md,.csv,image/*"
-                  onChange={(event) => handleAttachment(event.target.files?.[0] ?? null)}
-                />
-              </label>
-              <Link to="/admin/ocr-pieces-jointes">Ouvrir OCR avancé</Link>
-            </div>
-            <textarea
-              className="editorial-textarea"
-              value={state.sourceText}
-              onChange={(event) => patch({ sourceText: event.target.value })}
-              placeholder="Texte OCR, source brute, notes de fichier ou contenu à transformer."
-            />
-          </section>
-
-          <section className="editorial-panel editorial-step-card" id="studio-classification">
-            <header>
-              <p className="bcvb-eyebrow">Notes admin</p>
-              <h2>Cadrage et métadonnées</h2>
-            </header>
-            <div className="editorial-form-grid editorial-form-grid--single">
-              <label>
-                <span>Titre du document</span>
-                <input value={state.targetDocument} onChange={(event) => patch({ targetDocument: event.target.value })} />
-              </label>
-              <label>
-                <span>Famille</span>
-                <select value={state.family} onChange={(event) => patch({ family: event.target.value })}>
-                  {EDITORIAL_DOCUMENT_FAMILIES.map((family) => (
-                    <option value={family.id} key={family.id}>{family.label}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Catégorie</span>
-                <input value={state.category} onChange={(event) => patch({ category: event.target.value })} />
-              </label>
-              <label>
-                <span>Public</span>
-                <input value={state.audience} onChange={(event) => patch({ audience: event.target.value })} />
-              </label>
-            </div>
-            <dl className="editorial-metadata-list">
-              <div><dt>Fichier associé</dt><dd>{state.transformedFromTitle || 'Aucun fichier associé'}</dd></div>
-              <div><dt>Source document</dt><dd>{state.sourceDocumentId || 'Source locale'}</dd></div>
-              <div><dt>Dernière sauvegarde</dt><dd>{lastSavedAt ? new Date(lastSavedAt).toLocaleString('fr-FR') : 'Autosave actif'}</dd></div>
-            </dl>
-          </section>
+          <EditorialStudioForm
+            values={{
+              targetDocument: state.targetDocument,
+              family: state.family,
+              category: state.category,
+              audience: state.audience,
+              sourceText: state.sourceText,
+              transformedFromTitle: state.transformedFromTitle,
+              sourceDocumentId: state.sourceDocumentId,
+            }}
+            families={EDITORIAL_DOCUMENT_FAMILIES}
+            metadata={[
+              { label: 'Fichier associé', value: state.transformedFromTitle || 'Aucun fichier associé' },
+              { label: 'Source document', value: state.sourceDocumentId || 'Source locale' },
+              { label: 'Dernière sauvegarde', value: lastSavedAt ? new Date(lastSavedAt).toLocaleString('fr-FR') : 'Autosave actif' },
+            ]}
+            onChange={(nextValues) => patch(nextValues)}
+            onAttachment={handleAttachment}
+          />
         </aside>
 
         <section className="editorial-editor-column editorial-workbench__main" id="studio-editor">
@@ -825,247 +807,62 @@ export default function EditorialStudioPage() {
             </div>
           </section>
 
-          <section className="editorial-panel editorial-step-card editorial-preview" id="studio-preview">
-            <header>
-              <p className="bcvb-eyebrow">Aperçu / Export</p>
-              <h2>Document final</h2>
-            </header>
-            {finalDocumentExists ? (
-              <pre>{state.finalDocument}</pre>
-            ) : (
-              <div className="editorial-empty-preview">
-                Colle ou génère une réponse finale pour activer la prévisualisation.
-              </div>
-            )}
-            {finalDocumentExists && (
-              <div className="editorial-actions editorial-actions--export" id="studio-export">
-                <button type="button" onClick={exportPdf}>Export PDF</button>
-                <button type="button" onClick={() => downloadText(`${state.targetDocument}.md`, state.finalDocument)}>Télécharger source</button>
-                <button type="button" onClick={saveToLibrary}>Enregistrer bibliothèque</button>
-              </div>
-            )}
-          </section>
+          <EditorialStudioPreview content={state.finalDocument}>
+            <EditorialStudioExportActions
+              canExport={finalDocumentExists}
+              onExportPdf={exportPdf}
+              onExportMarkdown={() => downloadText(`${state.targetDocument}.md`, state.finalDocument)}
+              onSaveToLibrary={saveToLibrary}
+            />
+          </EditorialStudioPreview>
         </section>
 
         <aside className="editorial-assistance-column editorial-workbench__side" id="studio-assistance">
-          <section className="editorial-status-sidebar editorial-quality-panel bcvb-premium-card">
-            <p className="bcvb-eyebrow">Assistance</p>
-            <h2>{state.targetDocument}</h2>
-            <div className={`editorial-publication-status editorial-publication-status--${getQualityStatusTone(qualityReport.status)}`}>
-              <span>{statusLabel(qualityReport.status)}</span>
-              <small>
-                {criticalWarnings.length > 0
-                  ? `${criticalWarnings.length} warning critique`
-                  : 'Décision qualité calculée'}
-              </small>
-            </div>
-            <div className="editorial-quality-summary editorial-quality-summary--compact">
-              <strong>{qualityReport.globalScore}/100</strong>
-              <div>
-                <p>
-                  {criticalWarnings.length > 0
-                    ? 'Publication bloquée tant que les warnings critiques ne sont pas traités.'
-                    : state.recommendedAction}
-                </p>
-              </div>
-            </div>
-            <dl>
-              <div><dt>Famille</dt><dd>{selectedFamily.label}</dd></div>
-              <div><dt>Catégorie</dt><dd>{state.category}</dd></div>
-              <div><dt>Source</dt><dd>{savedState.steps.sources}</dd></div>
-              <div><dt>Plan</dt><dd>{savedState.steps.plan}</dd></div>
-              <div><dt>Production</dt><dd>{savedState.steps.production}</dd></div>
-              <div><dt>Export</dt><dd>{savedState.steps.export}</dd></div>
-            </dl>
-            <p className="editorial-message">{message}</p>
-          </section>
+          <EditorialStudioQualityPanel
+            title={state.targetDocument}
+            status={statusLabel(qualityReport.status)}
+            statusTone={getQualityStatusTone(qualityReport.status)}
+            criticalWarningsCount={criticalWarnings.length}
+            score={qualityReport.globalScore}
+            recommendedAction={state.recommendedAction}
+            metadata={[
+              { label: 'Famille', value: selectedFamily.label },
+              { label: 'Catégorie', value: state.category },
+              { label: 'Source', value: savedState.steps.sources },
+              { label: 'Plan', value: savedState.steps.plan },
+              { label: 'Production', value: savedState.steps.production },
+              { label: 'Export', value: savedState.steps.export },
+            ]}
+            message={message}
+            checks={qualityDecisionItems.map((item) => ({
+              id: item.key,
+              label: item.label,
+              value: item.value,
+              explanation: item.explanation,
+              action: item.action,
+            }))}
+            onCheckAction={handleQualityAction}
+          />
 
-          <section className="editorial-panel editorial-step-card editorial-assist-panel">
-            <header>
-              <p className="bcvb-eyebrow">Sous-scores</p>
-              <h2>Score actionnable</h2>
-            </header>
-            <div className="editorial-quality-breakdown">
-              {qualityDecisionItems.map((item) => (
-                <article className={item.value >= 75 ? 'is-ok' : 'is-low'} key={item.key}>
-                  <div>
-                    <span>{item.label}</span>
-                    <strong>{item.value}/100</strong>
-                  </div>
-                  <p>{item.explanation}</p>
-                  <button type="button" onClick={() => handleQualityAction(item.action)}>
-                    {item.action}
-                  </button>
-                </article>
-              ))}
-            </div>
-          </section>
+          <EditorialStudioCorrectionPanel
+            currentScore={qualityReport.globalScore}
+            targetScore={correctionTargetScore}
+            correctionPlan={correctionPlan}
+            correctionRunning={correctionRunning}
+            correctionReview={correctionReview}
+            modeLabels={correctionModeLabels}
+            onTargetScoreChange={setCorrectionTargetScore}
+            onRunCorrection={runControlledCorrection}
+            onValidateCorrection={validateCorrectionReview}
+            onRestoreCorrection={restoreCorrectionBefore}
+          />
 
-          <section className="editorial-panel editorial-step-card editorial-assist-panel editorial-correction-panel">
-            <header>
-              <p className="bcvb-eyebrow">Correction contrôlée</p>
-              <h2>Améliorer fortement sans perdre la source</h2>
-            </header>
-
-            <div className="editorial-correction-target">
-              <div>
-                <span>Score actuel</span>
-                <strong>{qualityReport.globalScore}/100</strong>
-              </div>
-              <label>
-                <span>Score visé</span>
-                <input
-                  type="number"
-                  min={70}
-                  max={100}
-                  value={correctionTargetScore}
-                  onChange={(event) => setCorrectionTargetScore(Number(event.target.value))}
-                />
-              </label>
-            </div>
-
-            <div className="editorial-correction-safety">
-              <article>
-                <strong>Conservé</strong>
-                <p>Source OCR, prompt, notes admin, métadonnées et ancienne version locale.</p>
-              </article>
-              <article>
-                <strong>Restructuré</strong>
-                <p>Sections faibles, tableaux, identité BCVB, situations, export readiness.</p>
-              </article>
-              <article>
-                <strong>Risque</strong>
-                <p>{correctionPlan.riskLevel === 'medium' ? 'Réorganisation visible : relire avant validation.' : 'Faible : corrections ciblées.'}</p>
-              </article>
-            </div>
-
-            <div className="editorial-correction-plan">
-              <strong>Actions prévues</strong>
-              {correctionPlan.actions.length > 0 ? (
-                correctionPlan.actions.slice(0, 4).map((action) => (
-                  <span key={action.id}>
-                    {action.description} · +{action.expectedGain}
-                  </span>
-                ))
-              ) : (
-                <span>Aucune correction automatique prioritaire. Relecture humaine conseillée.</span>
-              )}
-            </div>
-
-            <div className="editorial-correction-levels">
-              <button
-                type="button"
-                disabled={Boolean(correctionRunning)}
-                onClick={() => runControlledCorrection('micro')}
-              >
-                {correctionRunning === 'micro' ? 'Micro-correction…' : 'Micro-correction'}
-              </button>
-              <button
-                type="button"
-                disabled={Boolean(correctionRunning)}
-                onClick={() => runControlledCorrection('strong')}
-              >
-                {correctionRunning === 'strong' ? 'Amélioration…' : 'Amélioration forte'}
-              </button>
-              <button
-                type="button"
-                disabled={Boolean(correctionRunning)}
-                onClick={() => runControlledCorrection('rebuild')}
-              >
-                {correctionRunning === 'rebuild' ? 'Reconstruction…' : 'Reconstruction publication club'}
-              </button>
-            </div>
-
-            {correctionReview ? (
-              <div className="editorial-correction-result">
-                <strong>{correctionModeLabels[correctionReview.mode]} appliquée</strong>
-                <div>
-                  <span>Avant {correctionReview.result.previousScore?.globalScore ?? qualityReport.globalScore}/100</span>
-                  <span>Après {correctionReview.result.newScore?.globalScore ?? qualityReport.globalScore}/100</span>
-                  <span>
-                    Gain +{Math.max(
-                      0,
-                      (correctionReview.result.newScore?.globalScore ?? 0) -
-                        (correctionReview.result.previousScore?.globalScore ?? 0),
-                    )}
-                  </span>
-                </div>
-                <ul>
-                  {correctionReview.result.changeLog.map((entry) => (
-                    <li key={entry}>{entry}</li>
-                  ))}
-                </ul>
-                <details>
-                  <summary>Comparer avant / après</summary>
-                  <div className="editorial-correction-diff">
-                    <pre>{correctionReview.before.slice(0, 1200)}</pre>
-                    <pre>{correctionReview.result.correctedSource.slice(0, 1200)}</pre>
-                  </div>
-                </details>
-                <div className="editorial-correction-result__actions">
-                  <button type="button" onClick={validateCorrectionReview}>
-                    Valider
-                  </button>
-                  <button type="button" onClick={restoreCorrectionBefore}>
-                    Restaurer ancienne version
-                  </button>
-                </div>
-              </div>
-            ) : null}
-          </section>
-
-          <section className="editorial-panel editorial-step-card editorial-assist-panel">
-            <header>
-              <p className="bcvb-eyebrow">Recommandations</p>
-              <h2>À améliorer</h2>
-            </header>
-            <ul className="editorial-assist-list">
-              {qualityActions.map((action) => (
-                <li key={action}>{action}</li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="editorial-panel editorial-step-card editorial-assist-panel">
-            <header>
-              <p className="bcvb-eyebrow">Warnings</p>
-              <h2>Points à relire</h2>
-            </header>
-            <ul className="editorial-warning-list">
-              {studioWarnings.length > 0 ? studioWarnings.map((warning) => (
-                <li key={warning}>{warning}</li>
-              )) : <li>Aucun warning majeur détecté.</li>}
-            </ul>
-          </section>
-
-          <section className="editorial-panel editorial-step-card editorial-assist-panel">
-            <header>
-              <p className="bcvb-eyebrow">Actions rapides</p>
-              <h2>Améliorer sans chercher</h2>
-            </header>
-            <div className="editorial-quick-actions">
-              {quickActions.map((item) => (
-                <button type="button" key={item.label} onClick={item.action}>
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="editorial-panel editorial-step-card editorial-assist-panel">
-            <header>
-              <p className="bcvb-eyebrow">Checklist publication</p>
-              <h2>Avant diffusion</h2>
-            </header>
-            <ul className="editorial-checklist">
-              {publicationChecklist.map((item) => (
-                <li className={item.done ? 'is-done' : 'is-missing'} key={item.label}>
-                  <strong>{item.done ? 'OK' : 'À faire'} · {item.label}</strong>
-                  <span>{item.helper}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
+          <EditorialStudioAssistancePanels
+            qualityActions={qualityActions}
+            warnings={studioWarnings}
+            quickActions={quickActions}
+            publicationChecklist={publicationChecklist}
+          />
         </aside>
       </div>
     </main>
