@@ -1,0 +1,67 @@
+.library-hero__side {
+  min-width: 0;
+  display: grid;
+  justify-items: end;
+  gap: 12px;
+}
+
+.library-hero__badge {
+  min-width: 132px;
+  display: grid;
+  gap: 3px;
+  padding: 13px 15px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #ffffff;
+  text-align: right;
+}
+
+.library-hero__badge span,
+.library-hero__badge small {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.library-hero__badge strong {
+  color: #ffffff;
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.library-document-card {
+  min-width: 0;
+}
+
+.library-document-card__title,
+.library-document-card__description,
+.library-document-card__meta,
+.library-document-card__tags,
+.library-document-card__actions {
+  min-width: 0;
+}
+
+.library-document-card__top {
+  min-width: 0;
+}
+
+.library-document-card__tag {
+  max-width: min(190px, 60vw);
+}
+
+.library-filters__search input {
+  min-width: 0;
+}
+
+@media (max-width: 780px) {
+  .library-hero__side {
+    justify-items: stretch;
+  }
+
+  .library-hero__badge {
+    width: 100%;
+    text-align: left;
+  }
+}

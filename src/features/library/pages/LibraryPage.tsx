@@ -12,19 +12,19 @@ import {
 import { fetchDocumentVersions } from '../services/documentVersionService'
 
 import { DocumentPreviewModal } from '../components/DocumentPreviewModal'
-import LibraryMobileExperience, {
-  type LibraryMobileDocument,
-} from '../components/LibraryMobileExperience'
+import LibraryBulkActionsBar from '../components/LibraryBulkActionsBar'
+import LibraryDocumentGrid from '../components/LibraryDocumentGrid'
+import LibraryEmptyState from '../components/LibraryEmptyState'
+import LibraryFeedback from '../components/LibraryFeedback'
+import LibraryFilters from '../components/LibraryFilters'
+import LibraryHero from '../components/LibraryHero'
+import LibraryMobileExperience from '../components/LibraryMobileExperience'
+import LibraryStats from '../components/LibraryStats'
 
 import { canAccessDocument, canTransformDocument } from '../utils/libraryPermissions'
 import { useSafeLoading } from '../../../hooks/useSafeLoading'
 import { PRESENTATION_MODE } from '../../../config/presentationMode'
-import ActionFeedback from '../../../components/feedback/ActionFeedback'
-import {
-  BulkSelectableCard,
-  BulkSelectionToolbar,
-  useBulkSelection,
-} from '../../../components/bulk'
+import { useBulkSelection } from '../../../components/bulk'
 import { useDocumentExportActions } from '../../documents/hooks/useDocumentExportActions'
 import { canExportDocument } from '../../documents/services/documentExportService'
 import { useAuth } from '../../auth/context/AuthContext'
@@ -41,417 +41,46 @@ import {
   PUBLICATION_LEVELS,
   SPORT_CATEGORIES,
 } from '../../../config/documentModel.js'
+import {
+  FILTER_STORAGE_KEY,
+  SCROLL_STORAGE_KEY,
+  buildSearchText,
+  canGeneratePdf,
+  defaultFilters,
+  getAudience,
+  getCategory,
+  getDocumentDescription,
+  getDocumentTitle,
+  getFamily,
+  getFileType,
+  getPublicationLevel,
+  getSafeDateLabel,
+  getSeason,
+  getSportCategory,
+  getStatus,
+  getSubCategory,
+  getTheme,
+  getVersion,
+  hasPdf,
+  hasSource,
+  hasVersions,
+  isArchived,
+  isDeleted,
+  isRecentDocument,
+  loadLocalDraftDocuments,
+  loadSavedFilters,
+  lower,
+  mapDocumentToMobileDocument,
+  normalizeSearch,
+  optionUnion,
+  toExportableDocument,
+  uniq,
+  type LibraryFilters as LibraryFilterValues,
+} from '../utils/libraryPageHelpers'
 
 import './LibraryPage.css'
+import '../components/library-components.css'
 import '../../documents/styles/document-actions.css'
-
-type LibraryViewMode = 'grid' | 'list'
-
-type LibraryFilters = {
-  search: string
-  family: string
-  category: string
-  subCategory: string
-  theme: string
-  sportCategory: string
-  audience: string
-  season: string
-  status: string
-  fileType: string
-  publicationLevel: string
-  tag: string
-  lifecycle: string
-  viewMode: LibraryViewMode
-}
-
-const FILTER_STORAGE_KEY = 'bcvb-library-filters'
-const SCROLL_STORAGE_KEY = 'bcvb-library-scroll-y'
-
-const defaultFilters: LibraryFilters = {
-  search: '',
-  family: 'all',
-  category: 'all',
-  subCategory: 'all',
-  theme: 'all',
-  sportCategory: 'all',
-  audience: 'all',
-  season: 'all',
-  status: 'all',
-  fileType: 'all',
-  publicationLevel: 'all',
-  tag: 'all',
-  lifecycle: 'active',
-  viewMode: 'grid',
-}
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function normalize(value?: string | string[] | number | null) {
-  if (Array.isArray(value)) {
-    return value.filter(Boolean).join(', ').trim()
-  }
-
-  return String(value ?? '').trim()
-}
-
-function lower(value?: string | string[] | number | null) {
-  return normalize(value).toLowerCase()
-}
-
-function normalizeSearch(value?: string | string[] | number | null) {
-  return normalize(value)
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-}
-
-function uniq(values: Array<string | null | undefined>) {
-  return Array.from(new Set(values.map(normalize).filter(Boolean))).sort((a, b) =>
-    a.localeCompare(b),
-  )
-}
-
-function optionUnion(values: string[], existing: string[]) {
-  return Array.from(new Set([...values, ...existing].filter(Boolean))).sort((a, b) =>
-    a.localeCompare(b),
-  )
-}
-
-function getOptionLabel(value: string) {
-  const labels: Record<string, string> = {
-    all: 'Tous',
-    active: 'Actifs',
-    archived: 'Archivés',
-    deleted: 'Supprimés',
-  }
-
-  return labels[value] || value
-}
-
-function getFamily(doc: LibraryDocumentRow) {
-  return (
-    normalize(doc.family) ||
-    normalize(doc.subcategory) ||
-    normalize(doc.category) ||
-    normalize(doc.document_type) ||
-    'Document BCVB'
-  )
-}
-
-function getCategory(doc: LibraryDocumentRow) {
-  return normalize(doc.category_code) || normalize(doc.category) || normalize(doc.team_code) || 'Non classé'
-}
-
-function getSubCategory(doc: LibraryDocumentRow) {
-  return (
-    normalize(doc.subCategory) ||
-    normalize(doc.sub_category) ||
-    normalize(doc.subcategory) ||
-    normalize(doc.category_code) ||
-    'Non renseignée'
-  )
-}
-
-function getTheme(doc: LibraryDocumentRow) {
-  return normalize(doc.theme) || normalize(doc.theme_code) || 'Sans thème'
-}
-
-function getSportCategory(doc: LibraryDocumentRow) {
-  return (
-    normalize(doc.sportCategory) ||
-    normalize(doc.sport_category) ||
-    normalize(doc.team_code) ||
-    normalize(doc.category_code) ||
-    'Toutes catégories'
-  )
-}
-
-function getAudience(doc: LibraryDocumentRow) {
-  return normalize(doc.audience) || 'Club'
-}
-
-function getSeason(doc: LibraryDocumentRow) {
-  return normalize(doc.season) || 'Intemporel'
-}
-
-function getStatus(doc: LibraryDocumentRow) {
-  return normalize(doc.quality_status) || normalize(doc.status) || 'À contrôler'
-}
-
-function getFileType(doc: LibraryDocumentRow) {
-  const value = lower(doc.file_ext) || lower(doc.document_type)
-
-  if (value.includes('pdf')) return 'PDF'
-  if (value.includes('doc')) return 'DOCX'
-  if (value.includes('image') || ['jpg', 'jpeg', 'png', 'webp'].includes(value)) return 'Image'
-  if (value.includes('md') || value.includes('markdown')) return 'Markdown'
-  if (value.includes('txt')) return 'Texte'
-
-  return normalize(doc.document_type) || 'Source'
-}
-
-function getPublicationLevel(doc: LibraryDocumentRow) {
-  return (
-    normalize(doc.publicationLevel) ||
-    normalize(doc.publication_level) ||
-    normalize(doc.level) ||
-    (doc.is_featured ? 'Référence BCVB' : 'Club')
-  )
-}
-
-function getDocumentTitle(doc: LibraryDocumentRow) {
-  return normalize(doc.title) || 'Document BCVB'
-}
-
-function getDocumentDescription(doc: LibraryDocumentRow) {
-  return (
-    normalize(doc.description) ||
-    normalize(doc.summary) ||
-    'Document sans description, affiché avec métadonnées minimales.'
-  )
-}
-
-function getVersion(doc: LibraryDocumentRow) {
-  return normalize(String(doc.version ?? '1.0'))
-}
-
-function getSafeDateLabel(value?: string | null) {
-  const date = new Date(value || '')
-
-  if (Number.isNaN(date.getTime())) {
-    return 'Date inconnue'
-  }
-
-  return date.toLocaleDateString('fr-FR')
-}
-
-function getMobileUpdatedLabel(doc: LibraryDocumentRow) {
-  const date = getSafeDateLabel(doc.updated_at || doc.created_at)
-
-  if (date !== 'Date inconnue') {
-    return date
-  }
-
-  return getSeason(doc)
-}
-
-function hasPdf(doc: LibraryDocumentRow) {
-  return Boolean(
-    doc.pdf_url ||
-      doc.pdf_storage_path ||
-      doc.pdfPath ||
-      doc.pdf_path ||
-      lower(doc.file_ext).includes('pdf') ||
-      lower(doc.document_type).includes('pdf'),
-  )
-}
-
-function hasSource(doc: LibraryDocumentRow) {
-  return Boolean(
-    doc.content?.trim() ||
-      doc.source_markdown?.trim() ||
-      doc.file_url ||
-      doc.storage_path ||
-      doc.sourcePath ||
-      doc.source_path ||
-      doc.sourceDownloadUrl ||
-      doc.source_download_url ||
-      doc.downloadUrl ||
-      doc.download_url,
-  )
-}
-
-function canGeneratePdf(doc: LibraryDocumentRow) {
-  return Boolean(doc.content?.trim() || doc.source_markdown?.trim())
-}
-
-function hasVersions(doc: LibraryDocumentRow) {
-  return Boolean(
-    (doc.versions_count || 0) > 1 ||
-      doc.parent_document_id ||
-      doc.parentDocumentId ||
-      doc.created_from_document_id ||
-      doc.createdFromDocumentId,
-  )
-}
-
-function isArchived(doc: LibraryDocumentRow) {
-  return Boolean(
-    doc.isArchived ||
-      doc.is_archived ||
-      doc.archivedAt ||
-      doc.archived_at ||
-      lower(doc.status) === 'archived'
-  )
-}
-
-function isDeleted(doc: LibraryDocumentRow) {
-  return Boolean(
-    doc.isDeleted ||
-      doc.is_deleted ||
-      doc.deletedAt ||
-      doc.deleted_at ||
-      lower(doc.status) === 'deleted'
-  )
-}
-
-function isRecentDocument(doc: LibraryDocumentRow) {
-  const date = new Date(doc.updated_at || doc.created_at || '')
-
-  if (Number.isNaN(date.getTime())) {
-    return false
-  }
-
-  return Date.now() - date.getTime() < 1000 * 60 * 60 * 24 * 30
-}
-
-function buildSearchText(doc: LibraryDocumentRow) {
-  return normalizeSearch(
-    [
-      doc.title,
-      doc.description,
-      doc.summary,
-      doc.category,
-      doc.subcategory,
-      doc.subCategory,
-      doc.sub_category,
-      doc.theme,
-      doc.category_code,
-      doc.theme_code,
-      doc.sportCategory,
-      doc.sport_category,
-      doc.team_code,
-      doc.audience,
-      doc.season,
-      doc.status,
-      doc.quality_status,
-      doc.publication_level,
-      doc.level,
-      ...(doc.tags || []),
-      doc.content?.slice(0, 800),
-    ].join(' '),
-  )
-}
-
-function loadSavedFilters() {
-  try {
-    const raw = window.localStorage.getItem(FILTER_STORAGE_KEY)
-
-    if (!raw) return defaultFilters
-
-    return {
-      ...defaultFilters,
-      ...JSON.parse(raw),
-    } as LibraryFilters
-  } catch {
-    return defaultFilters
-  }
-}
-
-function loadLocalDraftDocuments(): LibraryDocumentRow[] {
-  try {
-    const drafts = JSON.parse(
-      window.localStorage.getItem('bcvb-editorial-library-drafts') || '[]',
-    ) as Array<{
-      title: string
-      family?: string
-      content: string
-      score?: number
-      savedAt?: string
-    }>
-
-    return drafts.map((draft, index) => {
-      const savedAt = draft.savedAt || new Date().toISOString()
-      const score = draft.score || 0
-
-      return {
-        id: `local-draft-${index}-${savedAt}`,
-        title: draft.title || 'Brouillon bibliothèque',
-        description: 'Brouillon enregistré depuis le Studio éditorial.',
-        document_type: 'markdown',
-        file_ext: 'md',
-        bucket_name: '',
-        storage_path: '',
-        category: draft.family || 'Studio éditorial',
-        family: draft.family || 'Fiche à thème',
-        subcategory: draft.family || 'Document transformé',
-        subCategory: 'Brouillon',
-        theme: 'Transformation BCVB',
-        sportCategory: 'Toutes catégories',
-        category_code: draft.family || 'Studio',
-        theme_code: 'Brouillon',
-        team_code: null,
-        audience: 'Admin',
-        season: null,
-        tags: ['BCVB', 'brouillon', 'studio'],
-        content: draft.content,
-        status: score >= 95 ? 'publiable' : 'à corriger',
-        quality_status: score >= 95 ? 'Prêt à publier' : 'À corriger',
-        publication_level: 'Brouillon',
-        visibility: 'private',
-        allowedRoles: ['admin'],
-        is_active: true,
-        is_featured: false,
-        is_ai_generated: true,
-        isArchived: false,
-        isDeleted: false,
-        uploaded_by: null,
-        source_document_id: null,
-        generation_request_id: null,
-        version: '1.0',
-        is_latest_version: true,
-        created_at: savedAt,
-        updated_at: savedAt,
-      }
-    })
-  } catch {
-    return []
-  }
-}
-
-function mapDocumentToMobileDocument(
-  doc: LibraryDocumentRow,
-  canTransform: boolean,
-): LibraryMobileDocument {
-  return {
-    id: doc.id,
-    title: getDocumentTitle(doc),
-    description: getDocumentDescription(doc),
-    family: getFamily(doc),
-    mainCategory: getCategory(doc),
-    subCategory: getSubCategory(doc),
-    theme: getTheme(doc),
-    audience: getAudience(doc),
-    type: getFileType(doc),
-    status: getStatus(doc),
-    publicationLevel: getPublicationLevel(doc),
-    updatedAt: getMobileUpdatedLabel(doc),
-    createdAt: doc.created_at,
-    to: doc.content?.trim() ? `/documents/${doc.id}` : '/bibliotheque',
-    locked: false,
-    canPreview: true,
-    canDownload: hasSource(doc) || hasPdf(doc),
-    canTransform: canTransform && hasSource(doc),
-  }
-}
-
-function toExportableDocument(doc: LibraryDocumentRow) {
-  return {
-    id: doc.id,
-    title: getDocumentTitle(doc),
-    content: doc.content || doc.source_markdown,
-    source_markdown: doc.source_markdown,
-    file_url: doc.file_url || doc.download_url || doc.downloadUrl,
-    source_download_url: doc.source_download_url,
-    sourceDownloadUrl: doc.sourceDownloadUrl,
-    pdf_url: doc.pdf_url,
-    bucket_name: doc.bucket_name,
-    storage_path: doc.storage_path,
-    updated_at: doc.updated_at,
-  }
-}
 
 /* =========================================================
    PAGE
@@ -461,7 +90,7 @@ export default function LibraryPage() {
   const { user, profile } = useAuth()
 
   const [documents, setDocuments] = useState<LibraryDocumentRow[]>([])
-  const [filters, setFilters] = useState<LibraryFilters>(() => loadSavedFilters())
+  const [filters, setFilters] = useState<LibraryFilterValues>(() => loadSavedFilters())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [openingId, setOpeningId] = useState<string | null>(null)
@@ -675,8 +304,8 @@ export default function LibraryPage() {
   )
 
   const activeFilterCount = useMemo(() => {
-    const ignoredKeys: Array<keyof LibraryFilters> = ['viewMode']
-    const entries = Object.entries(filters) as Array<[keyof LibraryFilters, string]>
+    const ignoredKeys: Array<keyof LibraryFilterValues> = ['viewMode']
+    const entries = Object.entries(filters) as Array<[keyof LibraryFilterValues, string]>
 
     return entries.filter(([key, value]) => {
       if (ignoredKeys.includes(key)) return false
@@ -685,7 +314,7 @@ export default function LibraryPage() {
     }).length
   }, [filters])
 
-  const patchFilters = useCallback((patch: Partial<LibraryFilters>) => {
+  const patchFilters = useCallback((patch: Partial<LibraryFilterValues>) => {
     setFilters((current) => ({
       ...current,
       ...patch,
@@ -1063,32 +692,33 @@ export default function LibraryPage() {
     [findDocumentById],
   )
 
-  function renderSelect(label: string, key: keyof LibraryFilters, values: string[]) {
-    const cleanedValues = values.filter((value) => value !== 'all')
-
-    return (
-      <label className="library-filter">
-        <span>{label}</span>
-
-        <select
-          value={filters[key]}
-          onChange={(event) =>
-            patchFilters({
-              [key]: event.target.value,
-            } as Partial<LibraryFilters>)
-          }
-        >
-          <option value="all">Tous</option>
-
-          {cleanedValues.map((value) => (
-            <option value={value} key={value}>
-              {getOptionLabel(value)}
-            </option>
-          ))}
-        </select>
-      </label>
-    )
-  }
+  const documentCardHelpers = useMemo(
+    () => ({
+      getFamily,
+      getDocumentTitle,
+      getDocumentDescription,
+      getCategory,
+      getSubCategory,
+      getTheme,
+      getSportCategory,
+      getAudience,
+      getSeason,
+      getFileType,
+      getPublicationLevel,
+      getStatus,
+      getVersion,
+      getSafeDateLabel,
+      hasPdf,
+      hasSource,
+      canGeneratePdf,
+      hasVersions,
+      isArchived,
+      isDeleted,
+      canExportMarkdown: (doc: LibraryDocumentRow) =>
+        canExportDocument(toExportableDocument(doc), 'markdown'),
+    }),
+    [],
+  )
 
   return (
     <section className="library-page bcvb-page bcvb-premium-page">
@@ -1104,208 +734,58 @@ export default function LibraryPage() {
       />
 
       <div className="library-desktop-first">
-        <section className="library-hero bcvb-premium-hero">
-          <div>
-            <p className="bcvb-eyebrow bcvb-premium-hero__eyebrow">
-              {PRESENTATION_MODE ? 'Mode présentation' : 'Bibliothèque documentaire'}
-            </p>
+        <LibraryHero
+          totalCount={visibleDocuments.length}
+          visibleCount={filteredDocuments.length}
+          loading={safeLoading}
+          presentationMode={PRESENTATION_MODE}
+          viewMode={filters.viewMode}
+          onViewModeChange={(viewMode) => patchFilters({ viewMode })}
+        />
 
-            <h1 className="bcvb-premium-hero__title">Centre de ressources BCVB</h1>
+        <LibraryStats
+          totalCount={stats.total}
+          publishedCount={stats.publishable}
+          draftCount={stats.toFix}
+          archivedCount={stats.archived}
+          selectedCount={selectedCount}
+          withoutPdfCount={stats.withoutPdf}
+          transformableCount={stats.transformable}
+          recentCount={stats.recent}
+          showArchived={isAdminRole}
+        />
 
-            <p className="bcvb-premium-hero__text">
-              Consulter, rechercher, ouvrir, prévisualiser, télécharger et transformer les documents du club selon les droits du profil connecté.
-            </p>
-          </div>
-
-          <div className="library-view-toggle bcvb-premium-actions bcvb-scroll-row bcvb-tabs-safe">
-            <button
-              type="button"
-              className={`bcvb-premium-button ${filters.viewMode === 'grid' ? 'is-active bcvb-premium-button--primary' : 'bcvb-premium-button--ghost'}`}
-              onClick={() => patchFilters({ viewMode: 'grid' })}
-            >
-              Grille
-            </button>
-
-            <button
-              type="button"
-              className={`bcvb-premium-button ${filters.viewMode === 'list' ? 'is-active bcvb-premium-button--primary' : 'bcvb-premium-button--ghost'}`}
-              onClick={() => patchFilters({ viewMode: 'list' })}
-            >
-              Liste
-            </button>
-          </div>
-        </section>
-
-        <section className="library-stats bcvb-premium-grid bcvb-premium-grid--4 bcvb-grid-safe">
-          <article className="bcvb-premium-kpi">
-            <span className="bcvb-premium-kpi__label">Documents visibles</span>
-            <strong className="bcvb-premium-kpi__value">{stats.total}</strong>
-          </article>
-
-          <article className="bcvb-premium-kpi">
-            <span className="bcvb-premium-kpi__label">Publiables</span>
-            <strong className="bcvb-premium-kpi__value">{stats.publishable}</strong>
-          </article>
-
-          <article className="bcvb-premium-kpi">
-            <span className="bcvb-premium-kpi__label">À corriger</span>
-            <strong className="bcvb-premium-kpi__value">{stats.toFix}</strong>
-          </article>
-
-          <article className="bcvb-premium-kpi">
-            <span className="bcvb-premium-kpi__label">Sans PDF</span>
-            <strong className="bcvb-premium-kpi__value">{stats.withoutPdf}</strong>
-          </article>
-
-          <article className="bcvb-premium-kpi">
-            <span className="bcvb-premium-kpi__label">Transformables</span>
-            <strong className="bcvb-premium-kpi__value">{stats.transformable}</strong>
-          </article>
-
-          <article className="bcvb-premium-kpi">
-            <span className="bcvb-premium-kpi__label">Récents</span>
-            <strong className="bcvb-premium-kpi__value">{stats.recent}</strong>
-          </article>
-
-          {isAdminRole ? (
-            <article className="bcvb-premium-kpi">
-              <span className="bcvb-premium-kpi__label">Archivés</span>
-              <strong className="bcvb-premium-kpi__value">{stats.archived}</strong>
-            </article>
-          ) : null}
-        </section>
-
-        <section className="library-toolbar bcvb-premium-toolbar bcvb-toolbar-safe">
-          <label className="library-search">
-            <span>Recherche texte / sémantique simple</span>
-
-            <input
-              value={filters.search}
-              onChange={(event) => patchFilters({ search: event.target.value })}
-              placeholder="Titre, description, catégorie, tags, résumé, métadonnées..."
-            />
-          </label>
-
-          <div className="library-toolbar__actions bcvb-premium-toolbar__secondary bcvb-action-row-safe">
-            {isAdminRole ? (
-              <button className="bcvb-premium-button bcvb-premium-button--secondary" type="button" onClick={toggleSelectionMode}>
-                {selectionMode ? 'Quitter sélection' : 'Sélection multiple'}
-              </button>
-            ) : null}
-
-            <button className="bcvb-premium-button bcvb-premium-button--ghost" type="button" onClick={resetFilters}>
-              Réinitialiser filtres
-            </button>
-
-            <button className="bcvb-premium-button bcvb-premium-button--primary" type="button" onClick={loadDocuments}>
-              Recharger
-            </button>
-          </div>
-        </section>
-
-        {activeFilterCount > 0 ? (
-          <p className="library-action-message">
-            {activeFilterCount} filtre{activeFilterCount > 1 ? 's' : ''} actif
-            {activeFilterCount > 1 ? 's' : ''}.
-          </p>
-        ) : null}
-
-        <div className="library-layout">
-          <aside className="library-filters bcvb-premium-card bcvb-premium-card--muted bcvb-card-safe">
-            <h2>Classement</h2>
-
-            {renderSelect('Famille documentaire', 'family', filterOptions.families)}
-            {renderSelect('Catégorie principale', 'category', filterOptions.categories)}
-            {renderSelect('Sous-catégorie', 'subCategory', filterOptions.subCategories)}
-            {renderSelect('Thème', 'theme', filterOptions.themes)}
-            {renderSelect('Catégorie sportive', 'sportCategory', filterOptions.sportCategories)}
-            {renderSelect('Audience', 'audience', filterOptions.audiences)}
-            {renderSelect('Saison', 'season', filterOptions.seasons)}
-            {renderSelect('Statut', 'status', filterOptions.statuses)}
-            {renderSelect('Type de fichier', 'fileType', filterOptions.fileTypes)}
-            {renderSelect('Niveau publication', 'publicationLevel', filterOptions.publicationLevels)}
-            {renderSelect('Tags', 'tag', filterOptions.tags)}
-
-            {isAdminRole
-              ? renderSelect('Cycle de vie', 'lifecycle', ['active', 'archived', 'deleted', 'all'])
-              : null}
-          </aside>
-
+        <LibraryFilters
+          filters={filters}
+          filterOptions={filterOptions}
+          activeFilterCount={activeFilterCount}
+          isAdmin={isAdminRole}
+          selectionMode={selectionMode}
+          onPatchFilters={patchFilters}
+          onResetFilters={resetFilters}
+          onReload={loadDocuments}
+          onToggleSelectionMode={toggleSelectionMode}
+        >
           <section className="library-results">
-            {safeLoading ? <p>Chargement de l’espace BCVB...</p> : null}
-
-            {hasTimedOut && PRESENTATION_MODE ? (
-              <div className="bcvb-demo-fallback">
-                <p className="bcvb-eyebrow">Mode présentation</p>
-                <h2>Bibliothèque prête à être présentée</h2>
-                <p>
-                  Le chargement distant est temporairement indisponible. Les brouillons locaux restent affichables.
-                </p>
-              </div>
-            ) : null}
-
-            {error ? (
-              <div className="bcvb-demo-fallback">
-                <p className="bcvb-eyebrow">Bibliothèque</p>
-                <h2>Chargement temporairement indisponible</h2>
-                <p>
-                  {PRESENTATION_MODE
-                    ? 'La bibliothèque reste disponible dès que la connexion aux données répond.'
-                    : error}
-                </p>
-
-                <button type="button" onClick={loadDocuments}>
-                  Réessayer
-                </button>
-              </div>
-            ) : null}
-
-            {downloadError ? (
-              <ActionFeedback
-                type="error"
-                title="Action groupée"
-                message={downloadError}
-                onClose={() => setDownloadError(null)}
-              />
-            ) : null}
-
-            {exportLoadingId && exportLoadingMessage ? (
-              <ActionFeedback
-                type="loading"
-                title="Export documentaire"
-                message={exportLoadingMessage}
-              />
-            ) : null}
-
-            {exportError ? (
-              <ActionFeedback
-                type="error"
-                title="Export impossible"
-                message={exportError}
-                onClose={clearExportFeedback}
-              />
-            ) : null}
-
-            {exportSuccess ? (
-              <ActionFeedback
-                type="success"
-                title="Export terminé"
-                message={exportSuccess}
-                onClose={clearExportFeedback}
-              />
-            ) : null}
-
-            {actionMessage ? (
-              <ActionFeedback
-                type="success"
-                title="Bibliothèque"
-                message={actionMessage}
-                onClose={() => setActionMessage(null)}
-              />
-            ) : null}
+            <LibraryFeedback
+              safeLoading={safeLoading}
+              hasTimedOut={hasTimedOut}
+              presentationMode={PRESENTATION_MODE}
+              error={error}
+              downloadError={downloadError}
+              actionMessage={actionMessage}
+              exportLoadingId={exportLoadingId}
+              exportLoadingMessage={exportLoadingMessage}
+              exportError={exportError}
+              exportSuccess={exportSuccess}
+              onRetry={loadDocuments}
+              onCloseDownloadError={() => setDownloadError(null)}
+              onCloseActionMessage={() => setActionMessage(null)}
+              onClearExportFeedback={clearExportFeedback}
+            />
 
             {selectionMode && isAdminRole ? (
-              <BulkSelectionToolbar
+              <LibraryBulkActionsBar
                 selectedCount={selectedCount}
                 totalCount={filteredDocuments.length}
                 onSelectAll={selectAll}
@@ -1313,225 +793,42 @@ export default function LibraryPage() {
                 onArchiveSelected={handleArchiveSelectedDocuments}
                 onDeleteSelected={handleDeleteSelectedDocuments}
                 onCancel={disableSelectionMode}
-                archiveLabel="Archiver sélection"
-                deleteLabel="Supprimer sélection"
                 isDeleting={bulkActionLoading}
               />
             ) : null}
 
             {!safeLoading && filteredDocuments.length === 0 ? (
-              <article className="library-empty">
-                <h3>Aucun document visible</h3>
-                <p>Aucun document ne correspond aux filtres ou aux droits du profil connecté.</p>
-              </article>
+              <LibraryEmptyState
+                loading={safeLoading}
+                hasDocuments={visibleDocuments.length > 0}
+              />
             ) : null}
 
-            <div className={`library-documents library-documents--${filters.viewMode} bcvb-grid-safe`}>
-              {filteredDocuments.map((doc) => {
-                const sourceAvailable = hasSource(doc)
-                const pdfAvailable = hasPdf(doc)
-                const canPdf = pdfAvailable || canGeneratePdf(doc)
-                const exportableDoc = toExportableDocument(doc)
-                const markdownAvailable = canExportDocument(exportableDoc, 'markdown')
-                const isCurrentExportLoading = exportLoadingId === doc.id
-                const rawTags = doc.tags?.length ? doc.tags : ['BCVB']
-                const visibleTags = rawTags.slice(0, 6)
-                const hiddenTagCount = Math.max(0, rawTags.length - visibleTags.length)
-                const statusWarning = /corriger|draft|brouillon/i.test(getStatus(doc))
-                const pdfLabel =
-                  isCurrentExportLoading && exportLoadingType === 'pdf'
-                    ? 'Préparation PDF...'
-                    : isCurrentExportLoading && exportLoadingType === 'source'
-                      ? 'Téléchargement...'
-                      : pdfAvailable
-                        ? 'Télécharger PDF'
-                        : canGeneratePdf(doc)
-                          ? 'Générer PDF'
-                          : 'PDF indisponible'
-
-                return (
-                  <BulkSelectableCard
-                    key={doc.id}
-                    selected={isSelected(doc.id)}
-                    selectionMode={selectionMode && isAdminRole}
-                    onToggleSelected={() => toggleSelected(doc.id)}
-                  >
-                    <article className="library-card bcvb-premium-card bcvb-card-safe">
-                    <header>
-                      <div>
-                        <p className="bcvb-eyebrow bcvb-premium-card__eyebrow bcvb-tag-safe">{getFamily(doc)}</p>
-                        <h2 className="bcvb-premium-card__title bcvb-text-clamp-2">{getDocumentTitle(doc)}</h2>
-                      </div>
-
-                      <span
-                        className={[
-                          'library-card__status',
-                          'bcvb-premium-status',
-                          'bcvb-status-safe',
-                          statusWarning ? 'is-warning bcvb-premium-status--warning' : 'is-ready bcvb-premium-status--ok',
-                        ].join(' ')}
-                      >
-                        {getStatus(doc)}
-                      </span>
-                    </header>
-
-                    <p className="library-card__description bcvb-premium-card__text bcvb-text-clamp-3">
-                      {getDocumentDescription(doc)}
-                    </p>
-
-                    <div className="library-card__meta bcvb-scroll-row">
-                      <span className="bcvb-badge-safe">{getCategory(doc)}</span>
-                      <span className="bcvb-badge-safe">{getSubCategory(doc)}</span>
-                      <span className="bcvb-theme-chip-safe">{getTheme(doc)}</span>
-                      <span className="bcvb-badge-safe">{getSportCategory(doc)}</span>
-                      <span className="bcvb-badge-safe">{getAudience(doc)}</span>
-                      <span className="bcvb-badge-safe">{getSeason(doc)}</span>
-                      <span className="bcvb-badge-safe">{getFileType(doc)}</span>
-                      <span className="bcvb-badge-safe">{getPublicationLevel(doc)}</span>
-                    </div>
-
-                    <div className="library-card__tags bcvb-scroll-row">
-                      {visibleTags.map((tag) => (
-                        <span className="bcvb-tag-safe" key={tag}>{tag}</span>
-                      ))}
-                      {hiddenTagCount > 0 ? (
-                        <span className="library-card__tag-more bcvb-tag-safe">+{hiddenTagCount}</span>
-                      ) : null}
-                    </div>
-
-                    <div className="library-card__version bcvb-scroll-row">
-                      <span className="bcvb-badge-safe">Version actuelle {getVersion(doc)}</span>
-                      <span className="bcvb-badge-safe">Modifié le {getSafeDateLabel(doc.updated_at || doc.created_at)}</span>
-
-                      {hasVersions(doc) ? (
-                        <button
-                          type="button"
-                          onClick={() => handleShowVersions(doc)}
-                        >
-                          Voir versions
-                        </button>
-                      ) : (
-                        <span className="library-card__version-note bcvb-badge-safe">Versions à venir</span>
-                      )}
-                    </div>
-
-                    <div className="library-card__actions">
-                      <div className="library-card__action-group library-card__action-group--primary document-action-row bcvb-action-row-safe">
-                        <button
-                          type="button"
-                          className="document-action-button document-action-button--primary"
-                          onClick={() => handleOpenDocument(doc)}
-                          disabled={openingId === doc.id}
-                        >
-                          {openingId === doc.id ? 'Ouverture...' : 'Ouvrir'}
-                        </button>
-
-                        <button
-                          type="button"
-                          className="document-action-button document-action-button--ghost"
-                          onClick={() => setPreviewDocument(doc)}
-                        >
-                          Prévisualiser
-                        </button>
-                      </div>
-
-                      <div className="library-card__action-group document-action-row bcvb-action-row-safe">
-                        <button
-                          type="button"
-                          className={[
-                            'document-action-button',
-                            pdfAvailable ? 'document-action-button--ghost' : 'document-action-button--primary',
-                            isCurrentExportLoading ? 'document-action-button--loading' : '',
-                          ].filter(Boolean).join(' ')}
-                          onClick={() => handleDownloadPdf(doc)}
-                          disabled={!canPdf || isCurrentExportLoading}
-                          title={!canPdf ? 'PDF à générer, mais aucune source exploitable.' : undefined}
-                        >
-                          {pdfLabel}
-                        </button>
-
-                        <button
-                          type="button"
-                          className={[
-                            'document-action-button',
-                            'document-action-button--ghost',
-                            isCurrentExportLoading && exportLoadingType === 'source'
-                              ? 'document-action-button--loading'
-                              : '',
-                          ].filter(Boolean).join(' ')}
-                          onClick={() => handleDownloadSource(doc)}
-                          disabled={!sourceAvailable || isCurrentExportLoading}
-                          title={!sourceAvailable ? 'Source indisponible.' : undefined}
-                        >
-                          {isCurrentExportLoading && exportLoadingType === 'source'
-                            ? 'Téléchargement...'
-                            : sourceAvailable ? 'Télécharger source' : 'Source indisponible'}
-                        </button>
-
-                        <button
-                          type="button"
-                          className={[
-                            'document-action-button',
-                            'document-action-button--ghost',
-                            isCurrentExportLoading && exportLoadingType === 'markdown'
-                              ? 'document-action-button--loading'
-                              : '',
-                          ].filter(Boolean).join(' ')}
-                          onClick={() => handleDownloadMarkdown(doc)}
-                          disabled={!markdownAvailable || isCurrentExportLoading}
-                          title={!markdownAvailable ? 'Source Markdown indisponible.' : undefined}
-                        >
-                          {isCurrentExportLoading && exportLoadingType === 'markdown'
-                            ? 'Préparation Markdown...'
-                            : 'Markdown'}
-                        </button>
-
-                        {transformAllowed ? (
-                          <button
-                            type="button"
-                            className="document-action-button document-action-button--ghost"
-                            onClick={() => handleTransform(doc)}
-                            disabled={!sourceAvailable}
-                            title={!sourceAvailable ? 'Transformation impossible : source indisponible.' : undefined}
-                          >
-                            Transformer BCVB
-                          </button>
-                        ) : (
-                          <span className="library-card__hint bcvb-badge-safe">
-                            Transformation réservée admin.
-                          </span>
-                        )}
-                      </div>
-
-                      {isAdminRole ? (
-                        <div className="library-card__action-group library-card__action-group--admin document-action-row bcvb-action-row-safe">
-                            <button
-                              type="button"
-                              className="document-action-button document-action-button--ghost"
-                              onClick={() => handleArchive(doc)}
-                              disabled={adminActionId === doc.id || isArchived(doc) || isDeleted(doc)}
-                            >
-                              {isArchived(doc) ? 'Archivé' : 'Archiver'}
-                            </button>
-
-                            <button
-                              type="button"
-                              className="document-action-button document-action-button--danger library-card__danger"
-                              onClick={() => handleSoftDelete(doc)}
-                              disabled={adminActionId === doc.id || isDeleted(doc)}
-                            >
-                              {isDeleted(doc) ? 'Supprimé' : 'Supprimer'}
-                            </button>
-                        </div>
-                      ) : null}
-                    </div>
-                    </article>
-                  </BulkSelectableCard>
-                )
-              })}
-            </div>
+            <LibraryDocumentGrid
+              documents={filteredDocuments}
+              viewMode={filters.viewMode}
+              selectionMode={selectionMode}
+              isAdminRole={isAdminRole}
+              transformAllowed={transformAllowed}
+              openingId={openingId}
+              adminActionId={adminActionId}
+              exportLoadingId={exportLoadingId}
+              exportLoadingType={exportLoadingType}
+              helpers={documentCardHelpers}
+              isSelected={isSelected}
+              onToggleSelected={toggleSelected}
+              onPreview={setPreviewDocument}
+              onOpen={handleOpenDocument}
+              onGeneratePdf={handleDownloadPdf}
+              onDownloadSource={handleDownloadSource}
+              onDownloadMarkdown={handleDownloadMarkdown}
+              onTransform={handleTransform}
+              onShowVersions={handleShowVersions}
+              onArchive={handleArchive}
+              onSoftDelete={handleSoftDelete}
+            />
           </section>
-        </div>
+        </LibraryFilters>
       </div>
 
       {previewDocument ? (
