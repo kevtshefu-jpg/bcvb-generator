@@ -26,6 +26,38 @@ function getReadableFunctionError(error: unknown) {
   return String(error)
 }
 
+async function notifyRegistrationDecision(eventType: string, requestId: string) {
+  try {
+    const title =
+      eventType === 'registration_approved'
+        ? 'Inscription validée'
+        : 'Inscription refusée'
+
+    const message =
+      eventType === 'registration_approved'
+        ? 'Une demande d’inscription BCVB vient d’être validée.'
+        : 'Une demande d’inscription BCVB vient d’être refusée.'
+
+    const { error } = await supabase.functions.invoke('notify-admin-event', {
+      body: {
+        eventType,
+        title,
+        message,
+        actionUrl: '/admin/inscriptions',
+        metadata: {
+          registration_request_id: requestId,
+        },
+      },
+    })
+
+    if (error) {
+      console.warn('Notification email décision inscription ignorée :', error)
+    }
+  } catch (error) {
+    console.warn('Notification email décision inscription ignorée :', error)
+  }
+}
+
 export async function createApprovedUser(requestId: string, finalRole?: string) {
   const { data, error } = await supabase.functions.invoke<CreateApprovedUserResult>(
     'create-approved-user',
@@ -46,6 +78,8 @@ export async function createApprovedUser(requestId: string, finalRole?: string) 
   if (!data?.ok) {
     throw new Error(data?.error || 'La création du compte a échoué.')
   }
+
+  await notifyRegistrationDecision('registration_approved', requestId)
 
   return data
 }
@@ -89,7 +123,10 @@ export async function rejectRegistrationRequest(requestId: string, approvedBy?: 
     .update(fullPatch)
     .eq('id', requestId)
 
-  if (!error) return
+  if (!error) {
+    await notifyRegistrationDecision('registration_rejected', requestId)
+    return
+  }
 
   if (!isMissingColumnError(error.message)) {
     throw new Error(error.message)
@@ -101,4 +138,6 @@ export async function rejectRegistrationRequest(requestId: string, approvedBy?: 
     .eq('id', requestId)
 
   if (fallbackError) throw new Error(fallbackError.message)
+
+  await notifyRegistrationDecision('registration_rejected', requestId)
 }

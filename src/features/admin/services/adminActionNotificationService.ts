@@ -14,6 +14,17 @@ type NotificationPreferenceLookup = {
   notify_responsable_technique?: boolean | null
 }
 
+const EMAIL_EVENT_TYPES = new Set([
+  'registration_created',
+  'registration_approved',
+  'registration_rejected',
+  'profile_request_created',
+  'authorization_requested',
+  'document_deleted',
+  'document_archived',
+  'import_failed',
+])
+
 async function fetchPreference(eventType: string) {
   const { data, error } = await supabase
     .from('admin_notification_preferences')
@@ -70,6 +81,27 @@ async function insertNotification(
   if (fallbackError) throw new Error(fallbackError.message)
 }
 
+async function notifyAdminEventByEmail(
+  payload: CreateAdminActionNotificationPayload,
+  preference: NotificationPreferenceLookup | null,
+) {
+  if (!EMAIL_EVENT_TYPES.has(payload.eventType)) return
+  if (payload.metadata?.skip_admin_email === true) return
+  if (preference?.enabled === false || preference?.notify_admin === false) return
+
+  try {
+    const { error } = await supabase.functions.invoke('notify-admin-event', {
+      body: payload,
+    })
+
+    if (error) {
+      console.warn('Notification email admin non bloquante échouée :', error)
+    }
+  } catch (error) {
+    console.warn('Notification email admin non bloquante échouée :', error)
+  }
+}
+
 export async function createAdminActionNotification(
   payload: CreateAdminActionNotificationPayload,
 ) {
@@ -99,6 +131,8 @@ export async function createAdminActionNotification(
     }
 
     await Promise.all(insertions)
+    await notifyAdminEventByEmail(payload, preference)
+
     return { ok: true, skipped: false }
   } catch (error) {
     console.warn('Notification admin non bloquante échouée :', error)

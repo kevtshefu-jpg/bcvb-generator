@@ -290,7 +290,7 @@ async function insertAdminNotificationDirect(
   const fullName = getFullName(payload) || email
   const roleRequested = normalizeText(payload.roleRequested) || 'member'
   const basePayload = {
-    type: 'registration_request_created',
+    type: 'registration_created',
     title: 'Nouvelle demande d’inscription',
     message: `${fullName} souhaite créer un accès ${roleRequested}.`,
     action_url: '/admin/inscriptions',
@@ -332,6 +332,30 @@ async function insertAdminNotificationDirect(
   return 'admin_notifications créé sans metadata ni recipient_role.'
 }
 
+async function tryNotifyRegistrationCreated(
+  payload: PublicRegistrationPayload,
+  registrationRequestId: string,
+) {
+  const { error } = await supabase.functions.invoke('notify-registration-created', {
+    body: {
+      registrationRequestId,
+      email: normalizeEmail(payload.email),
+      firstName: normalizeText(payload.firstName),
+      lastName: normalizeText(payload.lastName),
+      fullName: getFullName(payload),
+      roleRequested: normalizeText(payload.roleRequested) || 'member',
+      categoryRequested: normalizeText(payload.categoryRequested),
+      requestedTeam: normalizeText(payload.requestedTeam) || null,
+      phone: normalizeText(payload.phone) || null,
+    },
+  })
+
+  if (!error) return null
+
+  console.warn('[publicRegistrationService] notify-registration-created ignorée :', error)
+  return `notify-registration-created ignorée : ${serializeSupabaseError(error)}`
+}
+
 export async function tryNotifyAdmin(
   payload: PublicRegistrationPayload,
   registrationRequestId: string,
@@ -340,31 +364,19 @@ export async function tryNotifyAdmin(
   const email = normalizeEmail(payload.email)
   const fullName = getFullName(payload) || email
 
-  const { error: functionError } = await supabase.functions.invoke('notify-profile-request', {
-    body: {
-      diagnostic: false,
-      fullName,
-      email,
-      requestedRole: normalizeText(payload.roleRequested) || 'member',
-      requestedCategoryId: normalizeText(payload.categoryRequested),
-      requestedTeam: normalizeText(payload.requestedTeam) || null,
-      phone: normalizeText(payload.phone) || null,
-      message: normalizeText(payload.notes) || null,
-      registrationRequestId,
-    },
-  })
-
-  if (!functionError) return warnings
-
-  console.warn('[publicRegistrationService] notify-profile-request ignorée :', functionError)
-  warnings.push(`notify-profile-request ignorée : ${serializeSupabaseError(functionError)}`)
+  const registrationEmailWarning = await tryNotifyRegistrationCreated(
+    payload,
+    registrationRequestId,
+  )
+  if (registrationEmailWarning) warnings.push(registrationEmailWarning)
 
   const notificationResult = await createAdminActionNotification({
-    eventType: 'registration_request_created',
+    eventType: 'registration_created',
     title: 'Nouvelle demande d’inscription',
     message: `${fullName} souhaite créer un accès ${normalizeText(payload.roleRequested) || 'member'}.`,
     actionUrl: '/admin/inscriptions',
     metadata: {
+      skip_admin_email: true,
       registration_request_id: registrationRequestId,
       email,
       first_name: normalizeText(payload.firstName),

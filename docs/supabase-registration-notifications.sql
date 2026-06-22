@@ -453,11 +453,17 @@ create index if not exists profiles_role_idx
 insert into public.admin_notification_preferences
   (event_type, label, description, enabled, notify_admin, notify_responsable_technique)
 values
+  ('registration_created', 'Nouvelle demande d''inscription', 'Notification lorsqu''un visiteur envoie une demande d''inscription publique.', true, true, true),
   ('registration_request_created', 'Nouvelle demande d''inscription', 'Notification lorsqu''un visiteur envoie une demande d''inscription publique.', true, true, true),
+  ('registration_approved', 'Inscription validée', 'Notification lorsqu''une demande d''inscription est validée.', true, true, false),
+  ('registration_rejected', 'Inscription refusée', 'Notification lorsqu''une demande d''inscription est refusée.', true, true, false),
   ('profile_request_created', 'Nouvelle demande de profil', 'Notification lorsqu''un utilisateur demande un accès ou une évolution de rôle.', true, true, true),
+  ('authorization_requested', 'Autorisation demandée', 'Notification lorsqu''un utilisateur demande une autorisation sensible.', true, true, true),
   ('document_created', 'Document créé', 'Notification lorsqu''un document club est ajouté au référentiel.', true, true, false),
   ('document_updated', 'Document modifié', 'Notification lorsqu''un document existant est corrigé ou enrichi.', true, true, false),
   ('document_deleted', 'Document supprimé', 'Notification lorsqu''un document est supprimé ou retiré du référentiel actif.', true, true, true),
+  ('document_archived', 'Document archivé', 'Notification lorsqu''un document est archivé ou retiré du référentiel courant.', true, true, true),
+  ('import_failed', 'Import échoué', 'Notification lorsqu''un import de données ou de documents échoue.', true, true, true),
   ('document_exported', 'Document exporté', 'Notification lorsqu''un PDF ou une source est généré depuis la plateforme.', true, false, false),
   ('session_created', 'Séance créée', 'Notification lorsqu''un coach ou admin crée une séance terrain.', true, false, true),
   ('planning_created', 'Planification créée', 'Notification lorsqu''une planification sportive est créée ou initialisée.', true, false, true),

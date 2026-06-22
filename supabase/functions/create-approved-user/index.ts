@@ -30,6 +30,11 @@ type CreateApprovedUserPayload = {
   role?: string
 }
 
+type EmailContact = {
+  name: string
+  email: string
+}
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -46,6 +51,50 @@ function normalizeText(value: unknown) {
 
 function normalizeEmail(value: unknown) {
   return normalizeText(value).toLowerCase()
+}
+
+function parseEmailFrom(value?: string | null): EmailContact {
+  const fallback = {
+    name: 'BCVB Référentiel',
+    email: 'kevtshefu@gmail.com',
+  }
+
+  const raw = normalizeText(value)
+  if (!raw) return fallback
+
+  const bracketMatch = raw.match(/^(.*?)<([^<>@\s]+@[^<>@\s]+)>$/)
+  if (bracketMatch) {
+    return {
+      name: normalizeText(bracketMatch[1]) || fallback.name,
+      email: normalizeEmail(bracketMatch[2]) || fallback.email,
+    }
+  }
+
+  const emailMatch = raw.match(/([^\s<>@]+@[^\s<>@]+)$/)
+  if (!emailMatch) return fallback
+
+  return {
+    name: normalizeText(raw.slice(0, emailMatch.index).replace(/[<>]/g, '')) || fallback.name,
+    email: normalizeEmail(emailMatch[1]) || fallback.email,
+  }
+}
+
+function getEmailSender() {
+  return parseEmailFrom(
+    Deno.env.get('EMAIL_FROM') || 'BCVB Référentiel kevtshefu@gmail.com',
+  )
+}
+
+function getReplyTo() {
+  const replyToEmail =
+    normalizeEmail(Deno.env.get('REPLY_TO_EMAIL')) ||
+    normalizeEmail(Deno.env.get('ADMIN_NOTIFICATION_EMAIL')) ||
+    'kevtshefu@gmail.com'
+
+  return {
+    name: 'Kevin Tshefu',
+    email: replyToEmail,
+  }
 }
 
 function isMissingColumnError(message: string) {
@@ -171,14 +220,15 @@ async function updateRegistrationApprovalStatus(
   supabaseAdmin: ReturnType<typeof createClient>,
   requestId: string,
   approvedBy: string,
+  activationEmailStatus: 'sent' | 'failed',
 ) {
   const now = new Date().toISOString()
   const fullPatch = {
     status: 'approved',
     approved_by: approvedBy,
     approved_at: now,
-    activation_email_sent_at: now,
-    activation_email_status: 'sent',
+    activation_email_sent_at: activationEmailStatus === 'sent' ? now : null,
+    activation_email_status: activationEmailStatus,
   }
 
   const { error } = await supabaseAdmin
@@ -238,18 +288,78 @@ async function upsertProfileWithFallback(
   }
 }
 
-async function sendPasswordResetEmail(
+async function generateActivationLink(
   supabaseAdmin: ReturnType<typeof createClient>,
   email: string,
   redirectTo: string,
 ) {
-  const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
-    redirectTo,
+  const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+    type: 'recovery',
+    email,
+    options: {
+      redirectTo,
+    },
   })
 
   if (error) {
-    throw new Error(`Compte créé, mais email d’activation non envoyé : ${error.message}`)
+    throw new Error(`Lien d’activation impossible à générer : ${error.message}`)
   }
+
+  const actionLink = data.properties?.action_link
+  if (!actionLink) {
+    throw new Error('Lien d’activation absent dans la réponse Supabase.')
+  }
+
+  return actionLink
+}
+
+async function sendActivationEmail(email: string, fullName: string, activationLink: string) {
+  const apiKey = Deno.env.get('BREVO_API_KEY')
+  if (!apiKey) throw new Error('BREVO_API_KEY manquant.')
+
+  const htmlContent = `
+    <p>Bonjour ${fullName},</p>
+    <p>Votre accès au référentiel BCVB a été validé.</p>
+    <p>Vous pouvez créer votre mot de passe avec ce lien sécurisé :</p>
+    <p><a href="${activationLink}">Créer mon mot de passe</a></p>
+    <p>Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>${activationLink}</p>
+    <p>À bientôt,<br>BCVB Référentiel</p>
+  `
+
+  const textContent = [
+    `Bonjour ${fullName},`,
+    '',
+    'Votre accès au référentiel BCVB a été validé.',
+    'Vous pouvez créer votre mot de passe avec ce lien sécurisé :',
+    activationLink,
+    '',
+    'À bientôt,',
+    'BCVB Référentiel',
+  ].join('\n')
+
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': apiKey,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      sender: getEmailSender(),
+      to: [{ email, name: fullName }],
+      replyTo: getReplyTo(),
+      subject: 'BCVB — Créez votre mot de passe',
+      htmlContent,
+      textContent,
+    }),
+  })
+
+  if (!response.ok) {
+    const detail = await response.text()
+    throw new Error(`Brevo a refusé l'email d’activation (${response.status}) : ${detail}`)
+  }
+
+  return response.json()
 }
 
 async function updateProfileRequestStatus(
@@ -366,77 +476,20 @@ Deno.serve(async (request) => {
     let userAlreadyExisted = false
     const activationRedirectTo = getActivationRedirectUrl()
     const now = new Date().toISOString()
+    let activationEmailStatus: 'sent' | 'failed' = 'failed'
+    let activationEmailError: string | null = null
 
-    const { data: invitedUserData, error: inviteUserError } =
-      await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-        redirectTo: activationRedirectTo,
-        data: {
-          full_name: fullName,
-          role: finalRole,
-          source: 'bcvb_registration_approval',
-        },
-      })
-
-    if (inviteUserError) {
-      if (!isDuplicateUserError(inviteUserError.message)) {
-        return jsonResponse(
-          {
-            ok: false,
-            error: `Création du compte Auth ou envoi de l’invitation impossible : ${inviteUserError.message}`,
-          },
-          500,
-        )
-      }
-
+    const existingAuthUser = await findAuthUserByEmail(supabaseAdmin, email)
+    if (existingAuthUser?.id) {
       userAlreadyExisted = true
-
-      const existingAuthUser = await findAuthUserByEmail(supabaseAdmin, email)
-
-      if (!existingAuthUser?.id) {
-        return jsonResponse(
-          {
-            ok: false,
-            error:
-              'Un utilisateur existe peut-être déjà, mais impossible de le retrouver dans Supabase Auth.',
-          },
-          409,
-        )
-      }
-
       userId = existingAuthUser.id
-
-      try {
-        await sendPasswordResetEmail(supabaseAdmin, email, activationRedirectTo)
-      } catch (error) {
-        return jsonResponse(
-          {
-            ok: false,
-            error:
-              error instanceof Error
-                ? error.message
-                : 'Compte créé, mais email d’activation non envoyé.',
-          },
-          500,
-        )
-      }
-    } else {
-      userId = invitedUserData.user?.id || null
     }
 
-    if (!userId) {
-      const existingAuthUser = await findAuthUserByEmail(supabaseAdmin, email)
-      userId = existingAuthUser?.id || null
-      userAlreadyExisted = Boolean(existingAuthUser?.id)
-    }
-
-    /*
-     * inviteUserByEmail envoie l'email d'activation directement.
-     * Aucun mot de passe provisoire n'est généré, retourné ou affiché côté admin.
-     */
     if (!userId && !userAlreadyExisted) {
       const { data: createdUserData, error: createUserError } =
         await supabaseAdmin.auth.admin.createUser({
           email,
+          email_confirm: true,
           user_metadata: {
             full_name: fullName,
             role: finalRole,
@@ -455,21 +508,6 @@ Deno.serve(async (request) => {
       }
 
       userId = createdUserData.user?.id || null
-
-      try {
-        await sendPasswordResetEmail(supabaseAdmin, email, activationRedirectTo)
-      } catch (error) {
-        return jsonResponse(
-          {
-            ok: false,
-            error:
-              error instanceof Error
-                ? error.message
-                : 'Compte créé, mais email d’activation non envoyé.',
-          },
-          500,
-        )
-      }
     }
 
     if (!userId) {
@@ -519,7 +557,25 @@ Deno.serve(async (request) => {
       onboarding_completed: false,
     })
 
-    await updateRegistrationApprovalStatus(supabaseAdmin, requestId, adminUser.id)
+    try {
+      const activationLink = await generateActivationLink(
+        supabaseAdmin,
+        email,
+        activationRedirectTo,
+      )
+      await sendActivationEmail(email, fullName, activationLink)
+      activationEmailStatus = 'sent'
+    } catch (error) {
+      activationEmailError = error instanceof Error ? error.message : String(error)
+      console.error('[create-approved-user] activation email failed:', error)
+    }
+
+    await updateRegistrationApprovalStatus(
+      supabaseAdmin,
+      requestId,
+      adminUser.id,
+      activationEmailStatus,
+    )
     await updateProfileRequestStatus(supabaseAdmin, email, 'approved')
 
     return jsonResponse({
@@ -532,9 +588,13 @@ Deno.serve(async (request) => {
       role: finalProfileRole,
       user_already_existed: userAlreadyExisted,
       userAlreadyExisted,
-      email_sent: true,
-      activation_email_status: 'sent',
-      message: 'Compte créé et email d’activation envoyé.',
+      email_sent: activationEmailStatus === 'sent',
+      activation_email_status: activationEmailStatus,
+      activation_email_error: activationEmailError,
+      message:
+        activationEmailStatus === 'sent'
+          ? 'Compte créé et email d’activation envoyé.'
+          : 'Compte créé, mais l’email d’activation n’a pas pu être envoyé.',
     })
   } catch (error) {
     return jsonResponse(
