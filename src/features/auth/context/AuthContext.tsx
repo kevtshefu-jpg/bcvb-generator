@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../../../lib/supabase'
 import { withTimeout } from '../../../utils/withTimeout'
+import { normalizeRole } from '../../../config/roles'
 
 export type UserRole =
   | 'admin'
@@ -40,15 +41,77 @@ type AuthContextType = {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const ELEVATED_AUTH_ROLES: UserRole[] = ['admin', 'responsable_technique']
+
+type ProfileRow = {
+  id?: string | null
+  email?: string | null
+  full_name?: string | null
+  role?: string | null
+  is_active?: boolean | null
+  category_id?: string | null
+}
+
+function normalizeUserRole(value?: string | null): UserRole {
+  return normalizeRole(value) as UserRole
+}
+
+function getElevatedMetadataRole(currentUser: User): UserRole | null {
+  const candidates = [
+    currentUser.app_metadata?.role,
+    currentUser.app_metadata?.profile_role,
+    currentUser.app_metadata?.user_role,
+    currentUser.user_metadata?.role,
+    currentUser.user_metadata?.profile_role,
+    currentUser.user_metadata?.user_role,
+  ]
+
+  for (const candidate of candidates) {
+    const role = normalizeUserRole(typeof candidate === 'string' ? candidate : null)
+
+    if (ELEVATED_AUTH_ROLES.includes(role)) {
+      return role
+    }
+  }
+
+  return null
+}
+
+function resolveProfileRole(currentUser: User, role?: string | null): UserRole {
+  const normalizedRole = normalizeUserRole(role)
+  const elevatedMetadataRole = getElevatedMetadataRole(currentUser)
+
+  if (elevatedMetadataRole && (!role || normalizedRole === 'member')) {
+    console.warn(
+      `[AuthContext] rôle élevé conservé depuis les métadonnées Auth : ${elevatedMetadataRole}.`,
+    )
+    return elevatedMetadataRole
+  }
+
+  return normalizedRole
+}
 
 function buildFallbackProfile(currentUser: User): Profile {
   return {
     id: currentUser.id,
     email: currentUser.email ?? '',
     full_name: (currentUser.user_metadata?.full_name as string | undefined) ?? null,
-    role: 'member',
+    role: getElevatedMetadataRole(currentUser) ?? 'member',
     is_active: true,
     category_id: null,
+  }
+}
+
+function buildLoadedProfile(currentUser: User, row: ProfileRow): Profile {
+  return {
+    id: row.id || currentUser.id,
+    email: row.email || currentUser.email || '',
+    full_name:
+      row.full_name ??
+      ((currentUser.user_metadata?.full_name as string | undefined) || null),
+    role: resolveProfileRole(currentUser, row.role),
+    is_active: row.is_active ?? true,
+    category_id: row.category_id ?? null,
   }
 }
 
@@ -86,12 +149,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      setProfile(data as Profile)
+      setProfile(buildLoadedProfile(currentUser, data as ProfileRow))
     } catch (error) {
       console.error('Erreur inattendue chargement profil :', error)
       setProfile(buildFallbackProfile(currentUser))
     }
   }, [])
+  console.log('[AuthContext] user/profile', {
+  userId: user?.id,
+  userEmail: user?.email,
+  profileId: profile?.id,
+  profileEmail: profile?.email,
+  role: profile?.role,
+  isActive: profile?.is_active,
+})
 
   const refreshProfile = useCallback(async () => {
     await loadProfile(user)

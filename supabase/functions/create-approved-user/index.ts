@@ -343,11 +343,34 @@ Deno.serve(async (request) => {
       )
     }
 
+    const { data: existingProfile, error: existingProfileError } = await supabaseAdmin
+      .from('profiles')
+      .select('id, role, is_active')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (existingProfileError) {
+      return jsonResponse(
+        {
+          ok: false,
+          error: `Impossible de vérifier le profil existant : ${existingProfileError.message}`,
+        },
+        500,
+      )
+    }
+
+    const protectedRoles = ['admin', 'responsable_technique']
+
+    const existingRole = normalizeRole(existingProfile?.role)
+    const shouldKeepExistingRole = protectedRoles.includes(existingRole)
+
+    const finalProfileRole = shouldKeepExistingRole ? existingRole : finalRole
+
     const profilePayload = {
       id: userId,
       email,
       full_name: fullName,
-      role: finalRole,
+      role: finalProfileRole,
       is_active: true,
     }
 
@@ -385,7 +408,7 @@ Deno.serve(async (request) => {
       userId,
       email,
       fullName,
-      role: finalRole,
+      role: finalProfileRole,
       userAlreadyExisted,
       passwordResetLink,
       message: userAlreadyExisted

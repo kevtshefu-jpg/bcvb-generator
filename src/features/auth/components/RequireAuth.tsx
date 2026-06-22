@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import type { UserRole } from '../context/AuthContext'
 import { useStableSession } from '../../../hooks/useStableSession'
 import { PRESENTATION_MODE } from '../../../config/presentationMode'
+import { normalizeRole } from '../../../config/roles'
 
 type RequireAuthProps = {
   allowedRoles?: UserRole[]
@@ -54,7 +55,14 @@ export default function RequireAuth({ allowedRoles }: RequireAuthProps) {
     )
   }
 
-  if (allowedRoles && profile?.role && !allowedRoles.includes(profile.role)) {
+  const normalizedProfileRole = normalizeRole(profile?.role)
+  const normalizedAllowedRoles = allowedRoles?.map((role) => normalizeRole(role))
+
+  if (
+    allowedRoles &&
+    profile?.role &&
+    !normalizedAllowedRoles?.includes(normalizedProfileRole)
+  ) {
     if (PRESENTATION_MODE) {
       return (
         <main className="bcvb-page-loading">
