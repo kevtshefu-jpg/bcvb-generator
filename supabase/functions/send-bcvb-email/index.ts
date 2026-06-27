@@ -10,7 +10,7 @@ type EmailRecipient = {
 }
 
 type SendEmailPayload = {
-  to?: EmailRecipient[]
+  to?: unknown
   subject?: string
   htmlContent?: string
   textContent?: string
@@ -32,6 +32,10 @@ function normalizeText(value: unknown) {
 
 function normalizeEmail(value: unknown) {
   return normalizeText(value).toLowerCase()
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
 function parseEmailFrom(value?: string | null) {
@@ -62,7 +66,7 @@ function parseEmailFrom(value?: string | null) {
 
 function getSender() {
   return parseEmailFrom(
-    Deno.env.get('EMAIL_FROM') || 'BCVB Référentiel kevtshefu@gmail.com',
+    Deno.env.get('EMAIL_FROM') || 'BCVB Référentiel <kevtshefu@gmail.com>',
   )
 }
 
@@ -78,6 +82,48 @@ function getReplyTo() {
   }
 }
 
+function normalizeRecipient(input: unknown) {
+  if (typeof input === 'string') {
+    const email = normalizeEmail(input)
+    if (!isValidEmail(email)) return null
+
+    return { email }
+  }
+
+  if (input && typeof input === 'object') {
+    const recipient = input as EmailRecipient
+    const email = normalizeEmail(recipient.email)
+    if (!isValidEmail(email)) return null
+
+    return {
+      email,
+      name: normalizeText(recipient.name) || undefined,
+    }
+  }
+
+  return null
+}
+
+function normalizeRecipients(input: unknown) {
+  const values = Array.isArray(input) ? input : [input]
+
+  return values
+    .map((recipient) => normalizeRecipient(recipient))
+    .filter((recipient): recipient is { email: string; name?: string } => Boolean(recipient))
+}
+
+async function readBrevoResponse(response: Response) {
+  const raw = await response.text()
+
+  if (!raw) return null
+
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return raw
+  }
+}
+
 async function sendBrevoEmail(payload: SendEmailPayload) {
   const apiKey = Deno.env.get('BREVO_API_KEY')
   if (!apiKey) {
@@ -85,24 +131,27 @@ async function sendBrevoEmail(payload: SendEmailPayload) {
   }
 
   const subject = normalizeText(payload.subject)
-  const to = (payload.to || [])
-    .map((recipient) => ({
-      email: normalizeEmail(recipient.email),
-      name: normalizeText(recipient.name) || undefined,
-    }))
-    .filter((recipient) => recipient.email)
+  const to = normalizeRecipients(payload.to)
+  const sender = getSender()
 
   if (!to.length) throw new Error('Aucun destinataire email.')
   if (!subject) throw new Error('Sujet email manquant.')
 
   const brevoPayload = {
-    sender: getSender(),
+    sender,
     to,
     replyTo: getReplyTo(),
     subject,
     htmlContent: normalizeText(payload.htmlContent),
     textContent: normalizeText(payload.textContent),
   }
+
+  console.info('[send-bcvb-email] sending email:', {
+    provider: 'brevo',
+    subject,
+    recipientsCount: to.length,
+    sender,
+  })
 
   const response = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
@@ -114,12 +163,24 @@ async function sendBrevoEmail(payload: SendEmailPayload) {
     body: JSON.stringify(brevoPayload),
   })
 
+  const brevoResponse = await readBrevoResponse(response)
+
+  console.info('[send-bcvb-email] Brevo response:', {
+    provider: 'brevo',
+    subject,
+    recipientsCount: to.length,
+    sender,
+    status: response.status,
+    response: brevoResponse,
+  })
+
   if (!response.ok) {
-    const detail = await response.text()
-    throw new Error(`Brevo a refusé l'email (${response.status}) : ${detail}`)
+    throw new Error(
+      `Brevo a refusé l'email (${response.status}) : ${JSON.stringify(brevoResponse)}`,
+    )
   }
 
-  return response.json()
+  return brevoResponse
 }
 
 Deno.serve(async (request) => {
