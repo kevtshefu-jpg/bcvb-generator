@@ -26,9 +26,15 @@ const quickStartActions = [
     role: "Coach",
   },
   {
-    title: "Lire la FAQ",
+    title: "FAQ plateforme",
     text: "Droits, accès, exports et blocages courants.",
     path: "/faq",
+    role: "Tous",
+  },
+  {
+    title: "Bibliothèque documentaire",
+    text: "Retrouver les ressources publiées et les documents club.",
+    path: "/bibliotheque",
     role: "Tous",
   },
 ];

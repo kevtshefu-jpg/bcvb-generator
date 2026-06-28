@@ -316,39 +316,40 @@
     max-width: 100%;
     margin-top: 8px;
     font-size: 40px;
-    line-height: 0.98;
+    line-height: 1.02;
     letter-spacing: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    display: block;
+    overflow: visible;
+    white-space: normal;
+    text-wrap: balance;
   }
 
   .platform-tutorial-hero__text {
     margin-top: 12px;
     font-size: 15px;
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    line-height: 1.48;
+    display: block;
+    overflow: visible;
   }
 
   .platform-tutorial-hero__profile {
+    width: 100%;
     margin-top: 14px;
     min-height: 40px;
-    padding: 0 14px;
+    padding: 10px 14px;
     font-size: 14px;
+    flex-wrap: wrap;
+    border-radius: 18px;
   }
 
   .platform-tutorial-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     gap: 10px;
     margin-top: 16px;
   }
 
   .platform-tutorial-stat {
-    min-height: 104px;
+    min-height: 0;
     padding: 16px;
     border-radius: 20px;
   }
@@ -421,13 +422,17 @@
   }
 
   .platform-tutorial-card__title {
-    font-size: 30px;
-    line-height: 1.06;
+    font-size: 24px;
+    line-height: 1.12;
+    display: block;
+    overflow: visible;
   }
 
   .platform-tutorial-card__description {
     font-size: 16px;
-    line-height: 1.34;
+    line-height: 1.42;
+    display: block;
+    overflow: visible;
   }
 
   .platform-tutorial-card__meta {
@@ -459,7 +464,7 @@
   }
 
   .platform-tutorial-stats {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 
   .platform-tutorial-stat {
@@ -483,10 +488,28 @@
   }
 
   .platform-tutorial-card__title {
-    font-size: 25px;
+    font-size: 22px;
   }
 
   .platform-tutorial-card__description {
     font-size: 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .platform-tutorial-page {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  .platform-tutorial-page .tutorial-quickstart {
+    grid-template-columns: 1fr;
+  }
+
+  .platform-tutorial-page .tutorial-quickstart-card {
+    width: 100%;
+    min-height: 0;
+    padding: 16px;
   }
 }

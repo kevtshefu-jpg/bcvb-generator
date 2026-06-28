@@ -8,7 +8,7 @@ type TutorialStepListProps = {
 
 export default function TutorialStepList({ tutorial, completedStepIds, onToggleStep }: TutorialStepListProps) {
   return (
-    <section className="tutorial-detail-card">
+    <section className="tutorial-detail-card" id="parcours-guide">
       <div className="tutorial-section-heading">
         <p>Parcours guidé</p>
         <h2>Étapes opérationnelles</h2>

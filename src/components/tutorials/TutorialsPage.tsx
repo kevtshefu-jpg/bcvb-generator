@@ -127,7 +127,7 @@ export default function TutorialsPage({ initialCategory, initialTutorialId }: Tu
 
   return (
     <main className="bcvb-page tutorials-page platform-tutorial-page">
-      <section className="tutorial-hero platform-tutorial-hero">
+      <section className="tutorial-hero platform-tutorial-hero" id="vue-ensemble">
         <div className="tutorial-hero__content platform-tutorial-hero__content">
           <p className="bcvb-eyebrow platform-tutorial-hero__eyebrow">Aide intégrée BCVB</p>
           <h1 className="platform-tutorial-hero__title">Tutoriels d’utilisation</h1>
@@ -151,6 +151,14 @@ export default function TutorialsPage({ initialCategory, initialTutorialId }: Tu
         </div>
       </section>
 
+      <nav className="tutorial-mobile-jumpnav" aria-label="Navigation interne tutoriels">
+        <a href="#vue-ensemble">Vue d’ensemble</a>
+        <a href="#parcours-guide">Parcours guidé</a>
+        <a href="#checklist">Checklist</a>
+        <a href="#droits-acces">Droits d’accès</a>
+        <a href="#aide-faq">FAQ / aide</a>
+      </nav>
+
       <TutorialQuickStart />
 
       <TutorialSearch
@@ -164,7 +172,7 @@ export default function TutorialsPage({ initialCategory, initialTutorialId }: Tu
         onAudienceChange={setAudience}
       />
 
-      <section className="tutorial-workspace platform-tutorial-section">
+      <section className="tutorial-workspace platform-tutorial-section" id="aide-faq">
         <aside className="tutorial-list-panel">
           <div className="tutorial-section-heading">
             <p>Guides disponibles</p>

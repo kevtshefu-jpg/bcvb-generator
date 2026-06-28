@@ -8,7 +8,7 @@ type TutorialChecklistProps = {
 
 export default function TutorialChecklist({ tutorial, completedItems, onToggleItem }: TutorialChecklistProps) {
   return (
-    <section className="tutorial-detail-card tutorial-checklist-card">
+    <section className="tutorial-detail-card tutorial-checklist-card" id="checklist">
       <div className="tutorial-section-heading">
         <p>Checklist</p>
         <h2>À vérifier avant de quitter</h2>
