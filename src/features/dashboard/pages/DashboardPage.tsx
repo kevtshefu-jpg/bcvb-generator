@@ -7,6 +7,8 @@ import { PRESENTATION_MODE } from '../../../config/presentationMode'
 import { buildDirectorSpaceModel } from '../../../lib/directors/directorDashboard'
 import StudioExperiencePanel from '../../ux/components/StudioExperiencePanel'
 import ActionHeroCard from '../../../components/dashboard/ActionHeroCard'
+import { PageHeader } from '../../../components/ui/PageHeader'
+import { CollapsibleSection, PageShell, StatCard } from '../../../components/ui/PageShell'
 import {
   formatRole,
   isAdmin,
@@ -112,7 +114,7 @@ function DashboardList({ items }: { items: DashboardItem[] }) {
 }
 
 function DashboardActionGrid({ actions, role }: { actions: DashboardAction[]; role?: string | null }) {
-  const visibleActions = actions.filter((action) => canShowForRole(action, role))
+  const visibleActions = actions.filter((action) => canShowForRole(action, role)).slice(0, 5)
 
   return (
     <div className="bcvb-dashboard-actions">
@@ -145,62 +147,66 @@ function BcvbDashboardOverview({ role }: { role?: string | null }) {
     <>
       <ActionHeroCard role={role} />
 
-      <DashboardPanel title="Vue synthétique">
+      <DashboardPanel title="Que voulez-vous faire ?">
+        <DashboardActionGrid actions={quickActions} role={role} />
+      </DashboardPanel>
+
+      <DashboardPanel title="Résumé utile">
         <div className="bcvb-dashboard-metrics">
-          {overviewItems.map((item) => (
-            <DashboardMetricCard item={item} key={item.title} />
+          {overviewItems.slice(0, 4).map((item) => (
+            <StatCard key={item.title} label={item.title} value={item.value || '—'} hint={item.text} />
           ))}
         </div>
       </DashboardPanel>
 
       {isAdminRole && (
-        <DashboardPanel title="Alertes qualité">
+        <CollapsibleSection title="Alertes qualité" description="À ouvrir quand vous traitez les documents à contrôler.">
           <DashboardList items={qualityAlerts} />
-        </DashboardPanel>
+        </CollapsibleSection>
       )}
 
-      <DashboardPanel title="Reprise de travail">
-        <DashboardActionGrid actions={workResume} role={role} />
-      </DashboardPanel>
-
-      <DashboardPanel title="Accès rapide">
-        <DashboardActionGrid actions={quickActions} role={role} />
-      </DashboardPanel>
-
-      {(isAdminRole || isCoachRole || isDirigeantRole) && (
-        <DashboardPanel title="Indicateurs club">
-          <div className="bcvb-dashboard-metrics bcvb-dashboard-metrics--wide">
-            {clubMetrics.map((item) => (
-              <DashboardMetricCard item={item} key={item.title} />
-            ))}
-          </div>
+      <CollapsibleSection title="Reprise et indicateurs" description="Derniers accès et indicateurs club secondaires.">
+        <DashboardPanel title="Reprise de travail">
+          <DashboardActionGrid actions={workResume} role={role} />
         </DashboardPanel>
-      )}
+
+        {(isAdminRole || isCoachRole || isDirigeantRole) && (
+          <DashboardPanel title="Indicateurs club">
+            <div className="bcvb-dashboard-metrics bcvb-dashboard-metrics--wide">
+              {clubMetrics.slice(0, 4).map((item) => (
+                <DashboardMetricCard item={item} key={item.title} />
+              ))}
+            </div>
+          </DashboardPanel>
+        )}
+      </CollapsibleSection>
 
       {directorModel && (
-        <DashboardPanel title="Pilotage dirigeants">
-          <div className="bcvb-dashboard-metrics bcvb-dashboard-metrics--wide">
-            {directorModel.indicators
-              .filter((item) => ['documents-to-validate', 'teams-without-planning', 'sport-alerts', 'average-quality'].includes(item.id))
-              .map((item) => (
-                <DashboardMetricCard
-                  key={item.id}
-                  item={{
-                    title: item.label,
-                    value: String(item.value),
-                    text: item.description || 'Indicateur dirigeant.',
-                    tone: item.status === 'critical' ? 'red' : item.status === 'warning' ? 'blue' : 'dark',
-                  }}
-                />
-              ))}
-          </div>
-          <div className="bcvb-dashboard-actions">
-            <Link to="/dirigeants" className="bcvb-dashboard-action">
-              <h3>Ouvrir l’espace dirigeants</h3>
-              <p>Pilotage sportif, documentaire et organisationnel du BCVB.</p>
-            </Link>
-          </div>
-        </DashboardPanel>
+        <CollapsibleSection title="Pilotage dirigeants" description="Vue avancée réservée au pilotage club.">
+          <DashboardPanel title="Indicateurs dirigeants">
+            <div className="bcvb-dashboard-metrics bcvb-dashboard-metrics--wide">
+              {directorModel.indicators
+                .filter((item) => ['documents-to-validate', 'teams-without-planning', 'sport-alerts', 'average-quality'].includes(item.id))
+                .map((item) => (
+                  <DashboardMetricCard
+                    key={item.id}
+                    item={{
+                      title: item.label,
+                      value: String(item.value),
+                      text: item.description || 'Indicateur dirigeant.',
+                      tone: item.status === 'critical' ? 'red' : item.status === 'warning' ? 'blue' : 'dark',
+                    }}
+                  />
+                ))}
+            </div>
+            <div className="bcvb-dashboard-actions">
+              <Link to="/dirigeants" className="bcvb-dashboard-action">
+                <h3>Ouvrir l’espace dirigeants</h3>
+                <p>Pilotage sportif, documentaire et organisationnel du BCVB.</p>
+              </Link>
+            </div>
+          </DashboardPanel>
+        </CollapsibleSection>
       )}
     </>
   )
@@ -526,20 +532,14 @@ export default function DashboardPage() {
 
 	  return (
 	    <section className="dashboard-page bcvb-page">
-	      <div className="bcvb-dashboard-hero">
-	        <div>
-	          <p className="bcvb-eyebrow">Tableau de bord</p>
-	          <h2 className="bcvb-title-xl">Bienvenue dans ton espace BCVB</h2>
-	          <p className="bcvb-subtitle">
-	            Bonjour {displayName}. Retrouve ici les accès utiles selon ton rôle dans la plateforme.
-	          </p>
-	        </div>
-
-        <div className="dashboard-page__badge">
-          <span className="dashboard-page__badgeLabel">Profil actif</span>
-          <strong>{formatRole(role)}</strong>
-        </div>
-      </div>
+        <PageShell>
+          <PageHeader
+            eyebrow="Tableau de bord"
+            title="Bienvenue dans votre espace BCVB"
+            subtitle={`Bonjour ${displayName}. Les raccourcis ci-dessous sont adaptés à votre rôle.`}
+            meta={<span className="bcvb-premium-status bcvb-premium-status--neutral">{formatRole(role)}</span>}
+            action={<Link className="bcvb-premium-button bcvb-premium-button--primary" to="/bibliotheque">Ouvrir la bibliothèque</Link>}
+          />
 
 	      {!PRESENTATION_MODE && <StudioExperiencePanel role={role} />}
 	      {PRESENTATION_MODE && <PresentationDashboard role={role} />}
@@ -551,6 +551,7 @@ export default function DashboardPage() {
 	      {!PRESENTATION_MODE && isJoueur(role) && <JoueurDashboard />}
 	      {!PRESENTATION_MODE && isParent(role) && <ParentDashboard />}
 	      {!PRESENTATION_MODE && role === 'member' && <MemberDashboard />}
+        </PageShell>
 	    </section>
 	  )
 }

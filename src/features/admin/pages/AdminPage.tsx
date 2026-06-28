@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 
 import { supabase } from '../../../lib/supabase'
 import { EmptyState, MobileDetailCard, ResponsiveDataList, StatusBadge } from '../../../components/ui/ResponsiveDataView'
+import { PageHeader } from '../../../components/ui/PageHeader'
+import { CollapsibleSection, PageShell, StatCard } from '../../../components/ui/PageShell'
 import { useAuth } from '../../auth/context/AuthContext'
 
 type MemberRow = {
@@ -112,11 +114,6 @@ export default function AdminPage() {
     [members],
   )
 
-  const pendingMembers = useMemo(
-    () => members.filter((member) => getProfileStatus(member) === 'pending').length,
-    [members],
-  )
-
   const adminSummaryStatus = useMemo(() => {
     if (loading || countsLoading) return 'Chargement'
     if (error || countsError) return 'À vérifier'
@@ -208,26 +205,14 @@ export default function AdminPage() {
 
   return (
     <section className="admin-page">
-      <div className="admin-page__hero">
-        <div>
-          <p className="admin-page__eyebrow">Administration</p>
-          <h2 className="admin-page__title">Paramètres et administration</h2>
-          <p className="admin-page__text">
-            Administrer les accès, suivre les demandes, contrôler les profils membres
-            et structurer les droits de la plateforme BCVB.
-          </p>
-        </div>
-
-        <div className="admin-page__heroActions">
-          <Link to="/admin/demandes-profils" className="admin-page__heroButton">
-            Demandes profils
-          </Link>
-
-          <Link to="/admin/inscriptions" className="admin-page__heroButton admin-page__heroButton--light">
-            Inscriptions
-          </Link>
-        </div>
-      </div>
+      <PageShell>
+      <PageHeader
+        eyebrow="Administration"
+        title="Pilotage plateforme"
+        subtitle="Traitez les accès, les inscriptions et les réglages sensibles depuis un espace clarifié."
+        action={<Link to="/admin/inscriptions" className="bcvb-premium-button bcvb-premium-button--primary">Traiter les inscriptions</Link>}
+        meta={<span className="bcvb-premium-status bcvb-premium-status--neutral">{formatRole(profile?.role)}</span>}
+      />
 
       <section className="admin-action-grid">
         <Link
@@ -271,73 +256,10 @@ export default function AdminPage() {
       </section>
 
       <div className="admin-page__grid">
-        <article className="admin-page__card">
-          <h3>Compte connecté</h3>
-
-          <div className="admin-page__infoList">
-            <p>
-              <strong>Email</strong>
-              <span>{profile?.email || '—'}</span>
-            </p>
-
-            <p>
-              <strong>Rôle</strong>
-              <span>{formatRole(profile?.role)}</span>
-            </p>
-
-            <p>
-              <strong>Actif</strong>
-              <span>{profile?.is_active ? 'Oui' : 'Non'}</span>
-            </p>
-          </div>
-        </article>
-
-        <article className="admin-page__card">
-          <h3>Résumé</h3>
-
-          <div className="admin-page__infoList">
-            <p>
-              <strong>Membres chargés</strong>
-              <span>{members.length}</span>
-            </p>
-
-            <p>
-              <strong>Actifs</strong>
-              <span>{activeMembers}</span>
-            </p>
-
-            <p>
-              <strong>En attente</strong>
-              <span>{pendingMembers}</span>
-            </p>
-
-            <p>
-              <strong>Statut</strong>
-              <span>{adminSummaryStatus}</span>
-            </p>
-          </div>
-        </article>
-
-        <article className="admin-page__card admin-page__card--dark">
-          <h3>Alertes admin</h3>
-
-          <div className="admin-page__infoList">
-            <p>
-              <strong>Demandes profils</strong>
-              <span>{counts.pendingProfileRequests}</span>
-            </p>
-
-            <p>
-              <strong>Inscriptions club</strong>
-              <span>{counts.pendingRegistrationRequests}</span>
-            </p>
-
-            <p>
-              <strong>Notifications</strong>
-              <span>{counts.unreadNotifications}</span>
-            </p>
-          </div>
-        </article>
+        <StatCard label="Membres" value={members.length} hint={`${activeMembers} actifs`} />
+        <StatCard label="Inscriptions" value={counts.pendingRegistrationRequests} hint="À traiter" />
+        <StatCard label="Demandes profils" value={counts.pendingProfileRequests} hint="À vérifier" />
+        <StatCard label="Statut" value={adminSummaryStatus} hint={counts.unreadNotifications ? `${counts.unreadNotifications} notification(s)` : 'Suivi à jour'} />
       </div>
 
       {(error || countsError) ? (
@@ -351,6 +273,20 @@ export default function AdminPage() {
         </div>
       ) : null}
 
+      <CollapsibleSection title="Compte connecté et détails admin" description="Informations secondaires, utiles en contrôle ou support.">
+        <div className="admin-page__grid">
+          <article className="admin-page__card">
+            <h3>Compte connecté</h3>
+            <div className="admin-page__infoList">
+              <p><strong>Email</strong><span>{profile?.email || '—'}</span></p>
+              <p><strong>Rôle</strong><span>{formatRole(profile?.role)}</span></p>
+              <p><strong>Actif</strong><span>{profile?.is_active ? 'Oui' : 'Non'}</span></p>
+            </div>
+          </article>
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Aperçu des profils membres" description="Liste synthétique. Pour agir, ouvrir Gestion des membres.">
       <section className="admin-page__tableCard">
         <div className="admin-page__tableHead">
           <div>
@@ -441,6 +377,8 @@ export default function AdminPage() {
           </>
         )}
       </section>
+      </CollapsibleSection>
+      </PageShell>
     </section>
   )
 }

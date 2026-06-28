@@ -12,6 +12,8 @@ import {
 import type { NormalizedImportRow } from '../utils/normalizeImportRows'
 import { EmptyState, MobileDetailCard, ResponsiveDataList } from '../../../components/ui/ResponsiveDataView'
 import { formatUserFacingError, getTechnicalErrorDetail } from '../../../lib/userFacingError'
+import { PageHeader } from '../../../components/ui/PageHeader'
+import { AdminOnlyPanel, CollapsibleSection, PageShell, StatCard } from '../../../components/ui/PageShell'
 
 export default function ImportCenterPage() {
   const { user } = useAuth()
@@ -105,20 +107,19 @@ export default function ImportCenterPage() {
 
   return (
     <section className="dashboard-page">
-      <div className="dashboard-page__hero">
-        <div>
-          <p className="dashboard-page__eyebrow">Administration</p>
-          <h2 className="dashboard-page__title">Centre import / export</h2>
-          <p className="dashboard-page__text">
-            Travaille avec plusieurs modèles type pour simplifier l’import et l’export
-            de joueurs, inscriptions et progression.
-          </p>
-        </div>
+      <PageShell>
+      <PageHeader
+        eyebrow="Administration"
+        title="Centre import / export"
+        subtitle="Importez un fichier, contrôlez les lignes, puis enregistrez le lot quand tout est prêt."
+        meta={<span className="bcvb-premium-status bcvb-premium-status--neutral">CSV · XLSX · PDF</span>}
+      />
 
-        <div className="dashboard-page__badge">
-          <span className="dashboard-page__badgeLabel">Formats</span>
-          <strong>CSV · XLSX · PDF</strong>
-        </div>
+      <div className="admin-registration-page__stats">
+        <StatCard label="Étape 1" value="Modèle" hint="Choisir le format" />
+        <StatCard label="Étape 2" value="Import" hint="Analyser le fichier" />
+        <StatCard label="Étape 3" value={rows.length || '—'} hint="Lignes détectées" />
+        <StatCard label="Étape 4" value="Valider" hint="Enregistrer le lot" />
       </div>
 
       <article className="dashboard-panelCard">
@@ -171,10 +172,9 @@ export default function ImportCenterPage() {
             <strong>Import interrompu</strong>
             <p>{error}</p>
             {technicalError && (
-              <details>
-                <summary>Détail technique admin</summary>
+              <AdminOnlyPanel title="Voir le détail technique">
                 <pre>{technicalError}</pre>
-              </details>
+              </AdminOnlyPanel>
             )}
           </div>
         )}
@@ -201,6 +201,7 @@ export default function ImportCenterPage() {
             </article>
           </div>
 
+          <CollapsibleSection title="Prévisualisation des lignes" description="20 premières lignes détectées avant validation." defaultOpen>
           <article className="dashboard-panelCard">
             <h3 className="dashboard-panelCard__title">Prévisualisation</h3>
 
@@ -260,8 +261,10 @@ export default function ImportCenterPage() {
               </button>
             </div>
           </article>
+          </CollapsibleSection>
         </>
       )}
+      </PageShell>
     </section>
   )
 }

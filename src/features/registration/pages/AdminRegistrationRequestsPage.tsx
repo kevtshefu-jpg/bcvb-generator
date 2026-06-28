@@ -5,6 +5,8 @@ import { useAuth } from '../../auth/context/AuthContext'
 import RegistrationDiagnosticsPanel from '../components/RegistrationDiagnosticsPanel'
 import { useRegistrationRequests } from '../hooks/useRegistrationRequests'
 import { EmptyState } from '../../../components/ui/ResponsiveDataView'
+import { PageHeader } from '../../../components/ui/PageHeader'
+import { CollapsibleSection, PageShell, StatCard } from '../../../components/ui/PageShell'
 
 import './AdminRegistrationRequestsPage.css'
 
@@ -289,49 +291,19 @@ export default function AdminRegistrationRequestsPage() {
 
   return (
     <section className="admin-registration-page">
-      <header className="admin-registration-page__hero">
-        <div className="admin-registration-page__heroContent">
-          <p className="admin-registration-page__eyebrow">Administration</p>
-          <h1 className="admin-registration-page__title">
-            Demandes d’inscription
-          </h1>
-          <p className="admin-registration-page__text">
-            Valide les demandes publiques pour créer un vrai compte utilisateur
-            et rattacher son profil club.
-          </p>
-        </div>
-
-        <div className="admin-registration-page__heroBadge">
-          <span>Demandes</span>
-          <strong>{totalCount}</strong>
-        </div>
-      </header>
+      <PageShell>
+      <PageHeader
+        eyebrow="Administration"
+        title="Demandes d’inscription"
+        subtitle="Vérifiez les demandes publiques, validez le rôle puis envoyez un lien sécurisé de création de mot de passe."
+        meta={<span className="bcvb-premium-status bcvb-premium-status--pending">{pendingCount} en attente</span>}
+      />
 
       <div className="admin-registration-page__stats">
-        <article>
-          <strong>{totalCount}</strong>
-          <span>Total</span>
-        </article>
-
-        <article>
-          <strong>{pendingCount}</strong>
-          <span>En attente</span>
-        </article>
-
-        <article>
-          <strong>{approvedCount}</strong>
-          <span>Approuvées</span>
-        </article>
-
-        <article>
-          <strong>{rejectedCount}</strong>
-          <span>Refusées</span>
-        </article>
-
-        <article>
-          <strong>{activationEmailCount}</strong>
-          <span>Email envoyé</span>
-        </article>
+        <StatCard label="Total" value={totalCount} />
+        <StatCard label="En attente" value={pendingCount} />
+        <StatCard label="Approuvées" value={approvedCount} />
+        <StatCard label="Emails envoyés" value={activationEmailCount} />
       </div>
 
       <article className="admin-registration-message admin-registration-message--info">
@@ -362,7 +334,9 @@ export default function AdminRegistrationRequestsPage() {
         </article>
       ) : null}
 
-      <RegistrationDiagnosticsPanel />
+      <CollapsibleSection title="Diagnostic admin" description="À ouvrir uniquement si une inscription échoue.">
+        <RegistrationDiagnosticsPanel />
+      </CollapsibleSection>
 
       <section className="admin-registration-controls" aria-label="Filtres demandes inscription">
         <div className="admin-registration-controls__top">
@@ -604,6 +578,7 @@ export default function AdminRegistrationRequestsPage() {
           })}
         </div>
       )}
+      </PageShell>
     </section>
   )
 }
