@@ -13,7 +13,7 @@ export type AdminProfileRow = {
 
 export type AdminProfileAction = 'deactivate' | 'reactivate' | 'delete'
 
-export async function fetchAdminProfiles() {
+export async function listProfiles() {
   const { data, error } = await supabase
     .from('profiles')
     .select('id, email, full_name, role, is_active, profile_status, created_at, updated_at')
@@ -26,7 +26,7 @@ export async function fetchAdminProfiles() {
   return (data || []) as AdminProfileRow[]
 }
 
-export async function runAdminProfileAction(profileId: string, action: AdminProfileAction) {
+async function runAdminProfileAction(profileId: string, action: AdminProfileAction) {
   const { data, error } = await supabase.functions.invoke<{
     ok?: boolean
     error?: string
@@ -50,3 +50,17 @@ export async function runAdminProfileAction(profileId: string, action: AdminProf
 
   return data
 }
+
+export function deactivateProfile(profileId: string) {
+  return runAdminProfileAction(profileId, 'deactivate')
+}
+
+export function reactivateProfile(profileId: string) {
+  return runAdminProfileAction(profileId, 'reactivate')
+}
+
+export function deleteProfile(profileId: string) {
+  return runAdminProfileAction(profileId, 'delete')
+}
+
+export const fetchAdminProfiles = listProfiles

@@ -3,8 +3,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ROLE_LABELS, normalizeRole } from '../../../config/roles'
 import { useAuth } from '../../auth/context/AuthContext'
 import {
-  fetchAdminProfiles,
-  runAdminProfileAction,
+  deactivateProfile,
+  deleteProfile,
+  listProfiles,
+  reactivateProfile,
   type AdminProfileAction,
   type AdminProfileRow,
 } from '../services/adminProfileManagementService'
@@ -77,6 +79,12 @@ function getSuccessMessage(action: AdminProfileAction) {
   return 'Profil supprimé.'
 }
 
+function runProfileAction(profileId: string, action: AdminProfileAction) {
+  if (action === 'deactivate') return deactivateProfile(profileId)
+  if (action === 'reactivate') return reactivateProfile(profileId)
+  return deleteProfile(profileId)
+}
+
 export default function AdminProfilesPage() {
   const { profile: currentProfile } = useAuth()
   const [profiles, setProfiles] = useState<AdminProfileRow[]>([])
@@ -143,7 +151,7 @@ export default function AdminProfilesPage() {
     try {
       setLoading(true)
       if (!options?.keepToast) setToast(null)
-      const rows = await fetchAdminProfiles()
+      const rows = await listProfiles()
       setProfiles(rows)
     } catch (error) {
       setToast({
@@ -191,7 +199,7 @@ export default function AdminProfilesPage() {
     try {
       setActionLoadingId(profile.id)
       setToast(null)
-      await runAdminProfileAction(profile.id, action)
+      await runProfileAction(profile.id, action)
       setPendingAction(null)
       setDeleteConfirmation('')
       setToast({ type: 'success', message: getSuccessMessage(action) })

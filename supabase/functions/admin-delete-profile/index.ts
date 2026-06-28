@@ -71,10 +71,10 @@ function getBearerToken(request: Request) {
 }
 
 async function getCallerProfile(
+  supabaseUser: ReturnType<typeof createClient>,
   supabaseAdmin: ReturnType<typeof createClient>,
-  token: string,
 ) {
-  const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token)
+  const { data: userData, error: userError } = await supabaseUser.auth.getUser()
 
   if (userError || !userData.user) {
     throw new Error('Session invalide ou expirée.')
@@ -137,7 +137,7 @@ async function assertNotLastActiveAdmin(
   }
 
   if ((count || 0) <= 1) {
-    throw new Error('Action refusée : impossible de supprimer ou désactiver le dernier admin actif.')
+    throw new Error('Impossible de supprimer ou désactiver le dernier administrateur actif.')
   }
 }
 
@@ -177,39 +177,33 @@ async function deleteProfileAndAuthUser(
   supabaseAdmin: ReturnType<typeof createClient>,
   profileId: string,
 ) {
-  const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(profileId)
-
-  if (authError && !isMissingAuthUserError(authError.message)) {
-    const { data: existingProfile } = await supabaseAdmin
-      .from('profiles')
-      .select('id')
-      .eq('id', profileId)
-      .maybeSingle()
-
-    const message = authError.message || 'Suppression Auth impossible.'
-
-    if (existingProfile) {
-      throw new Error(`Suppression du compte Auth impossible, profil conservé : ${message}`)
-    }
-
-    throw new Error(`Suppression du compte Auth impossible : ${message}`)
-  }
-
-  if (authError) {
-    console.warn(
-      '[admin-delete-profile] Auth user already missing, deleting public profile only:',
-      authError.message,
-    )
-  }
-
   const { error: profileError } = await supabaseAdmin
     .from('profiles')
     .delete()
     .eq('id', profileId)
 
   if (profileError) {
-    throw new Error(`Compte Auth supprimé, mais suppression du profil impossible : ${profileError.message}`)
+    throw new Error(`Suppression du profil impossible : ${profileError.message}`)
   }
+
+  const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(profileId)
+
+  if (authError) {
+    if (isMissingAuthUserError(authError.message)) {
+      console.warn(
+        '[admin-delete-profile] Auth user already missing, public profile deleted:',
+        authError.message,
+      )
+
+      return {
+        warning: 'Profil supprimé. Le compte Auth était déjà absent.',
+      }
+    }
+
+    throw new Error(`Profil supprimé, mais suppression du compte Auth impossible : ${authError.message}`)
+  }
+
+  return null
 }
 
 async function writeAuditLog(
@@ -276,9 +270,10 @@ Deno.serve(async (request) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-    if (!supabaseUrl || !serviceRoleKey) {
+    if (!supabaseUrl || !anonKey || !serviceRoleKey) {
       return jsonResponse({ ok: false, error: 'Configuration Supabase incomplète.' }, 500)
     }
 
@@ -299,6 +294,18 @@ Deno.serve(async (request) => {
       return jsonResponse({ ok: false, error: 'Action profil invalide.' })
     }
 
+    const supabaseUser = createClient(supabaseUrl, anonKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    })
+
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: {
         autoRefreshToken: false,
@@ -306,23 +313,31 @@ Deno.serve(async (request) => {
       },
     })
 
-    const callerProfile = await getCallerProfile(supabaseAdmin, token)
+    const callerProfile = await getCallerProfile(supabaseUser, supabaseAdmin)
     const targetProfile = await getTargetProfile(supabaseAdmin, profileId)
 
     if (callerProfile.id === targetProfile.id) {
+      const selfActionMessage =
+        action === 'delete'
+          ? 'Vous ne pouvez pas supprimer votre propre profil.'
+          : 'Vous ne pouvez pas modifier votre propre profil.'
+
       return jsonResponse(
-        { ok: false, error: 'Impossible de supprimer votre propre profil.' },
+        { ok: false, error: selfActionMessage },
       )
     }
 
     await assertNotLastActiveAdmin(supabaseAdmin, targetProfile, action)
+
+    let warning: string | null = null
 
     if (action === 'deactivate') {
       await updateProfileStatus(supabaseAdmin, profileId, false)
     } else if (action === 'reactivate') {
       await updateProfileStatus(supabaseAdmin, profileId, true)
     } else {
-      await deleteProfileAndAuthUser(supabaseAdmin, profileId)
+      const deleteResult = await deleteProfileAndAuthUser(supabaseAdmin, profileId)
+      warning = deleteResult?.warning || null
     }
 
     await writeAuditLog(supabaseAdmin, {
@@ -333,9 +348,10 @@ Deno.serve(async (request) => {
 
     return jsonResponse({
       ok: true,
+      action,
       profileId,
       profile_id: profileId,
-      action,
+      warning,
     })
   } catch (error) {
     console.error('[admin-delete-profile] action failed:', error)
