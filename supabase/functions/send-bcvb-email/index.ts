@@ -12,7 +12,9 @@ type EmailRecipient = {
 type SendEmailPayload = {
   to?: unknown
   subject?: string
+  html?: string
   htmlContent?: string
+  text?: string
   textContent?: string
 }
 
@@ -112,6 +114,37 @@ function normalizeRecipients(input: unknown) {
     .filter((recipient): recipient is { email: string; name?: string } => Boolean(recipient))
 }
 
+function stripHtml(value: string) {
+  return value
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n\s+/g, '\n')
+    .trim()
+}
+
+function normalizeEmailContent(payload: SendEmailPayload) {
+  const htmlContent = normalizeText(payload.htmlContent) || normalizeText(payload.html)
+  const textContent =
+    normalizeText(payload.textContent) ||
+    normalizeText(payload.text) ||
+    stripHtml(htmlContent)
+
+  return {
+    htmlContent,
+    textContent,
+  }
+}
+
 async function readBrevoResponse(response: Response) {
   const raw = await response.text()
 
@@ -132,24 +165,28 @@ async function sendBrevoEmail(payload: SendEmailPayload) {
 
   const subject = normalizeText(payload.subject)
   const to = normalizeRecipients(payload.to)
+  const content = normalizeEmailContent(payload)
   const sender = getSender()
 
   if (!to.length) throw new Error('Aucun destinataire email.')
   if (!subject) throw new Error('Sujet email manquant.')
+  if (!content.htmlContent) throw new Error('Contenu HTML email manquant.')
 
   const brevoPayload = {
     sender,
     to,
     replyTo: getReplyTo(),
     subject,
-    htmlContent: normalizeText(payload.htmlContent),
-    textContent: normalizeText(payload.textContent),
+    htmlContent: content.htmlContent,
+    textContent: content.textContent,
   }
 
   console.info('[send-bcvb-email] sending email:', {
     provider: 'brevo',
     subject,
     recipientsCount: to.length,
+    hasHtmlContent: Boolean(content.htmlContent),
+    hasTextContent: Boolean(content.textContent),
     sender,
   })
 
@@ -169,9 +206,11 @@ async function sendBrevoEmail(payload: SendEmailPayload) {
     provider: 'brevo',
     subject,
     recipientsCount: to.length,
+    hasHtmlContent: Boolean(content.htmlContent),
+    hasTextContent: Boolean(content.textContent),
     sender,
-    status: response.status,
-    response: brevoResponse,
+    brevoStatus: response.status,
+    brevoResponseBody: brevoResponse,
   })
 
   if (!response.ok) {
