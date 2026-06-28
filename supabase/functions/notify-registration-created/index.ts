@@ -7,6 +7,7 @@ const corsHeaders = {
 }
 
 type RegistrationNotificationPayload = {
+  diagnostic?: boolean
   registrationRequestId?: string
   email?: string
   firstName?: string
@@ -36,49 +37,6 @@ function normalizeEmail(value: unknown) {
   return normalizeText(value).toLowerCase()
 }
 
-function parseEmailFrom(value?: string | null) {
-  const fallback = {
-    name: 'BCVB Référentiel',
-    email: 'kevtshefu@gmail.com',
-  }
-  const raw = normalizeText(value)
-  if (!raw) return fallback
-
-  const bracketMatch = raw.match(/^(.*?)<([^<>@\s]+@[^<>@\s]+)>$/)
-  if (bracketMatch) {
-    return {
-      name: normalizeText(bracketMatch[1]) || fallback.name,
-      email: normalizeEmail(bracketMatch[2]) || fallback.email,
-    }
-  }
-
-  const emailMatch = raw.match(/([^\s<>@]+@[^\s<>@]+)$/)
-  if (!emailMatch) return fallback
-
-  return {
-    name: normalizeText(raw.slice(0, emailMatch.index).replace(/[<>]/g, '')) || fallback.name,
-    email: normalizeEmail(emailMatch[1]) || fallback.email,
-  }
-}
-
-function getSender() {
-  return parseEmailFrom(
-    Deno.env.get('EMAIL_FROM') || 'BCVB Référentiel kevtshefu@gmail.com',
-  )
-}
-
-function getReplyTo() {
-  const replyToEmail =
-    normalizeEmail(Deno.env.get('REPLY_TO_EMAIL')) ||
-    normalizeEmail(Deno.env.get('ADMIN_NOTIFICATION_EMAIL')) ||
-    'kevtshefu@gmail.com'
-
-  return {
-    name: 'Kevin Tshefu',
-    email: replyToEmail,
-  }
-}
-
 function getAdminEmail() {
   return normalizeEmail(Deno.env.get('ADMIN_NOTIFICATION_EMAIL')) || 'kevtshefu@gmail.com'
 }
@@ -91,38 +49,42 @@ function getSiteUrl() {
   ).replace(/\/+$/, '')
 }
 
-async function sendBrevoEmail(input: {
-  to: Array<{ email: string; name?: string }>
+async function sendBcvbEmail(input: {
+  to: string | Array<{ email: string; name?: string }>
   subject: string
   htmlContent: string
   textContent: string
 }) {
-  const apiKey = Deno.env.get('BREVO_API_KEY')
-  if (!apiKey) throw new Error('BREVO_API_KEY manquant.')
+  const supabaseUrl = normalizeText(Deno.env.get('SUPABASE_URL')).replace(/\/+$/, '')
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: {
-      'api-key': apiKey,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify({
-      sender: getSender(),
-      to: input.to,
-      replyTo: getReplyTo(),
-      subject: input.subject,
-      htmlContent: input.htmlContent,
-      textContent: input.textContent,
-    }),
-  })
-
-  if (!response.ok) {
-    const detail = await response.text()
-    throw new Error(`Brevo a refusé l'email (${response.status}) : ${detail}`)
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error('Configuration Supabase manquante pour appeler send-bcvb-email.')
   }
 
-  return response.json()
+  const response = await fetch(`${supabaseUrl}/functions/v1/send-bcvb-email`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${serviceRoleKey}`,
+      apikey: serviceRoleKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  })
+
+  const detail = await response.text()
+
+  if (!response.ok) {
+    throw new Error(`send-bcvb-email a refusé l'email (${response.status}) : ${detail}`)
+  }
+
+  if (!detail) return null
+
+  try {
+    return JSON.parse(detail)
+  } catch {
+    return detail
+  }
 }
 
 async function logEmailEvent(
@@ -227,13 +189,17 @@ Deno.serve(async (request) => {
     const applicantEmail = normalizeEmail(payload.email)
     const fullName = buildFullName(payload)
 
+    if (payload.diagnostic === true) {
+      return jsonResponse({ ok: true, diagnostic: true, results: { skipped: 'diagnostic' } })
+    }
+
     if (!applicantEmail) {
       return jsonResponse({ ok: false, error: 'Email demandeur manquant.' }, 400)
     }
 
     try {
       const applicant = buildApplicantEmail(payload)
-      await sendBrevoEmail({
+      await sendBcvbEmail({
         to: [{ email: applicantEmail, name: fullName }],
         ...applicant,
       })
@@ -258,7 +224,7 @@ Deno.serve(async (request) => {
 
     try {
       const admin = buildAdminEmail(payload)
-      await sendBrevoEmail({
+      await sendBcvbEmail({
         to: [{ email: getAdminEmail(), name: 'Kevin Tshefu' }],
         ...admin,
       })

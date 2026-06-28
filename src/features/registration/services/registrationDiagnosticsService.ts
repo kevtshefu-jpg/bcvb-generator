@@ -176,21 +176,25 @@ async function testRegistrationInsert() {
 }
 
 async function testNotificationFunction() {
-  const { error } = await supabase.functions.invoke('notify-profile-request', {
+  const { error } = await supabase.functions.invoke('notify-registration-created', {
     body: {
       diagnostic: true,
+      registrationRequestId: 'diagnostic',
       email: `diagnostic-${Date.now()}@bcvb.local`,
+      firstName: 'Diagnostic',
+      lastName: 'BCVB',
       fullName: 'Diagnostic BCVB',
-      requestedRole: 'member',
-      requestedCategoryId: 'Diagnostic',
-      message: 'Diagnostic fonction notification.',
+      roleRequested: 'member',
+      categoryRequested: 'Diagnostic',
+      requestedTeam: null,
+      phone: null,
     },
   })
 
   if (!error) {
     return result(
       'notification-function',
-      'notify-profile-request',
+      'notify-registration-created',
       'ok',
       'Edge Function joignable.',
       'Les notifications automatiques peuvent être déclenchées après une demande.',
@@ -199,7 +203,7 @@ async function testNotificationFunction() {
 
   return result(
     'notification-function',
-    'notify-profile-request',
+    'notify-registration-created',
     'warning',
     `Fonction secondaire indisponible ou refusée : ${serializeSupabaseError(error)}`,
     'Ce point ne bloque pas l’inscription. Vérifier le déploiement de la fonction seulement si les admins ne reçoivent pas d’alerte.',
