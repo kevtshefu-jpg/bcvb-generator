@@ -38,7 +38,7 @@ export default function TutorialRoleMatrix({ currentRole }: TutorialRoleMatrixPr
         <h2>Matrice par rôle</h2>
       </div>
 
-      <div className="tutorial-role-table-wrap">
+      <div className="tutorial-role-table-wrap responsive-data-table">
         <table className="tutorial-role-table">
           <thead>
             <tr>
@@ -65,7 +65,7 @@ export default function TutorialRoleMatrix({ currentRole }: TutorialRoleMatrixPr
         </table>
       </div>
 
-      <div className="tutorial-role-card-list" aria-label="Matrice par rôle mobile">
+      <div className="tutorial-role-card-list responsive-data-mobile" aria-label="Matrice par rôle mobile">
         {roleCapabilityMatrix.map((row) => (
           <article className="tutorial-role-card" key={row.module}>
             <h3>{row.module}</h3>

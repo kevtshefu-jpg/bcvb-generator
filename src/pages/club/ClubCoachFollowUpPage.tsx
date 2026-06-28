@@ -1,3 +1,5 @@
+import { MobileDetailCard, ResponsiveDataList } from '../../components/ui/ResponsiveDataView'
+
 const followUpRows = [
   ['Coach U7', 'Accueil / cadre', 'Besoin de situations courtes', 'Accompagnement terrain'],
   ['Coach U9', 'Progression dribble / passe', 'Harmoniser les critères', 'Partage séance type'],
@@ -16,7 +18,8 @@ export default function ClubCoachFollowUpPage() {
       </section>
 
       <article className="bcvb-tool-card">
-        <table className="bcvb-table-premium">
+        <div className="responsive-data-table">
+          <table className="bcvb-table-premium">
           <thead>
             <tr>
               <th>Coach</th>
@@ -32,7 +35,24 @@ export default function ClubCoachFollowUpPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
+        <div className="responsive-data-mobile">
+          <ResponsiveDataList>
+            {followUpRows.map((row) => (
+              <MobileDetailCard
+                key={row[0]}
+                eyebrow="Suivi coach"
+                title={row[0]}
+                items={[
+                  { label: 'Priorité actuelle', value: row[1], full: true },
+                  { label: 'Besoin identifié', value: row[2], full: true },
+                  { label: 'Action club', value: row[3], full: true },
+                ]}
+              />
+            ))}
+          </ResponsiveDataList>
+        </div>
       </article>
     </main>
   )

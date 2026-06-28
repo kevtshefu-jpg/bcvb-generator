@@ -6,8 +6,67 @@ export type KeyValueItem = {
   full?: boolean;
 };
 
+type ResponsiveTone = "neutral" | "success" | "warning" | "danger" | "info";
+
+export function DataSectionCard({
+  eyebrow,
+  title,
+  children,
+  actions,
+}: {
+  eyebrow?: ReactNode;
+  title: ReactNode;
+  children: ReactNode;
+  actions?: ReactNode;
+}) {
+  return (
+    <section className="responsive-data-section">
+      <header className="responsive-data-section__header">
+        <div>
+          {eyebrow && <DataLabel>{eyebrow}</DataLabel>}
+          <h2>{title}</h2>
+        </div>
+        {actions && <div className="responsive-data-section__actions">{actions}</div>}
+      </header>
+      {children}
+    </section>
+  );
+}
+
 export function DataLabel({ children }: { children: ReactNode }) {
   return <span className="responsive-data-label">{children}</span>;
+}
+
+export function StatusBadge({
+  children,
+  tone = "neutral",
+}: {
+  children: ReactNode;
+  tone?: ResponsiveTone;
+}) {
+  return <span className={`responsive-status-badge responsive-status-badge--${tone}`}>{children}</span>;
+}
+
+export function EmptyState({
+  title,
+  description,
+  action,
+}: {
+  title: ReactNode;
+  description?: ReactNode;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="responsive-empty-state">
+      <strong>{title}</strong>
+      {description && <p>{description}</p>}
+      {action && <div>{action}</div>}
+    </div>
+  );
+}
+
+export function DesktopDataTable({ children }: { children: ReactNode }) {
+  return <div className="responsive-data-table">{children}</div>;
 }
 
 export function KeyValueGrid({ items }: { items: KeyValueItem[] }) {

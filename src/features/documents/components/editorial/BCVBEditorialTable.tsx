@@ -48,7 +48,8 @@ export function BCVBEditorialTable({
 
   return (
     <div className={`bcvb-table-wrap bcvb-table-wrap--${variant}`}>
-      <table className={`bcvb-editorial-table bcvb-editorial-table--${variant}`}>
+      <div className="responsive-data-table">
+        <table className={`bcvb-editorial-table bcvb-editorial-table--${variant}`}>
         <thead>
           <tr>
             {headers.map((header) => (
@@ -75,7 +76,30 @@ export function BCVBEditorialTable({
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
+      </div>
+      <div className="responsive-data-mobile">
+        <div className="responsive-data-list">
+          {rows.map((row, rowIndex) => (
+            <article className="responsive-data-card" key={`editorial-mobile-${rowIndex}`}>
+              <header className="responsive-data-card__header">
+                <div>
+                  <span className="responsive-data-label">Ligne {rowIndex + 1}</span>
+                  <h3>{renderInline(row[0] || `Entrée ${rowIndex + 1}`)}</h3>
+                </div>
+              </header>
+              <dl className="responsive-data-kv-grid">
+                {headers.map((header, cellIndex) => (
+                  <div className={cellIndex === 0 ? undefined : "is-full"} key={`editorial-mobile-${rowIndex}-${header}`}>
+                    <dt>{renderInline(header)}</dt>
+                    <dd>{renderInline(row[cellIndex] ?? "—")}</dd>
+                  </div>
+                ))}
+              </dl>
+            </article>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

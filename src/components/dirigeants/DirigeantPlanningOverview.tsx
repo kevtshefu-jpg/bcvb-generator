@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { DirigeantPlanningSummary } from "../../types/dirigeants";
+import { EmptyState, MobileDetailCard, ResponsiveDataList, StatusBadge } from "../ui/ResponsiveDataView";
 import { PlanningStatusBadge } from "../planning/PlanningStatusBadge";
 
 export function DirigeantPlanningOverview({ plannings }: { plannings: DirigeantPlanningSummary[] }) {
@@ -10,7 +11,7 @@ export function DirigeantPlanningOverview({ plannings }: { plannings: DirigeantP
         <h2>Plans à suivre en commission</h2>
       </div>
 
-      <div className="dirigeant-table-scroll">
+      <div className="dirigeant-table-scroll responsive-data-table">
         <table className="dirigeant-table">
           <thead>
             <tr>
@@ -45,6 +46,36 @@ export function DirigeantPlanningOverview({ plannings }: { plannings: DirigeantP
             ))}
           </tbody>
         </table>
+      </div>
+      <div className="responsive-data-mobile">
+        <ResponsiveDataList
+          empty={(
+            <EmptyState
+              title="Aucun plan à suivre"
+              description="Les planifications suivies en commission apparaîtront ici."
+            />
+          )}
+        >
+          {plannings.map((planning) => (
+            <MobileDetailCard
+              key={planning.id}
+              tone={planning.alerts.length > 0 ? "is-warning" : "is-valid"}
+              eyebrow={planning.category}
+              title={planning.teamName}
+              subtitle={planning.mainObjectives.slice(0, 2).join(" · ") || "Objectifs à préciser"}
+              badge={<PlanningStatusBadge status={planning.status} />}
+              items={[
+                { label: "Niveau", value: planning.level },
+                { label: "Coach", value: planning.coachName },
+                { label: "Cycle", value: planning.currentCycle },
+                { label: "Séances", value: planning.linkedSessionsCount },
+                { label: "Réalisation", value: `${planning.realizationRate}%` },
+                { label: "Alertes", value: planning.alerts.length ? <StatusBadge tone="warning">{planning.alerts.length}</StatusBadge> : "OK" },
+              ]}
+              actions={<Link to="/club/planifications">Voir le plan</Link>}
+            />
+          ))}
+        </ResponsiveDataList>
       </div>
     </section>
   );

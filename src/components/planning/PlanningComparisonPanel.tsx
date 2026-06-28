@@ -1,5 +1,6 @@
 import type { AnnualPlanning } from "../../types/planning";
 import type { DirigeantPlanningSummary } from "../../types/dirigeants";
+import { EmptyState, MobileDetailCard, ResponsiveDataList, StatusBadge } from "../ui/ResponsiveDataView";
 
 type ComparisonStatus = "non démarré" | "en cours" | "réalisé" | "en retard";
 
@@ -46,7 +47,7 @@ export function PlanningComparisonPanel({
         <h2>Comparatif commission sportive</h2>
       </div>
 
-      <div className="planning-table-scroll">
+      <div className="planning-table-scroll responsive-data-table">
         <table className="planning-week-table planning-comparison-table">
           <thead>
             <tr>
@@ -73,6 +74,28 @@ export function PlanningComparisonPanel({
             ))}
           </tbody>
         </table>
+      </div>
+      <div className="responsive-data-mobile">
+        <ResponsiveDataList
+          empty={<EmptyState title="Aucun objectif prévu" description="Les objectifs annuels alimenteront ce comparatif." />}
+        >
+          {rows.map((row) => (
+            <MobileDetailCard
+              key={row.id}
+              tone={row.status === "en retard" ? "is-warning" : row.status === "réalisé" ? "is-valid" : undefined}
+              eyebrow="Objectif prévu"
+              title={row.objective}
+              badge={<StatusBadge tone={row.status === "en retard" ? "warning" : row.status === "réalisé" ? "success" : "info"}>{row.status}</StatusBadge>}
+              items={[
+                { label: "Séances prévues", value: row.plannedSessions },
+                { label: "Réalisées", value: row.completedSessions },
+                { label: "Indicateur", value: row.indicator, full: true },
+                { label: "Commentaire", value: row.technicalComment, full: true },
+                { label: "Action", value: row.action, full: true },
+              ]}
+            />
+          ))}
+        </ResponsiveDataList>
       </div>
     </section>
   );

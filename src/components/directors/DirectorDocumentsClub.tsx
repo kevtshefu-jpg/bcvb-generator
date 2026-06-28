@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { DirectorDocumentView } from "../../types/directors";
+import { EmptyState, MobileDetailCard, ResponsiveDataList, StatusBadge } from "../ui/ResponsiveDataView";
 import { DirectorStatusBadge } from "./DirectorStatusBadge";
 
 export function DirectorDocumentsClub({ documents }: { documents: DirectorDocumentView[] }) {
@@ -48,7 +49,7 @@ export function DirectorDocumentsClub({ documents }: { documents: DirectorDocume
         </select>
       </div>
 
-      <div className="director-table-scroll">
+      <div className="director-table-scroll responsive-data-table">
         <table className="director-table">
           <thead>
             <tr>
@@ -84,6 +85,39 @@ export function DirectorDocumentsClub({ documents }: { documents: DirectorDocume
             ))}
           </tbody>
         </table>
+      </div>
+      <div className="responsive-data-mobile">
+        <ResponsiveDataList
+          empty={(
+            <EmptyState
+              title="Aucun document trouvé"
+              description="Ajuste les filtres ou publie un document club pour alimenter cette liste."
+            />
+          )}
+        >
+          {visibleDocuments.map((document) => (
+            <MobileDetailCard
+              key={document.id}
+              eyebrow={document.family}
+              title={document.title}
+              subtitle={document.category || "Club"}
+              badge={<DirectorStatusBadge status={document.status} />}
+              items={[
+                { label: "Score qualité", value: `${document.qualityScore ?? "—"}/100` },
+                { label: "Modification", value: document.updatedAt ? new Date(document.updatedAt).toLocaleDateString("fr-FR") : "—" },
+                { label: "Validation", value: document.validatedBy || (document.status === "pending_validation" ? "En attente" : "—"), full: true },
+              ]}
+              actions={(
+                <>
+                  <a href="/bibliotheque">Consulter</a>
+                  {document.canDownloadPdf ? <a href="/bibliotheque">PDF</a> : <StatusBadge>PDF indispo.</StatusBadge>}
+                  {document.canViewSource && <a href="/bibliotheque">Source</a>}
+                  {document.canValidate && <button type="button">Valider</button>}
+                </>
+              )}
+            />
+          ))}
+        </ResponsiveDataList>
       </div>
     </section>
   );

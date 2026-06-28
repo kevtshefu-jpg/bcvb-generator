@@ -1,4 +1,5 @@
 import type { DirectorDashboardIndicator, DirectorTeamOverview } from "../../types/directors";
+import { EmptyState, MobileDetailCard, ResponsiveDataList, StatusBadge } from "../ui/ResponsiveDataView";
 import { DirectorStatusBadge } from "./DirectorStatusBadge";
 
 export function DirectorSportDashboard({
@@ -28,7 +29,7 @@ export function DirectorSportDashboard({
         ))}
       </div>
 
-      <div className="director-table-scroll">
+      <div className="director-table-scroll responsive-data-table">
         <table className="director-table">
           <thead>
             <tr>
@@ -61,6 +62,36 @@ export function DirectorSportDashboard({
             ))}
           </tbody>
         </table>
+      </div>
+      <div className="responsive-data-mobile">
+        <ResponsiveDataList
+          empty={(
+            <EmptyState
+              title="Aucune équipe à piloter"
+              description="Les équipes apparaîtront ici dès que le référentiel sportif sera alimenté."
+            />
+          )}
+        >
+          {teams.map((team) => (
+            <MobileDetailCard
+              key={team.id}
+              tone={team.alerts.length > 0 ? "is-warning" : "is-valid"}
+              eyebrow={team.category}
+              title={team.name}
+              subtitle={team.alerts.length ? team.alerts.join(" · ") : "Aucune alerte prioritaire"}
+              badge={<StatusBadge tone={team.alerts.length > 0 ? "warning" : "success"}>{team.alerts.length ? "À suivre" : "OK"}</StatusBadge>}
+              items={[
+                { label: "Niveau", value: team.level || "À confirmer" },
+                { label: "Coach", value: team.headCoach || "À affecter" },
+                { label: "Effectif", value: `${team.playersCount}/${team.targetPlayersCount || "cible"}` },
+                { label: "Planification", value: <DirectorStatusBadge status={team.planningStatus} /> },
+                { label: "Présences", value: <DirectorStatusBadge status={team.presenceStatus} /> },
+                { label: "Évaluations", value: <DirectorStatusBadge status={team.evaluationStatus} /> },
+              ]}
+              actions={<a href={`/club/equipes/${team.id}`}>Voir l’équipe</a>}
+            />
+          ))}
+        </ResponsiveDataList>
       </div>
     </section>
   );

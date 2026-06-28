@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { AdminPlatformConfig } from "../../types/admin";
 import { SITE_CATEGORIES } from "../../config/siteCategories.js";
+import { EmptyState, MobileDetailCard, ResponsiveDataList, StatusBadge } from "../ui/ResponsiveDataView";
 
 type PlatformSecurityPanelProps = {
   config: AdminPlatformConfig;
@@ -75,7 +76,7 @@ export default function PlatformSecurityPanel({ config }: PlatformSecurityPanelP
 
       <div className="admin-module-table">
         <h3>Configuration centrale des modules</h3>
-        <div>
+        <div className="responsive-data-table">
           <table>
             <thead>
               <tr>
@@ -99,6 +100,25 @@ export default function PlatformSecurityPanel({ config }: PlatformSecurityPanelP
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="responsive-data-mobile">
+          <ResponsiveDataList
+            empty={<EmptyState title="Aucun module configuré" description="Les modules de navigation apparaîtront ici." />}
+          >
+            {SITE_CATEGORIES.map((category) => (
+              <MobileDetailCard
+                key={category.id}
+                eyebrow={category.group}
+                title={category.label}
+                badge={category.adminOnly ? <StatusBadge tone="danger">Admin</StatusBadge> : <StatusBadge tone="success">Ouvert</StatusBadge>}
+                items={[
+                  { label: "Route", value: category.path, full: true },
+                  { label: "Rôles autorisés", value: category.roles.join(", "), full: true },
+                ]}
+                actions={<Link to={category.path}>Ouvrir le module</Link>}
+              />
+            ))}
+          </ResponsiveDataList>
         </div>
       </div>
     </section>

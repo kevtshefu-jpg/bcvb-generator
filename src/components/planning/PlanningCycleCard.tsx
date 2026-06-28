@@ -1,5 +1,6 @@
 import type { CycleStatus, PlanningCycle, PlanningWeek } from "../../types/planning";
-import { PlanningWeekRow } from "./PlanningWeekRow";
+import { EmptyState, ResponsiveDataList } from "../ui/ResponsiveDataView";
+import { PlanningWeekCard, PlanningWeekRow } from "./PlanningWeekRow";
 
 type PlanningCycleCardProps = {
   cycle: PlanningCycle;
@@ -47,7 +48,7 @@ export function PlanningCycleCard({ cycle, onChange, onDuplicate, readOnly }: Pl
         </label>
       </div>
 
-      <div className="planning-table-scroll">
+      <div className="planning-table-scroll responsive-data-table">
         <table className="planning-week-table">
           <thead>
             <tr>
@@ -58,6 +59,13 @@ export function PlanningCycleCard({ cycle, onChange, onDuplicate, readOnly }: Pl
             {cycle.weeks.map((week) => <PlanningWeekRow key={week.id} week={week} locked={locked} onChange={updateWeek} />)}
           </tbody>
         </table>
+      </div>
+      <div className="responsive-data-mobile">
+        <ResponsiveDataList
+          empty={<EmptyState title="Aucune semaine planifiée" description="Ajoute une semaine au cycle pour détailler les objectifs." />}
+        >
+          {cycle.weeks.map((week) => <PlanningWeekCard key={week.id} week={week} locked={locked} onChange={updateWeek} />)}
+        </ResponsiveDataList>
       </div>
     </article>
   );

@@ -1,4 +1,5 @@
 import type { DirectorPlanningOverview as DirectorPlanningOverviewType } from "../../types/directors";
+import { EmptyState, MobileDetailCard, ResponsiveDataList } from "../ui/ResponsiveDataView";
 import { DirectorStatusBadge } from "./DirectorStatusBadge";
 
 export function DirectorPlanningOverview({ plannings }: { plannings: DirectorPlanningOverviewType[] }) {
@@ -34,7 +35,7 @@ export function DirectorPlanningOverview({ plannings }: { plannings: DirectorPla
         <button type="button" onClick={exportSummary}>Exporter synthèse</button>
       </div>
 
-      <div className="director-table-scroll">
+      <div className="director-table-scroll responsive-data-table">
         <table className="director-table">
           <thead>
             <tr>
@@ -65,6 +66,33 @@ export function DirectorPlanningOverview({ plannings }: { plannings: DirectorPla
             ))}
           </tbody>
         </table>
+      </div>
+      <div className="responsive-data-mobile">
+        <ResponsiveDataList
+          empty={(
+            <EmptyState
+              title="Aucune planification à suivre"
+              description="Les plans sportifs apparaîtront ici dès qu’ils seront créés."
+            />
+          )}
+        >
+          {plannings.map((planning) => (
+            <MobileDetailCard
+              key={planning.id}
+              eyebrow={planning.category}
+              title={planning.teamName}
+              subtitle={planning.currentCycle || "Cycle à définir"}
+              badge={<DirectorStatusBadge status={planning.status} />}
+              items={[
+                { label: "Saison", value: planning.season },
+                { label: "Objectifs", value: planning.objectivesCount },
+                { label: "Séances liées", value: planning.linkedSessionsCount },
+                { label: "Avancement", value: `${planning.completionRate ?? 0}%` },
+              ]}
+              actions={<a href="/club/planifications">Consulter</a>}
+            />
+          ))}
+        </ResponsiveDataList>
       </div>
     </section>
   );

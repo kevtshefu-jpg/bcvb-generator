@@ -401,7 +401,7 @@ export default function AdminPage() {
               ))}
             </div>
 
-            <div className="admin-page__tableWrap">
+            <div className="admin-page__tableWrap responsive-data-table">
               <table className="admin-page__table">
                 <thead>
                   <tr>

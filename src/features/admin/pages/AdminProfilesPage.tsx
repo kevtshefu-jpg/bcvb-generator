@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { ROLE_LABELS, normalizeRole } from '../../../config/roles'
+import {
+  EmptyState,
+  MobileDetailCard,
+  ResponsiveDataList,
+  StatusBadge,
+} from '../../../components/ui/ResponsiveDataView'
 import { useAuth } from '../../auth/context/AuthContext'
 import {
   deactivateProfile,
@@ -291,7 +297,7 @@ export default function AdminProfilesPage() {
         </p>
       ) : null}
 
-      <div className="admin-profiles-tableWrap">
+      <div className="admin-profiles-tableWrap responsive-data-table">
         <table className="admin-profiles-table">
           <thead>
             <tr>
@@ -392,6 +398,82 @@ export default function AdminProfilesPage() {
               : null}
           </tbody>
         </table>
+      </div>
+      <div className="responsive-data-mobile admin-profiles-mobileList">
+        {loading ? (
+          <EmptyState title="Chargement des profils..." description="La liste des membres est en cours de récupération." />
+        ) : (
+          <ResponsiveDataList
+            empty={<EmptyState title="Aucun profil trouvé" description="Aucun profil ne correspond aux filtres actuels." />}
+          >
+            {filteredProfiles.map((item) => {
+              const active = isActive(item)
+              const self = isSelf(item)
+              const lastActiveAdmin = wouldRemoveLastActiveAdmin(item)
+              const actionDisabled = actionLoadingId === item.id
+
+              return (
+                <MobileDetailCard
+                  key={item.id}
+                  tone={active ? 'is-valid' : 'is-muted'}
+                  eyebrow={getRoleLabel(item.role)}
+                  title={getDisplayName(item)}
+                  subtitle={item.email || 'Email absent'}
+                  badge={<StatusBadge tone={active ? 'success' : 'warning'}>{active ? 'Actif' : 'Inactif'}</StatusBadge>}
+                  items={[
+                    { label: 'Création', value: formatDate(item.created_at) },
+                    { label: 'Mise à jour', value: formatDate(item.updated_at) },
+                    { label: 'Sécurité', value: self ? 'Votre profil' : lastActiveAdmin ? 'Dernier admin actif' : 'Action possible', full: true },
+                  ]}
+                  actions={(
+                    <>
+                      {active ? (
+                        <button
+                          type="button"
+                          onClick={() => openAction(item, 'deactivate')}
+                          disabled={self || lastActiveAdmin || actionDisabled}
+                          title={
+                            self
+                              ? 'Impossible de désactiver votre propre profil'
+                              : lastActiveAdmin
+                                ? 'Impossible de désactiver le dernier admin actif'
+                                : undefined
+                          }
+                        >
+                          Désactiver
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => openAction(item, 'reactivate')}
+                          disabled={actionDisabled}
+                        >
+                          Réactiver
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        className="is-danger"
+                        onClick={() => openAction(item, 'delete')}
+                        disabled={self || lastActiveAdmin || actionDisabled}
+                        title={
+                          self
+                            ? 'Impossible de supprimer votre propre profil'
+                            : lastActiveAdmin
+                              ? 'Impossible de supprimer le dernier admin actif'
+                              : undefined
+                        }
+                      >
+                        Supprimer définitivement
+                      </button>
+                    </>
+                  )}
+                />
+              )
+            })}
+          </ResponsiveDataList>
+        )}
       </div>
 
       {pendingAction ? (
