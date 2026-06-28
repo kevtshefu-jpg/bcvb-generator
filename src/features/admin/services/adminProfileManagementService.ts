@@ -30,6 +30,7 @@ export async function runAdminProfileAction(profileId: string, action: AdminProf
   const { data, error } = await supabase.functions.invoke<{
     ok?: boolean
     error?: string
+    profileId?: string
     profile_id?: string
     action?: AdminProfileAction
   }>('admin-delete-profile', {

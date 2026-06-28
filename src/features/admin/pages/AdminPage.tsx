@@ -252,7 +252,7 @@ export default function AdminPage() {
           </em>
         </Link>
 
-        <Link to="/admin/utilisateurs" className="admin-action-card">
+        <Link to="/admin/membres" className="admin-action-card">
           <span>Membres</span>
           <strong>Gestion des membres</strong>
           <p>Contrôler les profils actifs, les rôles et les accès.</p>

@@ -214,7 +214,7 @@ export default function AdminProfilesPage() {
       <header className="admin-profiles-hero">
         <div>
           <p className="bcvb-eyebrow">Administration</p>
-          <h1>Gestion des profils</h1>
+          <h1>Gestion des membres</h1>
           <p>
             Rechercher, filtrer, désactiver ou supprimer les profils utilisateurs
             avec les garde-fous sensibles côté serveur.
@@ -405,14 +405,17 @@ export default function AdminProfilesPage() {
             </p>
 
             {pendingAction.action === 'delete' ? (
-              <label>
-                <span>Tape SUPPRIMER pour confirmer</span>
-                <input
-                  value={deleteConfirmation}
-                  onChange={(event) => setDeleteConfirmation(event.target.value)}
-                  placeholder="SUPPRIMER"
-                />
-              </label>
+              <>
+                <p>Cette action est irréversible.</p>
+                <label>
+                  <span>Tape SUPPRIMER pour confirmer</span>
+                  <input
+                    value={deleteConfirmation}
+                    onChange={(event) => setDeleteConfirmation(event.target.value)}
+                    placeholder="SUPPRIMER"
+                  />
+                </label>
+              </>
             ) : (
               <p>
                 Cette action changera immédiatement le statut du profil. Elle peut être

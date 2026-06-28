@@ -56,6 +56,16 @@ function isMissingColumnError(message: string) {
   )
 }
 
+function isMissingAuthUserError(message: string) {
+  const value = message.toLowerCase()
+
+  return (
+    value.includes('user not found') ||
+    value.includes('not found') ||
+    value.includes('no user')
+  )
+}
+
 function getBearerToken(request: Request) {
   return normalizeText(request.headers.get('Authorization')).replace(/^Bearer\s+/i, '')
 }
@@ -81,7 +91,7 @@ async function getCallerProfile(
   }
 
   if (!profile?.is_active || !isAdminRole(profile.role)) {
-    throw new Error('Permission refusée : rôle admin requis.')
+    throw new Error('Vous n’avez pas les droits administrateur.')
   }
 
   return profile as ProfileRow
@@ -169,7 +179,7 @@ async function deleteProfileAndAuthUser(
 ) {
   const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(profileId)
 
-  if (authError) {
+  if (authError && !isMissingAuthUserError(authError.message)) {
     const { data: existingProfile } = await supabaseAdmin
       .from('profiles')
       .select('id')
@@ -183,6 +193,13 @@ async function deleteProfileAndAuthUser(
     }
 
     throw new Error(`Suppression du compte Auth impossible : ${message}`)
+  }
+
+  if (authError) {
+    console.warn(
+      '[admin-delete-profile] Auth user already missing, deleting public profile only:',
+      authError.message,
+    )
   }
 
   const { error: profileError } = await supabaseAdmin
@@ -267,7 +284,7 @@ Deno.serve(async (request) => {
 
     const token = getBearerToken(request)
     if (!token) {
-      return jsonResponse({ ok: false, error: 'Session admin manquante.' }, 401)
+      return jsonResponse({ ok: false, error: 'Session admin manquante.' })
     }
 
     const payload = (await request.json()) as ActionPayload
@@ -275,11 +292,11 @@ Deno.serve(async (request) => {
     const action = payload.action
 
     if (!profileId) {
-      return jsonResponse({ ok: false, error: 'profileId manquant.' }, 400)
+      return jsonResponse({ ok: false, error: 'profileId manquant.' })
     }
 
     if (!action || !['deactivate', 'reactivate', 'delete'].includes(action)) {
-      return jsonResponse({ ok: false, error: 'Action profil invalide.' }, 400)
+      return jsonResponse({ ok: false, error: 'Action profil invalide.' })
     }
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
@@ -294,8 +311,7 @@ Deno.serve(async (request) => {
 
     if (callerProfile.id === targetProfile.id) {
       return jsonResponse(
-        { ok: false, error: 'Action refusée : impossible de modifier votre propre profil.' },
-        403,
+        { ok: false, error: 'Impossible de supprimer votre propre profil.' },
       )
     }
 
@@ -317,6 +333,7 @@ Deno.serve(async (request) => {
 
     return jsonResponse({
       ok: true,
+      profileId,
       profile_id: profileId,
       action,
     })
@@ -328,7 +345,6 @@ Deno.serve(async (request) => {
         ok: false,
         error: error instanceof Error ? error.message : 'Erreur admin inconnue.',
       },
-      400,
     )
   }
 })

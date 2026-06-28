@@ -260,7 +260,7 @@ export const SITE_CATEGORIES = [
     description: 'Pilotage global : rôles, permissions, saisons, standards, référentiels, exports et sécurité.',
     purpose: 'Administrer les accès, les standards club et les garde-fous sensibles de la plateforme.',
     mainActions: ['Configurer les rôles', 'Gérer la saison active', 'Régler les standards', 'Contrôler les exports'],
-    subModules: ['admin', 'parametres', 'admin/utilisateurs', 'admin/inscriptions', 'admin/deblocages', 'admin/plateforme'],
+    subModules: ['admin', 'parametres', 'admin/membres', 'admin/inscriptions', 'admin/deblocages', 'admin/plateforme'],
   },
 ]
 

@@ -297,7 +297,7 @@ export const router = createBrowserRouter([
             element: <AdminProfileRequestsPage />,
           },
           {
-            path: 'admin/utilisateurs',
+            path: 'admin/membres',
             element: <AdminProfilesPage />,
           },
         ],

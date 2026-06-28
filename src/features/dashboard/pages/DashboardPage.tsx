@@ -339,7 +339,7 @@ function DirigeantDashboard() {
 function AdminDashboard() {
   return (
     <div className="role-dashboard-grid">
-      <Link to="/admin" className="role-dashboard-card">
+      <Link to="/admin/membres" className="role-dashboard-card">
         <h3>Gestion des membres</h3>
         <p>Contrôler les profils, les rôles et l’activation des accès.</p>
       </Link>
@@ -399,7 +399,7 @@ function PresentationDashboard({ role }: { role?: string | null }) {
     ['Transformer un document', '/admin/documents/transformer', 'Convertir une source brute en document BCVB structuré.'],
     ['Contrôle qualité', '/admin/controle-qualite', 'Vérifier le niveau de publication et les blocs essentiels.'],
     ['Bibliothèque', '/bibliotheque', 'Centraliser les ressources techniques et pédagogiques du club.'],
-    ['Gestion utilisateurs', '/admin/utilisateurs', 'Piloter les profils et les accès.'],
+    ['Gestion utilisateurs', '/admin/membres', 'Piloter les profils et les accès.'],
   ]
   const coachCards = [
     ['Mes séances', '/coach/seances', 'Préparer et exporter mes entraînements.'],
