@@ -8,7 +8,7 @@ import { buildDirectorSpaceModel } from '../../../lib/directors/directorDashboar
 import StudioExperiencePanel from '../../ux/components/StudioExperiencePanel'
 import ActionHeroCard from '../../../components/dashboard/ActionHeroCard'
 import { PageHeader } from '../../../components/ui/PageHeader'
-import { CollapsibleSection, PageShell, StatCard } from '../../../components/ui/PageShell'
+import { CollapsibleSection, PageShell, RoleBasedQuickActions, StatCard } from '../../../components/ui/PageShell'
 import {
   formatRole,
   isAdmin,
@@ -53,15 +53,6 @@ const workResume: DashboardAction[] = [
   { label: 'Dernière séance créée', path: '/coach/seances', detail: 'U15 - Transition offensive', roles: ['admin', 'coach'] },
   { label: 'Dernière planification modifiée', path: '/planifications', detail: 'Cycle U11 - Juin 2026', roles: ['admin', 'coach'] },
   { label: 'Dernier effectif importé', path: '/effectifs', detail: 'U13 Région - 18 joueurs validés', roles: ['admin', 'coach'] },
-]
-
-const quickActions: DashboardAction[] = [
-  { label: 'Créer une séance', path: '/coach/seances', detail: 'Préparer une fiche complète.', roles: ['admin', 'coach'] },
-  { label: 'Faire l’appel', path: '/presences', detail: 'Présences, absences et retards.', roles: ['admin', 'coach'] },
-  { label: 'Importer un effectif', path: '/effectifs', detail: 'CSV ou Excel avec mapping.', roles: ['admin', 'coach'] },
-  { label: 'Ouvrir la bibliothèque', path: '/bibliotheque', detail: 'Documents et ressources club.', roles: ['admin', 'coach', 'dirigeant', 'parent_referent', 'team_staff', 'member', 'membre', 'parent', 'joueur'] },
-  { label: 'Créer une évaluation', path: '/evaluations', detail: 'Suivi joueur et axes de progrès.', roles: ['admin', 'coach'] },
-  { label: 'Accéder aux planifications', path: '/planifications', detail: 'Cycles sportifs par équipe.', roles: ['admin', 'coach'] },
 ]
 
 function normalizeDashboardRole(role?: string | null) {
@@ -147,9 +138,7 @@ function BcvbDashboardOverview({ role }: { role?: string | null }) {
     <>
       <ActionHeroCard role={role} />
 
-      <DashboardPanel title="Que voulez-vous faire ?">
-        <DashboardActionGrid actions={quickActions} role={role} />
-      </DashboardPanel>
+      <RoleBasedQuickActions role={role} />
 
       <DashboardPanel title="Résumé utile">
         <div className="bcvb-dashboard-metrics">

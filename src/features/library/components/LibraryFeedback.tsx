@@ -1,4 +1,5 @@
 import ActionFeedback from '../../../components/feedback/ActionFeedback'
+import { ErrorState, LoadingState } from '../../../components/ui/PageShell'
 
 type LibraryFeedbackProps = {
   safeLoading: boolean
@@ -35,7 +36,12 @@ export default function LibraryFeedback({
 }: LibraryFeedbackProps) {
   return (
     <>
-      {safeLoading ? <p>Chargement de l’espace BCVB...</p> : null}
+      {safeLoading ? (
+        <LoadingState
+          title="Chargement de la bibliothèque"
+          description="Nous préparons les documents disponibles pour votre profil."
+        />
+      ) : null}
 
       {hasTimedOut && presentationMode ? (
         <div className="bcvb-demo-fallback">
@@ -49,19 +55,15 @@ export default function LibraryFeedback({
       ) : null}
 
       {error ? (
-        <div className="bcvb-demo-fallback">
-          <p className="bcvb-eyebrow">Bibliothèque</p>
-          <h2>Chargement temporairement indisponible</h2>
-          <p>
-            {presentationMode
-              ? 'La bibliothèque reste disponible dès que la connexion aux données répond.'
-              : error}
-          </p>
-
-          <button type="button" onClick={onRetry}>
-            Réessayer
-          </button>
-        </div>
+        <ErrorState
+          title="Bibliothèque temporairement indisponible"
+          description={
+            presentationMode
+              ? 'La bibliothèque sera disponible dès que les données répondent.'
+              : 'Les documents n’ont pas pu être chargés. Réessayez dans un instant.'
+          }
+          action={<button type="button" onClick={onRetry}>Réessayer</button>}
+        />
       ) : null}
 
       {downloadError ? (

@@ -20,6 +20,8 @@ import TutorialQuickStart from "./TutorialQuickStart";
 import TutorialRoleMatrix from "./TutorialRoleMatrix";
 import TutorialSearch from "./TutorialSearch";
 import TutorialStepList from "./TutorialStepList";
+import { PageHeader } from "../ui/PageHeader";
+import { CollapsibleSection, PageShell, StatCard } from "../ui/PageShell";
 import "../../styles/tutorials.css";
 
 type TutorialsPageProps = {
@@ -127,29 +129,22 @@ export default function TutorialsPage({ initialCategory, initialTutorialId }: Tu
 
   return (
     <main className="bcvb-page tutorials-page platform-tutorial-page">
-      <section className="tutorial-hero platform-tutorial-hero" id="vue-ensemble">
-        <div className="tutorial-hero__content platform-tutorial-hero__content">
-          <p className="bcvb-eyebrow platform-tutorial-hero__eyebrow">Aide intégrée BCVB</p>
-          <h1 className="platform-tutorial-hero__title">Tutoriels d’utilisation</h1>
-          <p className="platform-tutorial-hero__text">
-            Des parcours courts pour produire des documents, préparer les séances, importer les effectifs,
-            suivre les joueurs, comprendre les droits et utiliser les exports sans se perdre dans la plateforme.
-          </p>
-          <div className="tutorial-current-role platform-tutorial-hero__profile">
-            <span>Profil détecté</span>
-            <strong>{tutorialAudienceLabels[currentAudience]}</strong>
-          </div>
-        </div>
-
-        <div className="tutorial-hero__stats platform-tutorial-stats">
-          {stats.map((stat) => (
-            <article key={stat.label} className="platform-tutorial-stat">
-              <strong>{stat.value}</strong>
-              <span>{stat.label}</span>
-            </article>
-          ))}
-        </div>
+      <PageShell>
+      <section id="vue-ensemble">
+        <PageHeader
+          eyebrow="Aide BCVB"
+          title="Tutoriels d’utilisation"
+          subtitle="Apprenez rapidement à utiliser les outils essentiels du club, selon votre rôle."
+          action={<a className="bcvb-premium-button bcvb-premium-button--primary" href="#parcours-guide">Démarrer le parcours</a>}
+          meta={<span className="bcvb-premium-status bcvb-premium-status--neutral">{tutorialAudienceLabels[currentAudience]}</span>}
+        />
       </section>
+
+      <div className="admin-registration-page__stats">
+        {stats.slice(0, 4).map((stat) => (
+          <StatCard key={stat.label} label={stat.label} value={stat.value} />
+        ))}
+      </div>
 
       <nav className="tutorial-mobile-jumpnav" aria-label="Navigation interne tutoriels">
         <a href="#vue-ensemble">Vue d’ensemble</a>
@@ -208,17 +203,16 @@ export default function TutorialsPage({ initialCategory, initialTutorialId }: Tu
             onToggleItem={toggleChecklistItem}
           />
 
-          <section className="tutorial-detail-card">
-            <div className="tutorial-section-heading">
-              <p>Implémentation</p>
-              <h2>Ce que le module apporte</h2>
-            </div>
+          <CollapsibleSection title="Ce que ce module apporte" description="Détail utile après avoir lu les étapes.">
             <p>{selectedTutorial.implementation}</p>
-          </section>
+          </CollapsibleSection>
         </div>
       </section>
 
-      <TutorialRoleMatrix currentRole={profile?.role} />
+      <CollapsibleSection title="Droits d’accès par rôle" description="À consulter si vous cherchez pourquoi un module est visible ou non.">
+        <TutorialRoleMatrix currentRole={profile?.role} />
+      </CollapsibleSection>
+      </PageShell>
     </main>
   );
 }

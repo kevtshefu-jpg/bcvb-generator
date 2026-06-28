@@ -25,12 +25,11 @@ export default function LibraryHero({
         </p>
 
         <h1 className="library-hero__title bcvb-premium-hero__title">
-          Centre de ressources BCVB
+          Bibliothèque documentaire
         </h1>
 
         <p className="library-hero__text bcvb-premium-hero__text">
-          Consulter, rechercher, ouvrir, prévisualiser, télécharger et transformer
-          les documents du club selon les droits du profil connecté.
+          Retrouvez les documents club validés, prêts à consulter, partager ou exporter selon votre rôle.
         </p>
       </div>
 

@@ -7,6 +7,8 @@ import {
   ResponsiveDataList,
   StatusBadge,
 } from '../../../components/ui/ResponsiveDataView'
+import { PageHeader } from '../../../components/ui/PageHeader'
+import { ErrorState, LoadingState, PageShell, StatCard, SuccessFeedback } from '../../../components/ui/PageShell'
 import { useAuth } from '../../auth/context/AuthContext'
 import {
   deactivateProfile,
@@ -237,31 +239,24 @@ export default function AdminProfilesPage() {
 
   return (
     <section className="admin-profiles-page bcvb-page">
-      <header className="admin-profiles-hero">
-        <div>
-          <p className="bcvb-eyebrow">Administration</p>
-          <h1>Gestion des membres</h1>
-          <p>
-            Rechercher, filtrer, désactiver ou supprimer les profils utilisateurs
-            avec les garde-fous sensibles côté serveur.
-          </p>
-        </div>
+      <PageShell>
+      <PageHeader
+        eyebrow="Administration"
+        title="Gestion des membres"
+        subtitle="Gérez les accès, statuts et profils utilisateurs. Désactiver coupe l’accès sans supprimer l’historique."
+        action={<button type="button" className="bcvb-premium-button bcvb-premium-button--primary" onClick={() => loadProfiles()} disabled={loading}>Actualiser</button>}
+      />
 
-        <div className="admin-profiles-hero__stats">
-          <article>
-            <span>Total</span>
-            <strong>{profiles.length}</strong>
-          </article>
-          <article>
-            <span>Actifs</span>
-            <strong>{activeCount}</strong>
-          </article>
-          <article>
-            <span>Inactifs</span>
-            <strong>{inactiveCount}</strong>
-          </article>
-        </div>
-      </header>
+      <div className="admin-profiles-hero__stats">
+        <StatCard label="Total" value={profiles.length} />
+        <StatCard label="Actifs" value={activeCount} />
+        <StatCard label="Inactifs" value={inactiveCount} />
+      </div>
+
+      <div className="bcvb-feature-card">
+        <h3>Repères de sécurité</h3>
+        <p>Désactiver est réversible. Supprimer définitivement est réservé aux comptes créés par erreur et demande une confirmation forte.</p>
+      </div>
 
       <section className="admin-profiles-toolbar" aria-label="Filtres profils">
         <label>
@@ -304,9 +299,9 @@ export default function AdminProfilesPage() {
       </section>
 
       {toast ? (
-        <p className={`admin-profiles-toast admin-profiles-toast--${toast.type}`}>
-          {toast.message}
-        </p>
+        toast.type === 'success'
+          ? <SuccessFeedback title="Action terminée" description={toast.message} />
+          : <ErrorState description={toast.message} />
       ) : null}
 
       <div className="admin-profiles-tableWrap responsive-data-table">
@@ -324,7 +319,7 @@ export default function AdminProfilesPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6}>Chargement des profils...</td>
+                <td colSpan={6}><LoadingState title="Chargement des profils" description="La liste des membres est en cours de récupération." /></td>
               </tr>
             ) : null}
 
@@ -551,6 +546,7 @@ export default function AdminProfilesPage() {
           </section>
         </div>
       ) : null}
+      </PageShell>
     </section>
   )
 }

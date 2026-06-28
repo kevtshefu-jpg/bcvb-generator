@@ -148,9 +148,34 @@
   border-color: rgba(163, 32, 53, 0.32);
 }
 
+.bcvb-action-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(16, 24, 39, 0.08);
+}
+
 .bcvb-action-card h3 {
   margin: 0;
   font-size: 1rem;
+}
+
+.bcvb-feature-card {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid var(--bcvb-premium-border);
+  border-radius: var(--bcvb-premium-radius);
+  padding: 16px;
+  background: #ffffff;
+}
+
+.bcvb-feature-card h3,
+.bcvb-feature-card p {
+  margin: 0;
+}
+
+.bcvb-feature-card p {
+  color: var(--bcvb-premium-muted);
+  line-height: 1.48;
 }
 
 .bcvb-action-card p {
@@ -239,6 +264,73 @@
   max-width: 100%;
   overflow: auto;
   white-space: pre-wrap;
+}
+
+.bcvb-feedback-state {
+  display: grid;
+  gap: 7px;
+  border-radius: var(--bcvb-premium-radius);
+  padding: 14px 16px;
+  border: 1px solid var(--bcvb-premium-border);
+  background: #ffffff;
+}
+
+.bcvb-feedback-state strong,
+.bcvb-feedback-state p {
+  margin: 0;
+}
+
+.bcvb-feedback-state p {
+  color: var(--bcvb-premium-muted);
+  line-height: 1.45;
+}
+
+.bcvb-feedback-state--success {
+  border-color: rgba(22, 101, 52, 0.18);
+  background: #f0fdf4;
+}
+
+.bcvb-feedback-state--success strong {
+  color: #166534;
+}
+
+.bcvb-feedback-state--error {
+  border-color: rgba(163, 32, 53, 0.22);
+  background: #fff5f6;
+}
+
+.bcvb-feedback-state--error strong {
+  color: var(--bcvb-premium-red);
+}
+
+.bcvb-feedback-state--loading {
+  background: #f8fafc;
+}
+
+.bcvb-feedback-state__action {
+  margin-top: 6px;
+}
+
+.bcvb-role-quick-actions {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--bcvb-premium-border);
+  border-radius: var(--bcvb-premium-radius);
+  padding: clamp(16px, 2.5vw, 22px);
+  background: #ffffff;
+  box-shadow: 0 10px 26px rgba(16, 24, 39, 0.055);
+}
+
+.bcvb-role-quick-actions h2 {
+  margin: 0;
+  font-size: clamp(1.25rem, 2.8vw, 1.8rem);
+  line-height: 1.1;
+}
+
+.bcvb-role-quick-actions__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: 12px;
 }
 
 .bcvb-empty-state-premium,
