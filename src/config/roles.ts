@@ -40,7 +40,7 @@ export function normalizeRole(role?: string | null) {
 }
 
 export function isAdmin(role?: string | null) {
-  return normalizeRole(role) === 'admin'
+  return ['admin', 'responsable_technique'].includes(normalizeRole(role))
 }
 
 export function isDirigeant(role?: string | null) {
@@ -77,15 +77,15 @@ export function canAccessLibrary(role?: string | null) {
 }
 
 export function canAccessEditorialStudio(role?: string | null) {
-  return normalizeRole(role) === 'admin'
+  return isAdmin(role)
 }
 
 export function canPublishClubDocument(role?: string | null) {
-  return normalizeRole(role) === 'admin'
+  return isAdmin(role)
 }
 
 export function canTransformClubDocument(role?: string | null) {
-  return normalizeRole(role) === 'admin'
+  return isAdmin(role)
 }
 
 export function canAccessClubDashboard(role?: string | null) {
@@ -129,5 +129,5 @@ export function canManageMatchLogistics(role?: string | null) {
 }
 
 export function canManageUsers(role?: string | null) {
-  return normalizeRole(role) === 'admin'
+  return isAdmin(role)
 }

@@ -158,10 +158,10 @@ Fonctions presentes localement:
 
 | Fonction | Etat |
 |---|---|
-| `create-approved-user` | utilise `SUPABASE_SERVICE_ROLE_KEY`, lit `registration_requests`, cree/retrouve Auth user, upsert `profiles`, update statuses; ne fait pas d'OpenAI |
+| `create-approved-user` | utilise `SUPABASE_SERVICE_ROLE_KEY`, lit `registration_requests`, cree/retrouve Auth user, upsert `profiles`, update statuses; ne fait pas d'appel fournisseur documentaire |
 | `generate-ai-document` | stub simple `success: true` |
-| `ai-openai` | appelle OpenAI, pas lie aux roles |
-| `ai-anthropic` | appelle Anthropic, pas lie aux roles |
+| `ai-openai` | appelle le fournisseur documentaire A, pas lie aux roles |
+| `ai-anthropic` | appelle le fournisseur documentaire B, pas lie aux roles |
 | `notify-profile-request` | appelee par le front mais absente localement |
 
 Audit `create-approved-user`:
@@ -286,4 +286,3 @@ Les policies actuelles sont volontairement permissives sur plusieurs tables. A d
 Le compte admin existe bien en base distante et les policies `profiles` permettent sa lecture. Le probleme restant est donc tres probablement cote client: session/cache, environnement Vercel, ancienne build, ou fallback `AuthContext` vers `member` apres erreur de chargement.
 
 Le prochain correctif utile n'est pas SQL en premier. Il faut d'abord observer le log `AuthContext` dans le navigateur avec une session fraiche, puis corriger le fallback ou l'environnement selon le resultat.
-

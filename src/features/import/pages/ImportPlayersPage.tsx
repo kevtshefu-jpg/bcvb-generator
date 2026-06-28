@@ -7,7 +7,8 @@ import {
   type ImportRowInsert,
 } from '../services/importService'
 import { parseImportFile } from '../utils/importParsers'
-import { MobileDetailCard, ResponsiveDataList } from '../../../components/ui/ResponsiveDataView'
+import { EmptyState, MobileDetailCard, ResponsiveDataList } from '../../../components/ui/ResponsiveDataView'
+import { formatUserFacingError, getTechnicalErrorDetail } from '../../../lib/userFacingError'
 
 export default function ImportPlayersPage() {
   const { user } = useAuth()
@@ -17,6 +18,7 @@ export default function ImportPlayersPage() {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [technicalError, setTechnicalError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
   async function handleFileChange(file: File | null) {
@@ -25,13 +27,15 @@ export default function ImportPlayersPage() {
     try {
       setLoading(true)
       setError(null)
+      setTechnicalError(null)
       setSuccess(null)
 
       const parsedRows = await parseImportFile(file)
       setRows(parsedRows)
       setFileName(file.name)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur d'import")
+      setError(formatUserFacingError(err, 'Le fichier joueurs n’a pas pu être lu. Vérifie le format et les colonnes attendues.'))
+      setTechnicalError(getTechnicalErrorDetail(err))
       setRows([])
       setFileName('')
     } finally {
@@ -45,6 +49,7 @@ export default function ImportPlayersPage() {
     try {
       setSaving(true)
       setError(null)
+      setTechnicalError(null)
       setSuccess(null)
 
       const sourceType = fileName.toLowerCase().endsWith('.csv') ? 'csv' : 'excel'
@@ -55,7 +60,8 @@ export default function ImportPlayersPage() {
 
       setSuccess(`Import enregistré avec succès. Batch : ${batch.id}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors de l'enregistrement")
+      setError(formatUserFacingError(err, 'L’import n’a pas pu être enregistré. Vérifie ta connexion puis réessaie.'))
+      setTechnicalError(getTechnicalErrorDetail(err))
     } finally {
       setSaving(false)
     }
@@ -93,9 +99,27 @@ export default function ImportPlayersPage() {
         </div>
 
         {loading && <p style={{ marginTop: 12 }}>Analyse du fichier...</p>}
-        {error && <p style={{ marginTop: 12 }}>{error}</p>}
+        {error && (
+          <div className="responsive-empty-state" style={{ marginTop: 12 }}>
+            <strong>Import joueurs interrompu</strong>
+            <p>{error}</p>
+            {technicalError && (
+              <details>
+                <summary>Détail technique admin</summary>
+                <pre>{technicalError}</pre>
+              </details>
+            )}
+          </div>
+        )}
         {success && <p style={{ marginTop: 12 }}>{success}</p>}
       </article>
+
+      {!loading && rows.length === 0 && !error && (
+        <EmptyState
+          title="Aucun fichier joueur chargé"
+          description="Importe un fichier CSV, XLSX ou XLS pour prévisualiser les joueurs avant validation."
+        />
+      )}
 
       {rows.length > 0 && (
         <>

@@ -78,7 +78,7 @@ export function DirectorDocumentsClub({ documents }: { documents: DirectorDocume
                     <a href="/bibliotheque">Consulter</a>
                     {document.canDownloadPdf ? <a href="/bibliotheque">PDF</a> : <button type="button" disabled>PDF indispo.</button>}
                     {document.canViewSource && <a href="/bibliotheque">Source</a>}
-                    {document.canValidate && <button type="button">Valider</button>}
+                    {document.canValidate && <button type="button" disabled title="Validation finale à réaliser depuis le studio éditorial admin">Valider</button>}
                   </div>
                 </td>
               </tr>
@@ -112,7 +112,7 @@ export function DirectorDocumentsClub({ documents }: { documents: DirectorDocume
                   <a href="/bibliotheque">Consulter</a>
                   {document.canDownloadPdf ? <a href="/bibliotheque">PDF</a> : <StatusBadge>PDF indispo.</StatusBadge>}
                   {document.canViewSource && <a href="/bibliotheque">Source</a>}
-                  {document.canValidate && <button type="button">Valider</button>}
+                  {document.canValidate && <StatusBadge>Validation admin</StatusBadge>}
                 </>
               )}
             />

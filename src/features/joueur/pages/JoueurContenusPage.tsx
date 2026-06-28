@@ -2,6 +2,8 @@ import { useAuth } from '../../auth/context/AuthContext'
 import { playerContents } from '../data/playerContents'
 import { canPlayerSeeContent } from '../utils/access'
 import { usePlayerUnlocks } from '../hooks/usePlayerUnlocks'
+import { EmptyState } from '../../../components/ui/ResponsiveDataView'
+import { formatUserFacingError } from '../../../lib/userFacingError'
 
 export default function JoueurContenusPage() {
   const { profile } = useAuth()
@@ -37,8 +39,18 @@ export default function JoueurContenusPage() {
         </div>
       </div>
 
-      {loading && <p>Chargement des contenus...</p>}
-      {error && <p>{error}</p>}
+      {loading && (
+        <EmptyState
+          title="Chargement des contenus"
+          description="Préparation des ressources accessibles pour ta catégorie."
+        />
+      )}
+      {error && (
+        <EmptyState
+          title="Contenus temporairement indisponibles"
+          description={formatUserFacingError(error, 'Les contenus ne peuvent pas être chargés pour le moment. Réessaie plus tard ou demande à ton coach.')}
+        />
+      )}
 
       <div className="dashboard-page__grid">
         {visibleContents.map((item) => (
@@ -49,6 +61,13 @@ export default function JoueurContenusPage() {
           </article>
         ))}
       </div>
+
+      {!loading && !error && visibleContents.length === 0 && (
+        <EmptyState
+          title="Aucun contenu débloqué"
+          description="Les ressources apparaîtront ici lorsque ton coach ou le club les rendra disponibles pour ta catégorie."
+        />
+      )}
 
       <div className="dashboard-panelCard">
         <p className="dashboard-page__eyebrow">Contenus verrouillés</p>

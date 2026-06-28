@@ -417,7 +417,7 @@ export default function LibraryMobileExperience({
           <section className="library-mobile-empty">
             <span aria-hidden="true">⚠️</span>
             <h2>Bibliothèque indisponible</h2>
-            <p>{error}</p>
+            <p>Les documents ne peuvent pas être chargés pour le moment. Réessaie depuis la bibliothèque ou contacte un administrateur si le problème persiste.</p>
           </section>
         ) : null}
 
@@ -443,7 +443,7 @@ export default function LibraryMobileExperience({
                 <span aria-hidden="true">🔎</span>
                 <h2>Aucun document trouvé</h2>
                 <p>
-                  Essaie avec un mot plus court : coach, U15, cadre, FAQ, séance ou document.
+                  Essaie avec un mot plus court, change de catégorie ou efface la recherche pour retrouver les ressources disponibles.
                 </p>
               </section>
             ) : null}

@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 export default function CoachPlayersPage() {
   return (
     <main className="bcvb-page coach-tool-page">
@@ -11,7 +13,7 @@ export default function CoachPlayersPage() {
         <span className="bcvb-status-pill">Suivi joueur</span>
         <h3>Liste joueurs</h3>
         <p>Aucun joueur rattaché pour le moment. Ajoute tes joueurs ou importe une liste depuis l’administration.</p>
-        <button className="bcvb-button-primary" type="button">Ajouter un joueur</button>
+        <Link className="bcvb-button-primary" to="/effectifs/import">Importer ou ajouter un joueur</Link>
       </article>
     </main>
   )

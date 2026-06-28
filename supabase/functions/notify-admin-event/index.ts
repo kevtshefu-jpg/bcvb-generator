@@ -44,6 +44,55 @@ function normalizeEmail(value: unknown) {
   return normalizeText(value).toLowerCase()
 }
 
+function normalizeRole(value: unknown) {
+  const role = normalizeText(value).toLowerCase()
+  if (role === 'technical_manager') return 'responsable_technique'
+  if (role === 'membre') return 'member'
+  return role || 'member'
+}
+
+function isAdminRole(value: unknown) {
+  return ['admin', 'responsable_technique'].includes(normalizeRole(value))
+}
+
+function getBearerToken(request: Request) {
+  return normalizeText(request.headers.get('Authorization')).replace(/^Bearer\s+/i, '')
+}
+
+async function assertAdminCaller(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  request: Request,
+  serviceRoleKey: string,
+) {
+  const token = getBearerToken(request)
+
+  if (!token) {
+    throw new Error('Session admin manquante.')
+  }
+
+  if (token === serviceRoleKey) return
+
+  const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token)
+
+  if (userError || !userData.user) {
+    throw new Error('Session invalide ou expirée.')
+  }
+
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('id, role, is_active')
+    .eq('id', userData.user.id)
+    .maybeSingle()
+
+  if (profileError) {
+    throw new Error(`Impossible de vérifier les droits admin : ${profileError.message}`)
+  }
+
+  if (!profile || profile.is_active === false || !isAdminRole(profile.role)) {
+    throw new Error('Droits administrateur insuffisants.')
+  }
+}
+
 function parseEmailFrom(value?: string | null) {
   const fallback = {
     name: 'BCVB Référentiel',
@@ -216,6 +265,19 @@ Deno.serve(async (request) => {
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     })
+
+    try {
+      await assertAdminCaller(supabaseAdmin, request, serviceRoleKey)
+    } catch (error) {
+      console.warn('[notify-admin-event] access denied:', error)
+      return jsonResponse(
+        {
+          ok: false,
+          error: error instanceof Error ? error.message : 'Accès refusé.',
+        },
+        403,
+      )
+    }
 
     const payload = (await request.json()) as AdminEventPayload
     const eventType = normalizeText(payload.eventType)

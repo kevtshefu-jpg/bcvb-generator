@@ -13,7 +13,7 @@ import { getTeamProfileBasePath } from "../../lib/teams/teamRoutes";
 import { buildTeamsDashboardData, computeTeamIndicators } from "../../lib/teams/teamStats";
 import { isHeadCoachRole } from "../../lib/teams/teamStaff";
 import { TeamDashboardCard } from "./TeamDashboardCard";
-import { MobileDetailCard, ResponsiveDataList } from "../ui/ResponsiveDataView";
+import { EmptyState, MobileDetailCard, ResponsiveDataList } from "../ui/ResponsiveDataView";
 import "../../styles/teams.css";
 
 export function TeamsPage() {
@@ -74,7 +74,7 @@ export function TeamsPage() {
           <p className="bcvb-subtitle">Centraliser les équipes, les staffs, les objectifs, les documents et le suivi sportif BCVB.</p>
         </div>
         <div className="teams-header-actions">
-          <button className="bcvb-button-primary" type="button">Créer une équipe</button>
+          <Link className="bcvb-button-primary" to="/effectifs/import">Créer une équipe</Link>
           <a className="bcvb-button-secondary" href="/effectifs/import">Importer équipes</a>
           <button className="bcvb-button-secondary" type="button" onClick={exportSummary}>Exporter synthèse</button>
         </div>
@@ -150,7 +150,14 @@ export function TeamsPage() {
           </table>
         </div>
         <div className="responsive-data-mobile">
-          <ResponsiveDataList empty={<p>Aucune équipe ne correspond aux filtres.</p>}>
+          <ResponsiveDataList
+            empty={(
+              <EmptyState
+                title="Aucune équipe trouvée"
+                description="Ajuste les filtres ou réinitialise la recherche pour retrouver les équipes du référentiel."
+              />
+            )}
+          >
             {filteredTeams.map((team) => {
               const teamStaff = getTeamStaff(team.id);
               const headCoach = teamStaff.find((member) => isHeadCoachRole(member.role) && member.isActive);

@@ -13,6 +13,32 @@ export type AdminProfileRow = {
 
 export type AdminProfileAction = 'deactivate' | 'reactivate' | 'delete'
 
+async function getFunctionErrorMessage(error: unknown) {
+  const context = (error as { context?: { json?: () => Promise<unknown>; text?: () => Promise<string> } })?.context
+
+  if (context?.json) {
+    try {
+      const body = await context.json()
+      const message = (body as { error?: unknown; message?: unknown })?.error || (body as { message?: unknown })?.message
+
+      if (message) return String(message)
+    } catch {
+      // Le corps peut ne pas être du JSON selon l'erreur Edge Function.
+    }
+  }
+
+  if (context?.text) {
+    try {
+      const text = await context.text()
+      if (text) return text
+    } catch {
+      // Fallback ci-dessous.
+    }
+  }
+
+  return error instanceof Error ? error.message : 'Erreur Edge Function inconnue.'
+}
+
 export async function listProfiles() {
   const { data, error } = await supabase
     .from('profiles')
@@ -33,6 +59,7 @@ async function runAdminProfileAction(profileId: string, action: AdminProfileActi
     profileId?: string
     profile_id?: string
     action?: AdminProfileAction
+    warning?: string | null
   }>('admin-delete-profile', {
     body: {
       profileId,
@@ -41,7 +68,7 @@ async function runAdminProfileAction(profileId: string, action: AdminProfileActi
   })
 
   if (error) {
-    throw new Error(error.message)
+    throw new Error(await getFunctionErrorMessage(error))
   }
 
   if (!data?.ok) {

@@ -4,6 +4,7 @@ import { useAuth } from "../../features/auth/context/AuthContext";
 import { canCommentPlanning, canRequestCorrection, canValidatePlanning } from "../../lib/dirigeants/dirigeantPermissions";
 import { requestCorrection, validateByDirigeant } from "../../lib/dirigeants/validationWorkflow";
 import { PlanningStatusBadge } from "./PlanningStatusBadge";
+import { EmptyState } from "../ui/ResponsiveDataView";
 
 type ValidationTargetState = {
   id: string;
@@ -73,7 +74,10 @@ export function PlanningValidationPanel({ summary }: { summary: DirigeantPlannin
 
       <h3>Historique</h3>
       {target.validationHistory.length === 0 ? (
-        <p>Aucune action de validation dans cette session.</p>
+        <EmptyState
+          title="Aucune action enregistrée"
+          description="Les validations, réserves et demandes de correction apparaîtront ici dès qu’une décision sera prise."
+        />
       ) : (
         <ul>
           {target.validationHistory.map((record) => (

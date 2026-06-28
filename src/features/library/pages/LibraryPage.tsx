@@ -114,7 +114,7 @@ export default function LibraryPage() {
   const { safeLoading, hasTimedOut } = useSafeLoading(loading, 2500)
 
   const role = profile?.role ?? 'member'
-  const isAdminRole = role === 'admin'
+  const isAdminRole = role === 'admin' || role === 'responsable_technique'
   const isCoachRole = role === 'coach' || role === 'responsable_technique'
 
   const libraryUser = useMemo(

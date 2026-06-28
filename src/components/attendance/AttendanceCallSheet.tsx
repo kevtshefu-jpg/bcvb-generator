@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { AttendancePlayer, AttendanceRecord, AttendanceStatus } from "../../types/attendance";
 import { attendanceStatuses, getAttendanceStatusLabel } from "../../lib/attendance/attendanceScoring";
 import { AttendancePlayerCard, AttendancePlayerRow } from "./AttendancePlayerRow";
+import { EmptyState } from "../ui/ResponsiveDataView";
 
 export function AttendanceCallSheet({
   players,
@@ -132,7 +133,12 @@ export function AttendanceCallSheet({
             />
           );
         })}
-        {visiblePlayers.length === 0 && <p>Aucun joueur ne correspond au filtre.</p>}
+        {visiblePlayers.length === 0 && (
+          <EmptyState
+            title="Aucun joueur trouvé"
+            description="Modifie la recherche ou le filtre de statut pour afficher les joueurs à appeler."
+          />
+        )}
       </div>
     </section>
   );

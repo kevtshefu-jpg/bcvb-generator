@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { supabase } from '../../../lib/supabase'
+import { EmptyState, MobileDetailCard, ResponsiveDataList, StatusBadge } from '../../../components/ui/ResponsiveDataView'
 import { useAuth } from '../../auth/context/AuthContext'
 
 type MemberRow = {
@@ -364,41 +365,48 @@ export default function AdminPage() {
 
         {loading ? (
           <div className="admin-page__empty">
-            Chargement des profils...
+            <EmptyState
+              title="Chargement des profils"
+              description="Récupération des membres et de leurs statuts en cours."
+            />
           </div>
         ) : members.length === 0 ? (
           <div className="admin-page__empty">
-            Aucun profil trouvé.
+            <EmptyState
+              title="Aucun profil trouvé"
+              description="Les membres apparaîtront ici après leur création ou leur validation d’inscription."
+            />
           </div>
         ) : (
           <>
-            <div className="admin-page__mobileMembers">
-              {members.map((member) => (
-                <article className="admin-member-card" key={member.id}>
-                  <header>
-                    <div>
-                      <h4>{getMemberName(member)}</h4>
-                      <p>{member.email || 'Email non renseigné'}</p>
-                    </div>
+            <div className="responsive-data-mobile">
+              <ResponsiveDataList
+                empty={(
+                  <EmptyState
+                    title="Aucun profil trouvé"
+                    description="Les membres apparaîtront ici dès qu’un profil sera créé."
+                  />
+                )}
+              >
+                {members.map((member) => {
+                  const status = getProfileStatus(member)
+                  const tone = status === 'active' ? 'success' : status === 'inactive' ? 'warning' : 'info'
 
-                    <span className={`admin-member-card__status ${getStatusClass(member)}`}>
-                      {getStatusLabel(member)}
-                    </span>
-                  </header>
-
-                  <div className="admin-member-card__meta">
-                    <p>
-                      <strong>Rôle</strong>
-                      <span>{formatRole(member.role)}</span>
-                    </p>
-
-                    <p>
-                      <strong>Créé le</strong>
-                      <span>{formatDate(member.created_at)}</span>
-                    </p>
-                  </div>
-                </article>
-              ))}
+                  return (
+                    <MobileDetailCard
+                      key={member.id}
+                      eyebrow={formatRole(member.role)}
+                      title={getMemberName(member)}
+                      subtitle={member.email || 'Email non renseigné'}
+                      badge={<StatusBadge tone={tone}>{getStatusLabel(member)}</StatusBadge>}
+                      items={[
+                        { label: 'Rôle', value: formatRole(member.role) },
+                        { label: 'Créé le', value: formatDate(member.created_at) },
+                      ]}
+                    />
+                  )
+                })}
+              </ResponsiveDataList>
             </div>
 
             <div className="admin-page__tableWrap responsive-data-table">

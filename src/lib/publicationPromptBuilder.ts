@@ -102,7 +102,7 @@ Tu dois obligatoirement :
 8. Ajouter une grille d’évaluation joueur si absente.
 9. Ajouter une grille d’auto-évaluation coach si absente.
 10. Ajouter une synthèse opérationnelle.
-11. Supprimer les traces IA, commentaires techniques, placeholders et lignes brutes.
+11. Supprimer les traces méta, commentaires techniques, placeholders et lignes brutes.
 12. Ne jamais laisser de tableau sous forme de texte séparé par des barres verticales hors bloc structuré.
 13. Ne jamais produire une situation sans diagramme associé.
 14. Ne jamais produire un diagramme incomplet sans players, arrows, zones utiles et notes.

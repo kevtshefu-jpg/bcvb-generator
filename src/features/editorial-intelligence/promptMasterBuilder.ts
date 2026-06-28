@@ -16,7 +16,7 @@ export function buildMasterPromptFromPlan(params: {
       : 'Tu dois produire une structure stricte, balisée, contrôlée, compatible avec le parseur BCVB.'
 
   return `
-PROMPT MAÎTRE EN 2 TEMPS — ${providerProfile.label}
+CADRE MAÎTRE EN 2 TEMPS — ${providerProfile.label}
 
 ÉTAGE 1 — PLAN ÉDITORIAL VALIDÉ
 - Titre : ${params.plan.title}

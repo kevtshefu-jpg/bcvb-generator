@@ -59,7 +59,7 @@ Faire progresser réellement le document vers un niveau publiable.
 Le document actuel est à ${input.currentScore}/100.
 L’objectif est d’atteindre au minimum ${input.targetScore}/100.
 
-PROVIDER CIBLE : ${provider.label}
+PROFIL CIBLE : ${provider.label}
 - Forces à exploiter : ${provider.strengths.join(', ')}
 
 MODE

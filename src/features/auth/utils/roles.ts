@@ -14,7 +14,7 @@ export function formatRole(role?: string | null) {
 }
 
 export function isAdmin(role?: string | null) {
-  return role === 'admin'
+  return role === 'admin' || role === 'responsable_technique'
 }
 
 export function isDirigeant(role?: string | null) {
@@ -50,7 +50,7 @@ export function canAccessClub(role?: string | null) {
 }
 
 export function canAccessAdmin(role?: string | null) {
-  return role === 'admin'
+  return role === 'admin' || role === 'responsable_technique'
 }
 
 export function getRoleHomeLabel(role?: UserRole | null) {

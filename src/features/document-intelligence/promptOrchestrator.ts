@@ -438,7 +438,7 @@ export function buildDocumentProductionPlan(
       ? [
           {
             id: 'single-output',
-            title: 'Prompt unique',
+            title: 'Cadre unique',
             objective: 'Produire directement le document final.',
             prompt: buildSingleOutputPrompt(request, targets),
           },

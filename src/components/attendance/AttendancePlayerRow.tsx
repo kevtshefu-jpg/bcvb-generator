@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { AttendancePlayer, AttendanceRecord } from "../../types/attendance";
 import {
   attendanceStatuses,
@@ -107,7 +108,7 @@ export function AttendancePlayerRow({
         )}
       </td>
       <td>{new Date(record.updatedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</td>
-      <td><button type="button" className="attendance-link-button">Fiche joueur</button></td>
+      <td><Link to="/effectifs" className="attendance-link-button">Fiche joueur</Link></td>
     </tr>
   );
 }
@@ -210,7 +211,7 @@ export function AttendancePlayerCard({
         )}
       </label>
 
-      <button type="button" className="attendance-link-button">Fiche joueur</button>
+      <Link to="/effectifs" className="attendance-link-button">Fiche joueur</Link>
     </article>
   );
 }

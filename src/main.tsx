@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
 import { router } from './app/router'
 import { AuthProvider } from './features/auth/context/AuthContext'
+import { formatUserFacingError } from './lib/userFacingError'
 import './features/documents/styles/bcvb-premium.css'
 import './features/documents/styles/bcvbEditorialDocument.css'
 import './features/documents/styles/documentFamilies.css'
@@ -33,8 +34,14 @@ class ErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <div style={{ padding: 40, fontFamily: 'sans-serif' }}>
-          <h1>Erreur React détectée</h1>
-          <pre>{this.state.error?.message}</pre>
+          <p style={{ color: '#c8102e', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            BCVB Référentiel
+          </p>
+          <h1>Une page n’a pas pu s’afficher correctement</h1>
+          <p>{formatUserFacingError(this.state.error, 'Recharge la page. Si le problème persiste, contacte un administrateur BCVB avec l’heure de l’incident.')}</p>
+          <button type="button" onClick={() => window.location.reload()}>
+            Recharger la page
+          </button>
         </div>
       )
     }

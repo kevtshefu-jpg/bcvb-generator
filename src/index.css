@@ -1964,11 +1964,14 @@ textarea:focus {
 
 /* Tableaux : sécurité responsive */
 
-table {
 .table-wrapper,
 .bcvb-table-wrapper {
   width: 100%;
   overflow-x: auto;
+}
+
+table {
+  max-width: 100%;
 }
 
 .table-wrapper table,

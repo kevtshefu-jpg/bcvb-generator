@@ -3,6 +3,8 @@ import { useAuth } from '../../auth/context/AuthContext'
 import { playerContents } from '../../joueur/data/playerContents'
 import { usePlayerProfiles } from '../../joueur/hooks/usePlayerProfiles'
 import { usePlayerUnlocks } from '../../joueur/hooks/usePlayerUnlocks'
+import { EmptyState } from '../../../components/ui/ResponsiveDataView'
+import { formatUserFacingError } from '../../../lib/userFacingError'
 
 export default function UnlockManagementPage() {
   const { user } = useAuth()
@@ -47,8 +49,18 @@ export default function UnlockManagementPage() {
       <article className="dashboard-panelCard">
         <h3 className="dashboard-panelCard__title">Choisir un joueur</h3>
 
-        {playersLoading && <p>Chargement des profils joueurs...</p>}
-        {playersError && <p>{playersError}</p>}
+        {playersLoading && (
+          <EmptyState
+            title="Chargement des joueurs"
+            description="Récupération des profils joueurs en cours."
+          />
+        )}
+        {playersError && (
+          <EmptyState
+            title="Profils joueurs indisponibles"
+            description={formatUserFacingError(playersError, 'La liste des joueurs ne peut pas être chargée pour le moment. Réessaie après avoir rechargé la page.')}
+          />
+        )}
 
         {!playersLoading && !playersError && (
           <div style={{ marginTop: 12 }}>
@@ -71,8 +83,18 @@ export default function UnlockManagementPage() {
 
       {selectedPlayer && (
         <>
-          {loading && <p>Chargement des déblocages...</p>}
-          {error && <p>{error}</p>}
+          {loading && (
+            <EmptyState
+              title="Chargement des déblocages"
+              description="Lecture des contenus déjà ouverts pour ce joueur."
+            />
+          )}
+          {error && (
+            <EmptyState
+              title="Déblocages indisponibles"
+              description={formatUserFacingError(error, 'Les déblocages de ce joueur ne peuvent pas être chargés pour le moment. Réessaie plus tard.')}
+            />
+          )}
 
           <div className="dashboard-page__grid">
             <article className="dashboard-actionCard">

@@ -85,6 +85,18 @@ function getSuccessMessage(action: AdminProfileAction) {
   return 'Profil supprimé.'
 }
 
+function getBlockedReason({
+  self,
+  lastActiveAdmin,
+}: {
+  self: boolean
+  lastActiveAdmin: boolean
+}) {
+  if (self) return 'Action bloquée : vous ne pouvez pas modifier votre propre profil.'
+  if (lastActiveAdmin) return 'Action bloquée : dernier admin actif.'
+  return null
+}
+
 function runProfileAction(profileId: string, action: AdminProfileAction) {
   if (action === 'deactivate') return deactivateProfile(profileId)
   if (action === 'reactivate') return reactivateProfile(profileId)
@@ -205,10 +217,10 @@ export default function AdminProfilesPage() {
     try {
       setActionLoadingId(profile.id)
       setToast(null)
-      await runProfileAction(profile.id, action)
+      const result = await runProfileAction(profile.id, action)
       setPendingAction(null)
       setDeleteConfirmation('')
-      setToast({ type: 'success', message: getSuccessMessage(action) })
+      setToast({ type: 'success', message: result.warning || getSuccessMessage(action) })
       await loadProfiles({ keepToast: true })
     } catch (error) {
       setToast({
@@ -328,6 +340,7 @@ export default function AdminProfilesPage() {
                   const self = isSelf(item)
                   const lastActiveAdmin = wouldRemoveLastActiveAdmin(item)
                   const actionDisabled = actionLoadingId === item.id
+                  const blockedReason = getBlockedReason({ self, lastActiveAdmin })
 
                   return (
                     <tr key={item.id}>
@@ -391,6 +404,9 @@ export default function AdminProfilesPage() {
                             Supprimer
                           </button>
                         </div>
+                        {blockedReason ? (
+                          <small className="admin-profiles-actionHint">{blockedReason}</small>
+                        ) : null}
                       </td>
                     </tr>
                   )
@@ -411,6 +427,7 @@ export default function AdminProfilesPage() {
               const self = isSelf(item)
               const lastActiveAdmin = wouldRemoveLastActiveAdmin(item)
               const actionDisabled = actionLoadingId === item.id
+              const blockedReason = getBlockedReason({ self, lastActiveAdmin })
 
               return (
                 <MobileDetailCard
@@ -423,7 +440,7 @@ export default function AdminProfilesPage() {
                   items={[
                     { label: 'Création', value: formatDate(item.created_at) },
                     { label: 'Mise à jour', value: formatDate(item.updated_at) },
-                    { label: 'Sécurité', value: self ? 'Votre profil' : lastActiveAdmin ? 'Dernier admin actif' : 'Action possible', full: true },
+                    { label: 'Sécurité', value: blockedReason || 'Action possible', full: true },
                   ]}
                   actions={(
                     <>

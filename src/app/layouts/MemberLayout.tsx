@@ -39,7 +39,7 @@ export function MemberLayout() {
             </NavLink>
           ))}
 
-          {profile && ['admin', 'dirigeant'].includes(profile.role) ? (
+          {profile && ['admin', 'responsable_technique'].includes(profile.role) ? (
             <NavLink
               to="/admin"
               className={({ isActive }) =>
@@ -70,7 +70,7 @@ export function MemberLayout() {
         <header className="member-topbar">
           <div>
             <div className="member-topbar__eyebrow">Espace membre sécurisé</div>
-            <h1>{profile?.role === 'admin' ? 'Pilotage complet BCVB' : 'Espace de travail BCVB'}</h1>
+            <h1>{['admin', 'responsable_technique'].includes(profile?.role || '') ? 'Pilotage complet BCVB' : 'Espace de travail BCVB'}</h1>
           </div>
           <div className="member-topbar__right">
             <span className="member-chip">Accès limité</span>

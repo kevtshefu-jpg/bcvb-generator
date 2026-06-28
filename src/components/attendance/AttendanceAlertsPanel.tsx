@@ -1,4 +1,5 @@
 import type { AttendanceAlert } from "../../types/attendance";
+import { EmptyState } from "../ui/ResponsiveDataView";
 
 export function AttendanceAlertsPanel({ alerts }: { alerts: AttendanceAlert[] }) {
   return (
@@ -15,7 +16,12 @@ export function AttendanceAlertsPanel({ alerts }: { alerts: AttendanceAlert[] })
             <p>{alert.recommendedAction}</p>
           </article>
         ))}
-        {alerts.length === 0 && <p>Aucune alerte critique pour cette séance.</p>}
+        {alerts.length === 0 && (
+          <EmptyState
+            title="Aucune alerte critique"
+            description="La séance ne présente pas de point bloquant. Continue le suivi régulier des présences."
+          />
+        )}
       </div>
     </aside>
   );

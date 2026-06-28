@@ -15,7 +15,7 @@ export const SITE_ROLES = [
 ]
 
 const allRoles = SITE_ROLES
-const adminOnly = ['admin']
+const adminOnly = ['admin', 'responsable_technique']
 const helpRoles = ['admin', 'coach', 'dirigeant', 'responsable_technique', 'parent_referent', 'team_staff', 'joueur', 'parent', 'benevole', 'arbitre', 'otm', 'member', 'membre']
 const libraryRoles = helpRoles
 const coachRoles = ['admin', 'coach', 'responsable_technique']

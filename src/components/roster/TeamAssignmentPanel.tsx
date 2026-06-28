@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { MembershipRole, RosterImportRow, RosterPermissionSet, Team } from "../../types/roster";
 import { buildPlanningContextFromTeam } from "../../lib/roster/rosterScoring";
 
@@ -68,9 +69,15 @@ export function TeamAssignmentPanel({
         <button className="bcvb-button-primary" type="button" disabled={!permissions.canAssignTeams} onClick={() => onPatchRows({ targetTeamName: team.name || "Équipe BCVB" })}>
           Affecter plusieurs joueurs
         </button>
-        <button className="bcvb-button-secondary" type="button" disabled={!permissions.canCreateTeam}>
-          Créer équipe
-        </button>
+        {permissions.canCreateTeam ? (
+          <Link className="bcvb-button-secondary" to="/club/equipes">
+            Créer équipe
+          </Link>
+        ) : (
+          <button className="bcvb-button-secondary" type="button" disabled title="Création d’équipe réservée aux rôles autorisés">
+            Créer équipe
+          </button>
+        )}
       </div>
       <div className="roster-planning-context">
         <span>Contexte planification</span>

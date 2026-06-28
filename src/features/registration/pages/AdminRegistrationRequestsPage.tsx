@@ -4,6 +4,7 @@ import { ROLE_LABELS, normalizeRole } from '../../../config/roles'
 import { useAuth } from '../../auth/context/AuthContext'
 import RegistrationDiagnosticsPanel from '../components/RegistrationDiagnosticsPanel'
 import { useRegistrationRequests } from '../hooks/useRegistrationRequests'
+import { EmptyState } from '../../../components/ui/ResponsiveDataView'
 
 import './AdminRegistrationRequestsPage.css'
 
@@ -122,7 +123,7 @@ function getReadableError(error?: string | null) {
   if (!error) return null
 
   if (error.includes('Edge Function returned a non-2xx status code')) {
-    return "La création du compte a échoué côté Supabase Edge Function. Vérifie les logs de la fonction create-approved-user dans Supabase."
+    return "La création du compte n’a pas abouti. Vérifie les informations du demandeur puis consulte le diagnostic admin si l’erreur persiste."
   }
 
   return error
@@ -343,8 +344,14 @@ export default function AdminRegistrationRequestsPage() {
 
       {readableError ? (
         <article className="admin-registration-message admin-registration-message--error">
-          <strong>Erreur de traitement</strong>
+          <strong>Action non finalisée</strong>
           <p>{readableError}</p>
+          {error ? (
+            <details>
+              <summary>Détail technique admin</summary>
+              <pre>{error}</pre>
+            </details>
+          ) : null}
         </article>
       ) : null}
 
@@ -431,15 +438,25 @@ export default function AdminRegistrationRequestsPage() {
 
       {loading ? (
         <article className="admin-registration-page__empty">
-          Chargement des demandes d’inscription…
+          <EmptyState
+            title="Chargement des inscriptions"
+            description="Récupération des demandes en cours. La liste sera disponible dans un instant."
+          />
         </article>
       ) : requests.length === 0 ? (
         <article className="admin-registration-page__empty">
-          Aucune demande d’inscription pour le moment.
+          <EmptyState
+            title="Aucune demande en attente"
+            description="Les nouvelles inscriptions publiques apparaîtront ici automatiquement après leur envoi."
+          />
         </article>
       ) : visibleRequests.length === 0 ? (
         <article className="admin-registration-page__empty">
-          Aucune demande ne correspond aux filtres actuels.
+          <EmptyState
+            title="Aucun résultat avec ces filtres"
+            description="Change le statut, la recherche ou réinitialise les filtres pour retrouver une demande."
+            action={<button type="button" onClick={resetFilters}>Réinitialiser les filtres</button>}
+          />
         </article>
       ) : (
         <div className="admin-registration-page__grid">

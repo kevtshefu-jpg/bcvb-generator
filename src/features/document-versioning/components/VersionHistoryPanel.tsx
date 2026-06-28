@@ -1,5 +1,6 @@
 import type { DocumentVersion } from "../types/version.types";
 import { downloadSource } from "../services/documentVersionService";
+import { EmptyState } from "../../../components/ui/ResponsiveDataView";
 
 type VersionHistoryPanelProps = {
   versions: DocumentVersion[];
@@ -15,7 +16,10 @@ export default function VersionHistoryPanel({ versions, onRestore }: VersionHist
       </header>
 
       {versions.length === 0 ? (
-        <p className="version-history-panel__empty">Aucune version enregistrée pour ce document.</p>
+        <EmptyState
+          title="Aucune version enregistrée"
+          description="Les sauvegardes apparaîtront ici après une restauration, une republication ou une évolution du document source."
+        />
       ) : (
         <div className="version-history-list">
           {versions.map((version) => (

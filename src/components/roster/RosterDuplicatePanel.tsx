@@ -1,6 +1,6 @@
 import type { RosterImportRow, RosterPermissionSet } from "../../types/roster";
 import { getDuplicateRows } from "../../lib/roster/rosterDuplicate";
-import { MobileDetailCard, ResponsiveDataList } from "../ui/ResponsiveDataView";
+import { EmptyState, MobileDetailCard, ResponsiveDataList } from "../ui/ResponsiveDataView";
 
 export function RosterDuplicatePanel({
   rows,
@@ -47,7 +47,14 @@ export function RosterDuplicatePanel({
         </table>
       </div>
       <div className="responsive-data-mobile">
-        <ResponsiveDataList empty={<p>Aucun doublon probable détecté.</p>}>
+        <ResponsiveDataList
+          empty={(
+            <EmptyState
+              title="Aucun doublon probable"
+              description="Les lignes importées semblent distinctes. Tu peux poursuivre la validation du fichier."
+            />
+          )}
+        >
           {duplicates.map((row) => (
             <MobileDetailCard
               key={row.id}

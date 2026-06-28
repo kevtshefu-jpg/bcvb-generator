@@ -37,6 +37,55 @@ function normalizeEmail(value: unknown) {
   return normalizeText(value).toLowerCase()
 }
 
+function normalizeRole(value: unknown) {
+  const role = normalizeText(value).toLowerCase()
+  if (role === 'technical_manager') return 'responsable_technique'
+  if (role === 'membre') return 'member'
+  return role || 'member'
+}
+
+function isAdminRole(value: unknown) {
+  return ['admin', 'responsable_technique'].includes(normalizeRole(value))
+}
+
+async function assertAdminDiagnosticCaller(
+  supabaseAdmin: ReturnType<typeof createClient> | null,
+  request: Request,
+  serviceRoleKey?: string,
+) {
+  const token = normalizeText(request.headers.get('Authorization')).replace(/^Bearer\s+/i, '')
+
+  if (!supabaseAdmin || !serviceRoleKey) {
+    throw new Error('Configuration Supabase incomplète pour lancer le diagnostic.')
+  }
+
+  if (!token) {
+    throw new Error('Session admin manquante pour lancer le diagnostic.')
+  }
+
+  if (token === serviceRoleKey) return
+
+  const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token)
+
+  if (userError || !userData.user) {
+    throw new Error('Session invalide ou expirée.')
+  }
+
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('id, role, is_active')
+    .eq('id', userData.user.id)
+    .maybeSingle()
+
+  if (profileError) {
+    throw new Error(`Impossible de vérifier les droits diagnostic : ${profileError.message}`)
+  }
+
+  if (!profile || profile.is_active === false || !isAdminRole(profile.role)) {
+    throw new Error('Droits administrateur insuffisants pour lancer le diagnostic.')
+  }
+}
+
 function getAdminEmail() {
   return normalizeEmail(Deno.env.get('ADMIN_NOTIFICATION_EMAIL')) || 'kevtshefu@gmail.com'
 }
@@ -190,6 +239,18 @@ Deno.serve(async (request) => {
     const fullName = buildFullName(payload)
 
     if (payload.diagnostic === true) {
+      try {
+        await assertAdminDiagnosticCaller(supabaseAdmin, request, serviceRoleKey || undefined)
+      } catch (error) {
+        console.warn('[notify-registration-created] diagnostic access denied:', error)
+        return jsonResponse(
+          {
+            ok: false,
+            error: error instanceof Error ? error.message : 'Accès refusé.',
+          },
+          403,
+        )
+      }
       return jsonResponse({ ok: true, diagnostic: true, results: { skipped: 'diagnostic' } })
     }
 

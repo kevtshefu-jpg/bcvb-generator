@@ -358,11 +358,15 @@
   line-height: 1.45;
 }
 
-.quality-breakdown__row button {
+.quality-breakdown__row button,
+.quality-breakdown__action {
   justify-self: start;
   min-height: 32px;
   padding: 0 10px;
   font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
 }
 
 .quality-warning-list,

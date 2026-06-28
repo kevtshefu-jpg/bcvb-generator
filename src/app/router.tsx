@@ -105,7 +105,7 @@ import PlatformPage from '../features/admin/pages/PlatformPage'
 import UnlockManagementPage from '../features/admin/pages/UnlockManagementPage'
 import AdminRegistrationRequestsPage from '../features/registration/pages/AdminRegistrationRequestsPage'
 import AdminProfileRequestsPage from '../features/admin/pages/AdminProfileRequestsPage'
-import AdminProfilesPage from '../features/admin/pages/AdminProfilesPage'
+import AdminMembersPage from '../features/admin/pages/AdminMembersPage'
 import AdminAIDocumentsPage from '../features/admin/pages/AdminAIDocumentsPage'
 
 // =========================
@@ -298,7 +298,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'admin/membres',
-            element: <AdminProfilesPage />,
+            element: <AdminMembersPage />,
           },
         ],
       },
@@ -542,10 +542,10 @@ export const router = createBrowserRouter([
       },
 
       // =========================
-      // ADMIN UNIQUEMENT — PARAMÉTRAGE / DATA / IA
+      // Admin uniquement — paramétrage, données et studio documentaire
       // =========================
       {
-        element: <RequireAuth allowedRoles={['admin']} />,
+        element: <RequireAuth allowedRoles={['admin', 'responsable_technique']} />,
         children: [
           {
             path: 'admin',
@@ -576,7 +576,7 @@ export const router = createBrowserRouter([
             element: <ImportBatchValidationPage />,
           },
 
-          // IA DOCUMENTAIRE
+          // Studio documentaire admin
           {
             path: 'admin/ia-documentaire',
             element: <AdminAIDocumentsPage />,

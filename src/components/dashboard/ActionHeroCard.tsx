@@ -81,10 +81,10 @@ export default function ActionHeroCard({ role }: ActionHeroCardProps) {
         <p className="action-hero-card__description">{heroAction.description}</p>
       </div>
 
-      <button className="action-hero-card__button">
+      <span className="action-hero-card__button">
         {heroAction.cta}
         <span className="action-hero-card__arrow" aria-label="Aller">→</span>
-      </button>
+      </span>
     </Link>
   )
 }

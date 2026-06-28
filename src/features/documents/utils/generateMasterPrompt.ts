@@ -33,7 +33,7 @@ export function generateMasterPrompt(input: GenerateMasterPromptInput) {
   const basePrompt = plan.prompts[0]?.prompt ?? ''
 
   return `
-PROMPT MAÎTRE QUALITÉ ÉDITEUR — BCVB RÉFÉRENTIEL
+CADRE MAÎTRE QUALITÉ ÉDITEUR — BCVB RÉFÉRENTIEL
 
 Objectif : produire en une seule réponse un document final complet, premium, structuré et directement collable dans le site BCVB.
 

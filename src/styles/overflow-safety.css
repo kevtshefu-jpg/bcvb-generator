@@ -574,7 +574,7 @@ body {
   background: #ffffff;
   border: 1px solid rgba(7, 16, 31, 0.1);
   box-shadow: 0 14px 30px rgba(7, 16, 31, 0.08);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: normal;
 }
 
@@ -684,7 +684,7 @@ body {
   font-size: 0.9rem;
   font-weight: 800;
   line-height: 1.35;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: normal;
 }
 
@@ -732,7 +732,7 @@ body {
   font-size: 0.74rem;
   font-weight: 900;
   line-height: 1.2;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   text-align: center;
   text-transform: uppercase;
 }

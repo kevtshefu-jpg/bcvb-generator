@@ -40,8 +40,8 @@ export default function CommissionDemoPage() {
         <h1 className="bcvb-title-xl">{PRESENTATION_LABELS.appTitle}</h1>
         <p className="bcvb-subtitle">{PRESENTATION_LABELS.appSubtitle}</p>
         <div className="commission-demo-actions">
-          <Link className="bcvb-button-primary" to="/admin/ia-documentaire">
-            Ouvrir le Studio éditorial
+          <Link className="bcvb-button-primary" to="/connexion">
+            Se connecter pour ouvrir le studio
           </Link>
           <Link className="bcvb-button-secondary" to="/bibliotheque">
             Voir la bibliothèque

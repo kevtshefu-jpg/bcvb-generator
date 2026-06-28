@@ -11,11 +11,11 @@ export default function LibraryEmptyState({
 
   return (
     <article className="library-empty">
-      <h3>{hasDocuments ? 'Aucun résultat' : 'Aucun document visible'}</h3>
+      <h3>{hasDocuments ? 'Aucun document trouvé' : 'Bibliothèque à alimenter'}</h3>
       <p>
         {hasDocuments
-          ? 'Aucun document ne correspond aux filtres actuels.'
-          : 'Aucun document ne correspond aux filtres ou aux droits du profil connecté.'}
+          ? 'Ajuste la recherche, change la catégorie ou efface les filtres pour élargir la sélection.'
+          : 'Les documents apparaîtront ici dès qu’ils seront publiés pour ton rôle ou ta catégorie.'}
       </p>
     </article>
   )

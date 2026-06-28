@@ -21,7 +21,7 @@ export default function QualityBreakdown({ score }: QualityBreakdownProps) {
               <span style={{ width: `${item.value}%` }} />
             </div>
             <p>{item.label} : {item.value}/100 — {item.explanation}</p>
-            <button type="button">{item.action}</button>
+            <span className="quality-breakdown__action">{item.action}</span>
           </article>
         );
       })}

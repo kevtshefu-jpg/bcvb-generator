@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Link } from 'react-router-dom'
+import { formatUserFacingError } from '../../../lib/userFacingError'
 
 function getDefaultPathByRole(role?: string | null) {
-  if (role === 'admin') return '/admin'
+  if (role === 'admin' || role === 'responsable_technique') return '/admin'
   if (role === 'dirigeant') return '/club'
   if (role === 'coach') return '/dashboard'
   return '/dashboard'
@@ -40,7 +41,7 @@ export default function LoginPage() {
     const result = await signIn(email, password)
 
     if (result.error) {
-      setError(result.error)
+      setError(formatUserFacingError(result.error, 'Connexion impossible. Vérifie ton email, ton mot de passe ou demande un nouveau lien d’accès.'))
       setSubmitting(false)
       return
     }
@@ -70,7 +71,11 @@ export default function LoginPage() {
           required
         />
 
-        {error && <div style={{ color: 'crimson' }}>{error}</div>}
+        {error && (
+          <div role="alert" style={{ color: 'crimson', lineHeight: 1.45 }}>
+            {error}
+          </div>
+        )}
 
         <button type="submit" disabled={submitting}>
           {submitting ? 'Connexion...' : 'Se connecter'}

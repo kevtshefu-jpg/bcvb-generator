@@ -1,6 +1,5 @@
 // src/components/auth/RequireRole.tsx
 
-import { Navigate } from 'react-router-dom'
 import {
   isAdmin,
   isDirigeant,
@@ -47,7 +46,16 @@ export function RequireRole({ role, allow, children }: RequireRoleProps) {
               : false
 
   if (!authorized) {
-    return <Navigate to="/" replace />
+    return (
+      <main className="bcvb-page-loading">
+        <div className="bcvb-loading-card">
+          <p className="bcvb-eyebrow">Accès refusé</p>
+          <h1>Droits insuffisants</h1>
+          <p>Cette action est réservée aux profils autorisés par le club.</p>
+          <a className="bcvb-button" href="/dashboard">Retour au tableau de bord</a>
+        </div>
+      </main>
+    )
   }
 
   return <>{children}</>

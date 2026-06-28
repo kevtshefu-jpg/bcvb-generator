@@ -12,7 +12,7 @@ Le studio reste responsable du parcours BCVB : créer, transformer, scorer, corr
 - `EditorialStudioModeSelector` : choix clair entre création, transformation, amélioration, contrôle qualité et export.
 - `EditorialStudioWorkflow` : parcours compact Intention, Contenu, Amélioration, Contrôle qualité, Export.
 - `EditorialStudioForm` : source OCR / texte brut et cadrage documentaire.
-- `EditorialStudioPromptPanel` : cadre initial, aides et raccourcis de consignes.
+- Panneau de cadre initial : aides et raccourcis de consignes.
 - `EditorialStudioPreview` : affichage du document final.
 - `EditorialStudioExportActions` : boutons PDF, Markdown et bibliothèque.
 - `EditorialStudioQualityPanel` : statut, score et sous-scores actionnables.

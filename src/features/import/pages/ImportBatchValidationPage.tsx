@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { fetchImportBatches } from '../services/importValidationService'
 import { useImportValidation } from '../hooks/useImportValidation'
-import { MobileDetailCard, ResponsiveDataList } from '../../../components/ui/ResponsiveDataView'
+import { EmptyState, MobileDetailCard, ResponsiveDataList } from '../../../components/ui/ResponsiveDataView'
+import { formatUserFacingError } from '../../../lib/userFacingError'
 
 type BatchRow = {
   id: string
@@ -37,7 +38,7 @@ export default function ImportBatchValidationPage() {
         if (active) setBatches(data as BatchRow[])
       } catch (err) {
         if (active) {
-          setBatchesError(err instanceof Error ? err.message : 'Erreur chargement batches')
+          setBatchesError(formatUserFacingError(err, 'Les lots d’import ne peuvent pas être chargés pour le moment. Recharge la page ou réessaie plus tard.'))
         }
       } finally {
         if (active) setBatchesLoading(false)
@@ -72,8 +73,18 @@ export default function ImportBatchValidationPage() {
       <article className="dashboard-panelCard">
         <h3 className="dashboard-panelCard__title">Choisir un batch</h3>
 
-        {batchesLoading && <p>Chargement des batches...</p>}
-        {batchesError && <p>{batchesError}</p>}
+        {batchesLoading && (
+          <EmptyState
+            title="Chargement des lots"
+            description="Récupération des imports enregistrés en cours."
+          />
+        )}
+        {batchesError && (
+          <EmptyState
+            title="Lots indisponibles"
+            description={batchesError}
+          />
+        )}
 
         {!batchesLoading && !batchesError && (
           <div style={{ marginTop: 16 }}>
@@ -93,8 +104,25 @@ export default function ImportBatchValidationPage() {
         )}
       </article>
 
-      {loading && <p>Chargement des lignes...</p>}
-      {error && <p>{error}</p>}
+      {loading && (
+        <EmptyState
+          title="Chargement des lignes"
+          description="Le lot sélectionné est en cours de préparation pour validation."
+        />
+      )}
+      {error && (
+        <EmptyState
+          title="Validation interrompue"
+          description={error}
+        />
+      )}
+
+      {!loading && selectedBatchId && rows.length === 0 && !error && (
+        <EmptyState
+          title="Aucune ligne dans ce lot"
+          description="Sélectionne un autre lot ou relance l’import si le fichier devait contenir des profils."
+        />
+      )}
 
       {rows.length > 0 && (
         <article className="dashboard-panelCard">

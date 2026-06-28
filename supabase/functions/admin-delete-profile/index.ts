@@ -177,16 +177,8 @@ async function deleteProfileAndAuthUser(
   supabaseAdmin: ReturnType<typeof createClient>,
   profileId: string,
 ) {
-  const { error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .delete()
-    .eq('id', profileId)
-
-  if (profileError) {
-    throw new Error(`Suppression du profil impossible : ${profileError.message}`)
-  }
-
   const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(profileId)
+  let warning: string | null = null
 
   if (authError) {
     if (isMissingAuthUserError(authError.message)) {
@@ -195,15 +187,32 @@ async function deleteProfileAndAuthUser(
         authError.message,
       )
 
-      return {
-        warning: 'Profil supprimé. Le compte Auth était déjà absent.',
-      }
-    }
+      warning = 'Profil supprimé. Le compte Auth était déjà absent.'
+    } else {
+      const { data: stillExists } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .eq('id', profileId)
+        .maybeSingle()
 
-    throw new Error(`Profil supprimé, mais suppression du compte Auth impossible : ${authError.message}`)
+      if (stillExists) {
+        throw new Error(`Suppression du compte Auth impossible, profil conservé : ${authError.message}`)
+      }
+
+      throw new Error(`Suppression du compte Auth impossible : ${authError.message}`)
+    }
   }
 
-  return null
+  const { error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .delete()
+    .eq('id', profileId)
+
+  if (profileError) {
+    throw new Error(`Compte Auth supprimé, mais suppression du profil impossible : ${profileError.message}`)
+  }
+
+  return warning ? { warning } : null
 }
 
 async function writeAuditLog(

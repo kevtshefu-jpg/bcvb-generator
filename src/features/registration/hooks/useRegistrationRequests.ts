@@ -4,6 +4,7 @@ import {
   approveRegistrationAndCreateUser,
   rejectRegistrationRequest,
 } from '../services/registrationApprovalService'
+import { formatUserFacingError } from '../../../lib/userFacingError'
 
 type RegistrationRequestActionInput = {
   id: string
@@ -28,7 +29,7 @@ export function useRegistrationRequests(approvedBy?: string) {
         if (active) setRequests(rows)
       } catch (err) {
         if (active) {
-          setError(err instanceof Error ? err.message : 'Erreur chargement inscriptions')
+          setError(formatUserFacingError(err, 'Les demandes d’inscription ne peuvent pas être chargées pour le moment. Réessaie dans quelques instants.'))
         }
       } finally {
         if (active) setLoading(false)
@@ -62,7 +63,7 @@ export function useRegistrationRequests(approvedBy?: string) {
       const rows = await fetchRegistrationRequests()
       setRequests(rows)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur approbation')
+      setError(formatUserFacingError(err, 'La demande n’a pas pu être approuvée. Vérifie le profil puis relance l’action.'))
     }
   }
 
@@ -74,7 +75,7 @@ export function useRegistrationRequests(approvedBy?: string) {
       const rows = await fetchRegistrationRequests()
       setRequests(rows)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur refus')
+      setError(formatUserFacingError(err, 'La demande n’a pas pu être refusée. Réessaie ou recharge la liste.'))
     }
   }
 

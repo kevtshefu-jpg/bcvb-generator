@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { LogisticsStatus, PlayerLogisticsAvailability, TeamLogisticsEvent } from "../../types/parentReferent";
 import { getLogisticsStatusLabel, sanitizeParentReferentNote } from "../../lib/parentReferents/parentReferentLogistics";
-import { MobileDetailCard, ResponsiveDataList } from "../ui/ResponsiveDataView";
+import { EmptyState, MobileDetailCard, ResponsiveDataList } from "../ui/ResponsiveDataView";
 
 const statusOptions: LogisticsStatus[] = ["present", "absent", "to_confirm", "not_filled"];
 
@@ -141,7 +141,14 @@ export function ParentReferentAvailabilityPanel({
         </table>
       </div>
       <div className="responsive-data-mobile">
-        <ResponsiveDataList empty={<p>Aucune disponibilité logistique à afficher.</p>}>
+        <ResponsiveDataList
+          empty={(
+            <EmptyState
+              title="Aucune disponibilité à afficher"
+              description="Les réponses famille apparaîtront ici dès que l’événement ou la liste joueurs sera renseigné."
+            />
+          )}
+        >
           {availabilities.map((availability) => (
             <MobileDetailCard
               key={availability.id}

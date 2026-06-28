@@ -6,6 +6,7 @@ import {
   updateImportRowValidation,
   type ImportRowDb,
 } from '../services/importValidationService'
+import { formatUserFacingError } from '../../../lib/userFacingError'
 
 export function useImportValidation(batchId?: string) {
   const [rows, setRows] = useState<ImportRowDb[]>([])
@@ -29,7 +30,7 @@ export function useImportValidation(batchId?: string) {
         if (active) setRows(data)
       } catch (err) {
         if (active) {
-          setError(err instanceof Error ? err.message : 'Erreur chargement batch')
+          setError(formatUserFacingError(err, 'Les lignes du lot ne peuvent pas être chargées pour le moment. Réessaie après avoir sélectionné le lot.'))
         }
       } finally {
         if (active) setLoading(false)
@@ -49,7 +50,7 @@ export function useImportValidation(batchId?: string) {
       const updated = await updateImportRowValidation(rowId, true, note)
       setRows((current) => current.map((row) => (row.id === rowId ? updated : row)))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur validation ligne')
+      setError(formatUserFacingError(err, 'Cette ligne n’a pas pu être validée. Vérifie les informations puis relance la validation.'))
     }
   }
 
@@ -59,7 +60,7 @@ export function useImportValidation(batchId?: string) {
       const updated = await updateImportRowValidation(rowId, false, note)
       setRows((current) => current.map((row) => (row.id === rowId ? updated : row)))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur dévalidation ligne')
+      setError(formatUserFacingError(err, 'Cette ligne n’a pas pu être remise à contrôler. Recharge le lot puis réessaie.'))
     }
   }
 
@@ -75,7 +76,7 @@ export function useImportValidation(batchId?: string) {
 
       setRows((current) => current.map((item) => (item.id === rowId ? updated : item)))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur import profil')
+      setError(formatUserFacingError(err, 'Le profil n’a pas pu être créé depuis cette ligne. Vérifie que la ligne est complète et validée.'))
     }
   }
 

@@ -63,10 +63,9 @@ export function PlayerProfile({
         <p>Responsable technique : {passport.technicalManagerNotes || "À renseigner"}</p>
       </section>
       <div className="coach-actions">
-        <button className="bcvb-button-secondary" type="button" disabled={!permissions.canArchivePlayer}>Archiver joueur</button>
-        <button className="bcvb-button-secondary" type="button" disabled={!permissions.canDeletePlayer}>Supprimer joueur</button>
+        <button className="bcvb-button-secondary" type="button" disabled title="Archivage à finaliser depuis le workflow effectifs">Archiver joueur</button>
+        <button className="bcvb-button-secondary" type="button" disabled title="Suppression à réaliser depuis la gestion sécurisée des membres">Supprimer joueur</button>
       </div>
     </aside>
   );
 }
-

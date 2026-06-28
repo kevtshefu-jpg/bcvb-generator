@@ -20,6 +20,7 @@ export function DirectorDocumentQuality({
   }), {});
   const canValidate = canValidateDocument(userRole);
   const canCorrect = canRequestCorrection(userRole);
+  const canOpenEditorialStudio = userRole === "admin";
 
   return (
     <section className="director-card" id="directors-quality">
@@ -48,8 +49,16 @@ export function DirectorDocumentQuality({
             <b>{document.qualityScore || 0}/100</b>
             <DirectorStatusBadge status={document.status} />
             <div className="director-actions">
-              <button type="button" disabled={!canCorrect}>Demander correction</button>
-              <button type="button" disabled={!canValidate || !document.canValidate}>Valider pour publication</button>
+              {canCorrect && canOpenEditorialStudio ? (
+                <a href="/admin/studio-editorial">Demander correction</a>
+              ) : (
+                <button type="button" disabled title={canCorrect ? "Correction à traiter depuis le studio éditorial admin" : "Action réservée aux validateurs documentaires"}>Demander correction</button>
+              )}
+              {canValidate && document.canValidate && canOpenEditorialStudio ? (
+                <a href="/admin/studio-editorial">Valider pour publication</a>
+              ) : (
+                <button type="button" disabled title={canValidate && document.canValidate ? "Validation finale à réaliser depuis le studio éditorial admin" : "Validation disponible quand le document est prêt et que le rôle le permet"}>Valider pour publication</button>
+              )}
             </div>
           </article>
         ))}

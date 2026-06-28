@@ -1,5 +1,5 @@
 import type { FamilyContact, RosterPermissionSet } from "../../types/roster";
-import { MobileDetailCard, ResponsiveDataList } from "../ui/ResponsiveDataView";
+import { EmptyState, MobileDetailCard, ResponsiveDataList } from "../ui/ResponsiveDataView";
 
 export function FamilyContactsPanel({
   contacts,
@@ -44,7 +44,14 @@ export function FamilyContactsPanel({
         </table>
       </div>
       <div className="responsive-data-mobile">
-        <ResponsiveDataList empty={<p>Aucun contact famille importé.</p>}>
+        <ResponsiveDataList
+          empty={(
+            <EmptyState
+              title="Aucun contact famille"
+              description="Ajoute ou importe les responsables famille pour faciliter les communications et les rôles référents."
+            />
+          )}
+        >
           {contacts.map((contact) => (
             <MobileDetailCard
               key={contact.id}

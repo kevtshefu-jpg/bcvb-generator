@@ -4,6 +4,7 @@ import type { UserRole } from '../context/AuthContext'
 import { useStableSession } from '../../../hooks/useStableSession'
 import { PRESENTATION_MODE } from '../../../config/presentationMode'
 import { normalizeRole } from '../../../config/roles'
+import { formatUserFacingError } from '../../../lib/userFacingError'
 
 type RequireAuthProps = {
   allowedRoles?: UserRole[]
@@ -32,7 +33,7 @@ export default function RequireAuth({ allowedRoles }: RequireAuthProps) {
         <div className="bcvb-loading-card">
           <p className="bcvb-eyebrow">Session</p>
           <h1>Impossible de charger l’espace membre</h1>
-          <p>{error}</p>
+          <p>{formatUserFacingError(error, 'Ta session n’a pas pu être vérifiée. Reconnecte-toi pour relancer l’accès sécurisé.')}</p>
           <a className="bcvb-button" href="/connexion">Se reconnecter</a>
         </div>
       </main>
@@ -75,7 +76,16 @@ export default function RequireAuth({ allowedRoles }: RequireAuthProps) {
         </main>
       )
     }
-    return <Navigate to="/" replace />
+    return (
+      <main className="bcvb-page-loading">
+        <div className="bcvb-loading-card">
+          <p className="bcvb-eyebrow">Accès refusé</p>
+          <h1>Section réservée</h1>
+          <p>Cette page est réservée aux administrateurs et responsables techniques autorisés.</p>
+          <a className="bcvb-button" href="/dashboard">Retour au tableau de bord</a>
+        </div>
+      </main>
+    )
   }
 
   if (allowedRoles && !profile?.role) {

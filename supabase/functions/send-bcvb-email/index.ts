@@ -1,3 +1,5 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -34,6 +36,64 @@ function normalizeText(value: unknown) {
 
 function normalizeEmail(value: unknown) {
   return normalizeText(value).toLowerCase()
+}
+
+function normalizeRole(value: unknown) {
+  const role = normalizeText(value).toLowerCase()
+  if (role === 'technical_manager') return 'responsable_technique'
+  if (role === 'membre') return 'member'
+  return role || 'member'
+}
+
+function isAdminRole(value: unknown) {
+  return ['admin', 'responsable_technique'].includes(normalizeRole(value))
+}
+
+function getBearerToken(request: Request) {
+  return normalizeText(request.headers.get('Authorization')).replace(/^Bearer\s+/i, '')
+}
+
+async function assertTrustedEmailCaller(request: Request) {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  const token = getBearerToken(request)
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error('Configuration Supabase incomplète pour vérifier l’appel email.')
+  }
+
+  if (!token) {
+    throw new Error('Session requise pour envoyer un email.')
+  }
+
+  if (token === serviceRoleKey) return
+
+  const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
+
+  const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token)
+
+  if (userError || !userData.user) {
+    throw new Error('Session invalide ou expirée.')
+  }
+
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('id, role, is_active')
+    .eq('id', userData.user.id)
+    .maybeSingle()
+
+  if (profileError) {
+    throw new Error(`Impossible de vérifier les droits email : ${profileError.message}`)
+  }
+
+  if (!profile || profile.is_active === false || !isAdminRole(profile.role)) {
+    throw new Error('Droits insuffisants pour envoyer un email serveur.')
+  }
 }
 
 function isValidEmail(value: string) {
@@ -232,18 +292,25 @@ Deno.serve(async (request) => {
   }
 
   try {
+    await assertTrustedEmailCaller(request)
     const payload = (await request.json()) as SendEmailPayload
     const data = await sendBrevoEmail(payload)
 
     return jsonResponse({ ok: true, data })
   } catch (error) {
     console.error('[send-bcvb-email] email failed:', error)
+    const message = error instanceof Error ? error.message : 'Erreur email inconnue.'
+    const status =
+      message.toLowerCase().includes('session') || message.toLowerCase().includes('droits')
+        ? 403
+        : 500
+
     return jsonResponse(
       {
         ok: false,
-        error: error instanceof Error ? error.message : 'Erreur email inconnue.',
+        error: message,
       },
-      500,
+      status,
     )
   }
 })

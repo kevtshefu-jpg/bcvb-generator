@@ -119,7 +119,7 @@ export function buildBCVBTransformationPrompt({
   const standard = getDocumentStandard(resolvedFamily)
 
   return `
-PROMPT DE TRANSFORMATION BCVB — DOCUMENT ÉDITEUR
+CADRE DE TRANSFORMATION BCVB — DOCUMENT ÉDITEUR
 
 Mission :
 Transformer le document source ci-dessous en document BCVB structuré, enrichi, professionnel et directement collable dans le site BCVB Référentiel.

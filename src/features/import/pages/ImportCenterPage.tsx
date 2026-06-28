@@ -10,7 +10,8 @@ import {
   insertImportRows,
 } from '../services/importBatchService'
 import type { NormalizedImportRow } from '../utils/normalizeImportRows'
-import { MobileDetailCard, ResponsiveDataList } from '../../../components/ui/ResponsiveDataView'
+import { EmptyState, MobileDetailCard, ResponsiveDataList } from '../../../components/ui/ResponsiveDataView'
+import { formatUserFacingError, getTechnicalErrorDetail } from '../../../lib/userFacingError'
 
 export default function ImportCenterPage() {
   const { user } = useAuth()
@@ -22,6 +23,7 @@ export default function ImportCenterPage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [technicalError, setTechnicalError] = useState<string | null>(null)
 
   const activeTemplate = useMemo(
     () => importTemplates.find((template) => template.type === templateType)!,
@@ -34,6 +36,7 @@ export default function ImportCenterPage() {
     try {
       setLoading(true)
       setError(null)
+      setTechnicalError(null)
       setMessage(null)
 
       const lowerName = file.name.toLowerCase()
@@ -54,7 +57,8 @@ export default function ImportCenterPage() {
     } catch (err) {
       setRows([])
       setFileName('')
-      setError(err instanceof Error ? err.message : "Erreur pendant l'import")
+      setError(formatUserFacingError(err, 'Le fichier n’a pas pu être analysé. Vérifie le format, les colonnes obligatoires et réessaie.'))
+      setTechnicalError(getTechnicalErrorDetail(err))
     } finally {
       setLoading(false)
     }
@@ -66,6 +70,7 @@ export default function ImportCenterPage() {
     try {
       setSaving(true)
       setError(null)
+      setTechnicalError(null)
       setMessage(null)
 
       const lowerName = fileName.toLowerCase()
@@ -81,7 +86,8 @@ export default function ImportCenterPage() {
 
       setMessage(`Batch enregistré avec succès : ${batch.id}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur d'enregistrement")
+      setError(formatUserFacingError(err, 'Le lot d’import n’a pas pu être enregistré. Vérifie ta connexion puis réessaie.'))
+      setTechnicalError(getTechnicalErrorDetail(err))
     } finally {
       setSaving(false)
     }
@@ -160,8 +166,26 @@ export default function ImportCenterPage() {
 
         {loading && <p style={{ marginTop: 12 }}>Analyse du fichier…</p>}
         {message && <p style={{ marginTop: 12 }}>{message}</p>}
-        {error && <p style={{ marginTop: 12 }}>{error}</p>}
+        {error && (
+          <div className="responsive-empty-state" style={{ marginTop: 12 }}>
+            <strong>Import interrompu</strong>
+            <p>{error}</p>
+            {technicalError && (
+              <details>
+                <summary>Détail technique admin</summary>
+                <pre>{technicalError}</pre>
+              </details>
+            )}
+          </div>
+        )}
       </article>
+
+      {!loading && rows.length === 0 && !error && (
+        <EmptyState
+          title="Aucun fichier prévisualisé"
+          description="Choisis un fichier CSV, XLSX ou PDF pour contrôler les lignes avant l’enregistrement du lot."
+        />
+      )}
 
       {rows.length > 0 && (
         <>

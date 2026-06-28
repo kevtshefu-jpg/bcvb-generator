@@ -6,6 +6,8 @@ import type { LibraryDocumentRow } from '../features/library/services/librarySer
 import { useSafeLoading } from '../hooks/useSafeLoading'
 import { withTimeout } from '../utils/withTimeout'
 import { PRESENTATION_MODE } from '../config/presentationMode'
+import { EmptyState } from '../components/ui/ResponsiveDataView'
+import { formatUserFacingError } from '../lib/userFacingError'
 
 export function DocumentReaderPage() {
   const { id } = useParams()
@@ -37,7 +39,7 @@ export function DocumentReaderPage() {
       if (!active) return
 
       if (queryError) {
-        setError(queryError.message)
+        setError(formatUserFacingError(queryError, 'Ce document ne peut pas être chargé pour le moment. Retourne à la bibliothèque puis réessaie.'))
         setLoading(false)
         return
       }
@@ -73,7 +75,15 @@ export function DocumentReaderPage() {
 	    )
 	  }
   if (!document?.content) {
-    return <section style={{ padding: 40 }}>Ce document ne contient pas de source Markdown lisible.</section>
+    return (
+      <section style={{ padding: 40 }}>
+        <EmptyState
+          title="Document sans contenu lisible"
+          description="La fiche existe, mais aucun contenu publiable n’est disponible. Reviens à la bibliothèque ou demande une republication du document."
+          action={<a className="bcvb-button" href="/bibliotheque">Retour à la bibliothèque</a>}
+        />
+      </section>
+    )
   }
 
   return (
