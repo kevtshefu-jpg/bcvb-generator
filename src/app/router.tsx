@@ -105,6 +105,7 @@ import PlatformPage from '../features/admin/pages/PlatformPage'
 import UnlockManagementPage from '../features/admin/pages/UnlockManagementPage'
 import AdminRegistrationRequestsPage from '../features/registration/pages/AdminRegistrationRequestsPage'
 import AdminProfileRequestsPage from '../features/admin/pages/AdminProfileRequestsPage'
+import AdminProfilesPage from '../features/admin/pages/AdminProfilesPage'
 import AdminAIDocumentsPage from '../features/admin/pages/AdminAIDocumentsPage'
 
 // =========================
@@ -294,6 +295,10 @@ export const router = createBrowserRouter([
           {
             path: 'admin/demandes-profils',
             element: <AdminProfileRequestsPage />,
+          },
+          {
+            path: 'admin/utilisateurs',
+            element: <AdminProfilesPage />,
           },
         ],
       },
@@ -611,10 +616,6 @@ export const router = createBrowserRouter([
           {
             path: 'admin/gestion-situations',
             element: <AdminSituationManager />,
-          },
-          {
-            path: 'admin/utilisateurs',
-            element: <AdminPage />,
           },
           {
             path: 'parametres',
