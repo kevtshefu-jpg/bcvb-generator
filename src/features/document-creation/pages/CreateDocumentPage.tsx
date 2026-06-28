@@ -149,8 +149,8 @@ export default function CreateDocumentPage() {
           <p className="bcvb-eyebrow">Créer un document</p>
           <h1>Assistant de création BCVB</h1>
           <p>
-            Choisis un type, renseigne le contexte, ajoute une source simple : le site prépare un prompt interne
-            et un brouillon BCVB Rich Markdown sans demander de connaître les prompts avancés.
+            Choisis un type, renseigne le contexte, ajoute une source simple : le site prépare un cadre de rédaction
+            et un brouillon BCVB Rich Markdown sans demander de connaître les réglages avancés.
           </p>
         </div>
         <Link to="/admin/studio-editorial">Ouvrir le studio complet</Link>
@@ -292,11 +292,11 @@ export default function CreateDocumentPage() {
 
           {source.mode === 'prompt_libre' && (
             <label className="create-source-field">
-              Prompt libre
+              Brief libre
               <textarea
                 value={source.freePrompt}
                 onChange={(event) => patchSource({ freePrompt: event.target.value })}
-                placeholder="Décris simplement ce que tu veux obtenir. Le site transforme ensuite en prompt BCVB propre."
+                placeholder="Décris simplement ce que tu veux obtenir. Le site transforme ensuite en cadre BCVB propre."
               />
             </label>
           )}
@@ -329,7 +329,7 @@ export default function CreateDocumentPage() {
           )}
 
           <section className="internal-prompt-preview">
-            <p className="bcvb-eyebrow">Prompt interne généré</p>
+            <p className="bcvb-eyebrow">Cadre de rédaction généré</p>
             <pre>{internalPrompt}</pre>
           </section>
 
@@ -358,7 +358,7 @@ export default function CreateDocumentPage() {
             <div className="draft-review-layout">
               <section className="draft-source-panel">
                 <p className="bcvb-eyebrow">Source</p>
-                <h3>Prompt interne propre</h3>
+                <h3>Cadre de rédaction propre</h3>
                 <pre>{draft.internalPrompt}</pre>
               </section>
 

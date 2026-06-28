@@ -63,7 +63,7 @@ export function EditorialStandardCard({
       </div>
 
       <button type="button" className="ai-studio-primary" onClick={onApply} disabled={disabled}>
-        Appliquer ce standard au prompt
+        Appliquer ce standard au cadre
       </button>
     </section>
   )

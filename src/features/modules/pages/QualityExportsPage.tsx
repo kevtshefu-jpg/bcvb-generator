@@ -256,7 +256,7 @@ export default function QualityExportsPage() {
       id: "source",
       label: "Source",
       status: activeAwareStatus("source", activeStep, hasSource ? "done" : "todo"),
-      explanation: "Ajoute un prompt, un PDF, une image ou un texte brut.",
+      explanation: "Ajoute un brief, un PDF, une image ou un texte brut.",
       primaryAction: {
         label: "Importer / écrire",
         onClick: () => goToStep("source"),

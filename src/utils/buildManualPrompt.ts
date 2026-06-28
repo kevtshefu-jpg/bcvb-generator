@@ -113,7 +113,7 @@ FORMAT BCVB RICH MARKDOWN
 - Produis uniquement le contenu final du document.
 - N’ajoute aucun commentaire sur la façon de mettre en page le document.
 - N’ajoute jamais de section “Recommandations de mise en page premium”.
-- N’écris jamais “ce document pourrait être”, “voici une proposition”, “généré avec ChatGPT”, “IA”, “assistant”, “prompt” ou toute formule méta.
+- N’écris jamais de formule méta du type “ce document pourrait être”, “voici une proposition”, “généré automatiquement”, “assistant”, “cadre de rédaction” ou commentaire hors document.
 - Le document doit être éditorial, directement publiable, comme un vrai support club.
 - Utilise le Markdown classique pour les titres et paragraphes.
 - Utilise les blocs enrichis BCVB ci-dessous pour les zones importantes.
@@ -400,6 +400,6 @@ EXIGENCE DE RÉDACTION :
 - Fais apparaître, quand c’est pertinent, la défense Homme à Homme, l’intensité, l’agressivité maîtrisée, la lecture du jeu et la progression joueur.
 - Mobilise naturellement la démarche : je découvre / je m’exerce / je retranscris en match / je régule.
 - Le document doit être prêt à être affiché dans un lecteur premium et exporté en PDF.
-- Ne réponds pas comme une IA. Rédige comme un responsable technique expérimenté qui prépare un vrai document club.
+- Rédige comme un responsable technique expérimenté qui prépare un vrai document club.
 `.trim()
 }

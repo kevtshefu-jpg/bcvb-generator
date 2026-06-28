@@ -15,7 +15,7 @@ export const defaultEditorialStudioState = {
   analyzedResponse: '',
   finalDocument: '',
   qualityScore: 72,
-  recommendedAction: 'Renforcer le plan éditorial puis générer un prompt spécialisé.',
+  recommendedAction: 'Renforcer le plan éditorial puis préparer un cadre de rédaction spécialisé.',
   sourceDocumentId: null,
   transformedFromTitle: null,
   transformationDate: null,
@@ -143,7 +143,7 @@ Réponse attendue :
 export function buildChatGPTPrompt(state) {
   return buildBasePrompt(
     state,
-    'Mode ChatGPT : privilégie une structure stricte, des blocs bien hiérarchisés, des listes actionnables et une cohérence de format impeccable.',
+    'Mode cadre rédactionnel : privilégie une structure stricte, des blocs bien hiérarchisés, des listes actionnables et une cohérence de format impeccable.',
     'Créer ou transformer le document BCVB en version publiable, avec architecture robuste et consignes opérationnelles.'
   )
 }
@@ -151,7 +151,7 @@ export function buildChatGPTPrompt(state) {
 export function buildClaudePrompt(state) {
   return buildBasePrompt(
     state,
-    'Mode Claude : privilégie profondeur éditoriale, transitions naturelles, finesse pédagogique, nuance, cohérence humaine et densité rédactionnelle.',
+    'Mode cadre approfondi : privilégie profondeur éditoriale, transitions naturelles, finesse pédagogique, nuance, cohérence humaine et densité rédactionnelle.',
     'Créer ou transformer le document BCVB en version longue, fluide, exigeante, lisible et directement exploitable par un club.'
   )
 }
@@ -161,8 +161,8 @@ export function buildFusionPrompt(state) {
 Tu es un éditeur en chef BCVB. Fusionne les deux réponses ci-dessous pour produire une version finale supérieure aux deux.
 
 Objectif :
-- conserver la structure robuste de ChatGPT ;
-- conserver la profondeur éditoriale de Claude ;
+- conserver la structure robuste de la première version ;
+- conserver la profondeur éditoriale de la deuxième version ;
 - supprimer doublons, contradictions, zones faibles ;
 - atteindre le niveau publication club ;
 - respecter toutes les contraintes BCVB.
@@ -171,10 +171,10 @@ ${buildContext(state)}
 
 ${buildNonNegotiables()}
 
-Réponse ChatGPT :
+Proposition 1 :
 ${state.chatGptResponse || 'À coller.'}
 
-Réponse Claude :
+Proposition 2 :
 ${state.claudeResponse || 'À coller.'}
 
 Produit uniquement la version finale fusionnée, publiable, sans commentaire extérieur.

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 const quickStartActions = [
   {
     title: "Créer un document",
-    text: "Cadrage, source, plan, IA, qualité et export.",
+    text: "Cadrage, source, plan, qualité et export.",
     path: "/tutoriels/createur-document",
     role: "Admin",
   },

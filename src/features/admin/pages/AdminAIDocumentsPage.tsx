@@ -555,7 +555,7 @@ export default function AdminAIDocumentsPage() {
 
       return current.trim() ? `${current.trim()}\n\n${standardText}` : standardText
     })
-    setMessage('Standard éditorial injecté dans le prompt.')
+    setMessage('Standard éditorial injecté dans le cadre de rédaction.')
     setActiveStep('production')
   }
 
@@ -588,7 +588,7 @@ ${responseContent}
 `.trim()
 
     setPrompt(correctionPrompt)
-    setMessage('Prompt de correction généré.')
+    setMessage('Cadre de correction généré.')
     setActiveStep('production')
   }
 
@@ -611,7 +611,7 @@ ${responseContent}
 
     setQualityBoostPrompt(nextPrompt)
     setPrompt(nextPrompt)
-    setMessage('Prompt d’amélioration généré.')
+    setMessage('Cadre d’amélioration généré.')
     setActiveStep('production')
     return nextPrompt
   }
@@ -661,7 +661,7 @@ ${responseContent}
     setSelectedImprovementMode(resolvedMode)
     setQualityBoostPrompt(nextPrompt)
     setPrompt(nextPrompt)
-    setMessage('Prompt de rehaussement publication BCVB généré.')
+    setMessage('Cadre de rehaussement publication BCVB généré.')
     setActiveStep('production')
     setLastElevationGain({
       previousScore: qualityReport.score,
@@ -700,7 +700,7 @@ ${responseContent}
 
     setQualityBoostPrompt(nextPrompt)
     setPrompt(nextPrompt)
-    setMessage('Prompt d’amélioration forte généré.')
+    setMessage('Cadre d’amélioration forte généré.')
     setActiveStep('production')
     return nextPrompt
   }
@@ -746,7 +746,7 @@ ${responseContent}
     setQualityReport(currentReport)
     setQualityBoostPrompt(nextPrompt)
     setPrompt(nextPrompt)
-    setMessage('Prompt de rehaussement fort généré.')
+    setMessage('Cadre de rehaussement fort généré.')
     setActiveStep('production')
     return nextPrompt
   }
@@ -784,15 +784,15 @@ ${responseContent}
         scoreReport: report,
       })
       const combinedPrompt = [
-        '# PROMPT CHATGPT — STRUCTURE ET CONFORMITÉ',
+        '# CADRE RÉDACTIONNEL — STRUCTURE ET CONFORMITÉ',
         promptSet.chatgptPrompt,
         '',
-        '# PROMPT CLAUDE — PROFONDEUR ÉDITORIALE',
+        '# CADRE APPROFONDI — PROFONDEUR ÉDITORIALE',
         promptSet.claudePrompt,
       ].join('\n\n')
       setPrompt(combinedPrompt)
       setQualityBoostPrompt(combinedPrompt)
-      setMessage('Double prompt ChatGPT + Claude généré.')
+      setMessage('Double cadre de production généré.')
       setActiveStep('production')
       return combinedPrompt
     }
@@ -810,7 +810,7 @@ ${responseContent}
 
     setPrompt(nextPrompt)
     setQualityBoostPrompt(nextPrompt)
-    setMessage(`Prompt Reconstruction Éditeur Mondial ${targetScore}/100 généré.`)
+    setMessage(`Cadre Reconstruction Éditeur Mondial ${targetScore}/100 généré.`)
     setActiveStep('production')
     return nextPrompt
   }
@@ -831,7 +831,7 @@ ${responseContent}
     setWorldFusionPrompt(nextPrompt)
     setPrompt(nextPrompt)
     setQualityBoostPrompt(nextPrompt)
-    setMessage('Prompt Fusionner et surclasser généré.')
+    setMessage('Cadre Fusionner et surclasser généré.')
     setActiveStep('production')
     return nextPrompt
   }
@@ -867,7 +867,7 @@ ${responseContent}
   async function copyBoostPrompt() {
     if (!qualityBoostPrompt.trim()) return
     await navigator.clipboard.writeText(qualityBoostPrompt)
-    setMessage('Prompt d’amélioration copié.')
+    setMessage('Cadre d’amélioration copié.')
     setActiveStep('production')
   }
 
@@ -944,7 +944,7 @@ ${responseContent}
               </button>
             ))}
           </div>
-          <div className="provider-switch" aria-label="Moteur IA premium">
+          <div className="provider-switch" aria-label="Mode de production premium">
             {(['chatgpt', 'claude', 'dual'] as WorldClassProvider[]).map((provider) => (
               <button
                 type="button"
@@ -952,7 +952,7 @@ ${responseContent}
                 className={worldClassProvider === provider ? 'active' : ''}
                 onClick={() => setWorldClassProvider(provider)}
               >
-                {provider === 'dual' ? 'Double production' : provider === 'claude' ? 'Claude' : 'ChatGPT'}
+                {provider === 'dual' ? 'Double production' : provider === 'claude' ? 'Cadre approfondi' : 'Cadre rédactionnel'}
               </button>
             ))}
           </div>
@@ -974,7 +974,7 @@ ${responseContent}
 	            className="bcvb-button-secondary"
 	            onClick={() => setActiveStep('production')}
 	          >
-	            Continuer la production IA
+	            Continuer la production guidée
 	          </button>
           <button
             type="button"
@@ -1029,7 +1029,7 @@ ${responseContent}
               className="bcvb-button-secondary"
               onClick={() => setActiveStep('production')}
             >
-              Coller la réponse IA
+              Coller la proposition
             </button>
 
             <button
@@ -1132,7 +1132,7 @@ ${responseContent}
               <p className="ai-studio-kicker">Reconstruction Éditeur Mondial</p>
               <h2>Atteindre 95–100 sans micro-correction</h2>
               <p>
-                Génère un prompt beaucoup plus directif pour ChatGPT, Claude ou une double production
+                Prépare un cadre beaucoup plus directif pour une production simple ou double
                 à fusionner ensuite en version finale supérieure.
               </p>
             </div>
@@ -1198,19 +1198,19 @@ ${responseContent}
 
             <div className="ai-world-fusion-grid">
               <label className="ai-studio-full-field">
-                <span>Réponse ChatGPT</span>
+                <span>Proposition 1</span>
                 <textarea
                   value={worldChatGptResponse}
                   onChange={(event) => setWorldChatGptResponse(event.target.value)}
-                  placeholder="Colle ici la version ChatGPT."
+                  placeholder="Colle ici la première version."
                 />
               </label>
               <label className="ai-studio-full-field">
-                <span>Réponse Claude</span>
+                <span>Proposition 2</span>
                 <textarea
                   value={worldClaudeResponse}
                   onChange={(event) => setWorldClaudeResponse(event.target.value)}
-                  placeholder="Colle ici la version Claude."
+                  placeholder="Colle ici la deuxième version."
                 />
               </label>
             </div>
@@ -1222,11 +1222,11 @@ ${responseContent}
             </div>
 
             <label className="ai-studio-full-field">
-              <span>Prompt de fusion mondiale</span>
+              <span>Cadre de fusion mondiale</span>
               <textarea
                 value={worldFusionPrompt}
                 onChange={(event) => setWorldFusionPrompt(event.target.value)}
-                placeholder="Le prompt Fusionner et surclasser apparaîtra ici."
+                placeholder="Le cadre Fusionner et surclasser apparaîtra ici."
               />
             </label>
           </section>

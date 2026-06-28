@@ -107,7 +107,7 @@ export function MasterPromptGenerator({
     <section className="bcvb-premium-panel">
       <div className="bcvb-premium-panel__head">
         <p>Production éditoriale</p>
-        <h2>Prompt maître qualité éditeur</h2>
+        <h2>Cadre maître qualité éditeur</h2>
       </div>
 
       <div className="bcvb-premium-grid">
@@ -181,10 +181,10 @@ export function MasterPromptGenerator({
 
       <div className="bcvb-premium-actions">
         <button type="button" onClick={handleGenerate}>
-          Générer le prompt maître qualité éditeur
+          Préparer le cadre maître qualité éditeur
         </button>
         <button type="button" onClick={handleCopy} disabled={!prompt.trim()}>
-          Copier le prompt maître
+          Copier le cadre maître
         </button>
       </div>
 

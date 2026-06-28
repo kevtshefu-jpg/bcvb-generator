@@ -5,7 +5,7 @@ BCVB Rich Markdown est une couche optionnelle au-dessus du Markdown classique.
 Objectifs :
 - garder les anciens documents compatibles ;
 - permettre aux nouveaux documents de produire des blocs éditoriaux premium ;
-- rester assez simple pour être demandé à ChatGPT ;
+- rester assez simple pour être utilisé dans un cadre de rédaction ;
 - fournir un rendu web et PDF plus proche d’un vrai document club.
 
 ## Principes
@@ -161,6 +161,6 @@ Le formulaire d’enregistrement manuel analyse le contenu collé avant sauvegar
 - nombre de situations ;
 - nombre de diagrammes ;
 - présence des planifications, cycles, séances types et synthèses ;
-- détection de traces IA ou de recommandations de mise en page.
+- détection de traces méta ou de recommandations de mise en page.
 
 Le contrôle n’empêche pas systématiquement la sauvegarde. Il sert d’alerte éditoriale avant publication.

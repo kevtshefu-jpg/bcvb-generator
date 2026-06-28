@@ -454,8 +454,8 @@ export default function SessionBuilderPage() {
     setUpgradePrompt(prompt)
 
     navigator.clipboard?.writeText(prompt).then(
-      () => setMessage('Prompt de correction massive copié.'),
-      () => setMessage('Prompt généré. Copie-le depuis le bloc affiché.')
+      () => setMessage('Consigne de correction massive copiée.'),
+      () => setMessage('Consigne générée. Copie-la depuis le bloc affiché.')
     )
   }
 
@@ -1206,7 +1206,7 @@ export default function SessionBuilderPage() {
 
             {upgradePrompt && (
               <details className="session-import-prompt" open>
-                <summary>Prompt de correction massive</summary>
+                <summary>Consigne de correction massive</summary>
                 <pre>{upgradePrompt}</pre>
               </details>
             )}
@@ -1286,7 +1286,7 @@ export default function SessionBuilderPage() {
                 </button>
 
                 <button type="button" onClick={buildUpgradePrompt}>
-                  Prompt
+                  Consigne
                 </button>
               </div>
             </article>

@@ -26,14 +26,14 @@ export function EditorialStudioPromptPanel({
     <section className="editorial-panel editorial-step-card editorial-prompt-panel">
       <header>
         <p className="bcvb-eyebrow">Source</p>
-        <h2>Prompt initial</h2>
+        <h2>Cadre de rédaction</h2>
       </header>
       <textarea
         className="editorial-textarea editorial-textarea--small"
         value={prompt}
         disabled={disabled}
         onChange={(event) => onPromptChange(event.target.value)}
-        placeholder="Prompt initial ou prompt généré par le module Créer."
+        placeholder="Cadre initial ou consigne préparée par le module Créer."
       />
       <div className="editorial-prompt-panel__help">
         <span>Soyez précis sur le public cible.</span>

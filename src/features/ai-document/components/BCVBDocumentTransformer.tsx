@@ -134,7 +134,7 @@ export function BCVBDocumentTransformer({
       transformationLevel,
     })
     setGeneratedPrompt(prompt)
-    setMessage('Prompt de transformation généré.')
+    setMessage('Cadre de transformation préparé.')
   }
 
   async function copyPrompt() {
@@ -150,7 +150,7 @@ export function BCVBDocumentTransformer({
     })
     setGeneratedPrompt(prompt)
     await navigator.clipboard.writeText(prompt)
-    setMessage('Prompt de transformation copié.')
+    setMessage('Cadre de transformation copié.')
   }
 
   function runQualityCheck(content = transformedContent) {
@@ -440,7 +440,7 @@ export function BCVBDocumentTransformer({
           onClick={copyPrompt}
           disabled={!sourceText.trim()}
         >
-          Copier le prompt de transformation
+          Copier le cadre de transformation
         </button>
       </div>
 
@@ -454,7 +454,7 @@ export function BCVBDocumentTransformer({
           value={transformedContent}
           onChange={(event) => setTransformedContent(event.target.value)}
           rows={12}
-          placeholder="Colle ici la réponse transformée par ChatGPT..."
+          placeholder="Colle ici le contenu transformé..."
           style={styles.textarea}
         />
       </label>

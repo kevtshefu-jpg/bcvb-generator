@@ -656,11 +656,11 @@ export function analyzeDocumentQuality(input: {
       'Points de vigilance absents'
     ),
     {
-      label: 'Traces IA / méta',
+      label: 'Traces méta',
       status: hasMetaTrace ? 'fail' : 'pass',
       detail: hasMetaTrace
-        ? 'Formulations méta ou traces IA détectées'
-        : 'Aucune trace IA évidente détectée',
+        ? 'Formulations méta détectées'
+        : 'Aucune trace méta évidente détectée',
     },
     {
       label: 'Blocs BCVB typés',

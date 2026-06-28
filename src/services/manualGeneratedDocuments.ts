@@ -37,7 +37,7 @@ export async function saveManualGeneratedDocument({
   sourceDocumentId = null,
   generationType = 'manual_chatgpt',
 }: SaveManualGeneratedDocumentInput) {
-  console.log('Début enregistrement manuel ChatGPT')
+  console.log('Début enregistrement manuel du document')
 
   const cleanTitle = title?.trim()
   const cleanContent = content?.trim()

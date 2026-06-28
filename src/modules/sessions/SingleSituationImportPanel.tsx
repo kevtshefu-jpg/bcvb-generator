@@ -35,16 +35,16 @@ export function SingleSituationImportPanel({ currentSession, currentUser, onAddT
   async function copyPrompt() {
     try {
       await navigator.clipboard.writeText(prompt)
-      setMessage('Prompt situation copié.')
+      setMessage('Consigne situation copiée.')
     } catch {
-      setMessage('Copie automatique impossible. Le prompt reste affiché.')
+      setMessage('Copie automatique impossible. La consigne reste affichée.')
     }
   }
 
   function buildSituationFromSource(useAiResponse = false) {
     const source = useAiResponse ? aiResponse : extractedText
     if (!source.trim()) {
-      setMessage('Ajoute un texte extrait ou une réponse IA avant de transformer.')
+      setMessage('Ajoute un texte extrait ou un contenu préparé avant de transformer.')
       return null
     }
     return useAiResponse
@@ -150,18 +150,18 @@ export function SingleSituationImportPanel({ currentSession, currentUser, onAddT
         <button type="button" onClick={() => addToSession(false)}>Transformer en situation BCVB</button>
         <button type="button" onClick={() => addToSession(false)}>Ajouter à ma séance</button>
         <button type="button" onClick={() => saveToLibrary(false)}>Enregistrer dans la bibliothèque de situations</button>
-        <button type="button" onClick={copyPrompt}>Copier prompt situation</button>
+        <button type="button" onClick={copyPrompt}>Copier la consigne situation</button>
       </div>
       <label className="session-full-field">
-        <span>Réponse ChatGPT / Claude pour cette situation</span>
-        <textarea value={aiResponse} onChange={(event) => setAiResponse(event.target.value)} placeholder="Colle ici le JSON retourné par ChatGPT ou Claude." />
+        <span>Contenu préparé pour cette situation</span>
+        <textarea value={aiResponse} onChange={(event) => setAiResponse(event.target.value)} placeholder="Colle ici le JSON préparé pour cette situation." />
       </label>
       <div className="session-actions">
-        <button type="button" onClick={() => addToSession(true)}>Créer depuis réponse IA</button>
-        <button type="button" onClick={() => saveToLibrary(true)}>Sauvegarder réponse IA</button>
+        <button type="button" onClick={() => addToSession(true)}>Créer depuis le contenu préparé</button>
+        <button type="button" onClick={() => saveToLibrary(true)}>Sauvegarder le contenu préparé</button>
       </div>
       <details className="session-import-prompt">
-        <summary>Voir le prompt situation BCVB</summary>
+        <summary>Voir la consigne situation BCVB</summary>
         <pre>{prompt}</pre>
       </details>
       {message && <p className="session-warning">{message}</p>}

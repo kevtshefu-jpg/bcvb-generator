@@ -8,11 +8,11 @@ export function buildFusionPrompt(params: {
   return `
 Tu es le directeur éditorial technique du BCVB.
 
-Tu dois fusionner deux réponses IA pour produire UNE version finale supérieure aux deux.
+Tu dois fusionner deux propositions pour produire UNE version finale supérieure aux deux.
 
 Objectif :
-- conserver la précision opérationnelle de ChatGPT ;
-- conserver la profondeur éditoriale de Claude ;
+- conserver la précision opérationnelle de la première version ;
+- conserver la profondeur éditoriale de la deuxième version ;
 - supprimer les répétitions ;
 - renforcer la structure ;
 - produire un document BCVB Rich Markdown strict ;
@@ -31,10 +31,10 @@ Règles :
 - Garde l’identité BCVB partout.
 - Ne produis aucun commentaire hors document.
 
-Réponse ChatGPT :
+Proposition 1 :
 ${params.chatgptResponse}
 
-Réponse Claude :
+Proposition 2 :
 ${params.claudeResponse}
 
 Produis maintenant la version fusionnée finale en BCVB Rich Markdown strict.

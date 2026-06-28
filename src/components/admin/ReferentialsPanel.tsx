@@ -18,7 +18,7 @@ export default function ReferentialsPanel({ referentials, onChange }: Referentia
           <h2>Référentiels mobilisables</h2>
           <span>Activer BCVB, FFBB, FIBA, Europe, USA, Canada et sources spécifiques pour guider les productions.</span>
         </div>
-        <strong>Injection prompt</strong>
+        <strong>Cadre de rédaction</strong>
       </div>
 
       <div className="admin-referential-grid">
@@ -45,7 +45,7 @@ export default function ReferentialsPanel({ referentials, onChange }: Referentia
                   disabled={!referential.enabled}
                   onChange={(event) => updateReferential({ ...referential, injectInPrompt: event.target.checked })}
                 />
-                <span>Injecter dans le prompt</span>
+                <span>Utiliser dans le cadre de rédaction</span>
               </label>
             </div>
           </article>

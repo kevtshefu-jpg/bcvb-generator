@@ -89,13 +89,13 @@ export async function generateWithAi(input: AiGenerateInput): Promise<AiGenerate
     text: [
       '# Double génération BCVB',
       '',
-      '## Réponse OpenAI',
-      openAiResult.text || `[Erreur OpenAI] ${openAiResult.error ?? 'Aucune réponse'}`,
+      '## Proposition 1',
+      openAiResult.text || `[Erreur production 1] ${openAiResult.error ?? 'Aucune réponse'}`,
       '',
-      '## Réponse Claude',
-      claudeResult.text || `[Erreur Claude] ${claudeResult.error ?? 'Aucune réponse'}`,
+      '## Proposition 2',
+      claudeResult.text || `[Erreur production 2] ${claudeResult.error ?? 'Aucune réponse'}`,
       '',
-      '## Prompt de fusion éditoriale',
+      '## Cadre de fusion éditoriale',
       fusionPrompt,
     ].join('\n'),
     usage: {

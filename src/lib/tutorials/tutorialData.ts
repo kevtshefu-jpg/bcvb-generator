@@ -112,7 +112,7 @@ export const tutorialItems: TutorialItem[] = [
     status: "publié",
     forWhat: "Produire un document BCVB clair, structuré, contrôlé et prêt à diffuser.",
     why: "Réduire les erreurs de production, les oublis de sections et les demandes d’aide au moment de publier.",
-    how: "Suivre le parcours cadrage, source, plan, production IA, réponse IA, qualité, prévisualisation puis export.",
+    how: "Suivre le parcours cadrage, source, plan, production guidée, contenu préparé, qualité, prévisualisation puis export.",
     evolution: "Ajouter un mode guidé vidéo et des exemples par famille documentaire.",
     implementation: "Page tutoriel, checklist interactive, lien direct vers le Studio éditorial et rappel du score qualité.",
     relatedRoutes: ["/admin/studio-editorial", "/admin/documents/nouveau", "/admin/qualite-exports"],
@@ -122,7 +122,7 @@ export const tutorialItems: TutorialItem[] = [
         title: "Définir le cadrage",
         description: "Choisis la famille, la catégorie, l’audience, la saison et l’objectif du document.",
         actionLabel: "Ouvrir le Studio",
-        expectedResult: "Le document cible est lisible avant toute production IA.",
+        expectedResult: "Le document cible est lisible avant toute production documentaire.",
       },
       {
         id: "source",
@@ -133,14 +133,14 @@ export const tutorialItems: TutorialItem[] = [
       {
         id: "plan",
         title: "Valider le plan éditorial",
-        description: "Contrôle les sections proposées et complète les manques avant de générer le prompt.",
+        description: "Contrôle les sections proposées et complète les manques avant de préparer le cadre de rédaction.",
         expectedResult: "Le plan contient les blocs indispensables à une publication club.",
       },
       {
         id: "production",
-        title: "Produire avec ChatGPT ou Claude",
-        description: "Génère le prompt, colle la réponse IA, puis fusionne si tu utilises deux fournisseurs.",
-        warning: "Ne publie jamais une réponse IA brute sans contrôle qualité.",
+        title: "Produire un brouillon structuré",
+        description: "Prépare le cadre de rédaction, colle le contenu préparé, puis consolide les versions si nécessaire.",
+        warning: "Ne publie jamais un brouillon brut sans contrôle qualité.",
       },
       {
         id: "qualite",

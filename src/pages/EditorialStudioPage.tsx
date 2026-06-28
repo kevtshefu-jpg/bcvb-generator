@@ -209,8 +209,8 @@ export default function EditorialStudioPage() {
   const qualityActions = useMemo(() => {
     if (!finalDocumentExists) {
       return [
-        'Coller ou analyser une réponse IA.',
-        'Générer un prompt ChatGPT ou Claude.',
+        'Coller ou analyser une proposition de contenu.',
+        'Préparer un cadre de rédaction.',
         'Construire le plan éditorial avant production.',
       ]
     }
@@ -257,13 +257,13 @@ export default function EditorialStudioPage() {
     }
     const nextPrompt = (builders[mode] ?? buildChatGPTPrompt)(nextState)
     patch({ activeMode: mode, activePrompt: nextPrompt, steps: computeSteps({ ...nextState, activePrompt: nextPrompt }) })
-    setMessage(`Prompt ${EDITORIAL_AI_MODES.find((item) => item.id === mode)?.label ?? mode} généré.`)
+    setMessage(`Cadre de rédaction ${EDITORIAL_AI_MODES.find((item) => item.id === mode)?.label ?? mode} préparé.`)
   }
 
   async function copyPrompt() {
     if (!state.activePrompt.trim()) return
     await navigator.clipboard.writeText(state.activePrompt)
-    setCopied('Prompt copié.')
+    setCopied('Cadre de rédaction copié.')
     window.setTimeout(() => setCopied(''), 1800)
   }
 
@@ -525,7 +525,7 @@ export default function EditorialStudioPage() {
   const studioWarnings = useMemo(() => {
     const content = state.finalDocument || state.analyzedResponse || state.sourceText
     const warnings = []
-    if (!state.sourceText.trim()) warnings.push('Source absente : ajoute un prompt, un OCR ou une note admin.')
+    if (!state.sourceText.trim()) warnings.push('Source absente : ajoute un brief, une transcription ou une note admin.')
     if (!state.editorialPlan.trim()) warnings.push('Plan éditorial à construire.')
     if (!content.trim()) warnings.push('Document final non généré.')
     if (state.qualityScore < 90) warnings.push('Score qualité à améliorer avant publication.')
@@ -607,11 +607,11 @@ export default function EditorialStudioPage() {
     <main className="editorial-studio-page editorial-studio-premium bcvb-page bcvb-premium-page">
       <EditorialStudioHero
         title="Produire, transformer, contrôler, exporter"
-        subtitle="Un outil de production documentaire BCVB pensé pour la publication club, avec prompts spécialisés, contrôle qualité et reprise de travail automatique."
+        subtitle="Un outil de production documentaire BCVB pensé pour la publication club, avec cadres de rédaction spécialisés, contrôle qualité et reprise de travail automatique."
       >
         <button className="bcvb-premium-button bcvb-premium-button--primary" type="button" onClick={resumeWork}>Reprendre mon travail</button>
         <button className="bcvb-premium-button bcvb-premium-button--danger" type="button" onClick={resetStudio}>Réinitialiser le studio</button>
-        <Link className="bcvb-premium-button bcvb-premium-button--ghost" to="/admin/ia-documentaire">Ancien studio avancé</Link>
+        <Link className="bcvb-premium-button bcvb-premium-button--ghost" to="/admin/ia-documentaire">Ancien studio technique</Link>
       </EditorialStudioHero>
 
       <section className="editorial-document-workbench" aria-label="Workflow documentaire guidé">
@@ -700,8 +700,8 @@ export default function EditorialStudioPage() {
             copiedMessage={copied}
             onPromptChange={(activePrompt) => patch({ activePrompt })}
             actions={[
-              { label: 'Prompt ChatGPT', onClick: () => generatePrompt('chatgpt') },
-              { label: 'Prompt Claude', onClick: () => generatePrompt('claude') },
+              { label: 'Cadre rédactionnel', onClick: () => generatePrompt('chatgpt') },
+              { label: 'Cadre approfondi', onClick: () => generatePrompt('claude') },
               { label: 'Copier', onClick: copyPrompt },
             ]}
           />
@@ -759,7 +759,7 @@ export default function EditorialStudioPage() {
           <section className="editorial-panel editorial-step-card" id="studio-structure">
             <header>
               <p className="bcvb-eyebrow">Structure</p>
-              <h2>Plan et production IA</h2>
+              <h2>Plan et production guidée</h2>
             </header>
             <textarea
               className="editorial-textarea editorial-textarea--small"
@@ -781,19 +781,19 @@ export default function EditorialStudioPage() {
             </div>
             <div className="editorial-actions">
               <button type="button" onClick={() => patch({ editorialPlan: buildPlanDraft(state) })}>Générer plan</button>
-              <button type="button" onClick={() => generatePrompt('fusion')}>Fusion ChatGPT + Claude</button>
+              <button type="button" onClick={() => generatePrompt('fusion')}>Consolider deux versions</button>
               <button type="button" onClick={() => generatePrompt('publication-reconstruction')}>Reconstruction publication</button>
             </div>
           </section>
 
           <section className="editorial-panel editorial-step-card" id="studio-production">
             <header>
-              <p className="bcvb-eyebrow">Réponses IA</p>
+              <p className="bcvb-eyebrow">Propositions de contenu</p>
               <h2>Comparer et analyser</h2>
             </header>
             <div className="editorial-response-grid">
-              <textarea value={state.chatGptResponse} onChange={(event) => patch({ chatGptResponse: event.target.value })} placeholder="Réponse ChatGPT" />
-              <textarea value={state.claudeResponse} onChange={(event) => patch({ claudeResponse: event.target.value })} placeholder="Réponse Claude" />
+              <textarea value={state.chatGptResponse} onChange={(event) => patch({ chatGptResponse: event.target.value })} placeholder="Proposition de contenu 1" />
+              <textarea value={state.claudeResponse} onChange={(event) => patch({ claudeResponse: event.target.value })} placeholder="Proposition de contenu 2" />
             </div>
             <textarea
               className="editorial-textarea editorial-textarea--small"

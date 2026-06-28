@@ -236,7 +236,7 @@ export function ManualChatGptGenerator({
 
   function handleBuildMasterPrompt() {
     const nextPrompt = buildManualPrompt({
-      generationType: `${generationType} — Prompt maître qualité éditeur`,
+      generationType: `${generationType} — Cadre maître qualité éditeur`,
       sourceTitle,
       sourceContent,
       userInstruction: [
@@ -259,9 +259,9 @@ export function ManualChatGptGenerator({
     })
 
     setDepth('reference')
-    setPrompt(`PROMPT MAÎTRE QUALITÉ ÉDITEUR\n\n${nextPrompt}`)
+    setPrompt(`CADRE MAÎTRE QUALITÉ ÉDITEUR\n\n${nextPrompt}`)
     setCopied(false)
-    setMessage('Prompt maître qualité éditeur généré.')
+    setMessage('Cadre maître qualité éditeur préparé.')
   }
 
   async function handleCopyPrompt() {
@@ -269,7 +269,7 @@ export function ManualChatGptGenerator({
 
     await navigator.clipboard.writeText(prompt)
     setCopied(true)
-    setMessage('Prompt copié. Tu peux maintenant le coller dans ChatGPT.')
+    setMessage('Cadre copié. Tu peux maintenant l’utiliser dans ton outil de rédaction.')
   }
 
   function handleNormalizeContent() {
@@ -307,7 +307,7 @@ export function ManualChatGptGenerator({
     }
 
     if (!chatGptResponse.trim()) {
-      setMessage('Colle d’abord la réponse générée par ChatGPT.')
+      setMessage('Colle d’abord le contenu préparé.')
       return
     }
 
@@ -316,7 +316,7 @@ export function ManualChatGptGenerator({
       setMessage('Enregistrement en cours...')
 
       console.log('Clic sur Enregistrer dans la bibliothèque')
-      console.log('Longueur réponse ChatGPT :', chatGptResponse.trim().length)
+      console.log('Longueur contenu préparé :', chatGptResponse.trim().length)
 
       const normalizedContent = normalizeBCVBRichMarkdown(chatGptResponse).content
 
@@ -337,7 +337,7 @@ export function ManualChatGptGenerator({
       setTagsInput('')
       setMetadata(INITIAL_METADATA)
     } catch (error) {
-      console.error('Erreur enregistrement manuel ChatGPT :', error)
+      console.error('Erreur enregistrement manuel du contenu préparé :', error)
 
       const message =
         error instanceof Error
@@ -353,13 +353,13 @@ export function ManualChatGptGenerator({
   return (
     <section style={styles.wrapper}>
       <div style={styles.header}>
-        <p style={styles.kicker}>Mode manuel ChatGPT</p>
+        <p style={styles.kicker}>Mode manuel documentaire</p>
 
-        <h2 style={styles.title}>Génération sans crédit API</h2>
+        <h2 style={styles.title}>Production sans crédit technique</h2>
 
         <p style={styles.description}>
-          Le site prépare un prompt complet. Tu le copies dans ChatGPT, puis tu
-          colles la réponse ici pour l’enregistrer dans la bibliothèque BCVB.
+          Le site prépare un cadre complet. Tu l’utilises dans ton outil de rédaction, puis tu
+          colles le contenu préparé ici pour l’enregistrer dans la bibliothèque BCVB.
           Plus ta demande est précise, plus le document sera structuré pour la lecture premium et l’export PDF.
         </p>
       </div>
@@ -432,7 +432,7 @@ export function ManualChatGptGenerator({
         </div>
 
         <div style={styles.promptSummary}>
-          <strong>Ce prompt demandera :</strong>
+          <strong>Ce cadre demandera :</strong>
           <span>format Rich Markdown strict</span>
           <span>aucune balise générique autorisée</span>
           <span>quotas injectés depuis le Gold Standard</span>
@@ -500,7 +500,7 @@ export function ManualChatGptGenerator({
           onClick={handleBuildPrompt}
           style={styles.primaryButton}
         >
-          Générer le prompt
+          Préparer le cadre
         </button>
 
         <button
@@ -508,7 +508,7 @@ export function ManualChatGptGenerator({
           onClick={handleBuildMasterPrompt}
           style={styles.primaryButton}
         >
-          Générer un prompt maître qualité éditeur
+          Préparer un cadre maître qualité éditeur
         </button>
 
         <button
@@ -521,31 +521,31 @@ export function ManualChatGptGenerator({
             cursor: prompt.trim() ? 'pointer' : 'not-allowed',
           }}
         >
-          {copied ? 'Prompt copié' : 'Copier le prompt'}
+          {copied ? 'Cadre copié' : 'Copier le cadre'}
         </button>
       </div>
 
       <div style={styles.fieldBlock}>
-        <label style={styles.label}>Prompt à envoyer dans ChatGPT</label>
+        <label style={styles.label}>Cadre à utiliser</label>
 
         <textarea
           value={prompt}
           onChange={(event) => setPrompt(event.target.value)}
           rows={16}
           style={styles.textareaPrompt}
-          placeholder="Clique sur “Générer le prompt”. Le prompt demandera un Markdown structuré avec planifications, tableaux, situations pédagogiques, blocs coach et schémas terrain si utile."
+          placeholder="Clique sur “Préparer le cadre”. Le cadre demandera un Markdown structuré avec planifications, tableaux, situations pédagogiques, blocs coach et schémas terrain si utile."
         />
       </div>
 
       <div style={styles.fieldBlock}>
-        <label style={styles.label}>Réponse générée par ChatGPT</label>
+        <label style={styles.label}>Contenu préparé</label>
 
         <textarea
           value={chatGptResponse}
           onChange={(event) => setChatGptResponse(event.target.value)}
           rows={18}
           style={styles.textareaResponse}
-          placeholder="Colle ici la réponse complète donnée par ChatGPT, idéalement en Markdown propre avec titres ##, tableaux, situations standardisées et blocs bcvb-diagram."
+          placeholder="Colle ici le contenu complet, idéalement en Markdown propre avec titres ##, tableaux, situations standardisées et blocs bcvb-diagram."
         />
       </div>
 
@@ -647,7 +647,7 @@ export function ManualChatGptGenerator({
             qualityReport.status === 'Base structurée mais insuffisante') && (
             <p style={styles.qualityWarning}>
               Ce document peut être enregistré, mais il est en dessous du niveau attendu
-              pour un document de référence BCVB. Recommande à ChatGPT de compléter les
+              pour un document de référence BCVB. Demande à ton outil de rédaction de compléter les
               points en échec avant publication.
             </p>
           )}

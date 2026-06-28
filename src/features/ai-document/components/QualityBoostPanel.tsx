@@ -84,7 +84,7 @@ export function QualityBoostPanel({
           </button>
         ))}
         <button type="button" className="ai-studio-secondary" onClick={onCopy} disabled={!prompt.trim()}>
-          Copier prompt
+          Copier le cadre
         </button>
       </div>
 
@@ -121,11 +121,11 @@ export function QualityBoostPanel({
       )}
 
       <label className="ai-studio-full-field">
-        <span>Prompt d’amélioration</span>
+        <span>Cadre d’amélioration</span>
         <textarea
           value={prompt}
           onChange={(event) => onPromptChange(event.target.value)}
-          placeholder="Le prompt d’amélioration sera généré ici."
+          placeholder="Le cadre d’amélioration sera préparé ici."
         />
       </label>
     </section>

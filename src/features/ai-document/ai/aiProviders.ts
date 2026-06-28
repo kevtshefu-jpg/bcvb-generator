@@ -11,8 +11,8 @@ export const AI_API_ENABLED = import.meta.env.VITE_ENABLE_AI_API === 'true'
 export const AI_PROVIDERS: AiGenerationMode[] = [
   {
     provider: 'manual_chatgpt',
-    label: 'Manuel ChatGPT',
-    description: 'Le site génère un prompt à coller dans ChatGPT.',
+    label: 'Cadre rédactionnel',
+    description: 'Le site prépare un cadre à utiliser en mode manuel.',
     requiresApiKey: false,
     supportsFiles: true,
     supportsImages: true,
@@ -20,8 +20,8 @@ export const AI_PROVIDERS: AiGenerationMode[] = [
   },
   {
     provider: 'manual_claude',
-    label: 'Manuel Claude',
-    description: 'Le site génère un prompt optimisé pour Claude.',
+    label: 'Cadre approfondi',
+    description: 'Le site prépare un cadre approfondi pour une version longue.',
     requiresApiKey: false,
     supportsFiles: true,
     supportsImages: true,
@@ -29,8 +29,8 @@ export const AI_PROVIDERS: AiGenerationMode[] = [
   },
   {
     provider: 'openai',
-    label: 'API OpenAI',
-    description: 'Production automatisée via OpenAI.',
+    label: 'Production guidée',
+    description: 'Production automatisée via la configuration serveur.',
     requiresApiKey: true,
     supportsFiles: true,
     supportsImages: true,
@@ -38,8 +38,8 @@ export const AI_PROVIDERS: AiGenerationMode[] = [
   },
   {
     provider: 'anthropic',
-    label: 'API Claude',
-    description: 'Production automatisée via Anthropic Claude.',
+    label: 'Production approfondie',
+    description: 'Production automatisée longue via la configuration serveur.',
     requiresApiKey: true,
     supportsFiles: true,
     supportsImages: true,
@@ -47,8 +47,8 @@ export const AI_PROVIDERS: AiGenerationMode[] = [
   },
   {
     provider: 'dual',
-    label: 'Double génération ChatGPT + Claude',
-    description: 'Génère deux versions puis prépare une fusion éditoriale BCVB.',
+    label: 'Double production',
+    description: 'Prépare deux versions puis une fusion éditoriale BCVB.',
     requiresApiKey: true,
     supportsFiles: true,
     supportsImages: true,

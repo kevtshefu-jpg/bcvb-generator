@@ -60,12 +60,12 @@ export function DocumentFramingPanel({
       <div className="ai-studio-card__header">
         <p className="ai-studio-kicker">Étape 1</p>
         <h2>Cadrage documentaire</h2>
-        <p>Définis le document cible avant de produire le prompt ou d’analyser une source.</p>
+        <p>Définis le document cible avant de préparer le cadre ou d’analyser une source.</p>
       </div>
 
       {hasError && (
         <p className="ai-studio-alert ai-studio-alert--warning">
-          Famille documentaire et titre cible sont obligatoires pour générer un prompt fiable.
+          Famille documentaire et titre cible sont obligatoires pour préparer un cadre fiable.
         </p>
       )}
 

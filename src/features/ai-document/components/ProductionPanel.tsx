@@ -85,7 +85,7 @@ export function ProductionPanel({
   const [provider, setProvider] = useState<AiProvider>(mapEditorialProvider(initialProvider))
   const [model, setModel] = useState(DEFAULT_OPENAI_MODEL)
   const [generating, setGenerating] = useState(false)
-  const [aiStatus, setAiStatus] = useState('Mode manuel disponible sans crédit API.')
+  const [aiStatus, setAiStatus] = useState('Mode manuel disponible sans crédit technique.')
   const [selectedProvider, setSelectedProvider] = useState<'chatgpt' | 'claude'>(
     initialProvider === 'claude' ? 'claude' : 'chatgpt'
   )
@@ -153,7 +153,7 @@ export function ProductionPanel({
       system: 'Tu es un comité éditorial technique du BCVB.',
     })
     onPromptChange(result.text)
-    setAiStatus(provider === 'manual_claude' ? 'Prompt Claude généré.' : 'Prompt ChatGPT généré.')
+    setAiStatus(provider === 'manual_claude' ? 'Cadre approfondi préparé.' : 'Cadre rédactionnel préparé.')
   }
 
   async function copyPrompt() {
@@ -181,7 +181,7 @@ export function ProductionPanel({
     })
     onPromptChange(result.text)
     await navigator.clipboard.writeText(result.text)
-    setAiStatus(nextProvider === 'claude' ? 'Prompt Claude copié.' : 'Prompt ChatGPT copié.')
+    setAiStatus(nextProvider === 'claude' ? 'Cadre approfondi copié.' : 'Cadre rédactionnel copié.')
   }
 
   function normalizeResponse() {
@@ -195,7 +195,7 @@ export function ProductionPanel({
     if (!basePrompt || apiBlocked) return
 
     setGenerating(true)
-    setAiStatus('Génération IA en cours...')
+    setAiStatus('Production guidée en cours...')
     try {
       const result = await generateWithAi({
         provider,
@@ -221,11 +221,11 @@ export function ProductionPanel({
   }
 
   function extractFusionPrompt() {
-    const marker = '## Prompt de fusion éditoriale'
+    const marker = '## Cadre de fusion éditoriale'
     const index = responseContent.indexOf(marker)
     if (index < 0) return
     onPromptChange(responseContent.slice(index + marker.length).trim())
-    setAiStatus('Prompt de fusion extrait dans la zone prompt.')
+    setAiStatus('Cadre de consolidation extrait dans la zone de travail.')
   }
 
   function generateFusionPrompt() {
@@ -239,15 +239,15 @@ export function ProductionPanel({
 
     setFusionPrompt(nextPrompt)
     onPromptChange(nextPrompt)
-    setAiStatus('Prompt de fusion ChatGPT + Claude généré.')
+    setAiStatus('Cadre de consolidation préparé.')
   }
 
   return (
     <section className="ai-studio-card">
       <div className="ai-studio-card__header">
         <p className="ai-studio-kicker">Étape 4</p>
-        <h2>Production IA</h2>
-        <p>Copie le prompt, colle la réponse IA à intégrer, puis lance la mise au format BCVB.</p>
+        <h2>Production guidée</h2>
+        <p>Copie le cadre, colle la proposition à intégrer, puis lance la mise au format BCVB.</p>
       </div>
 
       {!planValidated && (
@@ -268,7 +268,7 @@ export function ProductionPanel({
               onProviderChange?.('chatgpt')
             }}
           >
-            ChatGPT
+            Cadre rédactionnel
           </button>
 
           <button
@@ -281,13 +281,13 @@ export function ProductionPanel({
               onProviderChange?.('claude')
             }}
           >
-            Claude
+            Cadre approfondi
           </button>
         </div>
 
         <div className="ai-studio-form-grid">
           <label>
-            <span>Moteur IA</span>
+            <span>Mode de production</span>
             <select
               value={provider}
               onChange={(event) => {
@@ -329,21 +329,21 @@ export function ProductionPanel({
 
         <p>{activeProvider.description}</p>
         <div className="ai-provider-badges">
-          <span>{activeProvider.requiresApiKey ? 'API' : 'Manuel'}</span>
+          <span>{activeProvider.requiresApiKey ? 'Mode technique' : 'Manuel'}</span>
           {activeProvider.supportsFiles && <span>Fichiers</span>}
           {activeProvider.supportsImages && <span>Images</span>}
           {activeProvider.supportsLongContext && <span>Long contexte</span>}
         </div>
         <p className="ai-studio-alert ai-studio-alert--warning">
-          Les clés API restent côté serveur. Le mode manuel ne consomme aucun crédit.
-          {apiBlocked ? ' Modes API désactivés : définir VITE_ENABLE_AI_API=true et les secrets Supabase.' : ''}
+          Les accès techniques restent côté serveur. Le mode manuel ne consomme aucun crédit.
+          {apiBlocked ? ' Modes techniques désactivés : activer la configuration serveur et les secrets Supabase.' : ''}
         </p>
         {aiStatus && <p className="ai-provider-status">{aiStatus}</p>}
       </div>
 
       <div className="ai-studio-actions">
         <button type="button" className="ai-studio-primary" onClick={buildPrompt} disabled={!canGeneratePrompt}>
-          {provider === 'manual_claude' ? 'Générer prompt Claude' : 'Générer prompt ChatGPT'}
+          {provider === 'manual_claude' ? 'Préparer un cadre approfondi' : 'Préparer un cadre rédactionnel'}
         </button>
         <button
           type="button"
@@ -352,9 +352,9 @@ export function ProductionPanel({
           disabled={!canGeneratePrompt || apiBlocked || generating}
         >
           {provider === 'openai'
-            ? 'Lancer OpenAI'
+            ? 'Lancer la production guidée'
             : provider === 'anthropic'
-              ? 'Lancer Claude'
+              ? 'Lancer la production approfondie'
               : provider === 'dual'
                 ? 'Lancer double génération'
                 : generating
@@ -365,12 +365,12 @@ export function ProductionPanel({
           type="button"
           className="ai-studio-secondary"
           onClick={extractFusionPrompt}
-          disabled={provider !== 'dual' || !responseContent.includes('## Prompt de fusion éditoriale')}
+          disabled={provider !== 'dual' || !responseContent.includes('## Cadre de fusion éditoriale')}
         >
           Fusionner les réponses
         </button>
         <button type="button" className="ai-studio-secondary" onClick={copyPrompt} disabled={!prompt.trim()}>
-          Copier le prompt
+          Copier le cadre
         </button>
         <button type="button" className="ai-studio-secondary" onClick={() => onAnalyze(responseContent)} disabled={!responseContent.trim()}>
           Coller / analyser la réponse
@@ -390,7 +390,7 @@ export function ProductionPanel({
           onClick={() => copyPromptFor('chatgpt')}
           disabled={!canGeneratePrompt}
         >
-          Copier pour ChatGPT
+          Copier le cadre rédactionnel
         </button>
 
         <button
@@ -399,7 +399,7 @@ export function ProductionPanel({
           onClick={() => copyPromptFor('claude')}
           disabled={!canGeneratePrompt}
         >
-          Copier pour Claude
+          Copier le cadre approfondi
         </button>
 
 	        <button
@@ -409,32 +409,32 @@ export function ProductionPanel({
 	            document.querySelector<HTMLTextAreaElement>('[data-ai-response-textarea]')?.focus()
 	          }}
 	        >
-	          Coller la réponse IA
+	          Coller la proposition
 	        </button>
       </div>
 
       <div className="ai-studio-card ai-studio-card--nested">
         <div className="ai-studio-card__header">
           <p className="ai-studio-kicker">Fusion éditoriale</p>
-          <h3>Fusionner ChatGPT + Claude</h3>
-          <p>Colle les deux versions, puis génère un prompt de fusion pour produire une version finale supérieure.</p>
+          <h3>Consolider deux versions</h3>
+          <p>Colle les deux versions, puis prépare un cadre de consolidation pour produire une version finale supérieure.</p>
         </div>
 
         <label className="ai-studio-full-field">
-          <span>Réponse ChatGPT</span>
+          <span>Proposition 1</span>
           <textarea
             value={chatgptResponse}
             onChange={(event) => setChatgptResponse(event.target.value)}
-            placeholder="Colle ici la réponse ChatGPT"
+            placeholder="Colle ici la première proposition"
           />
         </label>
 
         <label className="ai-studio-full-field">
-          <span>Réponse Claude</span>
+          <span>Proposition 2</span>
           <textarea
             value={claudeResponse}
             onChange={(event) => setClaudeResponse(event.target.value)}
-            placeholder="Colle ici la réponse Claude"
+            placeholder="Colle ici la deuxième proposition"
           />
         </label>
 
@@ -444,27 +444,27 @@ export function ProductionPanel({
           onClick={generateFusionPrompt}
           disabled={!chatgptResponse.trim() || !claudeResponse.trim()}
         >
-          Fusionner ChatGPT + Claude
+          Consolider les versions
         </button>
 
         <label className="ai-studio-full-field">
-          <span>Prompt de fusion</span>
+          <span>Cadre de consolidation</span>
           <textarea value={fusionPrompt} readOnly />
         </label>
       </div>
 
       <label className="ai-studio-full-field">
-        <span>Prompt maître</span>
+        <span>Cadre maître</span>
         <textarea value={prompt} onChange={(event) => onPromptChange(event.target.value)} />
       </label>
 
       <label className="ai-studio-full-field">
-        <span>Réponse IA à intégrer</span>
+        <span>Proposition à intégrer</span>
         <textarea
           value={responseContent}
           onChange={(event) => onResponseChange(event.target.value)}
           data-ai-response-textarea
-          placeholder="Colle ici la réponse complète générée par ChatGPT ou Claude..."
+          placeholder="Colle ici la proposition complète à intégrer..."
         />
       </label>
     </section>

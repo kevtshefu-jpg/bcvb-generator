@@ -73,7 +73,7 @@ export const creationAudiences: CreationAudience[] = ['coachs', 'joueurs', 'pare
 export const creationLevels: CreationLevel[] = ['découverte', 'formation', 'compétition', 'performance']
 
 export const creationModeLabels: Record<CreationContentMode, string> = {
-  prompt_libre: 'Prompt libre',
+  prompt_libre: 'Brief libre',
   modele_guide: 'Modèle guidé',
   fichier_importe: 'Partir d’un fichier importé',
 }
@@ -137,7 +137,7 @@ Livrable attendu :
 - ajouter des blocs BCVB Rich Markdown utiles ;
 - inclure des critères observables et actions concrètes ;
 - finir par une checklist de publication ;
-- ne pas exposer le prompt interne dans le document final.
+- ne pas exposer le cadre de rédaction interne dans le document final.
 `.trim()
 }
 

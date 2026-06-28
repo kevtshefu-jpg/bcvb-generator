@@ -1,6 +1,6 @@
 export const AI_PROVIDER_PROFILES = {
   chatgpt: {
-    label: 'ChatGPT',
+    label: 'Cadre rédactionnel',
     strengths: [
       'structuration stricte',
       'respect des blocs',
@@ -16,7 +16,7 @@ export const AI_PROVIDER_PROFILES = {
     ],
   },
   claude: {
-    label: 'Claude',
+    label: 'Cadre approfondi',
     strengths: [
       'réécriture longue',
       'style naturel',

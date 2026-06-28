@@ -23,12 +23,12 @@ const LEVEL_TARGETS: Record<WorldClassLevel, number> = {
 
 function providerInstruction(provider: WorldClassProvider) {
   if (provider === 'claude') {
-    return 'Tu écris avec la profondeur de Claude : rédaction longue, transitions éditoriales, cohérence humaine, mais tu respectes strictement les blocs BCVB.'
+    return 'Tu écris avec une profondeur éditoriale renforcée : rédaction longue, transitions éditoriales, cohérence humaine, mais tu respectes strictement les blocs BCVB.'
   }
   if (provider === 'dual') {
-    return 'Ce prompt sert à une production double : conserve une structure stricte exploitable par ChatGPT et une profondeur rédactionnelle exploitable par Claude.'
+    return 'Ce cadre sert à une production double : conserve une structure stricte pour la première version et une profondeur rédactionnelle forte pour la deuxième version.'
   }
-  return 'Tu écris avec la rigueur de ChatGPT : structure stricte, contraintes fortes, blocs BCVB propres, tableaux et diagrammes conformes.'
+  return 'Tu écris avec une rigueur rédactionnelle élevée : structure stricte, contraintes fortes, blocs BCVB propres, tableaux et diagrammes conformes.'
 }
 
 function formatList(items: string[]) {

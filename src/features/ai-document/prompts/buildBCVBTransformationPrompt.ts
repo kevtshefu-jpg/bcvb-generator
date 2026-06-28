@@ -188,7 +188,7 @@ FORMAT STRICT DE SORTIE
 - Chaque situation pédagogique doit être suivie immédiatement d’un diagramme.
 - Ne jamais laisser les champs \`players\`, \`arrows\`, \`zones\`, \`ball\` visibles hors bloc diagramme.
 - Ne jamais produire de tableau brut hors bloc.
-- Ne jamais afficher “ChatGPT”, “IA”, “généré par IA” dans le contenu public.
+- Ne jamais afficher de mention d’outil, d’automatisation ou de génération dans le contenu public.
 - Produire uniquement le contenu final, sans phrase d’introduction.
 - Pour un guide coach : minimum 8 à 12 blocs BCVB typés, planification annuelle, progression opérationnelle, séance type, critères d’évaluation, outils coach, relation familles et passerelle catégorie suivante.
 - Pour un cahier de catégorie : minimum 6 situations pédagogiques.

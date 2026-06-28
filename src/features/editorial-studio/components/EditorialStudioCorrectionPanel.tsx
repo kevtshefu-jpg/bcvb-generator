@@ -78,7 +78,7 @@ export function EditorialStudioCorrectionPanel({
       <div className="editorial-correction-safety">
         <article>
           <strong>Conservé</strong>
-          <p>Source OCR, prompt, notes admin, métadonnées et ancienne version locale.</p>
+          <p>Source OCR, cadre de rédaction, notes admin, métadonnées et ancienne version locale.</p>
         </article>
         <article>
           <strong>Restructuré</strong>

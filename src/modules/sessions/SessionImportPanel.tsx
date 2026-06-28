@@ -29,9 +29,9 @@ export function SessionImportPanel({ currentSession, onImportSession, onClose }:
   async function copyPrompt() {
     try {
       await navigator.clipboard.writeText(transformationPrompt)
-      setMessage('Prompt de transformation copié.')
+      setMessage('Consigne de transformation copiée.')
     } catch {
-      setMessage('Copie automatique impossible. Le prompt reste affiché et sélectionnable.')
+      setMessage('Copie automatique impossible. La consigne reste affichée et sélectionnable.')
     }
   }
 
@@ -56,7 +56,7 @@ export function SessionImportPanel({ currentSession, onImportSession, onClose }:
   function parseAiResponse() {
     const source = aiResponse || extractedText || rawText
     if (!source.trim()) {
-      setMessage('Colle une réponse ChatGPT / Claude ou une source texte avant de créer la séance.')
+      setMessage('Colle un contenu préparé ou une source texte avant de créer la séance.')
       return
     }
     const nextSession = parseImportedSession(source, {
@@ -100,16 +100,16 @@ export function SessionImportPanel({ currentSession, onImportSession, onClose }:
       <div className="session-actions">
         <button type="button" onClick={transformLocally}>Transformer en séance BCVB</button>
         <button type="button" onClick={parseAiResponse}>Créer une séance depuis cette source</button>
-        <button type="button" onClick={copyPrompt}>Copier prompt ChatGPT / Claude</button>
+        <button type="button" onClick={copyPrompt}>Copier la consigne de transformation</button>
       </div>
 
       <label className="session-full-field">
-        <span>Réponse ChatGPT / Claude</span>
-        <textarea value={aiResponse} onChange={(event) => setAiResponse(event.target.value)} placeholder="Colle ici le JSON + Markdown retourné par ChatGPT ou Claude si tu veux parser une transformation IA." />
+        <span>Contenu préparé</span>
+        <textarea value={aiResponse} onChange={(event) => setAiResponse(event.target.value)} placeholder="Colle ici le JSON + Markdown préparé si tu veux parser une transformation." />
       </label>
 
       <details className="session-import-prompt">
-        <summary>Voir le prompt de transformation</summary>
+        <summary>Voir la consigne de transformation</summary>
         <pre>{transformationPrompt}</pre>
       </details>
       {message && <p className="session-warning">{message}</p>}

@@ -27,16 +27,16 @@ export function SessionAttachmentImporter({ label = 'Pièce jointe', extractedTe
       return
     }
 
-    setMessage('OCR non disponible localement. Colle le texte extrait ou utilise le prompt OCR ChatGPT/Claude.')
+    setMessage('Lecture automatique non disponible localement. Colle le texte extrait ou utilise la consigne de transcription.')
     if (!extractedText) onExtractedTextChange(`Fichier importé : ${file.name}\nColle ici le texte OCR ou la transcription de la fiche.`)
   }
 
   async function copyOcrPrompt() {
     try {
       await navigator.clipboard.writeText(ocrPrompt)
-      setMessage('Prompt OCR copié.')
+      setMessage('Consigne de transcription copiée.')
     } catch {
-      setMessage('Copie automatique impossible. Le prompt OCR reste visible.')
+      setMessage('Copie automatique impossible. La consigne de transcription reste visible.')
     }
   }
 
@@ -57,10 +57,10 @@ export function SessionAttachmentImporter({ label = 'Pièce jointe', extractedTe
         <textarea value={extractedText} onChange={(event) => onExtractedTextChange(event.target.value)} placeholder="Colle ici le texte OCR, la transcription ou le contenu brut de la fiche." />
       </label>
       <div className="session-actions">
-        <button type="button" onClick={copyOcrPrompt}>Copier prompt OCR ChatGPT / Claude</button>
+        <button type="button" onClick={copyOcrPrompt}>Copier la consigne de transcription</button>
       </div>
       <details className="session-import-prompt">
-        <summary>Voir le prompt OCR</summary>
+        <summary>Voir la consigne de transcription</summary>
         <pre>{ocrPrompt}</pre>
       </details>
       {message && <p className="session-warning">{message}</p>}

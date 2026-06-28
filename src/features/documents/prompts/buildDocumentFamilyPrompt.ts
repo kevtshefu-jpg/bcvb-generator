@@ -75,7 +75,7 @@ FORMAT DE SORTIE STRICTEMENT OBLIGATOIRE
 - Chaque situation terrain doit être suivie immédiatement d’au moins un diagramme.
 - Les tableaux doivent utiliser des pipes markdown propres à l’intérieur du champ \`table:\`.
 - Les diagrammes doivent utiliser des listes YAML indentées avec des tirets \`-\`.
-- Ne jamais écrire “ChatGPT”, “IA”, “généré par IA”, ni commentaire méta.
+- Ne jamais écrire de mention d’outil, d’automatisation, de génération, ni commentaire méta.
 
 EXEMPLE TABLEAU OBLIGATOIRE
 \`\`\`md

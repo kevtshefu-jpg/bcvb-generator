@@ -1,6 +1,6 @@
 export function buildOpenAiProductionPrompt(basePrompt: string): string {
   return `
-VERSION OPENAI — PRIORITÉ STRUCTURE ET CONFORMITÉ TECHNIQUE
+VERSION 1 — PRIORITÉ STRUCTURE ET CONFORMITÉ TECHNIQUE
 
 Objectif : produire la version la plus propre techniquement pour le moteur BCVB.
 - Respect strict des blocs :::bcvb-*.
@@ -15,7 +15,7 @@ ${basePrompt}
 
 export function buildClaudeProductionPrompt(basePrompt: string): string {
   return `
-VERSION CLAUDE — PRIORITÉ STYLE, PROFONDEUR ET LECTURE ÉDITORIALE
+VERSION 2 — PRIORITÉ STYLE, PROFONDEUR ET LECTURE ÉDITORIALE
 
 Objectif : produire la version la plus humaine, dense et coachable, sans casser le format BCVB.
 - Écriture fluide et professionnelle.
@@ -50,12 +50,12 @@ RÈGLES DE FUSION :
 STANDARD :
 ${JSON.stringify(standard ?? {}, null, 2)}
 
-VERSION OPENAI :
+VERSION 1 :
 ---
 ${openAiText}
 ---
 
-VERSION CLAUDE :
+VERSION 2 :
 ---
 ${claudeText}
 ---

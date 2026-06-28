@@ -16,7 +16,7 @@ export function buildFusionWorldClassPrompt(params: {
 Tu es le directeur éditorial technique du BCVB.
 
 MISSION :
-Fusionner deux réponses IA pour produire UNE version finale supérieure aux deux, directement publiable au standard ${params.targetScore}/100.
+Fusionner deux propositions pour produire UNE version finale supérieure aux deux, directement publiable au standard ${params.targetScore}/100.
 
 Document : ${params.title}
 Famille : ${standard.label}
@@ -24,8 +24,8 @@ Catégorie : ${params.category}
 Score cible : ${params.targetScore}/100
 
 OBJECTIF :
-- conserver la précision opérationnelle de ChatGPT ;
-- conserver la profondeur éditoriale de Claude ;
+- conserver la précision opérationnelle de la première version ;
+- conserver la profondeur éditoriale de la deuxième version ;
 - supprimer les doublons ;
 - garder la structure BCVB la plus propre ;
 - conserver les meilleurs tableaux ;
@@ -56,12 +56,12 @@ RÈGLES STRICTES :
 - Aucun champ players/arrows/zones hors bloc diagramme.
 - Aucun bloc générique.
 
-RÉPONSE CHATGPT :
+PROPOSITION 1 :
 ---
 ${params.chatgptResponse}
 ---
 
-RÉPONSE CLAUDE :
+PROPOSITION 2 :
 ---
 ${params.claudeResponse}
 ---

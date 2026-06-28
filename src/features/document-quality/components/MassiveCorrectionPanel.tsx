@@ -62,7 +62,7 @@ export default function MassiveCorrectionPanel({
             <article key={action.id}>
               <strong>{action.type}</strong>
               <p>{action.description}</p>
-              <span>+{action.expectedGain} · {action.requiresAi ? "IA recommandée" : "Correction déterministe"}</span>
+              <span>+{action.expectedGain} · {action.requiresAi ? "Assistance documentaire recommandée" : "Correction automatique"}</span>
             </article>
           ))
         )}

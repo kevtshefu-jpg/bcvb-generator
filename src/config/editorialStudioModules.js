@@ -2,7 +2,7 @@ export const EDITORIAL_STUDIO_STEPS = [
   { id: 'framing', label: 'Cadrage' },
   { id: 'sources', label: 'Sources' },
   { id: 'plan', label: 'Plan éditorial' },
-  { id: 'production', label: 'Production IA' },
+  { id: 'production', label: 'Production guidée' },
   { id: 'quality', label: 'Contrôle qualité' },
   { id: 'export', label: 'Export' },
 ]
@@ -15,9 +15,9 @@ export const EDITORIAL_STEP_STATUSES = [
 ]
 
 export const EDITORIAL_AI_MODES = [
-  { id: 'chatgpt', label: 'ChatGPT' },
-  { id: 'claude', label: 'Claude' },
-  { id: 'fusion', label: 'Fusion ChatGPT + Claude' },
+  { id: 'chatgpt', label: 'Cadre rédactionnel' },
+  { id: 'claude', label: 'Cadre approfondi' },
+  { id: 'fusion', label: 'Consolidation de versions' },
   { id: 'massive-correction', label: 'Correction massive' },
   { id: 'publication-reconstruction', label: 'Reconstruction publication club' },
 ]
@@ -92,8 +92,8 @@ export const EDITORIAL_STUDIO_MODULES = [
     forWhat: 'Générer des documents BCVB de qualité éditeur.',
     why: 'Disposer d’un référentiel club homogène et publiable.',
     forWhom: 'Admin, responsable technique.',
-    how: 'Choisir famille, catégorie, niveau de production, sources, puis générer prompt ChatGPT / Claude.',
-    evolution: 'Production multi-IA orchestrée.',
+    how: 'Choisir famille, catégorie, niveau de production, sources, puis préparer un cadre de rédaction.',
+    evolution: 'Production documentaire orchestrée.',
     howToEvolve: 'Créer pipeline cadrage → sources → plan → production → fusion → QA → export.',
     priority: 'Très haute',
     impact: 'Très fort',
@@ -116,13 +116,13 @@ export const EDITORIAL_STUDIO_MODULES = [
   },
   {
     id: 'prompts',
-    title: 'Prompt ChatGPT / Claude',
-    forWhat: 'Produire des prompts adaptés à chaque IA.',
+    title: 'Cadres de rédaction',
+    forWhat: 'Produire des consignes adaptées à chaque document.',
     why: 'Obtenir un meilleur document sans multiplier les essais.',
     forWhom: 'Admin.',
-    how: 'Boutons copier pour ChatGPT, copier pour Claude, fusionner réponses.',
-    evolution: 'Prompt en plusieurs passes contrôlées.',
-    howToEvolve: 'Générer prompts spécialisés : architecte, rédacteur, schémas, QA, fusion.',
+    how: 'Boutons copier pour préparer un cadre court, un cadre approfondi ou consolider plusieurs contenus.',
+    evolution: 'Cadre de rédaction en plusieurs passes contrôlées.',
+    howToEvolve: 'Générer des consignes spécialisées : architecture, rédaction, schémas, contrôle qualité, consolidation.',
     priority: 'Très haute',
     impact: 'Très fort',
     complexity: 'Moyenne',

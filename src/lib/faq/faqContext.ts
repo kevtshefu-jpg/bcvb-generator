@@ -59,7 +59,7 @@ const routeContexts: Array<{ match: string; context: FaqContextHint }> = [
       title: "Aide Studio éditorial",
       description: "Questions utiles pour créer, transformer, contrôler et exporter un document BCVB.",
       severity: "info",
-      relatedFaqIds: ["document-non-publiable", "score-qualite-bloque", "studio-chatgpt-claude"],
+      relatedFaqIds: ["document-non-publiable", "score-qualite-bloque", "studio-documentaire-production"],
     },
   },
   {

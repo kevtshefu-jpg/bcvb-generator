@@ -298,12 +298,12 @@ Commence directement par :::bcvb-hero.
 function getProviderRule(provider: PromptProvider): string {
   if (provider === 'claude') {
     return `
-Tu réponds comme Claude : structure longue, rigoureuse, complète, sans résumé prématuré.
+Tu réponds avec une structure longue, rigoureuse, complète, sans résumé prématuré.
 Tu dois privilégier la cohérence éditoriale, la précision pédagogique et la complétude.
 `
   }
 
   return `
-Tu réponds comme ChatGPT : production structurée, opérationnelle, directement exploitable, avec blocs riches strictement conformes.
+Tu réponds avec une production structurée, opérationnelle, directement exploitable, avec blocs riches strictement conformes.
 `
 }
