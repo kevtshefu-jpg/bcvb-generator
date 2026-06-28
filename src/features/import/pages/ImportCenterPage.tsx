@@ -10,6 +10,7 @@ import {
   insertImportRows,
 } from '../services/importBatchService'
 import type { NormalizedImportRow } from '../utils/normalizeImportRows'
+import { MobileDetailCard, ResponsiveDataList } from '../../../components/ui/ResponsiveDataView'
 
 export default function ImportCenterPage() {
   const { user } = useAuth()
@@ -179,7 +180,7 @@ export default function ImportCenterPage() {
           <article className="dashboard-panelCard">
             <h3 className="dashboard-panelCard__title">Prévisualisation</h3>
 
-            <div className="admin-page__tableWrap" style={{ marginTop: 16 }}>
+            <div className="admin-page__tableWrap responsive-data-table" style={{ marginTop: 16 }}>
               <table className="admin-page__table">
                 <thead>
                   <tr>
@@ -208,6 +209,25 @@ export default function ImportCenterPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="responsive-data-mobile" style={{ marginTop: 16 }}>
+              <ResponsiveDataList>
+                {preview.map((row, index) => (
+                  <MobileDetailCard
+                    key={index}
+                    eyebrow={`Ligne ${index + 1}`}
+                    title={`${row.normalized_first_name || 'Prénom manquant'} ${row.normalized_last_name || 'Nom manquant'}`}
+                    subtitle={row.normalized_team || 'Équipe non renseignée'}
+                    items={[
+                      { label: 'Email', value: row.normalized_email || '—', full: true },
+                      { label: 'Téléphone', value: row.normalized_phone || '—' },
+                      { label: 'Année', value: row.normalized_birth_year || '—' },
+                      { label: 'Catégorie', value: row.normalized_category_id || '—' },
+                      { label: 'Licence', value: row.normalized_license_number || '—' },
+                    ]}
+                  />
+                ))}
+              </ResponsiveDataList>
             </div>
 
             <div style={{ marginTop: 18 }}>

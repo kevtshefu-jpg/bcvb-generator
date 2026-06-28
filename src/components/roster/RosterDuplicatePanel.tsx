@@ -1,5 +1,6 @@
 import type { RosterImportRow, RosterPermissionSet } from "../../types/roster";
 import { getDuplicateRows } from "../../lib/roster/rosterDuplicate";
+import { MobileDetailCard, ResponsiveDataList } from "../ui/ResponsiveDataView";
 
 export function RosterDuplicatePanel({
   rows,
@@ -9,6 +10,13 @@ export function RosterDuplicatePanel({
   permissions: RosterPermissionSet;
 }) {
   const duplicates = getDuplicateRows(rows);
+  const renderAction = () => (
+    <select disabled={!permissions.canMergeDuplicates}>
+      <option>Vérifier</option>
+      <option>Fusionner</option>
+      <option>Ignorer</option>
+    </select>
+  );
 
   return (
     <section className="bcvb-tool-card roster-section">
@@ -19,7 +27,7 @@ export function RosterDuplicatePanel({
         </div>
         <strong>{duplicates.length} à vérifier</strong>
       </div>
-      <div className="bcvb-table-scroll">
+      <div className="bcvb-table-scroll responsive-data-table">
         <table className="bcvb-table-premium">
           <thead><tr><th>Joueur</th><th>Ligne</th><th>Score</th><th>Correspondances</th><th>Action</th></tr></thead>
           <tbody>
@@ -30,11 +38,7 @@ export function RosterDuplicatePanel({
                 <td><strong>{row.duplicateScore}%</strong></td>
                 <td>{row.possibleDuplicateIds?.join(", ") || "Import courant"}</td>
                 <td>
-                  <select disabled={!permissions.canMergeDuplicates}>
-                    <option>Vérifier</option>
-                    <option>Fusionner</option>
-                    <option>Ignorer</option>
-                  </select>
+                  {renderAction()}
                 </td>
               </tr>
             ))}
@@ -42,7 +46,24 @@ export function RosterDuplicatePanel({
           </tbody>
         </table>
       </div>
+      <div className="responsive-data-mobile">
+        <ResponsiveDataList empty={<p>Aucun doublon probable détecté.</p>}>
+          {duplicates.map((row) => (
+            <MobileDetailCard
+              key={row.id}
+              tone="is-duplicate"
+              eyebrow={`Ligne ${row.sourceLine}`}
+              title={`${row.mapped?.firstName || "Prénom manquant"} ${row.mapped?.lastName || "Nom manquant"}`}
+              badge={<span className="roster-chip">{row.duplicateScore}%</span>}
+              items={[
+                { label: "Score", value: `${row.duplicateScore}%` },
+                { label: "Correspondances", value: row.possibleDuplicateIds?.join(", ") || "Import courant", full: true },
+              ]}
+              actions={renderAction()}
+            />
+          ))}
+        </ResponsiveDataList>
+      </div>
     </section>
   );
 }
-

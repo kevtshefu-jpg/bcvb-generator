@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { fetchImportBatches } from '../services/importValidationService'
 import { useImportValidation } from '../hooks/useImportValidation'
+import { MobileDetailCard, ResponsiveDataList } from '../../../components/ui/ResponsiveDataView'
 
 type BatchRow = {
   id: string
@@ -99,7 +100,7 @@ export default function ImportBatchValidationPage() {
         <article className="dashboard-panelCard">
           <h3 className="dashboard-panelCard__title">Lignes du batch</h3>
 
-          <div className="admin-page__tableWrap" style={{ marginTop: 16 }}>
+          <div className="admin-page__tableWrap responsive-data-table" style={{ marginTop: 16 }}>
             <table className="admin-page__table">
               <thead>
                 <tr>
@@ -157,6 +158,52 @@ export default function ImportBatchValidationPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+          <div className="responsive-data-mobile" style={{ marginTop: 16 }}>
+            <ResponsiveDataList>
+              {rows.map((row) => (
+                <MobileDetailCard
+                  key={row.id}
+                  eyebrow={row.validated ? 'Validée' : 'À contrôler'}
+                  title={`${row.normalized_first_name || 'Prénom manquant'} ${row.normalized_last_name || 'Nom manquant'}`}
+                  subtitle={row.normalized_email || 'Email non renseigné'}
+                  badge={<span className="bcvb-status-pill">{row.status}</span>}
+                  items={[
+                    { label: 'Année', value: row.normalized_birth_year || '—' },
+                    { label: 'Catégorie', value: row.normalized_category_id || '—' },
+                    { label: 'Profil créé', value: row.imported_profile_id || '—', full: true },
+                  ]}
+                  actions={(
+                    <>
+                      {!row.validated ? (
+                        <button
+                          className="bcvb-primary-btn"
+                          onClick={() => validateRow(row.id)}
+                        >
+                          Valider
+                        </button>
+                      ) : (
+                        <button
+                          className="bcvb-btn danger"
+                          onClick={() => unvalidateRow(row.id)}
+                        >
+                          Dévalider
+                        </button>
+                      )}
+
+                      {row.validated && !row.imported_profile_id && (
+                        <button
+                          className="bcvb-primary-btn"
+                          onClick={() => importValidatedRow(row.id)}
+                        >
+                          Créer profil
+                        </button>
+                      )}
+                    </>
+                  )}
+                />
+              ))}
+            </ResponsiveDataList>
           </div>
         </article>
       )}

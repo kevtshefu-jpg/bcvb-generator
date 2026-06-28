@@ -7,6 +7,7 @@ import {
   type ImportRowInsert,
 } from '../services/importService'
 import { parseImportFile } from '../utils/importParsers'
+import { MobileDetailCard, ResponsiveDataList } from '../../../components/ui/ResponsiveDataView'
 
 export default function ImportPlayersPage() {
   const { user } = useAuth()
@@ -113,7 +114,7 @@ export default function ImportPlayersPage() {
           <article className="dashboard-panelCard">
             <h3 className="dashboard-panelCard__title">Prévisualisation</h3>
 
-            <div className="admin-page__tableWrap" style={{ marginTop: 16 }}>
+            <div className="admin-page__tableWrap responsive-data-table" style={{ marginTop: 16 }}>
               <table className="admin-page__table">
                 <thead>
                   <tr>
@@ -138,6 +139,23 @@ export default function ImportPlayersPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="responsive-data-mobile" style={{ marginTop: 16 }}>
+              <ResponsiveDataList>
+                {previewRows.map((row, index) => (
+                  <MobileDetailCard
+                    key={index}
+                    eyebrow={`Ligne ${index + 1}`}
+                    title={`${row.normalized_first_name || 'Prénom manquant'} ${row.normalized_last_name || 'Nom manquant'}`}
+                    items={[
+                      { label: 'Email', value: row.normalized_email || '—', full: true },
+                      { label: 'Téléphone', value: row.normalized_phone || '—' },
+                      { label: 'Année', value: row.normalized_birth_year || '—' },
+                      { label: 'Catégorie', value: row.normalized_category_id || '—' },
+                    ]}
+                  />
+                ))}
+              </ResponsiveDataList>
             </div>
 
             <div style={{ marginTop: 18 }}>

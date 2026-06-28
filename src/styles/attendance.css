@@ -320,6 +320,65 @@
   background: #fff2cf;
 }
 
+.attendance-player-card-list {
+  gap: 12px;
+}
+
+.attendance-player-card {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid rgba(7, 16, 31, 0.1);
+  box-shadow: 0 14px 30px rgba(7, 16, 31, 0.08);
+}
+
+.attendance-player-card.has-warning {
+  border-color: rgba(200, 16, 46, 0.22);
+  background: #fff5f7;
+}
+
+.attendance-player-card header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+}
+
+.attendance-player-card strong,
+.attendance-player-card span {
+  display: block;
+  min-width: 0;
+}
+
+.attendance-player-card header > div > span,
+.attendance-player-card label > span,
+.attendance-player-card__grid > div > span {
+  color: #5c6472;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.attendance-player-card label,
+.attendance-player-card__grid > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.attendance-player-card__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.attendance-player-card__warning {
+  color: #9b1028;
+  font-weight: 900;
+}
+
 .attendance-stat-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -347,9 +406,25 @@
 }
 
 .attendance-alert {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
   padding: 12px;
   border-radius: 14px;
   border: 1px solid rgba(7, 16, 31, 0.08);
+  overflow-wrap: anywhere;
+}
+
+.attendance-alert__level {
+  justify-self: start;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #07101f;
+  background: rgba(255, 255, 255, 0.66);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .attendance-alert strong,

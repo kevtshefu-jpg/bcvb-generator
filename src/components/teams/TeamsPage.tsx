@@ -13,6 +13,7 @@ import { getTeamProfileBasePath } from "../../lib/teams/teamRoutes";
 import { buildTeamsDashboardData, computeTeamIndicators } from "../../lib/teams/teamStats";
 import { isHeadCoachRole } from "../../lib/teams/teamStaff";
 import { TeamDashboardCard } from "./TeamDashboardCard";
+import { MobileDetailCard, ResponsiveDataList } from "../ui/ResponsiveDataView";
 import "../../styles/teams.css";
 
 export function TeamsPage() {
@@ -128,7 +129,7 @@ export function TeamsPage() {
 
       <section className="team-table-card">
         <h2>Tableau équipes</h2>
-        <div className="team-table-scroll">
+        <div className="team-table-scroll responsive-data-table">
           <table className="bcvb-table-premium">
             <thead><tr><th>Équipe</th><th>Catégorie</th><th>Niveau</th><th>Coach principal</th><th>Statut</th><th>Fiche</th></tr></thead>
             <tbody>
@@ -147,6 +148,30 @@ export function TeamsPage() {
               })}
             </tbody>
           </table>
+        </div>
+        <div className="responsive-data-mobile">
+          <ResponsiveDataList empty={<p>Aucune équipe ne correspond aux filtres.</p>}>
+            {filteredTeams.map((team) => {
+              const teamStaff = getTeamStaff(team.id);
+              const headCoach = teamStaff.find((member) => isHeadCoachRole(member.role) && member.isActive);
+              return (
+                <MobileDetailCard
+                  key={team.id}
+                  eyebrow={team.category}
+                  title={team.name}
+                  subtitle={team.championship || team.description || "Fiche équipe BCVB"}
+                  badge={<span className="bcvb-status-pill">{team.status}</span>}
+                  items={[
+                    { label: "Niveau", value: team.level },
+                    { label: "Saison", value: team.season },
+                    { label: "Coach principal", value: headCoach?.name || "À affecter", full: true },
+                    { label: "Salle", value: team.mainGym || "—", full: true },
+                  ]}
+                  actions={<Link to={`${profileBasePath}/${team.id}`}>Ouvrir la fiche</Link>}
+                />
+              );
+            })}
+          </ResponsiveDataList>
         </div>
       </section>
     </main>

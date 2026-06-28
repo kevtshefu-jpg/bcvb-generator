@@ -1,4 +1,5 @@
 import type { FamilyContact, RosterPermissionSet } from "../../types/roster";
+import { MobileDetailCard, ResponsiveDataList } from "../ui/ResponsiveDataView";
 
 export function FamilyContactsPanel({
   contacts,
@@ -25,7 +26,7 @@ export function FamilyContactsPanel({
         <span>Visibles <strong>{permissions.canViewSensitiveContacts ? contacts.length : 0}</strong></span>
         <span>Masqués <strong>{permissions.canViewSensitiveContacts ? 0 : contacts.length}</strong></span>
       </div>
-      <div className="bcvb-table-scroll">
+      <div className="bcvb-table-scroll responsive-data-table">
         <table className="bcvb-table-premium">
           <thead><tr><th>Relation</th><th>Nom</th><th>Email</th><th>Téléphone</th><th>Référent</th></tr></thead>
           <tbody>
@@ -42,7 +43,23 @@ export function FamilyContactsPanel({
           </tbody>
         </table>
       </div>
+      <div className="responsive-data-mobile">
+        <ResponsiveDataList empty={<p>Aucun contact famille importé.</p>}>
+          {contacts.map((contact) => (
+            <MobileDetailCard
+              key={contact.id}
+              eyebrow={contact.relation}
+              title={`${contact.firstName} ${contact.lastName}`.trim() || "Contact famille"}
+              badge={<span className="roster-chip">{contact.isParentReferent ? "Référent" : "Contact"}</span>}
+              items={[
+                { label: "Email", value: permissions.canViewSensitiveContacts ? contact.email || "—" : "Masqué", full: true },
+                { label: "Téléphone", value: permissions.canViewSensitiveContacts ? contact.phone || "—" : "Masqué" },
+                { label: "Principal", value: contact.isPrimary ? "Oui" : "Non" },
+              ]}
+            />
+          ))}
+        </ResponsiveDataList>
+      </div>
     </section>
   );
 }
-

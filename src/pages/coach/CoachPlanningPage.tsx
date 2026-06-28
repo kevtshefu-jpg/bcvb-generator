@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { MobileDetailCard, ResponsiveDataList } from '../../components/ui/ResponsiveDataView'
 
 const defaultRows = [
   ['Semaine 1', 'Accueil / cadre', 'Manipulation', 'Occupation espace', 'Coordination', 'Confiance', 'Jeux de repères', 'Engagement'],
@@ -22,7 +23,8 @@ export default function CoachPlanningPage() {
           <input value={team} onChange={(event) => setTeam(event.target.value)} placeholder="Équipe" />
           <input value={period} onChange={(event) => setPeriod(event.target.value)} placeholder="Période" />
         </div>
-        <table className="bcvb-table-premium">
+        <div className="responsive-data-table">
+          <table className="bcvb-table-premium">
           <thead>
             <tr>
               {['Semaine', 'Thème', 'Objectif technique', 'Objectif tactique', 'Objectif physique', 'Objectif mental', 'Situation référence', 'Critères'].map((header) => <th key={header}>{header}</th>)}
@@ -33,7 +35,27 @@ export default function CoachPlanningPage() {
               <tr key={row[0]}>{row.map((cell) => <td key={cell}>{cell}</td>)}</tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
+        <div className="responsive-data-mobile">
+          <ResponsiveDataList>
+            {defaultRows.map((row) => (
+              <MobileDetailCard
+                key={row[0]}
+                eyebrow={row[0]}
+                title={row[1]}
+                items={[
+                  { label: 'Technique', value: row[2] },
+                  { label: 'Tactique', value: row[3] },
+                  { label: 'Physique', value: row[4] },
+                  { label: 'Mental', value: row[5] },
+                  { label: 'Situation', value: row[6], full: true },
+                  { label: 'Critères', value: row[7], full: true },
+                ]}
+              />
+            ))}
+          </ResponsiveDataList>
+        </div>
       </article>
     </main>
   )

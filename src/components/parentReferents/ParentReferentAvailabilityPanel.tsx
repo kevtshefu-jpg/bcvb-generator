@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { LogisticsStatus, PlayerLogisticsAvailability, TeamLogisticsEvent } from "../../types/parentReferent";
 import { getLogisticsStatusLabel, sanitizeParentReferentNote } from "../../lib/parentReferents/parentReferentLogistics";
+import { MobileDetailCard, ResponsiveDataList } from "../ui/ResponsiveDataView";
 
 const statusOptions: LogisticsStatus[] = ["present", "absent", "to_confirm", "not_filled"];
 
@@ -93,7 +94,7 @@ export function ParentReferentAvailabilityPanel({
         <button type="button" onClick={() => setAvailabilities(initialAvailabilities)}>Réinitialiser filtres</button>
       </div>
 
-      <div className="parent-referent-table-wrap">
+      <div className="parent-referent-table-wrap responsive-data-table">
         <table className="parent-referent-availability-table">
           <thead>
             <tr>
@@ -138,6 +139,43 @@ export function ParentReferentAvailabilityPanel({
             ))}
           </tbody>
         </table>
+      </div>
+      <div className="responsive-data-mobile">
+        <ResponsiveDataList empty={<p>Aucune disponibilité logistique à afficher.</p>}>
+          {availabilities.map((availability) => (
+            <MobileDetailCard
+              key={availability.id}
+              eyebrow="Logistique"
+              title={availability.playerName}
+              badge={<span className="bcvb-status-pill">{getLogisticsStatusLabel(availability.status)}</span>}
+              items={[
+                {
+                  label: "Statut",
+                  value: availability.status === "unavailable" ? (
+                    <span className="parent-referent-status-badge parent-referent-status-badge--unavailable">Non disponible</span>
+                  ) : (
+                    <select
+                      disabled={!canManage}
+                      value={availability.status}
+                      onChange={(event) => updateAvailability(availability.id, { status: event.target.value as LogisticsStatus })}
+                    >
+                      {statusOptions.map((status) => <option key={status} value={status}>{getLogisticsStatusLabel(status)}</option>)}
+                    </select>
+                  ),
+                  full: true,
+                },
+                { label: "Transport", value: <input type="checkbox" disabled={!canManage} checked={Boolean(availability.transportNeeded)} onChange={(event) => updateAvailability(availability.id, { transportNeeded: event.target.checked })} /> },
+                { label: "Voiture", value: <input type="checkbox" disabled={!canManage} checked={Boolean(availability.carAvailable)} onChange={(event) => updateAvailability(availability.id, { carAvailable: event.target.checked })} /> },
+                { label: "Places", value: <input type="number" min={0} max={8} disabled={!canManage} value={availability.availableSeats || 0} onChange={(event) => updateAvailability(availability.id, { availableSeats: Number(event.target.value) })} /> },
+                { label: "Maillots", value: <input type="checkbox" disabled={!canManage} checked={Boolean(availability.jerseyWash)} onChange={(event) => updateAvailability(availability.id, { jerseyWash: event.target.checked })} /> },
+                { label: "Goûter", value: <input type="checkbox" disabled={!canManage} checked={Boolean(availability.snackContribution)} onChange={(event) => updateAvailability(availability.id, { snackContribution: event.target.checked })} /> },
+                { label: "Table", value: <input type="checkbox" disabled={!canManage} checked={Boolean(availability.tableHelp)} onChange={(event) => updateAvailability(availability.id, { tableHelp: event.target.checked })} /> },
+                { label: "Accompagnateur", value: <input disabled={!canManage} value={availability.accompanyingParent || ""} onChange={(event) => updateAvailability(availability.id, { accompanyingParent: event.target.value })} />, full: true },
+                { label: "Remarque", value: <input disabled={!canManage} value={availability.note || ""} onChange={(event) => updateAvailability(availability.id, { note: event.target.value })} placeholder="Remarque courte" />, full: true },
+              ]}
+            />
+          ))}
+        </ResponsiveDataList>
       </div>
       <p className="parent-referent-muted">Les informations médicales ne peuvent pas être créées ici. Un statut indisponible vient du coach ou de l’admin.</p>
     </section>

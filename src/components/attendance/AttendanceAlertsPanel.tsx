@@ -10,6 +10,7 @@ export function AttendanceAlertsPanel({ alerts }: { alerts: AttendanceAlert[] })
       <div className="attendance-alert-list">
         {alerts.map((alert) => (
           <article className={`attendance-alert attendance-alert--${alert.level}`} key={alert.id}>
+            <span className="attendance-alert__level">{alert.level}</span>
             <strong>{alert.message}</strong>
             <p>{alert.recommendedAction}</p>
           </article>
@@ -19,4 +20,3 @@ export function AttendanceAlertsPanel({ alerts }: { alerts: AttendanceAlert[] })
     </aside>
   );
 }
-

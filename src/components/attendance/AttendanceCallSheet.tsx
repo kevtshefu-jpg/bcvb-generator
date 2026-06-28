@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { AttendancePlayer, AttendanceRecord, AttendanceStatus } from "../../types/attendance";
 import { attendanceStatuses, getAttendanceStatusLabel } from "../../lib/attendance/attendanceScoring";
-import { AttendancePlayerRow } from "./AttendancePlayerRow";
+import { AttendancePlayerCard, AttendancePlayerRow } from "./AttendancePlayerRow";
 
 export function AttendanceCallSheet({
   players,
@@ -84,7 +84,7 @@ export function AttendanceCallSheet({
         <button type="button" disabled={!canEdit} onClick={onLock}>{locked ? "Appel validé" : "Valider appel coach"}</button>
       </div>
 
-      <div className="attendance-table-scroll">
+      <div className="attendance-table-scroll responsive-data-table">
         <table className="bcvb-table-premium attendance-table">
           <thead>
             <tr>
@@ -116,6 +116,23 @@ export function AttendanceCallSheet({
             {visiblePlayers.length === 0 && <tr><td colSpan={8}>Aucun joueur ne correspond au filtre.</td></tr>}
           </tbody>
         </table>
+      </div>
+      <div className="responsive-data-mobile attendance-player-card-list">
+        {visiblePlayers.map((player) => {
+          const record = records.find((item) => item.playerId === player.id);
+          if (!record) return null;
+          return (
+            <AttendancePlayerCard
+              key={player.id}
+              player={player}
+              record={record}
+              canEdit={effectiveCanEdit}
+              canViewNotes={canViewNotes}
+              onChange={updateRecord}
+            />
+          );
+        })}
+        {visiblePlayers.length === 0 && <p>Aucun joueur ne correspond au filtre.</p>}
       </div>
     </section>
   );

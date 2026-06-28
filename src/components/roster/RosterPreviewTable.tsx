@@ -1,5 +1,6 @@
 import type { RosterImportRow, RosterPermissionSet } from "../../types/roster";
 import { describeDuplicate } from "../../lib/roster/rosterDuplicate";
+import { MobileDetailCard, ResponsiveDataList } from "../ui/ResponsiveDataView";
 
 function rowTone(row: RosterImportRow) {
   if (row.ignored) return "is-muted";
@@ -26,6 +27,15 @@ export function RosterPreviewTable({
   onPatchRow: (rowId: string, patch: Partial<RosterImportRow>) => void;
   onSelectRow: (row: RosterImportRow) => void;
 }) {
+  const renderActions = (row: RosterImportRow) => (
+    <div className="roster-row-actions">
+      <button type="button" onClick={() => onSelectRow(row)}>Fiche</button>
+      <button type="button" disabled={permissions.readOnly} onClick={() => onPatchRow(row.id, { validated: true, ignored: false })}>Valider</button>
+      <button type="button" disabled={permissions.readOnly} onClick={() => onPatchRow(row.id, { ignored: true })}>Ignorer</button>
+      <button type="button" disabled={!permissions.canMergeDuplicates || (row.duplicateScore || 0) < 60}>Fusionner</button>
+    </div>
+  );
+
   return (
     <section className="bcvb-tool-card roster-section">
       <div className="roster-section-header">
@@ -35,7 +45,7 @@ export function RosterPreviewTable({
         </div>
         <strong>{rows.length} lignes</strong>
       </div>
-      <div className="bcvb-table-scroll">
+      <div className="bcvb-table-scroll responsive-data-table">
         <table className="bcvb-table-premium roster-preview-table">
           <thead>
             <tr>
@@ -70,12 +80,7 @@ export function RosterPreviewTable({
                 <td>{row.errors.join(" ") || row.warnings.join(" ") || "—"}</td>
                 <td>{describeDuplicate(row)} · {row.duplicateScore || 0}%</td>
                 <td>
-                  <div className="roster-row-actions">
-                    <button type="button" onClick={() => onSelectRow(row)}>Fiche</button>
-                    <button type="button" disabled={permissions.readOnly} onClick={() => onPatchRow(row.id, { validated: true, ignored: false })}>Valider</button>
-                    <button type="button" disabled={permissions.readOnly} onClick={() => onPatchRow(row.id, { ignored: true })}>Ignorer</button>
-                    <button type="button" disabled={!permissions.canMergeDuplicates || (row.duplicateScore || 0) < 60}>Fusionner</button>
-                  </div>
+                  {renderActions(row)}
                 </td>
               </tr>
             ))}
@@ -83,7 +88,31 @@ export function RosterPreviewTable({
           </tbody>
         </table>
       </div>
+      <div className="responsive-data-mobile">
+        <ResponsiveDataList empty={<p>Importe un fichier pour afficher la prévisualisation.</p>}>
+          {rows.map((row) => (
+            <MobileDetailCard
+              key={row.id}
+              tone={rowTone(row)}
+              eyebrow={`Ligne ${row.sourceLine}`}
+              title={`${row.mapped?.firstName || "Prénom manquant"} ${row.mapped?.lastName || "Nom manquant"}`}
+              subtitle={row.targetTeamName || "À affecter"}
+              badge={<span className="roster-chip">{row.ignored ? "Ignorée" : row.errors.length ? "Erreur" : row.warnings.length ? "Alerte" : "Valide"}</span>}
+              items={[
+                { label: "Naissance", value: row.mapped?.birthDate || "—" },
+                { label: "Sexe", value: row.mapped?.gender || "—" },
+                { label: "Licence", value: row.mapped?.licenseNumber || "—" },
+                { label: "Catégorie", value: row.mapped?.category || "—" },
+                { label: "Parent 1", value: permissions.canViewSensitiveContacts ? contactLabel(row, 0) : "Masqué", full: true },
+                { label: "Parent 2", value: permissions.canViewSensitiveContacts ? contactLabel(row, 1) : "Masqué", full: true },
+                { label: "Contrôles", value: row.errors.join(" ") || row.warnings.join(" ") || "—", full: true },
+                { label: "Doublon", value: `${describeDuplicate(row)} · ${row.duplicateScore || 0}%`, full: true },
+              ]}
+              actions={renderActions(row)}
+            />
+          ))}
+        </ResponsiveDataList>
+      </div>
     </section>
   );
 }
-
