@@ -729,10 +729,19 @@ export default function EditorialStudioPage() {
 
         <section className="editorial-editor-column editorial-workbench__main" id="studio-editor">
           <section className="editorial-panel editorial-step-card editorial-editor-shell">
-            <header>
-              <p className="bcvb-eyebrow">Éditeur</p>
-              <h2>BCVB Rich Markdown</h2>
-              <span>Sections · tableaux · situations · encarts</span>
+            <header className="editorial-editor-shell__header">
+              <div className="editorial-editor-shell__title">
+                <p className="bcvb-eyebrow editorial-editor-shell__badge">Éditeur</p>
+                <h2>BCVB Rich Markdown</h2>
+                <span>Structure les contenus club avec sections, tableaux, situations et encarts.</span>
+              </div>
+              <div className="editorial-editor-shell__visual" aria-hidden="true">
+                <svg viewBox="0 0 48 48" role="img" focusable="false">
+                  <rect x="10" y="6" width="28" height="36" rx="6" />
+                  <path d="M17 17h14M17 24h14M17 31h9" />
+                  <circle cx="36" cy="12" r="5" />
+                </svg>
+              </div>
             </header>
             <div className="editorial-editor-stats">
               {editorStats.map((item) => (
@@ -752,7 +761,7 @@ export default function EditorialStudioPage() {
                   family: resolveQualityFamily(state.family),
                 }).globalScore,
               })}
-              placeholder="Écris ou colle ici le document final BCVB Rich Markdown. Les actions rapides à droite ajoutent des blocs prêts à relire."
+              placeholder="Écris ou colle ici le document final. Les actions rapides ajoutent des blocs prêts à relire."
             />
           </section>
 

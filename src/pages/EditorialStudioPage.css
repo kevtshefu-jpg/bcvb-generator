@@ -102,20 +102,33 @@
 
 .editorial-top-toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 10px;
   position: sticky;
   top: 14px;
   z-index: 8;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
   border: 1px solid rgba(20, 24, 31, 0.1);
   border-radius: 18px;
   padding: 12px;
   background: rgba(255, 255, 255, 0.94);
   box-shadow: 0 18px 44px rgba(16, 24, 39, 0.12);
   backdrop-filter: blur(10px);
+  scrollbar-width: thin;
+}
+
+.editorial-top-toolbar .bcvb-premium-toolbar__main,
+.editorial-top-toolbar .bcvb-premium-toolbar__secondary {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+  min-width: max-content;
 }
 
 .editorial-top-toolbar button {
+  flex: 0 0 auto;
   min-height: 40px;
   border: 0;
   border-radius: 999px;
@@ -124,6 +137,9 @@
   background: #eceef1;
   font-weight: 900;
   cursor: pointer;
+  white-space: nowrap !important;
+  overflow-wrap: normal !important;
+  word-break: normal;
 }
 
 .editorial-top-toolbar button:first-child,
@@ -322,16 +338,58 @@
   border-top: 5px solid #14181f;
 }
 
-.editorial-editor-shell header {
-  display: flex;
-  justify-content: space-between;
+.editorial-editor-shell__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 16px;
-  align-items: end;
+  align-items: start;
 }
 
-.editorial-editor-shell header span {
+.editorial-editor-shell__title {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.editorial-editor-shell__title h2 {
+  margin: 0;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+
+.editorial-editor-shell__badge {
+  width: fit-content;
+  max-width: 100%;
+  white-space: nowrap;
+  word-break: normal;
+}
+
+.editorial-editor-shell__title span {
   color: rgba(20, 24, 31, 0.62);
   font-weight: 900;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.editorial-editor-shell__visual {
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  color: #a32035;
+  background: linear-gradient(135deg, rgba(163, 32, 53, 0.12), rgba(20, 24, 31, 0.06));
+}
+
+.editorial-editor-shell__visual svg {
+  width: 34px;
+  height: 34px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .editorial-editor-stats {
@@ -346,6 +404,7 @@
   background: #f7f1ee;
   display: grid;
   gap: 4px;
+  min-width: 0;
 }
 
 .editorial-editor-stats span {
@@ -353,6 +412,8 @@
   font-size: 0.72rem;
   font-weight: 900;
   text-transform: uppercase;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .editorial-editor-stats strong {
@@ -949,10 +1010,86 @@
   .editorial-quality-summary,
   .editorial-response-grid,
   .editorial-stepper,
-  .editorial-mode-grid,
-  .editorial-editor-stats {
+  .editorial-mode-grid {
     grid-template-columns: 1fr;
     flex-direction: column;
+  }
+
+  .editorial-top-toolbar {
+    top: 8px;
+    gap: 8px;
+    margin-inline: -6px;
+    padding: 8px;
+    border-radius: 14px;
+    box-shadow: 0 12px 28px rgba(16, 24, 39, 0.1);
+  }
+
+  .editorial-top-toolbar .bcvb-premium-toolbar__main,
+  .editorial-top-toolbar .bcvb-premium-toolbar__secondary {
+    gap: 8px;
+  }
+
+  .editorial-top-toolbar button {
+    min-height: 38px;
+    padding-inline: 12px;
+    font-size: 0.82rem;
+  }
+
+  .editorial-editor-shell {
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  .editorial-editor-shell__header {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .editorial-editor-shell__title {
+    gap: 7px;
+  }
+
+  .editorial-editor-shell__title h2 {
+    font-size: clamp(1.35rem, 7vw, 1.85rem);
+    line-height: 1.08;
+  }
+
+  .editorial-editor-shell__title span {
+    max-width: 32rem;
+    font-size: 0.88rem;
+    font-weight: 760;
+  }
+
+  .editorial-editor-shell__visual {
+    display: none;
+  }
+
+  .editorial-editor-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .editorial-editor-stats article {
+    min-height: 66px;
+    padding: 11px;
+    border-radius: 14px;
+  }
+
+  .editorial-editor-stats span {
+    font-size: 0.68rem;
+    letter-spacing: 0.03em;
+    line-height: 1.15;
+  }
+
+  .editorial-editor-stats strong {
+    font-size: 1.45rem;
+  }
+
+  .editorial-markdown-editor {
+    min-height: 340px;
+    border-radius: 14px;
+    padding: 14px;
+    font-size: 0.88rem;
   }
 
   .editorial-attachment-row {
