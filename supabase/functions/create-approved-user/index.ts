@@ -195,7 +195,7 @@ async function assertAdminCaller(
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
-    .select('id, email, role, is_active')
+    .select('id, email, role, is_active, profile_status')
     .eq('id', userData.user.id)
     .maybeSingle()
 
@@ -205,7 +205,7 @@ async function assertAdminCaller(
 
   const role = normalizeRole(profile?.role)
 
-  if (!profile?.is_active) {
+  if (!profile?.is_active || profile.profile_status !== 'active') {
     throw new Error('Compte administrateur inactif.')
   }
 
@@ -213,7 +213,7 @@ async function assertAdminCaller(
     throw new Error('Droits insuffisants pour créer un compte.')
   }
 
-  return userData.user
+  return { user: userData.user, role }
 }
 
 async function updateRegistrationApprovalStatus(
@@ -444,6 +444,7 @@ Deno.serve(async (request) => {
       .from('registration_requests')
       .select('*')
       .eq('id', requestId)
+      .eq('status', 'pending')
       .single()
 
     if (requestError || !requestRow) {
@@ -467,6 +468,22 @@ Deno.serve(async (request) => {
         registrationRequest.requested_role ||
         'member',
     )
+
+    const allowedRoles = new Set([
+      'admin', 'responsable_technique', 'dirigeant', 'coach', 'team_staff',
+      'parent_referent', 'joueur', 'parent', 'benevole', 'arbitre', 'otm', 'member',
+    ])
+
+    if (!allowedRoles.has(finalRole)) {
+      return jsonResponse({ ok: false, error: 'Rôle final invalide.' }, 400)
+    }
+
+    if (['admin', 'responsable_technique'].includes(finalRole) && adminUser.role !== 'admin') {
+      return jsonResponse(
+        { ok: false, error: 'Seul un administrateur peut attribuer un rôle élevé.' },
+        403,
+      )
+    }
 
     if (!email) {
       return jsonResponse({ ok: false, error: 'Email manquant dans la demande.' }, 400)
@@ -573,7 +590,7 @@ Deno.serve(async (request) => {
     await updateRegistrationApprovalStatus(
       supabaseAdmin,
       requestId,
-      adminUser.id,
+      adminUser.user.id,
       activationEmailStatus,
     )
     await updateProfileRequestStatus(supabaseAdmin, email, 'approved')

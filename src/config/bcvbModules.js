@@ -14,6 +14,7 @@ export function normalizeRole(role) {
 }
 
 export function isModuleAllowed(module, role) {
+  if (!role || !BCVB_ROLES.includes(role)) return false
   if (module.roles) return canAccessCategory(module, role)
   return module.allowedRoles.includes(normalizeSiteRole(role))
 }

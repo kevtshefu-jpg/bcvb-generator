@@ -271,6 +271,7 @@ export function normalizeSiteRole(role) {
 }
 
 export function canAccessCategory(category, role) {
+  if (!role || !SITE_ROLES.includes(role)) return false
   if (normalizeSiteRole(role) === 'admin') return true
   return category.roles.includes(normalizeSiteRole(role))
 }

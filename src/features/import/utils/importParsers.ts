@@ -1,6 +1,6 @@
 import Papa from 'papaparse'
-import * as XLSX from 'xlsx'
 import type { ImportRowInsert } from '../services/importService'
+import { getSafeImportExtension, MAX_IMPORT_ROWS, readSafeXlsxRecords } from './safeSpreadsheet'
 
 type GenericRow = Record<string, unknown>
 
@@ -83,6 +83,7 @@ function normalizeRow(row: GenericRow): ImportRowInsert {
 }
 
 export async function parseCsvFile(file: File): Promise<ImportRowInsert[]> {
+  if (getSafeImportExtension(file) !== 'csv') throw new Error('Un fichier CSV est requis.')
   const text = await file.text()
 
   const parsed = Papa.parse<GenericRow>(text, {
@@ -93,18 +94,13 @@ export async function parseCsvFile(file: File): Promise<ImportRowInsert[]> {
   if (parsed.errors.length > 0) {
     throw new Error(parsed.errors[0].message)
   }
+  if (parsed.data.length > MAX_IMPORT_ROWS) throw new Error(`Le fichier dépasse ${MAX_IMPORT_ROWS} lignes.`)
 
   return parsed.data.map(normalizeRow)
 }
 
 export async function parseExcelFile(file: File): Promise<ImportRowInsert[]> {
-  const arrayBuffer = await file.arrayBuffer()
-  const workbook = XLSX.read(arrayBuffer, { type: 'array' })
-  const firstSheetName = workbook.SheetNames[0]
-  const worksheet = workbook.Sheets[firstSheetName]
-  const json = XLSX.utils.sheet_to_json<GenericRow>(worksheet, { defval: '' })
-
-  return json.map(normalizeRow)
+  return (await readSafeXlsxRecords(file)).map(normalizeRow)
 }
 
 export async function parseImportFile(file: File): Promise<ImportRowInsert[]> {
@@ -114,9 +110,9 @@ export async function parseImportFile(file: File): Promise<ImportRowInsert[]> {
     return parseCsvFile(file)
   }
 
-  if (lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls')) {
+  if (lowerName.endsWith('.xlsx')) {
     return parseExcelFile(file)
   }
 
-  throw new Error('Format non pris en charge. Utilisez un fichier CSV, XLSX ou XLS.')
+  throw new Error('Format non pris en charge. Utilisez un fichier CSV ou XLSX.')
 }

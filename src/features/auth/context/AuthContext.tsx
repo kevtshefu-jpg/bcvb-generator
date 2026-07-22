@@ -4,6 +4,7 @@ import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../../../lib/supabase'
 import { withTimeout } from '../../../utils/withTimeout'
 import { normalizeRole } from '../../../config/roles'
+import { isKnownUserRole } from '../utils/profileAccess'
 
 export type UserRole =
   | 'admin'
@@ -27,6 +28,7 @@ type Profile = {
   full_name: string | null
   role: UserRole
   is_active: boolean
+  profile_status: string
   category_id: string | null
 }
 
@@ -35,13 +37,14 @@ type AuthContextType = {
   session: Session | null
   profile: Profile | null
   loading: boolean
+  profileError: string | null
+  accessDenied: boolean
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
-const ELEVATED_AUTH_ROLES: UserRole[] = ['admin', 'responsable_technique']
 
 type ProfileRow = {
   id?: string | null
@@ -49,68 +52,25 @@ type ProfileRow = {
   full_name?: string | null
   role?: string | null
   is_active?: boolean | null
+  profile_status?: string | null
   category_id?: string | null
 }
 
-function normalizeUserRole(value?: string | null): UserRole {
-  return normalizeRole(value) as UserRole
-}
-
-function getElevatedMetadataRole(currentUser: User): UserRole | null {
-  const candidates = [
-    currentUser.app_metadata?.role,
-    currentUser.app_metadata?.profile_role,
-    currentUser.app_metadata?.user_role,
-    currentUser.user_metadata?.role,
-    currentUser.user_metadata?.profile_role,
-    currentUser.user_metadata?.user_role,
-  ]
-
-  for (const candidate of candidates) {
-    const role = normalizeUserRole(typeof candidate === 'string' ? candidate : null)
-
-    if (ELEVATED_AUTH_ROLES.includes(role)) {
-      return role
-    }
-  }
-
-  return null
-}
-
-function resolveProfileRole(currentUser: User, role?: string | null): UserRole {
-  const normalizedRole = normalizeUserRole(role)
-  const elevatedMetadataRole = getElevatedMetadataRole(currentUser)
-
-  if (elevatedMetadataRole && (!role || normalizedRole === 'member')) {
-    console.warn(
-      `[AuthContext] rôle élevé conservé depuis les métadonnées Auth : ${elevatedMetadataRole}.`,
-    )
-    return elevatedMetadataRole
-  }
-
-  return normalizedRole
-}
-
-function buildFallbackProfile(currentUser: User): Profile {
-  return {
-    id: currentUser.id,
-    email: currentUser.email ?? '',
-    full_name: (currentUser.user_metadata?.full_name as string | undefined) ?? null,
-    role: getElevatedMetadataRole(currentUser) ?? 'member',
-    is_active: true,
-    category_id: null,
-  }
-}
-
 function buildLoadedProfile(currentUser: User, row: ProfileRow): Profile {
+  const normalizedRole = normalizeRole(row.role)
+  if (!row.role || !isKnownUserRole(normalizedRole)) {
+    throw new Error('Le profil ne contient aucun rôle reconnu.')
+  }
+
   return {
     id: row.id || currentUser.id,
     email: row.email || currentUser.email || '',
     full_name:
       row.full_name ??
       ((currentUser.user_metadata?.full_name as string | undefined) || null),
-    role: resolveProfileRole(currentUser, row.role),
-    is_active: row.is_active ?? true,
+    role: normalizedRole,
+    is_active: row.is_active === true,
+    profile_status: row.profile_status ?? '',
     category_id: row.category_id ?? null,
   }
 }
@@ -120,18 +80,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [profileError, setProfileError] = useState<string | null>(null)
 
   const loadProfile = useCallback(async (currentUser: User | null) => {
     if (!currentUser) {
       setProfile(null)
+      setProfileError(null)
       return
     }
+
+    setProfile(null)
+    setProfileError(null)
 
     try {
       const { data, error } = await withTimeout(
         supabase
           .from('profiles')
-          .select('id, email, full_name, role, is_active, category_id')
+          .select('id, email, full_name, role, is_active, profile_status, category_id')
           .eq('id', currentUser.id)
           .maybeSingle(),
         12000,
@@ -140,29 +105,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error('Erreur chargement profil :', error)
-        setProfile(buildFallbackProfile(currentUser))
+        setProfileError('Le profil applicatif n’a pas pu être chargé.')
         return
       }
 
       if (!data) {
-        setProfile(buildFallbackProfile(currentUser))
+        setProfileError('Aucun profil applicatif n’est associé à ce compte.')
         return
       }
 
       setProfile(buildLoadedProfile(currentUser, data as ProfileRow))
     } catch (error) {
       console.error('Erreur inattendue chargement profil :', error)
-      setProfile(buildFallbackProfile(currentUser))
+      setProfile(null)
+      setProfileError(error instanceof Error ? error.message : 'Le profil applicatif n’a pas pu être vérifié.')
     }
   }, [])
-  console.log('[AuthContext] user/profile', {
-  userId: user?.id,
-  userEmail: user?.email,
-  profileId: profile?.id,
-  profileEmail: profile?.email,
-  role: profile?.role,
-  isActive: profile?.is_active,
-})
 
   const refreshProfile = useCallback(async () => {
     await loadProfile(user)
@@ -195,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(null)
           setUser(null)
           setProfile(null)
+          setProfileError('La session n’a pas pu être vérifiée.')
         }
       } finally {
         if (isMounted) {
@@ -249,6 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null)
     setUser(null)
     setSession(null)
+    setProfileError(null)
   }
 
   const value = useMemo(
@@ -257,11 +217,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       profile,
       loading,
+      profileError,
+      accessDenied: Boolean(user && (!profile || profile.is_active !== true || profile.profile_status !== 'active')),
       signIn,
       signOut,
       refreshProfile,
     }),
-    [user, session, profile, loading, refreshProfile]
+    [user, session, profile, loading, profileError, refreshProfile]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

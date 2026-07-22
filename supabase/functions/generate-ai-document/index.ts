@@ -39,12 +39,12 @@ async function assertAdminCaller(req: Request) {
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
-    .select('id, role, is_active')
+    .select('id, role, is_active, profile_status')
     .eq('id', userData.user.id)
     .maybeSingle()
 
   if (profileError) throw new Error(`Impossible de vérifier les droits admin : ${profileError.message}`)
-  if (!profile || profile.is_active === false || !isAdminRole(profile.role)) {
+  if (!profile || profile.is_active !== true || profile.profile_status !== 'active' || !isAdminRole(profile.role)) {
     throw new Error('Droits administrateur insuffisants.')
   }
 }

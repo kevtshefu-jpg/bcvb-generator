@@ -5,3 +5,8 @@ dist
 .DS_Store
 .vercel
 .env*
+.rls-test-fixtures.json
+coverage
+playwright-report
+test-results
+supabase/.env.local

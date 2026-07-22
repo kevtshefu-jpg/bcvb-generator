@@ -60,6 +60,7 @@ export function isTeamStaff(role?: string | null) {
 }
 
 export function canAccessLibrary(role?: string | null) {
+  if (!role) return false
   return [
     'admin',
     'responsable_technique',

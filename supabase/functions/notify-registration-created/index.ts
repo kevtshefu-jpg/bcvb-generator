@@ -44,6 +44,15 @@ function normalizeRole(value: unknown) {
   return role || 'member'
 }
 
+function escapeHtml(value: unknown) {
+  return normalizeText(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function isAdminRole(value: unknown) {
   return ['admin', 'responsable_technique'].includes(normalizeRole(value))
 }
@@ -73,7 +82,7 @@ async function assertAdminDiagnosticCaller(
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
-    .select('id, role, is_active')
+    .select('id, role, is_active, profile_status')
     .eq('id', userData.user.id)
     .maybeSingle()
 
@@ -81,7 +90,7 @@ async function assertAdminDiagnosticCaller(
     throw new Error(`Impossible de vérifier les droits diagnostic : ${profileError.message}`)
   }
 
-  if (!profile || profile.is_active === false || !isAdminRole(profile.role)) {
+  if (!profile || profile.is_active !== true || profile.profile_status !== 'active' || !isAdminRole(profile.role)) {
     throw new Error('Droits administrateur insuffisants pour lancer le diagnostic.')
   }
 }
@@ -150,6 +159,92 @@ async function logEmailEvent(
   }
 }
 
+async function createAdminNotification(
+  supabaseAdmin: ReturnType<typeof createClient> | null,
+  payload: RegistrationNotificationPayload,
+) {
+  if (!supabaseAdmin) return
+
+  const fullName = buildFullName(payload)
+  const { error } = await supabaseAdmin.from('admin_notifications').insert({
+    type: 'registration_created',
+    title: 'Nouvelle demande d’inscription',
+    message: `${fullName} souhaite créer un accès ${normalizeText(payload.roleRequested) || 'member'}.`,
+    action_url: '/admin/inscriptions',
+    recipient_role: 'admin',
+    metadata: {
+      registration_request_id: normalizeText(payload.registrationRequestId),
+      email: normalizeEmail(payload.email),
+      role_requested: normalizeText(payload.roleRequested),
+      category_requested: normalizeText(payload.categoryRequested),
+      requested_team: normalizeText(payload.requestedTeam) || null,
+    },
+  })
+
+  if (error) throw new Error(`Notification admin impossible : ${error.message}`)
+}
+
+async function claimRegistrationNotification(
+  supabaseAdmin: ReturnType<typeof createClient> | null,
+  payload: RegistrationNotificationPayload,
+): Promise<RegistrationNotificationPayload> {
+  if (!supabaseAdmin) {
+    throw new Error('Configuration serveur indisponible pour vérifier la demande.')
+  }
+
+  const requestId = normalizeText(payload.registrationRequestId)
+  const email = normalizeEmail(payload.email)
+
+  let query = supabaseAdmin
+    .from('registration_requests')
+    .select('id, email, first_name, last_name, role_requested, requested_role, category_requested, requested_category, requested_team, phone, status, notification_sent_at, created_at')
+    .eq('status', 'pending')
+
+  if (requestId && requestId !== 'unknown') {
+    query = query.eq('id', requestId)
+  } else {
+    if (!email) throw new Error('Identifiant de demande ou email requis.')
+    query = query.eq('email', email).order('created_at', { ascending: false }).limit(1)
+  }
+
+  const { data: candidate, error: candidateError } = await query.maybeSingle()
+  if (candidateError || !candidate) {
+    throw new Error('Demande d’inscription vérifiable introuvable.')
+  }
+
+  if (email && normalizeEmail(candidate.email) !== email) {
+    throw new Error('Email incohérent avec la demande enregistrée.')
+  }
+
+  if (candidate.notification_sent_at) {
+    throw new Error('Notification déjà envoyée pour cette demande.')
+  }
+
+  const { data: claimed, error: claimError } = await supabaseAdmin
+    .from('registration_requests')
+    .update({ notification_sent_at: new Date().toISOString() })
+    .eq('id', candidate.id)
+    .eq('status', 'pending')
+    .is('notification_sent_at', null)
+    .select('id')
+    .maybeSingle()
+
+  if (claimError || !claimed) {
+    throw new Error('Notification déjà traitée ou demande devenue indisponible.')
+  }
+
+  return {
+    registrationRequestId: String(candidate.id),
+    email: normalizeEmail(candidate.email),
+    firstName: normalizeText(candidate.first_name),
+    lastName: normalizeText(candidate.last_name),
+    roleRequested: normalizeText(candidate.role_requested || candidate.requested_role),
+    categoryRequested: normalizeText(candidate.category_requested || candidate.requested_category),
+    requestedTeam: normalizeText(candidate.requested_team) || null,
+    phone: normalizeText(candidate.phone) || null,
+  }
+}
+
 function buildFullName(payload: RegistrationNotificationPayload) {
   return (
     normalizeText(payload.fullName) ||
@@ -165,7 +260,7 @@ function buildApplicantEmail(payload: RegistrationNotificationPayload) {
   return {
     subject: 'BCVB — Votre demande d’accès a bien été reçue',
     htmlContent: `
-      <p>Bonjour ${fullName},</p>
+      <p>Bonjour ${escapeHtml(fullName)},</p>
       <p>Votre demande d’accès au référentiel BCVB a bien été reçue.</p>
       <p>Un responsable du club va l’étudier. Si elle est validée, vous recevrez un email sécurisé pour créer votre mot de passe.</p>
       <p>À bientôt,<br>BCVB Référentiel</p>
@@ -191,11 +286,11 @@ function buildAdminEmail(payload: RegistrationNotificationPayload) {
     htmlContent: `
       <p>Nouvelle demande d’inscription BCVB.</p>
       <ul>
-        <li><strong>Nom :</strong> ${fullName}</li>
-        <li><strong>Email :</strong> ${normalizeEmail(payload.email)}</li>
-        <li><strong>Rôle demandé :</strong> ${normalizeText(payload.roleRequested) || 'Non précisé'}</li>
-        <li><strong>Catégorie :</strong> ${normalizeText(payload.categoryRequested) || 'Non précisée'}</li>
-        <li><strong>Équipe :</strong> ${normalizeText(payload.requestedTeam) || 'Non précisée'}</li>
+        <li><strong>Nom :</strong> ${escapeHtml(fullName)}</li>
+        <li><strong>Email :</strong> ${escapeHtml(normalizeEmail(payload.email))}</li>
+        <li><strong>Rôle demandé :</strong> ${escapeHtml(payload.roleRequested) || 'Non précisé'}</li>
+        <li><strong>Catégorie :</strong> ${escapeHtml(payload.categoryRequested) || 'Non précisée'}</li>
+        <li><strong>Équipe :</strong> ${escapeHtml(payload.requestedTeam) || 'Non précisée'}</li>
       </ul>
       <p><a href="${adminUrl}">Ouvrir les inscriptions admin</a></p>
     `,
@@ -234,11 +329,9 @@ Deno.serve(async (request) => {
   const results: Record<string, unknown> = {}
 
   try {
-    const payload = (await request.json()) as RegistrationNotificationPayload
-    const applicantEmail = normalizeEmail(payload.email)
-    const fullName = buildFullName(payload)
+    const receivedPayload = (await request.json()) as RegistrationNotificationPayload
 
-    if (payload.diagnostic === true) {
+    if (receivedPayload.diagnostic === true) {
       try {
         await assertAdminDiagnosticCaller(supabaseAdmin, request, serviceRoleKey || undefined)
       } catch (error) {
@@ -252,6 +345,27 @@ Deno.serve(async (request) => {
         )
       }
       return jsonResponse({ ok: true, diagnostic: true, results: { skipped: 'diagnostic' } })
+    }
+
+    let payload: RegistrationNotificationPayload
+    try {
+      payload = await claimRegistrationNotification(supabaseAdmin, receivedPayload)
+    } catch (error) {
+      return jsonResponse({
+        ok: false,
+        error: error instanceof Error ? error.message : 'Demande non vérifiable.',
+      }, 409)
+    }
+
+    const applicantEmail = normalizeEmail(payload.email)
+    const fullName = buildFullName(payload)
+
+    try {
+      await createAdminNotification(supabaseAdmin, payload)
+      results.notification = 'created'
+    } catch (error) {
+      console.error('[notify-registration-created] admin notification failed:', error)
+      results.notification = 'failed'
     }
 
     if (!applicantEmail) {

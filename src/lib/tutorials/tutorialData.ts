@@ -237,7 +237,7 @@ export const tutorialItems: TutorialItem[] = [
       {
         id: "fichier",
         title: "Sélectionner le fichier",
-        description: "Dépose un CSV, XLS ou XLSX contenant au minimum nom, prénom et catégorie.",
+        description: "Dépose un CSV ou XLSX contenant au minimum nom, prénom et catégorie.",
       },
       {
         id: "mapping",
@@ -262,7 +262,7 @@ export const tutorialItems: TutorialItem[] = [
       },
     ],
     checklist: [
-      "Fichier au format CSV/XLS/XLSX",
+      "Fichier au format CSV/XLSX",
       "Colonnes obligatoires détectées",
       "Doublons relus",
       "Équipe et saison sélectionnées",

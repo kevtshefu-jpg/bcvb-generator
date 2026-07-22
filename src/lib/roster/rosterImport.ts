@@ -1,5 +1,5 @@
 import * as Papa from "papaparse";
-import * as XLSX from "xlsx";
+import { getSafeImportExtension, MAX_IMPORT_ROWS, readSafeXlsxRecords } from "../../features/import/utils/safeSpreadsheet";
 import type {
   ImportedRosterRow,
   Player,
@@ -25,23 +25,8 @@ function hasValue(row: Record<string, unknown>) {
   return Object.values(row).some((value) => String(value || "").trim().length > 0);
 }
 
-async function readWorkbook(file: File) {
-  const extension = file.name.split(".").pop()?.toLowerCase();
-
-  if (extension === "csv") {
-    const text = await file.text();
-    return XLSX.read(text, { type: "string" });
-  }
-
-  if (extension === "xls" || extension === "xlsx") {
-    const buffer = await file.arrayBuffer();
-    return XLSX.read(buffer, { type: "array" });
-  }
-
-  throw new Error("Format non reconnu. Importez un fichier .csv, .xls ou .xlsx.");
-}
-
 async function readCsvRows(file: File): Promise<Record<string, unknown>[]> {
+  if (getSafeImportExtension(file) !== "csv") throw new Error("Un fichier CSV est requis.");
   const text = await file.text();
   const parsed = Papa.parse<Record<string, unknown>>(text, {
     header: true,
@@ -51,6 +36,7 @@ async function readCsvRows(file: File): Promise<Record<string, unknown>[]> {
   if (parsed.errors.length > 0 && parsed.data.length === 0) {
     throw new Error(parsed.errors[0]?.message || "CSV illisible.");
   }
+  if (parsed.data.length > MAX_IMPORT_ROWS) throw new Error(`Le fichier dépasse ${MAX_IMPORT_ROWS} lignes.`);
 
   return parsed.data;
 }
@@ -132,7 +118,7 @@ export async function parseRosterFile(
   file: File,
   existingPlayers: Partial<Player>[] = []
 ): Promise<RosterImportResult> {
-  const extension = file.name.split(".").pop()?.toLowerCase();
+  const extension = getSafeImportExtension(file);
 
   if (extension === "csv") {
     const rows = await readCsvRows(file);
@@ -142,18 +128,7 @@ export async function parseRosterFile(
     return buildRosterImportResult(file.name, cleanedRows, mapping, existingPlayers);
   }
 
-  const workbook = await readWorkbook(file);
-  const firstSheetName = workbook.SheetNames[0];
-
-  if (!firstSheetName) {
-    throw new Error("Aucune feuille détectée dans le fichier.");
-  }
-
-  const sheet = workbook.Sheets[firstSheetName];
-  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-    defval: "",
-    raw: false,
-  });
+  const rows = await readSafeXlsxRecords(file);
 
   const cleanedRows = rows.filter(hasValue);
   const columns = Object.keys(cleanedRows[0] || {});

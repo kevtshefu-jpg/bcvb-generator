@@ -19,6 +19,7 @@ type ProfileRow = {
   full_name?: string | null
   role?: string | null
   is_active?: boolean | null
+  profile_status?: string | null
 }
 
 function jsonResponse(body: unknown, status = 200) {
@@ -82,7 +83,7 @@ async function getCallerProfile(
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
-    .select('id, email, full_name, role, is_active')
+    .select('id, email, full_name, role, is_active, profile_status')
     .eq('id', userData.user.id)
     .maybeSingle()
 
@@ -90,7 +91,7 @@ async function getCallerProfile(
     throw new Error(`Impossible de vérifier les permissions : ${profileError.message}`)
   }
 
-  if (!profile?.is_active || !isAdminRole(profile.role)) {
+  if (!profile?.is_active || profile.profile_status !== 'active' || !isAdminRole(profile.role)) {
     throw new Error('Vous n’avez pas les droits administrateur.')
   }
 
@@ -103,7 +104,7 @@ async function getTargetProfile(
 ) {
   const { data, error } = await supabaseAdmin
     .from('profiles')
-    .select('id, email, full_name, role, is_active')
+    .select('id, email, full_name, role, is_active, profile_status')
     .eq('id', profileId)
     .maybeSingle()
 
@@ -324,6 +325,13 @@ Deno.serve(async (request) => {
 
     const callerProfile = await getCallerProfile(supabaseUser, supabaseAdmin)
     const targetProfile = await getTargetProfile(supabaseAdmin, profileId)
+
+    if (isAdminRole(targetProfile.role) && normalizeRole(callerProfile.role) !== 'admin') {
+      return jsonResponse(
+        { ok: false, error: 'Seul un administrateur peut gérer un profil à rôle élevé.' },
+        403,
+      )
+    }
 
     if (callerProfile.id === targetProfile.id) {
       const selfActionMessage =

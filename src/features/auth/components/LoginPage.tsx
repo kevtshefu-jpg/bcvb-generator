@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Link } from 'react-router-dom'
 import { formatUserFacingError } from '../../../lib/userFacingError'
+import { ACCESS_SUSPENDED_MESSAGE, isProfileAllowed } from '../utils/profileAccess'
 
 function getDefaultPathByRole(role?: string | null) {
   if (role === 'admin' || role === 'responsable_technique') return '/admin'
@@ -12,7 +13,7 @@ function getDefaultPathByRole(role?: string | null) {
 }
 
 export default function LoginPage() {
-  const { signIn, user, profile, loading } = useAuth()
+  const { signIn, signOut, user, profile, loading, profileError } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -24,13 +25,28 @@ export default function LoginPage() {
   const from = (location.state as { from?: { pathname?: string } })?.from?.pathname
 
   useEffect(() => {
-    if (!loading && user && profile?.is_active) {
+    if (!loading && user && isProfileAllowed(profile)) {
       navigate(from || getDefaultPathByRole(profile.role), { replace: true })
     }
   }, [loading, user, profile, navigate, from])
 
-  if (!loading && user && profile?.is_active) {
+  if (!loading && user && isProfileAllowed(profile)) {
     return <Navigate to={from || getDefaultPathByRole(profile.role)} replace />
+  }
+
+  if (!loading && user && (profileError || !isProfileAllowed(profile))) {
+    return (
+      <main className="bcvb-page-loading" role="alert">
+        <div className="bcvb-loading-card">
+          <p className="bcvb-eyebrow">Accès suspendu</p>
+          <h1>Profil non vérifié</h1>
+          <p>{ACCESS_SUSPENDED_MESSAGE}</p>
+          <button type="button" className="bcvb-button" onClick={() => void signOut()}>
+            Se déconnecter
+          </button>
+        </div>
+      </main>
+    )
   }
 
   async function handleSubmit(e: React.FormEvent) {

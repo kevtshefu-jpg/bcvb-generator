@@ -168,7 +168,7 @@ export const faqItems: FaqItem[] = [
     question: "Comment importer un effectif CSV ou Excel ?",
     shortAnswer: "Dépose le fichier, mappe les colonnes, prévisualise puis valide.",
     answer:
-      "Le fichier doit contenir au minimum les informations joueur nécessaires : nom, prénom, catégorie ou équipe. Le module accepte CSV, XLS et XLSX. Après import, associe les colonnes aux champs BCVB, vérifie les erreurs, traite les doublons et affecte les joueurs à une équipe et une saison.",
+      "Le fichier doit contenir au minimum les informations joueur nécessaires : nom, prénom, catégorie ou équipe. Le module accepte CSV et XLSX (5 Mo maximum, sans formule). Après import, associe les colonnes aux champs BCVB, vérifie les erreurs, traite les doublons et affecte les joueurs à une équipe et une saison.",
     category: "effectifs",
     roles: ["admin", "responsable_technique", "coach"],
     priority: "haute",

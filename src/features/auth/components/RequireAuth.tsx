@@ -2,16 +2,16 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import type { UserRole } from '../context/AuthContext'
 import { useStableSession } from '../../../hooks/useStableSession'
-import { PRESENTATION_MODE } from '../../../config/presentationMode'
 import { normalizeRole } from '../../../config/roles'
 import { formatUserFacingError } from '../../../lib/userFacingError'
+import { ACCESS_SUSPENDED_MESSAGE, isProfileAllowed } from '../utils/profileAccess'
 
 type RequireAuthProps = {
   allowedRoles?: UserRole[]
 }
 
 export default function RequireAuth({ allowedRoles }: RequireAuthProps) {
-  const { profile, loading: profileLoading } = useAuth()
+  const { profile, loading: profileLoading, profileError } = useAuth()
   const { loading, session, error } = useStableSession()
   const location = useLocation()
 
@@ -44,7 +44,7 @@ export default function RequireAuth({ allowedRoles }: RequireAuthProps) {
     return <Navigate to="/connexion" replace state={{ from: location }} />
   }
 
-  if (allowedRoles && profileLoading) {
+  if (profileLoading) {
     return (
       <main className="bcvb-page-loading">
         <div className="bcvb-loading-card">
@@ -56,26 +56,26 @@ export default function RequireAuth({ allowedRoles }: RequireAuthProps) {
     )
   }
 
+  if (profileError || !isProfileAllowed(profile)) {
+    return (
+      <main className="bcvb-page-loading" role="alert">
+        <div className="bcvb-loading-card">
+          <p className="bcvb-eyebrow">Accès suspendu</p>
+          <h1>Profil non vérifié</h1>
+          <p>{ACCESS_SUSPENDED_MESSAGE}</p>
+          <a className="bcvb-button" href="/connexion">Retour à la connexion</a>
+        </div>
+      </main>
+    )
+  }
+
   const normalizedProfileRole = normalizeRole(profile?.role)
   const normalizedAllowedRoles = allowedRoles?.map((role) => normalizeRole(role))
 
   if (
     allowedRoles &&
-    profile?.role &&
     !normalizedAllowedRoles?.includes(normalizedProfileRole)
   ) {
-    if (PRESENTATION_MODE) {
-      return (
-        <main className="bcvb-page-loading">
-          <div className="bcvb-loading-card">
-            <p className="bcvb-eyebrow">Mode présentation</p>
-            <h1>Accès réservé</h1>
-            <p>Cette section est disponible avec un profil autorisé. La démonstration peut continuer depuis le tableau de bord ou la page Démo commission.</p>
-            <a className="bcvb-button" href="/demo-commission">Voir la démo commission</a>
-          </div>
-        </main>
-      )
-    }
     return (
       <main className="bcvb-page-loading">
         <div className="bcvb-loading-card">
@@ -83,19 +83,6 @@ export default function RequireAuth({ allowedRoles }: RequireAuthProps) {
           <h1>Section réservée</h1>
           <p>Cette page est réservée aux administrateurs et responsables techniques autorisés.</p>
           <a className="bcvb-button" href="/dashboard">Retour au tableau de bord</a>
-        </div>
-      </main>
-    )
-  }
-
-  if (allowedRoles && !profile?.role) {
-    return (
-      <main className="bcvb-page-loading">
-        <div className="bcvb-loading-card">
-          <p className="bcvb-eyebrow">Accès</p>
-          <h1>Droits indisponibles</h1>
-          <p>La session est active, mais le profil membre n’a pas pu être chargé.</p>
-          <a className="bcvb-button" href="/dashboard">Retour espace membre</a>
         </div>
       </main>
     )

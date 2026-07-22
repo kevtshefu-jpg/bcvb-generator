@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom'
+import { lazy } from 'react'
 
 import { MainLayout } from './layouts/MainLayout'
 
@@ -17,102 +18,102 @@ import ResetPasswordPage from '../features/auth/pages/ResetPasswordPage'
 // =========================
 // GLOBAL AUTH
 // =========================
-import DashboardPage from '../features/dashboard/pages/DashboardPage'
+const DashboardPage = lazy(() => import('../features/dashboard/pages/DashboardPage'))
 
 // =========================
 // REFERENTIEL
 // =========================
-import { CategoriesPage } from '../features/referentiel/pages/CategoriesPage'
-import { CategoryDetailPage } from '../features/referentiel/pages/CategoryDetailPage'
-import { ThemesPage } from '../features/referentiel/pages/ThemesPage'
-import { SituationsLibraryPage } from '../features/referentiel/pages/SituationsLibraryPage'
-import { SituationDetailPage } from '../features/referentiel/pages/SituationDetailPage'
+const CategoriesPage = lazy(() => import('../features/referentiel/pages/CategoriesPage').then((module) => ({ default: module.CategoriesPage })))
+const CategoryDetailPage = lazy(() => import('../features/referentiel/pages/CategoryDetailPage').then((module) => ({ default: module.CategoryDetailPage })))
+const ThemesPage = lazy(() => import('../features/referentiel/pages/ThemesPage').then((module) => ({ default: module.ThemesPage })))
+const SituationsLibraryPage = lazy(() => import('../features/referentiel/pages/SituationsLibraryPage').then((module) => ({ default: module.SituationsLibraryPage })))
+const SituationDetailPage = lazy(() => import('../features/referentiel/pages/SituationDetailPage').then((module) => ({ default: module.SituationDetailPage })))
 
 // =========================
 // LIBRARY / GENERATOR / SESSIONS
 // =========================
-import LibraryPage from '../features/library/pages/LibraryPage'
-import GeneratorRoutePage from '../features/generator/pages/GeneratorRoutePage'
-import SessionsPage from '../features/sessions/pages/SessionsPage'
-import { DocumentReaderPage } from '../pages/DocumentReaderPage'
-import DebugLocal from '../pages/DebugLocal'
-import CommissionDemoPage from '../pages/CommissionDemoPage'
+const LibraryPage = lazy(() => import('../features/library/pages/LibraryPage'))
+const GeneratorRoutePage = lazy(() => import('../features/generator/pages/GeneratorRoutePage'))
+const SessionsPage = lazy(() => import('../features/sessions/pages/SessionsPage'))
+const DocumentReaderPage = lazy(() => import('../pages/DocumentReaderPage').then((module) => ({ default: module.DocumentReaderPage })))
+const DebugLocal = lazy(() => import('../pages/DebugLocal'))
+const CommissionDemoPage = lazy(() => import('../pages/CommissionDemoPage'))
 import ModulePlaceholder from '../components/ModulePlaceholder'
-import FAQPage from '../pages/FAQPage'
-import ContentCreatorTutorial from '../pages/tutorials/ContentCreatorTutorial'
-import PlatformTutorial from '../pages/tutorials/PlatformTutorial'
-import RosterImportPage from '../pages/RosterImportPage'
-import PlanningBuilderPage from '../pages/PlanningBuilderPage'
-import SessionBuilderPage from '../pages/SessionBuilderPage'
-import SessionLibraryPage from '../modules/sessions/SessionLibraryPage'
-import SituationLibraryPage from '../modules/sessions/SituationLibraryPage'
-import AttendancePage from '../pages/AttendancePage'
-import PlayerEvaluationPage from '../pages/PlayerEvaluationPage'
-import EditorialStudioPage from '../pages/EditorialStudioPage'
-import EditorialRoadmapPage from '../pages/EditorialRoadmapPage'
-import CreateDocumentPage from '../features/document-creation/pages/CreateDocumentPage'
-import TeamsManagementPage from '../features/modules/pages/TeamsManagementPage'
-import TeamProfilePage from '../components/teams/TeamProfilePage'
-import DirigeantsSpacePage from '../features/modules/pages/DirigeantsSpacePage'
-import ParentReferentsSpacePage from '../features/modules/pages/ParentReferentsSpacePage'
-import AdminSettingsPage from '../features/modules/pages/AdminSettingsPage'
-import AdminOcrAttachmentsPage from '../features/modules/pages/AdminOcrAttachmentsPage'
-import QualityExportsPage from '../features/modules/pages/QualityExportsPage'
-import AdminSessionManager from '../modules/admin/AdminSessionManager'
-import AdminSituationManager from '../modules/admin/AdminSituationManager'
+const FAQPage = lazy(() => import('../pages/FAQPage'))
+const ContentCreatorTutorial = lazy(() => import('../pages/tutorials/ContentCreatorTutorial'))
+const PlatformTutorial = lazy(() => import('../pages/tutorials/PlatformTutorial'))
+const RosterImportPage = lazy(() => import('../pages/RosterImportPage'))
+const PlanningBuilderPage = lazy(() => import('../pages/PlanningBuilderPage'))
+const SessionBuilderPage = lazy(() => import('../pages/SessionBuilderPage'))
+const SessionLibraryPage = lazy(() => import('../modules/sessions/SessionLibraryPage'))
+const SituationLibraryPage = lazy(() => import('../modules/sessions/SituationLibraryPage'))
+const AttendancePage = lazy(() => import('../pages/AttendancePage'))
+const PlayerEvaluationPage = lazy(() => import('../pages/PlayerEvaluationPage'))
+const EditorialStudioPage = lazy(() => import('../pages/EditorialStudioPage'))
+const EditorialRoadmapPage = lazy(() => import('../pages/EditorialRoadmapPage'))
+const CreateDocumentPage = lazy(() => import('../features/document-creation/pages/CreateDocumentPage'))
+const TeamsManagementPage = lazy(() => import('../features/modules/pages/TeamsManagementPage'))
+const TeamProfilePage = lazy(() => import('../components/teams/TeamProfilePage'))
+const DirigeantsSpacePage = lazy(() => import('../features/modules/pages/DirigeantsSpacePage'))
+const ParentReferentsSpacePage = lazy(() => import('../features/modules/pages/ParentReferentsSpacePage'))
+const AdminSettingsPage = lazy(() => import('../features/modules/pages/AdminSettingsPage'))
+const AdminOcrAttachmentsPage = lazy(() => import('../features/modules/pages/AdminOcrAttachmentsPage'))
+const QualityExportsPage = lazy(() => import('../features/modules/pages/QualityExportsPage'))
+const AdminSessionManager = lazy(() => import('../modules/admin/AdminSessionManager'))
+const AdminSituationManager = lazy(() => import('../modules/admin/AdminSituationManager'))
 
 // =========================
 // CLUB
 // =========================
-import ClubPage from '../features/club/pages/ClubPage'
-import PilotagePage from '../features/club/pages/PilotagePage'
-import ClubDashboardPage from '../pages/club/ClubDashboardPage'
-import ClubTeamsPage from '../pages/club/ClubTeamsPage'
-import ClubIndicatorsPage from '../pages/club/ClubIndicatorsPage'
-import ClubCoachFollowUpPage from '../pages/club/ClubCoachFollowUpPage'
+const ClubPage = lazy(() => import('../features/club/pages/ClubPage'))
+const PilotagePage = lazy(() => import('../features/club/pages/PilotagePage'))
+const ClubDashboardPage = lazy(() => import('../pages/club/ClubDashboardPage'))
+const ClubTeamsPage = lazy(() => import('../pages/club/ClubTeamsPage'))
+const ClubIndicatorsPage = lazy(() => import('../pages/club/ClubIndicatorsPage'))
+const ClubCoachFollowUpPage = lazy(() => import('../pages/club/ClubCoachFollowUpPage'))
 
 // =========================
 // JOUEUR
 // =========================
-import JoueurContenusPage from '../features/joueur/pages/JoueurContenusPage'
-import JoueurChartePage from '../features/joueur/pages/JoueurChartePage'
-import JoueurEngagementPage from '../features/joueur/pages/JoueurEngagementPage'
-import JoueurFondamentauxPage from '../features/joueur/pages/JoueurFondamentauxPage'
-import JoueurProgressionPage from '../features/joueur/pages/JoueurProgressionPage'
+const JoueurContenusPage = lazy(() => import('../features/joueur/pages/JoueurContenusPage'))
+const JoueurChartePage = lazy(() => import('../features/joueur/pages/JoueurChartePage'))
+const JoueurEngagementPage = lazy(() => import('../features/joueur/pages/JoueurEngagementPage'))
+const JoueurFondamentauxPage = lazy(() => import('../features/joueur/pages/JoueurFondamentauxPage'))
+const JoueurProgressionPage = lazy(() => import('../features/joueur/pages/JoueurProgressionPage'))
 
 // =========================
 // PARENT
 // =========================
-import ParentChartePage from '../features/parent/pages/ParentChartePage'
-import ParentVieClubPage from '../features/parent/pages/ParentVieClubPage'
-import ParentRolesPage from '../features/parent/pages/ParentRolesPage'
-import ParentReferentPage from '../features/parent/pages/ParentReferentPage'
-import ParentProjetClubPage from '../features/parent/pages/ParentProjetClubPage'
+const ParentChartePage = lazy(() => import('../features/parent/pages/ParentChartePage'))
+const ParentVieClubPage = lazy(() => import('../features/parent/pages/ParentVieClubPage'))
+const ParentRolesPage = lazy(() => import('../features/parent/pages/ParentRolesPage'))
+const ParentReferentPage = lazy(() => import('../features/parent/pages/ParentReferentPage'))
+const ParentProjetClubPage = lazy(() => import('../features/parent/pages/ParentProjetClubPage'))
 
 // =========================
 // COACH
 // =========================
-import CoachJoueurProgressionPage from '../features/coach/pages/CoachJoueurProgressionPage'
-import CoachDashboardPage from '../pages/coach/CoachDashboardPage'
-import CoachTeamsPage from '../pages/coach/CoachTeamsPage'
-import CoachPlayersPage from '../pages/coach/CoachPlayersPage'
+const CoachJoueurProgressionPage = lazy(() => import('../features/coach/pages/CoachJoueurProgressionPage'))
+const CoachDashboardPage = lazy(() => import('../pages/coach/CoachDashboardPage'))
+const CoachTeamsPage = lazy(() => import('../pages/coach/CoachTeamsPage'))
+const CoachPlayersPage = lazy(() => import('../pages/coach/CoachPlayersPage'))
 
 // =========================
 // ADMIN
 // =========================
-import AdminPage from '../features/admin/pages/AdminPage'
-import PlatformPage from '../features/admin/pages/PlatformPage'
-import UnlockManagementPage from '../features/admin/pages/UnlockManagementPage'
-import AdminRegistrationRequestsPage from '../features/registration/pages/AdminRegistrationRequestsPage'
-import AdminProfileRequestsPage from '../features/admin/pages/AdminProfileRequestsPage'
-import AdminMembersPage from '../features/admin/pages/AdminMembersPage'
-import AdminAIDocumentsPage from '../features/admin/pages/AdminAIDocumentsPage'
+const AdminPage = lazy(() => import('../features/admin/pages/AdminPage'))
+const PlatformPage = lazy(() => import('../features/admin/pages/PlatformPage'))
+const UnlockManagementPage = lazy(() => import('../features/admin/pages/UnlockManagementPage'))
+const AdminRegistrationRequestsPage = lazy(() => import('../features/registration/pages/AdminRegistrationRequestsPage'))
+const AdminProfileRequestsPage = lazy(() => import('../features/admin/pages/AdminProfileRequestsPage'))
+const AdminMembersPage = lazy(() => import('../features/admin/pages/AdminMembersPage'))
+const AdminAIDocumentsPage = lazy(() => import('../features/admin/pages/AdminAIDocumentsPage'))
 
 // =========================
 // IMPORT
 // =========================
-import ImportBatchValidationPage from '../features/import/pages/ImportBatchValidationPage'
-import ImportCenterPage from '../features/import/pages/ImportCenterPage'
+const ImportBatchValidationPage = lazy(() => import('../features/import/pages/ImportBatchValidationPage'))
+const ImportCenterPage = lazy(() => import('../features/import/pages/ImportCenterPage'))
 
 export const router = createBrowserRouter([
   {
