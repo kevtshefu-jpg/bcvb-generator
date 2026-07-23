@@ -5,6 +5,7 @@ import { MainLayout } from './layouts/MainLayout'
 
 import RequireAuth from '../features/auth/components/RequireAuth'
 import { RequireRole } from '../components/auth/RequireRole'
+import { areInternalRoutesEnabled } from '../config/internalRoutes'
 
 // =========================
 // PUBLIC
@@ -36,9 +37,8 @@ const LibraryPage = lazy(() => import('../features/library/pages/LibraryPage'))
 const GeneratorRoutePage = lazy(() => import('../features/generator/pages/GeneratorRoutePage'))
 const SessionsPage = lazy(() => import('../features/sessions/pages/SessionsPage'))
 const DocumentReaderPage = lazy(() => import('../pages/DocumentReaderPage').then((module) => ({ default: module.DocumentReaderPage })))
-const DebugLocal = lazy(() => import('../pages/DebugLocal'))
-const CommissionDemoPage = lazy(() => import('../pages/CommissionDemoPage'))
 import ModulePlaceholder from '../components/ModulePlaceholder'
+import NotFoundPage from '../pages/NotFoundPage'
 const FAQPage = lazy(() => import('../pages/FAQPage'))
 const ContentCreatorTutorial = lazy(() => import('../pages/tutorials/ContentCreatorTutorial'))
 const PlatformTutorial = lazy(() => import('../pages/tutorials/PlatformTutorial'))
@@ -115,6 +115,30 @@ const AdminAIDocumentsPage = lazy(() => import('../features/admin/pages/AdminAID
 const ImportBatchValidationPage = lazy(() => import('../features/import/pages/ImportBatchValidationPage'))
 const ImportCenterPage = lazy(() => import('../features/import/pages/ImportCenterPage'))
 
+const internalRoutesEnabled = areInternalRoutesEnabled({
+  isDev: import.meta.env.DEV,
+  enabledFlag: import.meta.env.VITE_ENABLE_INTERNAL_ROUTES,
+})
+
+const internalRoutes = internalRoutesEnabled
+  ? [
+      {
+        path: 'debug-local',
+        element: (() => {
+          const DebugLocal = lazy(() => import('../pages/DebugLocal'))
+          return <DebugLocal />
+        })(),
+      },
+      {
+        path: 'demo-commission',
+        element: (() => {
+          const CommissionDemoPage = lazy(() => import('../pages/CommissionDemoPage'))
+          return <CommissionDemoPage />
+        })(),
+      },
+    ]
+  : []
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -127,14 +151,7 @@ export const router = createBrowserRouter([
         index: true,
         element: <HomePage />,
       },
-      {
-        path: 'debug-local',
-        element: <DebugLocal />,
-      },
-      {
-        path: 'demo-commission',
-        element: <CommissionDemoPage />,
-      },
+      ...internalRoutes,
       {
         path: 'connexion',
         element: <LoginPage />,
@@ -630,7 +647,7 @@ export const router = createBrowserRouter([
       // =========================
       {
         path: '*',
-        element: <ModulePlaceholder />,
+        element: <NotFoundPage />,
       },
     ],
   },
