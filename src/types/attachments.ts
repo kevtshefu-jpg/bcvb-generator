@@ -33,7 +33,7 @@ export interface OCRPageResult {
 export interface AttachmentMetadata {
   importedAt: string;
   pageCount: number;
-  extractionMode: "PDF texte" | "PDF scanné" | "Image" | "Texte brut" | "Inconnu";
+  extractionMode: "PDF texte" | "PDF scanné" | "Image" | "Texte brut" | "Saisie manuelle" | "Inconnu";
   originalFileName: string;
   emptyPages: number[];
   lowConfidencePages: number[];
@@ -71,7 +71,6 @@ export interface AttachmentProgressEvent {
 
 export interface AttachmentProcessingOptions {
   maxPages?: number;
-  useMockOcr?: boolean;
   signal?: AbortSignal;
   onProgress?: (event: AttachmentProgressEvent) => void;
 }

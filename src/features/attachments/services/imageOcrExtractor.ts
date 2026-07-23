@@ -8,13 +8,31 @@ function createAttachmentId() {
     : `attachment-${Date.now()}-${Math.round(Math.random() * 10000)}`;
 }
 
-function mockOcrText(fileName: string) {
-  return [
-    `Source image importée : ${fileName}`,
-    "Texte OCR simulé en attente de moteur serveur ou Tesseract disponible.",
-    "Relire manuellement cette extraction avant toute publication.",
-    "Philosophie BCVB : Défendre Fort, Courir et Partager la Balle.",
-  ].join("\n");
+export type OcrFailureCode = "empty" | "network" | "provider" | "invalid_file";
+
+const failureMessages: Record<OcrFailureCode, string> = {
+  empty: "Aucun texte n’a été détecté dans ce fichier.",
+  network: "L’extraction est momentanément indisponible. Réessayez.",
+  provider: "L’extraction n’a pas pu aboutir. Réessayez ou saisissez le texte.",
+  invalid_file: "Ce fichier image ne peut pas être lu.",
+};
+
+export class OcrExtractionError extends Error {
+  constructor(public readonly code: OcrFailureCode, public readonly cause?: unknown) {
+    super(failureMessages[code]);
+    this.name = "OcrExtractionError";
+  }
+}
+
+function isNetworkFailure(error: unknown) {
+  if (error instanceof TypeError) return true;
+  const message = error instanceof Error ? error.message : String(error);
+  return /network|fetch|connexion|internet|load.*(language|traineddata)/i.test(message);
+}
+
+function normalizeOcrFailure(error: unknown) {
+  if (error instanceof OcrExtractionError) return error;
+  return new OcrExtractionError(isNetworkFailure(error) ? "network" : "provider", error);
 }
 
 function loadImage(file: File) {
@@ -60,34 +78,22 @@ async function preprocessImage(file: File) {
   return canvas;
 }
 
-export async function recognizeCanvasWithOcr(
-  canvas: HTMLCanvasElement,
-  fallbackName: string,
-  useMockOcr = false
-) {
-  if (useMockOcr) {
-    return {
-      text: mockOcrText(fallbackName),
-      confidence: 58,
-    };
-  }
-
-  const worker = await createWorker("fra+eng");
+export async function recognizeCanvasWithOcr(canvas: HTMLCanvasElement) {
+  let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
 
   try {
+    worker = await createWorker("fra+eng");
     const { data } = await worker.recognize(canvas);
+    const text = data.text.trim();
+    if (!text) throw new OcrExtractionError("empty");
     return {
-      text: data.text.trim(),
+      text,
       confidence: Math.round(data.confidence ?? 70),
     };
   } catch (error) {
-    console.warn("OCR Tesseract indisponible, utilisation du mock :", error);
-    return {
-      text: mockOcrText(fallbackName),
-      confidence: 48,
-    };
+    throw normalizeOcrFailure(error);
   } finally {
-    await worker.terminate();
+    await worker?.terminate();
   }
 }
 
@@ -95,13 +101,17 @@ export async function extractOcrFromImage(
   file: File,
   options: AttachmentProcessingOptions = {}
 ): Promise<AttachmentProcessingResult> {
+  if (!file || file.size === 0 || !file.type.startsWith("image/")) {
+    throw new OcrExtractionError("invalid_file");
+  }
+
   const createdAt = new Date().toISOString();
   options.onProgress?.({ status: "ocr_processing", progress: 24, message: "Prétraitement image : contraste et bruit." });
   const canvas = await preprocessImage(file);
   const imagePreviewUrl = canvas.toDataURL("image/png");
 
   options.onProgress?.({ status: "ocr_processing", progress: 48, message: "OCR image en cours.", pageNumber: 1 });
-  const ocr = await recognizeCanvasWithOcr(canvas, file.name, options.useMockOcr);
+  const ocr = await recognizeCanvasWithOcr(canvas);
 
   const pages: OCRPageResult[] = [
     {

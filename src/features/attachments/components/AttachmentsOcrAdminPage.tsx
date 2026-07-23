@@ -59,11 +59,15 @@ export default function AttachmentsOcrAdminPage() {
   const [message, setMessage] = useState("Dépose une pièce jointe pour démarrer la chaîne OCR.");
   const [retryingPageNumber, setRetryingPageNumber] = useState<number | null>(null);
   const [previewTab, setPreviewTab] = useState<PreviewTab>("cleaned");
+  const [manualEntry, setManualEntry] = useState(false);
+  const [manualText, setManualText] = useState("");
 
   async function handleFile(file: File) {
     setSelectedFile(file);
     setResult(null);
     setMarkdown("");
+    setManualEntry(false);
+    setManualText("");
     setProcessing(true);
     setMessage(`Analyse de ${file.name} en cours : le site détecte le type puis extrait le contenu.`);
 
@@ -100,6 +104,8 @@ export default function AttachmentsOcrAdminPage() {
     setProgress(null);
     setProcessing(false);
     setMarkdown("");
+    setManualEntry(false);
+    setManualText("");
     setMessage("Dépose une pièce jointe pour démarrer la chaîne OCR.");
   }
 
@@ -113,7 +119,7 @@ export default function AttachmentsOcrAdminPage() {
 
     try {
       const canvas = await canvasFromImageUrl(page.imagePreviewUrl);
-      const ocr = await recognizeCanvasWithOcr(canvas, `${result.fileName} page ${pageNumber}`);
+      const ocr = await recognizeCanvasWithOcr(canvas);
       const nextPages: OCRPageResult[] = result.pages.map((item) =>
         item.pageNumber === pageNumber
           ? {
@@ -134,12 +140,48 @@ export default function AttachmentsOcrAdminPage() {
         confidence: Math.round(cleanedPages.reduce((sum, item) => sum + item.confidence, 0) / Math.max(1, cleanedPages.length)),
         updatedAt: new Date().toISOString(),
       });
-      setMessage(`OCR page ${pageNumber} relancé.`);
+      setMessage(`Le texte de la page ${pageNumber} a été extrait.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Relance OCR impossible.");
     } finally {
       setRetryingPageNumber(null);
     }
+  }
+
+  function useManualText() {
+    if (!selectedFile) return;
+    const text = manualText.trim();
+    if (!text) {
+      setMessage("Saisissez un texte avant de continuer.");
+      return;
+    }
+    const now = new Date().toISOString();
+    setResult({
+      id: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `attachment-${Date.now()}`,
+      fileName: selectedFile.name,
+      mimeType: selectedFile.type || "unknown",
+      size: selectedFile.size,
+      kind: selectedFile.type.startsWith("image/") ? "image" : "unknown",
+      status: "ready",
+      rawText: text,
+      cleanedText: text,
+      pages: [{ pageNumber: 1, rawText: text, cleanedText: text, confidence: 100, warnings: ["Texte saisi manuellement"] }],
+      confidence: 100,
+      warnings: ["Texte saisi manuellement"],
+      metadata: {
+        importedAt: now,
+        pageCount: 1,
+        extractionMode: "Saisie manuelle",
+        originalFileName: selectedFile.name,
+        emptyPages: [],
+        lowConfidencePages: [],
+      },
+      createdAt: now,
+      updatedAt: now,
+    });
+    setProgress({ status: "ready", progress: 100, message: "Texte saisi manuellement." });
+    setManualEntry(false);
+    setMessage("Le texte saisi est prêt à être relu.");
   }
 
   function sendToStudio(documentType: BcvbDocumentType, draftMarkdown: string) {
@@ -270,7 +312,24 @@ export default function AttachmentsOcrAdminPage() {
               </div>
             </dl>
           )}
-          {result && (
+          {result?.status === "error" && selectedFile && (
+            <div className="attachments-source-card__recovery" role="alert">
+              <strong>L’extraction n’a pas abouti.</strong>
+              <div>
+                <button type="button" onClick={() => void handleFile(selectedFile)} disabled={processing}>Réessayer</button>
+                <button type="button" onClick={() => setManualEntry(true)}>Saisir le texte manuellement</button>
+                <button type="button" onClick={resetProcessing}>Annuler</button>
+              </div>
+              {manualEntry && (
+                <div className="attachments-source-card__manual">
+                  <label htmlFor="manual-ocr-text">Texte du document</label>
+                  <textarea id="manual-ocr-text" value={manualText} onChange={(event) => setManualText(event.target.value)} />
+                  <button type="button" onClick={useManualText}>Utiliser ce texte</button>
+                </div>
+              )}
+            </div>
+          )}
+          {result && result.status !== "error" && result.cleanedText.trim() && (
             <button type="button" className="attachments-source-card__transform" onClick={focusTransform}>
               Transformer en document BCVB
             </button>
@@ -290,7 +349,7 @@ export default function AttachmentsOcrAdminPage() {
 
       <div id="attachment-transform">
         <AttachmentToDocumentPanel
-          result={result}
+          result={result?.status !== "error" && result?.cleanedText.trim() ? result : null}
           markdown={markdown}
           onMarkdownChange={setMarkdown}
           onSendToStudio={sendToStudio}

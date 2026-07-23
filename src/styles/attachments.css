@@ -410,6 +410,40 @@
   cursor: pointer;
 }
 
+.attachments-source-card__recovery,
+.attachments-source-card__manual {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.attachments-source-card__recovery > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.attachments-source-card__recovery button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #111827;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.attachments-source-card__manual textarea {
+  min-height: 180px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d0d5dd;
+  border-radius: 12px;
+  font: inherit;
+}
+
 .ocr-preview--empty {
   min-height: 220px;
   display: grid;

@@ -33,7 +33,7 @@ export async function extractOcrFromScannedPdf(
     });
 
     const canvas = rendered.canvases[index];
-    const ocr = await recognizeCanvasWithOcr(canvas, `${file.name} page ${pageNumber}`, options.useMockOcr);
+    const ocr = await recognizeCanvasWithOcr(canvas);
 
     pages.push({
       pageNumber,

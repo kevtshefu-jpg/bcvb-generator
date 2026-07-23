@@ -34,6 +34,7 @@ export default function AttachmentProcessingPanel({
   const progressValue = progress?.progress ?? (result ? 100 : 0);
   const friendlyMessage = getFriendlyProgressMessage(progress, result);
   const solution = getAttachmentSolution(status);
+  const hasUsableText = Boolean(result && result.status !== "error" && result.cleanedText.trim());
 
   return (
     <section className="attachment-processing-panel">
@@ -96,18 +97,10 @@ export default function AttachmentProcessingPanel({
             <strong>{result.confidence}%</strong>
           </div>
           <div className="attachment-file-card__actions">
-            <button type="button" onClick={onShowRaw}>
-              Voir texte brut
-            </button>
-            <button type="button" onClick={onShowCleaned}>
-              Voir texte nettoyé
-            </button>
-            <button type="button" onClick={onCorrect}>
-              Corriger
-            </button>
-            <button type="button" onClick={onTransform}>
-              Transformer en document BCVB
-            </button>
+            {hasUsableText && <button type="button" onClick={onShowRaw}>Voir texte brut</button>}
+            {hasUsableText && <button type="button" onClick={onShowCleaned}>Voir texte nettoyé</button>}
+            {hasUsableText && <button type="button" onClick={onCorrect}>Corriger</button>}
+            {hasUsableText && <button type="button" onClick={onTransform}>Transformer en document BCVB</button>}
             <button type="button" onClick={onReset}>
               Supprimer
             </button>
