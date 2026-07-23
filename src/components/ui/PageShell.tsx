@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 export function PageShell({
   children,
@@ -100,16 +100,23 @@ export function AdminOnlyPanel({
 export function LoadingState({
   title = "Chargement en cours",
   description = "Les informations arrivent dans un instant.",
+  skeleton = false,
 }: {
-  title?: string;
-  description?: string;
+  title?: ReactNode;
+  description?: ReactNode;
+  skeleton?: boolean;
 }) {
   return (
-    <div className="bcvb-feedback-state bcvb-feedback-state--loading" role="status">
+    <div className="bcvb-feedback-state bcvb-feedback-state--loading" role="status" aria-live="polite" aria-busy="true">
       <strong>{title}</strong>
       <p>{description}</p>
+      {skeleton ? <span className="bcvb-feedback-state__skeleton" aria-hidden="true" /> : null}
     </div>
   );
+}
+
+export function RetryAction({ children = "Réessayer", ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return <button type="button" {...props}>{children}</button>;
 }
 
 export function ErrorState({
@@ -117,19 +124,62 @@ export function ErrorState({
   description,
   action,
   technicalDetail,
+  isAdmin = false,
 }: {
-  title?: string;
+  title?: ReactNode;
   description: string;
   action?: ReactNode;
   technicalDetail?: ReactNode;
+  isAdmin?: boolean;
 }) {
   return (
     <div className="bcvb-feedback-state bcvb-feedback-state--error" role="alert">
       <strong>{title}</strong>
       <p>{description}</p>
       {action ? <div className="bcvb-feedback-state__action">{action}</div> : null}
-      {technicalDetail ? <AdminOnlyPanel title="Voir le détail technique">{technicalDetail}</AdminOnlyPanel> : null}
+      {technicalDetail && isAdmin ? <AdminOnlyPanel title="Voir le détail technique">{technicalDetail}</AdminOnlyPanel> : null}
     </div>
+  );
+}
+
+export function EmptyState({
+  title = "Aucune donnée disponible",
+  description,
+  action,
+  cause = "no_data",
+}: {
+  title?: ReactNode;
+  description?: ReactNode;
+  action?: ReactNode;
+  cause?: "no_data" | "unauthorized" | "no_results" | "not_loaded";
+}) {
+  const defaultDescriptions = {
+    no_data: "Aucune donnée n’a encore été créée.",
+    unauthorized: "Aucune donnée n’est disponible pour votre rôle.",
+    no_results: "Aucune donnée ne correspond aux filtres actuels.",
+    not_loaded: "Les données n’ont pas encore été chargées.",
+  };
+
+  return (
+    <div className="bcvb-feedback-state bcvb-feedback-state--empty" role="status" data-empty-cause={cause}>
+      <strong>{title}</strong>
+      <p>{description ?? defaultDescriptions[cause]}</p>
+      {action ? <div className="bcvb-feedback-state__action">{action}</div> : null}
+    </div>
+  );
+}
+
+export function AccessSuspendedState({ action }: { action?: ReactNode }) {
+  return (
+    <main className="bcvb-page-loading" role="alert">
+      <div className="bcvb-loading-card bcvb-feedback-state--suspended">
+        <p className="bcvb-eyebrow">Accès suspendu</p>
+        <h1>Profil non vérifié</h1>
+        <p>Votre profil n’a pas pu être vérifié. L’accès est suspendu par sécurité.</p>
+        <p>Contactez un responsable du club si vous pensez qu’il s’agit d’une erreur.</p>
+        {action ? <div className="bcvb-feedback-state__action">{action}</div> : null}
+      </div>
+    </main>
   );
 }
 

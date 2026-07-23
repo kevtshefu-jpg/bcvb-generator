@@ -1,7 +1,7 @@
 import type { UserRole } from '../../../config/roles'
 
 export const ACCESS_SUSPENDED_MESSAGE =
-  "Votre profil n’a pas pu être vérifié. L’accès a été suspendu par sécurité."
+  "Votre profil n’a pas pu être vérifié. L’accès est suspendu par sécurité."
 
 const KNOWN_ROLES = new Set<UserRole>([
   'admin',

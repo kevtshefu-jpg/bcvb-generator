@@ -8,7 +8,7 @@ import {
   StatusBadge,
 } from '../../../components/ui/ResponsiveDataView'
 import { PageHeader } from '../../../components/ui/PageHeader'
-import { ErrorState, LoadingState, PageShell, StatCard, SuccessFeedback } from '../../../components/ui/PageShell'
+import { EmptyState as CommonEmptyState, ErrorState, LoadingState, PageShell, RetryAction, StatCard, SuccessFeedback } from '../../../components/ui/PageShell'
 import { useAuth } from '../../auth/context/AuthContext'
 import {
   deactivateProfile,
@@ -118,6 +118,7 @@ export default function AdminProfilesPage() {
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(
     null,
   )
+  const [technicalError, setTechnicalError] = useState<string | null>(null)
 
   const activeElevatedCount = useMemo(
     () =>
@@ -170,17 +171,13 @@ export default function AdminProfilesPage() {
   const loadProfiles = useCallback(async (options?: { keepToast?: boolean }) => {
     try {
       setLoading(true)
+      setTechnicalError(null)
       if (!options?.keepToast) setToast(null)
       const rows = await listProfiles()
       setProfiles(rows)
     } catch (error) {
-      setToast({
-        type: 'error',
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Impossible de charger les profils.',
-      })
+      setTechnicalError(error instanceof Error ? error.message : String(error))
+      setToast({ type: 'error', message: 'Les profils n’ont pas pu être chargés.' })
     } finally {
       setLoading(false)
     }
@@ -225,13 +222,8 @@ export default function AdminProfilesPage() {
       setToast({ type: 'success', message: result.warning || getSuccessMessage(action) })
       await loadProfiles({ keepToast: true })
     } catch (error) {
-      setToast({
-        type: 'error',
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Erreur de permission ou action impossible.',
-      })
+      setTechnicalError(error instanceof Error ? error.message : String(error))
+      setToast({ type: 'error', message: 'Cette action n’a pas pu être effectuée.' })
     } finally {
       setActionLoadingId(null)
     }
@@ -301,7 +293,7 @@ export default function AdminProfilesPage() {
       {toast ? (
         toast.type === 'success'
           ? <SuccessFeedback title="Action terminée" description={toast.message} />
-          : <ErrorState description={toast.message} />
+          : <ErrorState description={toast.message} action={<RetryAction onClick={() => loadProfiles()} />} technicalDetail={technicalError} isAdmin />
       ) : null}
 
       <div className="admin-profiles-tableWrap responsive-data-table">
@@ -325,7 +317,7 @@ export default function AdminProfilesPage() {
 
             {!loading && filteredProfiles.length === 0 ? (
               <tr>
-                <td colSpan={6}>Aucun profil ne correspond aux filtres.</td>
+                <td colSpan={6}><CommonEmptyState cause="no_results" title="Aucun profil trouvé" description="Aucun profil ne correspond aux filtres actuels." /></td>
               </tr>
             ) : null}
 
@@ -412,7 +404,7 @@ export default function AdminProfilesPage() {
       </div>
       <div className="responsive-data-mobile admin-profiles-mobileList">
         {loading ? (
-          <EmptyState title="Chargement des profils..." description="La liste des membres est en cours de récupération." />
+          <LoadingState title="Chargement des profils" description="La liste des membres est en cours de récupération." />
         ) : (
           <ResponsiveDataList
             empty={<EmptyState title="Aucun profil trouvé" description="Aucun profil ne correspond aux filtres actuels." />}

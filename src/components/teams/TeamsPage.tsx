@@ -13,7 +13,8 @@ import { getTeamProfileBasePath } from "../../lib/teams/teamRoutes";
 import { buildTeamsDashboardData, computeTeamIndicators } from "../../lib/teams/teamStats";
 import { isHeadCoachRole } from "../../lib/teams/teamStaff";
 import { TeamDashboardCard } from "./TeamDashboardCard";
-import { EmptyState, MobileDetailCard, ResponsiveDataList } from "../ui/ResponsiveDataView";
+import { MobileDetailCard, ResponsiveDataList } from "../ui/ResponsiveDataView";
+import { EmptyState } from "../ui/PageShell";
 import "../../styles/teams.css";
 
 export function TeamsPage() {
@@ -63,6 +64,18 @@ export function TeamsPage() {
     link.download = "synthese-equipes-bcvb.csv";
     link.click();
     URL.revokeObjectURL(url);
+  }
+
+  function resetFilters() {
+    setSeason("all");
+    setCategory("all");
+    setGender("all");
+    setLevel("all");
+    setStatus("all");
+    setCoach("");
+    setGym("");
+    setChampionship("");
+    setQuery("");
   }
 
   return (
@@ -127,6 +140,15 @@ export function TeamsPage() {
         ))}
       </section>
 
+      {filteredTeams.length === 0 ? (
+        <EmptyState
+          cause="no_results"
+          title="Aucune équipe visible"
+          description="Aucune équipe ne correspond aux filtres actuels. Réinitialisez-les pour afficher les équipes disponibles."
+          action={<button type="button" onClick={resetFilters}>Réinitialiser les filtres</button>}
+        />
+      ) : null}
+
       <section className="team-table-card">
         <h2>Tableau équipes</h2>
         <div className="team-table-scroll responsive-data-table">
@@ -153,8 +175,10 @@ export function TeamsPage() {
           <ResponsiveDataList
             empty={(
               <EmptyState
+                cause="no_results"
                 title="Aucune équipe trouvée"
                 description="Ajuste les filtres ou réinitialise la recherche pour retrouver les équipes du référentiel."
+                action={<button type="button" onClick={resetFilters}>Réinitialiser les filtres</button>}
               />
             )}
           >

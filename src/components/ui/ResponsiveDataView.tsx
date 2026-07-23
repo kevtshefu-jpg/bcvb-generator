@@ -1,4 +1,5 @@
 import { Children, type ReactNode } from "react";
+import { EmptyState as CommonEmptyState } from "./PageShell";
 
 export type KeyValueItem = {
   label: string;
@@ -56,13 +57,7 @@ export function EmptyState({
   description?: ReactNode;
   action?: ReactNode;
 }) {
-  return (
-    <div className="responsive-empty-state">
-      <strong>{title}</strong>
-      {description && <p>{description}</p>}
-      {action && <div>{action}</div>}
-    </div>
-  );
+  return <CommonEmptyState title={title} description={description} action={action} />;
 }
 
 export function DesktopDataTable({ children }: { children: ReactNode }) {

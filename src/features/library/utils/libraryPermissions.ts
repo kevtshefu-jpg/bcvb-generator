@@ -18,7 +18,7 @@ const visibilityRoles: Record<string, string[]> = {
 function normalizeRole(role?: string | null) {
   if (role === 'membre') return 'member'
   if (role === 'technical_manager') return 'responsable_technique'
-  return role || 'member'
+  return role || ''
 }
 
 function inferVisibility(document: LibraryDocumentRow) {

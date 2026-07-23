@@ -3,7 +3,8 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Link } from 'react-router-dom'
 import { formatUserFacingError } from '../../../lib/userFacingError'
-import { ACCESS_SUSPENDED_MESSAGE, isProfileAllowed } from '../utils/profileAccess'
+import { isProfileAllowed } from '../utils/profileAccess'
+import { AccessSuspendedState, ErrorState, LoadingState } from '../../../components/ui/PageShell'
 
 function getDefaultPathByRole(role?: string | null) {
   if (role === 'admin' || role === 'responsable_technique') return '/admin'
@@ -34,19 +35,12 @@ export default function LoginPage() {
     return <Navigate to={from || getDefaultPathByRole(profile.role)} replace />
   }
 
+  if (loading) {
+    return <main className="bcvb-page-loading"><LoadingState title="Vérification de votre session" description="Votre espace sera disponible dans un instant." /></main>
+  }
+
   if (!loading && user && (profileError || !isProfileAllowed(profile))) {
-    return (
-      <main className="bcvb-page-loading" role="alert">
-        <div className="bcvb-loading-card">
-          <p className="bcvb-eyebrow">Accès suspendu</p>
-          <h1>Profil non vérifié</h1>
-          <p>{ACCESS_SUSPENDED_MESSAGE}</p>
-          <button type="button" className="bcvb-button" onClick={() => void signOut()}>
-            Se déconnecter
-          </button>
-        </div>
-      </main>
-    )
+    return <AccessSuspendedState action={<button type="button" className="bcvb-button" onClick={() => void signOut()}>Se déconnecter</button>} />
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -87,11 +81,7 @@ export default function LoginPage() {
           required
         />
 
-        {error && (
-          <div role="alert" style={{ color: 'crimson', lineHeight: 1.45 }}>
-            {error}
-          </div>
-        )}
+        {error ? <ErrorState title="Connexion impossible" description={error} /> : null}
 
         <button type="submit" disabled={submitting}>
           {submitting ? 'Connexion...' : 'Se connecter'}

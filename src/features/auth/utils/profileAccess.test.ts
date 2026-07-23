@@ -25,8 +25,7 @@ describe('validation fermée du profil applicatif', () => {
   it('n’autorise qu’un profil complet explicitement actif', () => {
     expect(isProfileAllowed({ role: 'coach', is_active: true, profile_status: 'active' })).toBe(true)
     expect(ACCESS_SUSPENDED_MESSAGE).toBe(
-      "Votre profil n’a pas pu être vérifié. L’accès a été suspendu par sécurité.",
+      "Votre profil n’a pas pu être vérifié. L’accès est suspendu par sécurité.",
     )
   })
 })
-

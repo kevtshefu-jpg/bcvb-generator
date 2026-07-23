@@ -9,7 +9,8 @@ import {
   normalizeRole,
 } from '../../config/roles'
 import { useAuth } from '../../features/auth/context/AuthContext'
-import { ACCESS_SUSPENDED_MESSAGE, isProfileAllowed } from '../../features/auth/utils/profileAccess'
+import { isProfileAllowed } from '../../features/auth/utils/profileAccess'
+import { AccessSuspendedState, LoadingState } from '../ui/PageShell'
 
 type AllowedRole =
   | 'admin'
@@ -30,20 +31,11 @@ export function RequireRole({ role, allow, children }: RequireRoleProps) {
   const { profile, loading, profileError } = useAuth()
 
   if (loading) {
-    return <main className="bcvb-page-loading"><div className="bcvb-loading-card"><h1>Chargement des droits…</h1></div></main>
+    return <main className="bcvb-page-loading"><LoadingState title="Chargement de vos droits" description="Vérification de votre profil en cours." /></main>
   }
 
   if (profileError || !isProfileAllowed(profile)) {
-    return (
-      <main className="bcvb-page-loading" role="alert">
-        <div className="bcvb-loading-card">
-          <p className="bcvb-eyebrow">Accès suspendu</p>
-          <h1>Profil non vérifié</h1>
-          <p>{ACCESS_SUSPENDED_MESSAGE}</p>
-          <a className="bcvb-button" href="/connexion">Retour à la connexion</a>
-        </div>
-      </main>
-    )
+    return <AccessSuspendedState action={<a className="bcvb-button" href="/connexion">Retour à la connexion</a>} />
   }
 
   // Le rôle fourni par une page ne constitue jamais une source d'autorité.
