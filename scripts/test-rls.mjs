@@ -38,6 +38,15 @@ function check(condition, message, detail = '') {
   if (!condition) failures += 1
 }
 
+function formatPostgrestError(error) {
+  return [
+    `code=${error?.code ?? 'absent'}`,
+    `message=${error?.message ?? 'absent'}`,
+    `details=${error?.details ?? 'absent'}`,
+    `hint=${error?.hint ?? 'absent'}`,
+  ].join(', ')
+}
+
 async function authenticatedClient(email, password) {
   const client = createClient(url, anonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -150,13 +159,33 @@ for (const table of ['ai_expert_modes', 'document_ai_results', 'email_events']) 
     request_id: randomRequestId,
     admin_note_value: 'test RLS',
   })
-  check(coachError?.code === '42501', 'coach A: RPC security definer refusée', coachError?.message)
+  check(
+    coachError?.code === '42501',
+    'coach A: RPC security definer refusée',
+    formatPostgrestError(coachError),
+  )
 
   const { error: adminError } = await clients.admin.rpc('reject_profile_request', {
     request_id: randomRequestId,
     admin_note_value: 'test RLS',
   })
-  check(adminError?.code === 'P0002', 'admin: RPC autorisée jusqu’au contrôle métier', adminError?.message)
+  check(
+    adminError?.code === 'PT404',
+    'admin: RPC autorisée jusqu’au contrôle métier',
+    formatPostgrestError(adminError),
+  )
+
+  const { error: approveAdminError } = await clients.admin.rpc('approve_profile_request', {
+    request_id: randomRequestId,
+    final_role: 'member',
+    final_category_id: null,
+    admin_note_value: 'test RLS',
+  })
+  check(
+    approveAdminError?.code === 'PT404',
+    'admin: approbation autorisée jusqu’au contrôle métier',
+    formatPostgrestError(approveAdminError),
+  )
 }
 
 const { teamA, teamB, playerA, playerB, contactA, contactB, sessionA, sessionB, situationA, situationB } = fixtures
