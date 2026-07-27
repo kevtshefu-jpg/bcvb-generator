@@ -291,7 +291,7 @@ export default function AdminRegistrationRequestsPage() {
 
   return (
     <section className="admin-registration-page">
-      <PageShell>
+      <PageShell variant="wide">
       <PageHeader
         eyebrow="Administration"
         title="Demandes d’inscription"

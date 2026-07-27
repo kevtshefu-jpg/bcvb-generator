@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { lazy } from 'react'
 
 import { MainLayout } from './layouts/MainLayout'
@@ -106,7 +106,12 @@ const PlatformPage = lazy(() => import('../features/admin/pages/PlatformPage'))
 const UnlockManagementPage = lazy(() => import('../features/admin/pages/UnlockManagementPage'))
 const AdminRegistrationRequestsPage = lazy(() => import('../features/registration/pages/AdminRegistrationRequestsPage'))
 const AdminProfileRequestsPage = lazy(() => import('../features/admin/pages/AdminProfileRequestsPage'))
-const AdminMembersPage = lazy(() => import('../features/admin/pages/AdminMembersPage'))
+const AdminProfilesPage = lazy(() => import('../features/admin/pages/AdminProfilesPage'))
+import {
+  MEMBER_MANAGEMENT_LEGACY_ROUTES,
+  MEMBER_MANAGEMENT_PATH,
+  MEMBER_MANAGEMENT_ROUTE,
+} from '../features/admin/memberManagementRoute'
 const AdminAIDocumentsPage = lazy(() => import('../features/admin/pages/AdminAIDocumentsPage'))
 
 // =========================
@@ -314,10 +319,21 @@ export const router = createBrowserRouter([
             path: 'admin/demandes-profils',
             element: <AdminProfileRequestsPage />,
           },
+        ],
+      },
+
+      // Gestion globale des membres : administrateur strict uniquement.
+      {
+        element: <RequireAuth allowedRoles={['admin']} />,
+        children: [
           {
-            path: 'admin/membres',
-            element: <AdminMembersPage />,
+            path: MEMBER_MANAGEMENT_ROUTE,
+            element: <AdminProfilesPage />,
           },
+          ...MEMBER_MANAGEMENT_LEGACY_ROUTES.map((path) => ({
+            path,
+            element: <Navigate to={MEMBER_MANAGEMENT_PATH} replace />,
+          })),
         ],
       },
 

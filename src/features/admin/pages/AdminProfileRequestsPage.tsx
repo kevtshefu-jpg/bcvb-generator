@@ -7,6 +7,7 @@ import {
   type ProfileRequestRow,
   type ProfileRequestStatus,
 } from '../services/profileRequestService'
+import { PageShell } from '../../../components/ui/PageShell'
 
 const ROLE_OPTIONS = [
   { value: 'member', label: 'Membre' },
@@ -141,6 +142,7 @@ export default function AdminProfileRequestsPage() {
 
   return (
     <section className="admin-profile-requests-page bcvb-page">
+      <PageShell variant="wide">
       <div className="admin-profile-requests-hero">
         <div>
           <p className="bcvb-eyebrow">Administration</p>
@@ -300,6 +302,7 @@ export default function AdminProfileRequestsPage() {
           </article>
         ))}
       </div>
+      </PageShell>
     </section>
   )
 }

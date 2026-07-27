@@ -48,7 +48,7 @@ export default function RequireAuth({ allowedRoles }: RequireAuthProps) {
         <div className="bcvb-loading-card">
           <p className="bcvb-eyebrow">Accès refusé</p>
           <h1>Section réservée</h1>
-          <p>Cette page est réservée aux administrateurs et responsables techniques autorisés.</p>
+          <p>Votre profil ne dispose pas des droits nécessaires pour ouvrir cette page.</p>
           <a className="bcvb-button" href="/dashboard">Retour au tableau de bord</a>
         </div>
       </main>

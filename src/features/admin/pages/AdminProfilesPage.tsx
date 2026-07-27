@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { ROLE_LABELS, normalizeRole } from '../../../config/roles'
 import {
-  EmptyState,
   MobileDetailCard,
   ResponsiveDataList,
   StatusBadge,
@@ -112,6 +111,7 @@ export default function AdminProfilesPage() {
   const [roleFilter, setRoleFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [loading, setLoading] = useState(true)
+  const [loadFailed, setLoadFailed] = useState(false)
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
   const [pendingAction, setPendingAction] = useState<PendingAction>(null)
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
@@ -171,11 +171,13 @@ export default function AdminProfilesPage() {
   const loadProfiles = useCallback(async (options?: { keepToast?: boolean }) => {
     try {
       setLoading(true)
+      setLoadFailed(false)
       setTechnicalError(null)
       if (!options?.keepToast) setToast(null)
       const rows = await listProfiles()
       setProfiles(rows)
     } catch (error) {
+      setLoadFailed(true)
       setTechnicalError(error instanceof Error ? error.message : String(error))
       setToast({ type: 'error', message: 'Les profils n’ont pas pu être chargés.' })
     } finally {
@@ -231,11 +233,11 @@ export default function AdminProfilesPage() {
 
   return (
     <section className="admin-profiles-page bcvb-page">
-      <PageShell>
+      <PageShell variant="wide">
       <PageHeader
         eyebrow="Administration"
         title="Gestion des membres"
-        subtitle="Gérez les accès, statuts et profils utilisateurs. Désactiver coupe l’accès sans supprimer l’historique."
+        subtitle="Recherchez un membre et contrôlez son rôle et son statut."
         action={<button type="button" className="bcvb-premium-button bcvb-premium-button--primary" onClick={() => loadProfiles()} disabled={loading}>Actualiser</button>}
       />
 
@@ -243,11 +245,6 @@ export default function AdminProfilesPage() {
         <StatCard label="Total" value={profiles.length} />
         <StatCard label="Actifs" value={activeCount} />
         <StatCard label="Inactifs" value={inactiveCount} />
-      </div>
-
-      <div className="bcvb-feature-card">
-        <h3>Repères de sécurité</h3>
-        <p>Désactiver est réversible. Supprimer définitivement est réservé aux comptes créés par erreur et demande une confirmation forte.</p>
       </div>
 
       <section className="admin-profiles-toolbar" aria-label="Filtres profils">
@@ -261,33 +258,34 @@ export default function AdminProfilesPage() {
           />
         </label>
 
-        <label>
-          <span>Rôle</span>
-          <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
-            <option value="all">Tous les rôles</option>
-            {availableRoles.map((role) => (
-              <option key={role} value={role}>
-                {getRoleLabel(role)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <details className="admin-profiles-filters">
+          <summary>Filtres</summary>
+          <div className="admin-profiles-filters__content">
+            <label>
+              <span>Rôle</span>
+              <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
+                <option value="all">Tous les rôles</option>
+                {availableRoles.map((role) => (
+                  <option key={role} value={role}>
+                    {getRoleLabel(role)}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-        <label>
-          <span>Statut</span>
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-          >
-            <option value="all">Tous</option>
-            <option value="active">Actifs</option>
-            <option value="inactive">Inactifs</option>
-          </select>
-        </label>
-
-        <button type="button" onClick={() => loadProfiles()} disabled={loading}>
-          Recharger
-        </button>
+            <label>
+              <span>Statut</span>
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+              >
+                <option value="all">Tous</option>
+                <option value="active">Actifs</option>
+                <option value="inactive">Inactifs</option>
+              </select>
+            </label>
+          </div>
+        </details>
       </section>
 
       {toast ? (
@@ -296,7 +294,7 @@ export default function AdminProfilesPage() {
           : <ErrorState description={toast.message} action={<RetryAction onClick={() => loadProfiles()} />} technicalDetail={technicalError} isAdmin />
       ) : null}
 
-      <div className="admin-profiles-tableWrap responsive-data-table">
+      {!loadFailed ? <div className="admin-profiles-tableWrap responsive-data-table">
         <table className="admin-profiles-table">
           <thead>
             <tr>
@@ -317,7 +315,7 @@ export default function AdminProfilesPage() {
 
             {!loading && filteredProfiles.length === 0 ? (
               <tr>
-                <td colSpan={6}><CommonEmptyState cause="no_results" title="Aucun profil trouvé" description="Aucun profil ne correspond aux filtres actuels." /></td>
+                <td colSpan={6}><CommonEmptyState cause={profiles.length === 0 ? 'no_data' : 'no_results'} title="Aucun profil trouvé" /></td>
               </tr>
             ) : null}
 
@@ -401,13 +399,13 @@ export default function AdminProfilesPage() {
               : null}
           </tbody>
         </table>
-      </div>
-      <div className="responsive-data-mobile admin-profiles-mobileList">
+      </div> : null}
+      {!loadFailed ? <div className="responsive-data-mobile admin-profiles-mobileList">
         {loading ? (
           <LoadingState title="Chargement des profils" description="La liste des membres est en cours de récupération." />
         ) : (
           <ResponsiveDataList
-            empty={<EmptyState title="Aucun profil trouvé" description="Aucun profil ne correspond aux filtres actuels." />}
+            empty={<CommonEmptyState cause={profiles.length === 0 ? 'no_data' : 'no_results'} title="Aucun profil trouvé" />}
           >
             {filteredProfiles.map((item) => {
               const active = isActive(item)
@@ -478,7 +476,7 @@ export default function AdminProfilesPage() {
             })}
           </ResponsiveDataList>
         )}
-      </div>
+      </div> : null}
 
       {pendingAction ? (
         <div className="admin-profiles-modalBackdrop" role="presentation">

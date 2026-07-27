@@ -6,6 +6,7 @@ import { EmptyState, MobileDetailCard, ResponsiveDataList, StatusBadge } from '.
 import { PageHeader } from '../../../components/ui/PageHeader'
 import { CollapsibleSection, PageShell, StatCard } from '../../../components/ui/PageShell'
 import { useAuth } from '../../auth/context/AuthContext'
+import { MEMBER_MANAGEMENT_PATH, canAccessMemberManagement } from '../memberManagementRoute'
 
 type MemberRow = {
   id: string
@@ -205,7 +206,7 @@ export default function AdminPage() {
 
   return (
     <section className="admin-page">
-      <PageShell>
+      <PageShell variant="wide">
       <PageHeader
         eyebrow="Administration"
         title="Pilotage plateforme"
@@ -238,13 +239,13 @@ export default function AdminPage() {
           </em>
         </Link>
 
-        <Link to="/admin/membres" className="admin-action-card">
+        {canAccessMemberManagement(profile?.role) ? <Link to={MEMBER_MANAGEMENT_PATH} className="admin-action-card">
           <span>Membres</span>
           <strong>Gestion des membres</strong>
           <p>Contrôler les profils actifs, les rôles et les accès.</p>
 
           <em>{members.length}</em>
-        </Link>
+        </Link> : null}
 
         <Link to="/admin/plateforme" className="admin-action-card">
           <span>Plateforme</span>

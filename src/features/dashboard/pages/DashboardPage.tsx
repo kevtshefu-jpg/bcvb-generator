@@ -9,6 +9,7 @@ import StudioExperiencePanel from '../../ux/components/StudioExperiencePanel'
 import ActionHeroCard from '../../../components/dashboard/ActionHeroCard'
 import { PageHeader } from '../../../components/ui/PageHeader'
 import { CollapsibleSection, PageShell, RoleBasedQuickActions, StatCard } from '../../../components/ui/PageShell'
+import { MEMBER_MANAGEMENT_PATH, canAccessMemberManagement } from '../../admin/memberManagementRoute'
 import {
   formatRole,
   isAdmin,
@@ -331,13 +332,13 @@ function DirigeantDashboard() {
   )
 }
 
-function AdminDashboard() {
+function AdminDashboard({ role }: { role?: string | null }) {
   return (
     <div className="role-dashboard-grid">
-      <Link to="/admin/membres" className="role-dashboard-card">
+      {canAccessMemberManagement(role) ? <Link to={MEMBER_MANAGEMENT_PATH} className="role-dashboard-card">
         <h3>Gestion des membres</h3>
         <p>Contrôler les profils, les rôles et l’activation des accès.</p>
-      </Link>
+      </Link> : null}
 
       <Link to="/admin/plateforme" className="role-dashboard-card">
         <h3>Administration plateforme</h3>
@@ -394,8 +395,8 @@ function PresentationDashboard({ role }: { role?: string | null }) {
     ['Transformer un document', '/admin/documents/transformer', 'Convertir une source brute en document BCVB structuré.'],
     ['Contrôle qualité', '/admin/controle-qualite', 'Vérifier le niveau de publication et les blocs essentiels.'],
     ['Bibliothèque', '/bibliotheque', 'Centraliser les ressources techniques et pédagogiques du club.'],
-    ['Gestion utilisateurs', '/admin/membres', 'Piloter les profils et les accès.'],
-  ]
+    ['Gestion utilisateurs', MEMBER_MANAGEMENT_PATH, 'Piloter les profils et les accès.'],
+  ].filter(([, path]) => path !== MEMBER_MANAGEMENT_PATH || canAccessMemberManagement(role))
   const coachCards = [
     ['Mes séances', '/coach/seances', 'Préparer et exporter mes entraînements.'],
     ['Mes planifications', '/coach/planifications', 'Organiser les objectifs par semaine et par période.'],
@@ -533,7 +534,7 @@ export default function DashboardPage() {
 	      {!PRESENTATION_MODE && <StudioExperiencePanel role={role} />}
 	      {PRESENTATION_MODE && <PresentationDashboard role={role} />}
 	      {!PRESENTATION_MODE && <BcvbDashboardOverview role={role} />}
-	      {!PRESENTATION_MODE && isAdmin(role) && <AdminDashboard />}
+	      {!PRESENTATION_MODE && isAdmin(role) && <AdminDashboard role={role} />}
 	      {!PRESENTATION_MODE && isDirigeant(role) && <DirigeantDashboard />}
 	      {!PRESENTATION_MODE && isCoach(role) && <CoachDashboard />}
 	      {!PRESENTATION_MODE && (role === 'parent_referent' || role === 'team_staff') && <ParentReferentDashboard />}
