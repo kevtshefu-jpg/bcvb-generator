@@ -63,7 +63,7 @@
 
 .admin-profiles-toolbar {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(150px, 220px) minmax(140px, 200px) auto;
+  grid-template-columns: minmax(220px, 1fr) auto;
   gap: 12px;
   align-items: end;
   padding: 16px;
@@ -80,14 +80,46 @@
 .admin-profiles-toolbar input,
 .admin-profiles-toolbar select,
 .admin-profiles-toolbar button,
+.admin-profiles-filters summary,
 .admin-profiles-modal input {
-  min-height: 42px;
+  min-height: 44px;
   padding: 0 12px;
   border-radius: 12px;
   border: 1px solid rgba(203, 213, 225, 0.95);
   background: #ffffff;
   color: #0f172a;
   font-weight: 800;
+}
+
+.admin-profiles-filters {
+  position: relative;
+}
+
+.admin-profiles-filters summary {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+}
+
+.admin-profiles-filters summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-profiles-filters__content {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(420px, calc(100vw - 32px));
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.14);
 }
 
 .admin-profiles-toolbar button,
@@ -204,7 +236,7 @@
 
 .admin-profiles-actions button,
 .admin-profiles-modal button {
-  min-height: 36px;
+  min-height: 44px;
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid rgba(203, 213, 225, 0.95);
@@ -288,5 +320,21 @@
 
   .admin-profiles-hero__stats {
     min-width: 0;
+  }
+
+  .admin-profiles-filters {
+    width: 100%;
+  }
+
+  .admin-profiles-filters summary {
+    width: 100%;
+  }
+
+  .admin-profiles-filters__content {
+    position: static;
+    width: 100%;
+    grid-template-columns: 1fr;
+    margin-top: 8px;
+    box-shadow: none;
   }
 }
