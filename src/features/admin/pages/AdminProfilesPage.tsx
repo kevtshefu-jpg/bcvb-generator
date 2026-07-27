@@ -21,6 +21,7 @@ import {
 import './AdminProfilesPage.css'
 
 type StatusFilter = 'all' | 'active' | 'inactive'
+type ProfileStatusFilter = 'all' | string
 type PendingAction = {
   profile: AdminProfileRow
   action: AdminProfileAction
@@ -45,6 +46,14 @@ function normalizeText(value: unknown) {
   return String(value || '').trim()
 }
 
+function normalizeSearchValue(value: unknown) {
+  return normalizeText(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('fr-FR')
+    .replace(/\s+/g, ' ')
+}
+
 function isActive(profile: AdminProfileRow) {
   return profile.is_active !== false
 }
@@ -60,6 +69,33 @@ function getDisplayName(profile: AdminProfileRow) {
 function getRoleLabel(role?: string | null) {
   const normalized = normalizeRole(role)
   return ROLE_LABELS[normalized as keyof typeof ROLE_LABELS] || normalized
+}
+
+function normalizeProfileStatus(status?: string | null) {
+  return normalizeSearchValue(status).replace(/\s+/g, '_') || 'non_renseigne'
+}
+
+function getProfileStatusLabel(status?: string | null) {
+  const normalized = normalizeProfileStatus(status)
+  const labels: Record<string, string> = {
+    active: 'Validé',
+    approved: 'Validé',
+    inactive: 'Inactif',
+    pending: 'À vérifier',
+    pending_review: 'À vérifier',
+    requested: 'Demandé',
+    rejected: 'Refusé',
+    suspended: 'Suspendu',
+    unverified: 'À vérifier',
+    non_renseigne: 'Non renseigné',
+  }
+
+  return labels[normalized] || normalizeText(status).replace(/_/g, ' ')
+}
+
+function getReviewPriority(profile: AdminProfileRow) {
+  const status = normalizeProfileStatus(profile.profile_status)
+  return isActive(profile) && ['active', 'approved'].includes(status) ? 1 : 0
 }
 
 function formatDate(value?: string | null) {
@@ -110,6 +146,7 @@ export default function AdminProfilesPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [profileStatusFilter, setProfileStatusFilter] = useState<ProfileStatusFilter>('all')
   const [loading, setLoading] = useState(true)
   const [loadFailed, setLoadFailed] = useState(false)
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
@@ -140,8 +177,18 @@ export default function AdminProfilesPage() {
     })
   }, [profiles])
 
+  const availableProfileStatuses = useMemo(() => {
+    const statuses = new Map<string, string>()
+    profiles.forEach((profile) => {
+      const value = normalizeProfileStatus(profile.profile_status)
+      statuses.set(value, getProfileStatusLabel(profile.profile_status))
+    })
+    return Array.from(statuses, ([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'fr'))
+  }, [profiles])
+
   const filteredProfiles = useMemo(() => {
-    const query = normalizeText(searchTerm).toLowerCase()
+    const queryTerms = normalizeSearchValue(searchTerm).split(' ').filter(Boolean)
 
     return profiles.filter((item) => {
       const normalizedRole = normalizeRole(item.role)
@@ -150,16 +197,32 @@ export default function AdminProfilesPage() {
       if (roleFilter !== 'all' && normalizedRole !== roleFilter) return false
       if (statusFilter === 'active' && !active) return false
       if (statusFilter === 'inactive' && active) return false
+      if (
+        profileStatusFilter !== 'all' &&
+        normalizeProfileStatus(item.profile_status) !== profileStatusFilter
+      ) return false
 
-      if (!query) return true
+      if (queryTerms.length === 0) return true
 
       const searchable = [item.full_name, item.email, normalizedRole, getRoleLabel(normalizedRole)]
-        .map((value) => normalizeText(value).toLowerCase())
+        .map(normalizeSearchValue)
         .join(' ')
 
-      return searchable.includes(query)
-    })
-  }, [profiles, roleFilter, searchTerm, statusFilter])
+      return queryTerms.every((term) => searchable.includes(term))
+    }).sort((a, b) => (
+      getReviewPriority(a) - getReviewPriority(b) ||
+      getDisplayName(a).localeCompare(getDisplayName(b), 'fr', { sensitivity: 'base' })
+    ))
+  }, [profiles, profileStatusFilter, roleFilter, searchTerm, statusFilter])
+
+  const activeFilterCount = [roleFilter, statusFilter, profileStatusFilter]
+    .filter((value) => value !== 'all').length
+
+  function resetFilters() {
+    setRoleFilter('all')
+    setStatusFilter('all')
+    setProfileStatusFilter('all')
+  }
 
   const activeCount = useMemo(
     () => profiles.filter((item) => isActive(item)).length,
@@ -238,7 +301,7 @@ export default function AdminProfilesPage() {
         eyebrow="Administration"
         title="Gestion des membres"
         subtitle="Recherchez un membre et contrôlez son rôle et son statut."
-        action={<button type="button" className="bcvb-premium-button bcvb-premium-button--primary" onClick={() => loadProfiles()} disabled={loading}>Actualiser</button>}
+        action={<button type="button" className="bcvb-premium-button bcvb-premium-button--ghost" onClick={() => loadProfiles()} disabled={loading}>Actualiser</button>}
       />
 
       <div className="admin-profiles-hero__stats">
@@ -248,18 +311,26 @@ export default function AdminProfilesPage() {
       </div>
 
       <section className="admin-profiles-toolbar" aria-label="Filtres profils">
-        <label>
-          <span>Recherche</span>
-          <input
-            type="search"
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Nom ou email"
-          />
-        </label>
+        <div className="admin-profiles-search">
+          <label htmlFor="admin-member-search">Rechercher un membre</label>
+          <div className="admin-profiles-search__field">
+            <input
+              id="admin-member-search"
+              type="search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Nom ou email"
+            />
+            {searchTerm ? (
+              <button type="button" onClick={() => setSearchTerm('')} aria-label="Effacer la recherche">
+                Effacer
+              </button>
+            ) : null}
+          </div>
+        </div>
 
         <details className="admin-profiles-filters">
-          <summary>Filtres</summary>
+          <summary>Filtres{activeFilterCount ? ` (${activeFilterCount})` : ''}</summary>
           <div className="admin-profiles-filters__content">
             <label>
               <span>Rôle</span>
@@ -284,8 +355,36 @@ export default function AdminProfilesPage() {
                 <option value="inactive">Inactifs</option>
               </select>
             </label>
+
+            <label>
+              <span>État du profil</span>
+              <select
+                value={profileStatusFilter}
+                onChange={(event) => setProfileStatusFilter(event.target.value)}
+              >
+                <option value="all">Tous les états</option>
+                {availableProfileStatuses.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </label>
+
+            <button
+              type="button"
+              className="admin-profiles-filters__reset"
+              onClick={resetFilters}
+              disabled={activeFilterCount === 0}
+            >
+              Réinitialiser les filtres
+            </button>
           </div>
         </details>
+
+        {!loading && !loadFailed ? (
+          <p className="admin-profiles-results" role="status" aria-live="polite">
+            {filteredProfiles.length} {filteredProfiles.length > 1 ? 'profils affichés' : 'profil affiché'} sur {profiles.length}
+          </p>
+        ) : null}
       </section>
 
       {toast ? (
@@ -301,6 +400,7 @@ export default function AdminProfilesPage() {
               <th>Profil</th>
               <th>Rôle</th>
               <th>Statut</th>
+              <th>État du profil</th>
               <th>Création</th>
               <th>Mise à jour</th>
               <th>Actions</th>
@@ -309,13 +409,13 @@ export default function AdminProfilesPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6}><LoadingState title="Chargement des profils" description="La liste des membres est en cours de récupération." /></td>
+                <td colSpan={7}><LoadingState title="Chargement des profils" description="La liste des membres est en cours de récupération." /></td>
               </tr>
             ) : null}
 
             {!loading && filteredProfiles.length === 0 ? (
               <tr>
-                <td colSpan={6}><CommonEmptyState cause={profiles.length === 0 ? 'no_data' : 'no_results'} title="Aucun profil trouvé" /></td>
+                <td colSpan={7}><CommonEmptyState cause={profiles.length === 0 ? 'no_data' : 'no_results'} title="Aucun profil trouvé" /></td>
               </tr>
             ) : null}
 
@@ -344,6 +444,7 @@ export default function AdminProfilesPage() {
                           {active ? 'Actif' : 'Inactif'}
                         </span>
                       </td>
+                      <td>{getProfileStatusLabel(item.profile_status)}</td>
                       <td>{formatDate(item.created_at)}</td>
                       <td>{formatDate(item.updated_at)}</td>
                       <td>
@@ -425,6 +526,7 @@ export default function AdminProfilesPage() {
                   items={[
                     { label: 'Création', value: formatDate(item.created_at) },
                     { label: 'Mise à jour', value: formatDate(item.updated_at) },
+                    { label: 'État du profil', value: getProfileStatusLabel(item.profile_status) },
                     { label: 'Sécurité', value: blockedReason || 'Action possible', full: true },
                   ]}
                   actions={(

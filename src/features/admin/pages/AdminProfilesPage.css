@@ -72,9 +72,33 @@
   border: 1px solid rgba(226, 232, 240, 0.92);
 }
 
-.admin-profiles-toolbar label {
+.admin-profiles-toolbar label,
+.admin-profiles-search {
   display: grid;
   gap: 6px;
+}
+
+.admin-profiles-search > label {
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.admin-profiles-search__field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.admin-profiles-search__field button {
+  color: #9f1239;
+  background: #fff1f2;
+  border-color: rgba(190, 18, 60, 0.24);
+}
+
+.admin-profiles-toolbar :is(input, select, button, summary):focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.42);
+  outline-offset: 2px;
 }
 
 .admin-profiles-toolbar input,
@@ -122,6 +146,19 @@
   box-shadow: 0 18px 45px rgba(15, 23, 42, 0.14);
 }
 
+.admin-profiles-filters__reset {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.admin-profiles-results {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
 .admin-profiles-toolbar button,
 .admin-profiles-actions button,
 .admin-profiles-modal button {
@@ -154,7 +191,7 @@
 
 .admin-profiles-table {
   width: 100%;
-  min-width: 900px;
+  min-width: 980px;
   border-collapse: collapse;
 }
 
@@ -336,5 +373,13 @@
     grid-template-columns: 1fr;
     margin-top: 8px;
     box-shadow: none;
+  }
+
+  .admin-profiles-search__field {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-profiles-search__field button {
+    justify-self: start;
   }
 }
