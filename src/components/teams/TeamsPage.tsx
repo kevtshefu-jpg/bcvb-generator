@@ -79,7 +79,7 @@ export function TeamsPage() {
   }
 
   return (
-    <main className="teams-page">
+    <main className="teams-page bcvb-page-shell bcvb-page-shell--wide">
       <section className="bcvb-dashboard-hero teams-header">
         <div>
           <p className="bcvb-eyebrow">Gestion des équipes</p>

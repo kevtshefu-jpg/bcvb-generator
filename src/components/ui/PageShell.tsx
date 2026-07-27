@@ -3,12 +3,16 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 export function PageShell({
   children,
   compact = false,
+  variant,
 }: {
   children: ReactNode;
   compact?: boolean;
+  variant?: "standard" | "reading" | "wide" | "fullBleed";
 }) {
+  const resolvedVariant = variant ?? (compact ? "reading" : "standard");
+
   return (
-    <main className={compact ? "bcvb-page-shell bcvb-page-shell--compact" : "bcvb-page-shell"}>
+    <main className={`bcvb-page-shell bcvb-page-shell--${resolvedVariant}`}>
       {children}
     </main>
   );

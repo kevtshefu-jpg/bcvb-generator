@@ -332,53 +332,31 @@ export default function HomePage() {
   const role = profile?.role
 
   return (
-    <section className="home-page v33-home">
+    <section className="home-page v33-home bcvb-page-shell bcvb-page-shell--standard">
       <div className="v33-hero">
         <div className="v33-hero__main">
           <p className="v33-hero__eyebrow">BCVB Référentiel</p>
-          <h2 className="v33-hero__title">La plateforme multi-acteurs du BCVB.</h2>
+          <h2 className="v33-hero__title">Bienvenue sur le Référentiel BCVB</h2>
           <p className="v33-hero__text">
-            Un même cadre pour les coachs, dirigeants, joueurs, parents et administrateurs, avec des accès
-            adaptés à chaque rôle.
+            Retrouvez vos équipes, séances, documents et outils selon votre rôle.
           </p>
 
           <div className="v33-hero__actions">
             {user ? (
-              <>
-                <Link to="/dashboard" className="v33-btn v33-btn--primary">
-                  Ouvrir mon tableau de bord
-                </Link>
-                <Link to="/dashboard" className="v33-btn v33-btn--dark">
-                  Voir mon espace
-                </Link>
-              </>
+              <Link to="/dashboard" className="v33-btn v33-btn--primary">
+                Accéder à mon espace
+              </Link>
             ) : (
               <>
                 <Link to="/connexion" className="v33-btn v33-btn--primary">
-                  Accéder à l’espace membre
-                </Link>
-                <Link to="/connexion" className="v33-btn v33-btn--ghost">
                   Se connecter
+                </Link>
+                <Link to="/inscription" className="v33-btn v33-btn--secondary">
+                  Demander un accès
                 </Link>
               </>
             )}
           </div>
-        </div>
-
-        <div className="v33-hero__side">
-          <article className="v33-highlightCard v33-highlightCard--dark">
-            <span className="v33-highlightCard__label">Identité BCVB</span>
-            <strong className="v33-highlightCard__value">Défendre fort</strong>
-            <span className="v33-highlightCard__sub">Courir • Partager la balle</span>
-          </article>
-
-          <article className="v33-highlightCard">
-            <span className="v33-highlightCard__label">Démarche pédagogique</span>
-            <strong className="v33-highlightCard__value">4 étapes</strong>
-            <span className="v33-highlightCard__sub">
-              Je découvre • Je m’exerce • Je retranscris • Je régule
-            </span>
-          </article>
         </div>
       </div>
 

@@ -105,6 +105,8 @@ export function PlanningPage({ readOnly = false }: PlanningPageProps) {
       className={[
         "planning-page",
         "planning-builder-page",
+        "bcvb-page-shell",
+        "bcvb-page-shell--wide",
         `planning-builder-page--${mode}`,
         isReadOnly ? "is-readonly" : "",
       ].filter(Boolean).join(" ")}

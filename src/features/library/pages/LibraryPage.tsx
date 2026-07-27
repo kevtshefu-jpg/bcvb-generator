@@ -721,7 +721,7 @@ export default function LibraryPage() {
   )
 
   return (
-    <section className="library-page bcvb-page bcvb-premium-page">
+    <section className="library-page bcvb-page bcvb-premium-page bcvb-page-shell bcvb-page-shell--wide">
       <LibraryMobileExperience
         documents={mobileDocuments}
         isAdmin={isAdminRole}
