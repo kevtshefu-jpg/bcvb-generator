@@ -35,6 +35,27 @@ type EmailContact = {
   email: string
 }
 
+type ApiErrorCode =
+  | 'AUTH_REQUIRED'
+  | 'INVALID_JWT'
+  | 'PROFILE_FORBIDDEN'
+  | 'ROLE_FORBIDDEN'
+  | 'INVALID_PAYLOAD'
+  | 'REQUEST_NOT_FOUND'
+  | 'INTERNAL_ERROR'
+
+class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    readonly code: ApiErrorCode,
+    message: string,
+    readonly details?: string,
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -43,6 +64,16 @@ function jsonResponse(body: unknown, status = 200) {
       'Content-Type': 'application/json',
     },
   })
+}
+
+function errorResponse(error: ApiError) {
+  return jsonResponse({
+    ok: false,
+    code: error.code,
+    error: error.message,
+    message: error.message,
+    ...(error.details ? { details: error.details } : {}),
+  }, error.status)
 }
 
 function normalizeText(value: unknown) {
@@ -184,13 +215,13 @@ async function assertAdminCaller(
   const token = authorization?.replace('Bearer ', '').trim()
 
   if (!token) {
-    throw new Error('Utilisateur non authentifié.')
+    throw new ApiError(401, 'AUTH_REQUIRED', 'Authentification requise.')
   }
 
   const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token)
 
   if (userError || !userData.user) {
-    throw new Error('Session invalide ou expirée.')
+    throw new ApiError(401, 'INVALID_JWT', 'Session invalide ou expirée.')
   }
 
   const { data: profile, error: profileError } = await supabaseAdmin
@@ -200,17 +231,17 @@ async function assertAdminCaller(
     .maybeSingle()
 
   if (profileError) {
-    throw new Error(`Impossible de vérifier les droits : ${profileError.message}`)
+    throw new ApiError(500, 'INTERNAL_ERROR', 'Impossible de vérifier les autorisations.')
   }
 
   const role = normalizeRole(profile?.role)
 
-  if (!profile?.is_active || profile.profile_status !== 'active') {
-    throw new Error('Compte administrateur inactif.')
+  if (!profile || !profile.is_active || profile.profile_status !== 'active') {
+    throw new ApiError(403, 'PROFILE_FORBIDDEN', 'Profil absent ou inactif.')
   }
 
   if (role !== 'admin' && role !== 'responsable_technique') {
-    throw new Error('Droits insuffisants pour créer un compte.')
+    throw new ApiError(403, 'ROLE_FORBIDDEN', 'Accès administrateur requis.')
   }
 
   return { user: userData.user, role }
@@ -411,14 +442,11 @@ Deno.serve(async (request) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
     if (!supabaseUrl || !serviceRoleKey) {
-      return jsonResponse(
-        {
-          ok: false,
-          error:
-            'Configuration Supabase incomplète : SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY manquant.',
-        },
+      return errorResponse(new ApiError(
         500,
-      )
+        'INTERNAL_ERROR',
+        'Une erreur interne est survenue.',
+      ))
     }
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
@@ -433,11 +461,20 @@ Deno.serve(async (request) => {
       request.headers.get('Authorization'),
     )
 
-    const payload = (await request.json()) as CreateApprovedUserPayload
+    let payload: CreateApprovedUserPayload
+    try {
+      payload = (await request.json()) as CreateApprovedUserPayload
+    } catch {
+      throw new ApiError(400, 'INVALID_PAYLOAD', 'Corps de requête invalide.')
+    }
     const requestId = normalizeText(payload.requestId || payload.id)
 
     if (!requestId) {
-      return jsonResponse({ ok: false, error: 'requestId manquant.' }, 400)
+      return errorResponse(new ApiError(
+        400,
+        'INVALID_PAYLOAD',
+        'Identifiant de demande manquant.',
+      ))
     }
 
     const { data: requestRow, error: requestError } = await supabaseAdmin
@@ -448,13 +485,11 @@ Deno.serve(async (request) => {
       .single()
 
     if (requestError || !requestRow) {
-      return jsonResponse(
-        {
-          ok: false,
-          error: `Demande introuvable : ${requestError?.message || 'aucune donnée'}`,
-        },
+      return errorResponse(new ApiError(
         404,
-      )
+        'REQUEST_NOT_FOUND',
+        'Demande introuvable ou déjà traitée.',
+      ))
     }
 
     const registrationRequest = requestRow as RegistrationRequestRow
@@ -475,7 +510,7 @@ Deno.serve(async (request) => {
     ])
 
     if (!allowedRoles.has(finalRole)) {
-      return jsonResponse({ ok: false, error: 'Rôle final invalide.' }, 400)
+      return errorResponse(new ApiError(400, 'INVALID_PAYLOAD', 'Rôle final invalide.'))
     }
 
     if (['admin', 'responsable_technique'].includes(finalRole) && adminUser.role !== 'admin') {
@@ -614,12 +649,13 @@ Deno.serve(async (request) => {
           : 'Compte créé, mais l’email d’activation n’a pas pu être envoyé.',
     })
   } catch (error) {
-    return jsonResponse(
-      {
-        ok: false,
-        error: error instanceof Error ? error.message : 'Erreur inconnue.',
-      },
+    if (error instanceof ApiError) return errorResponse(error)
+
+    console.error('[create-approved-user] unexpected failure')
+    return errorResponse(new ApiError(
       500,
-    )
+      'INTERNAL_ERROR',
+      'Une erreur interne est survenue.',
+    ))
   }
 })
