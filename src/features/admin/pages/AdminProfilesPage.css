@@ -289,6 +289,18 @@
   background: #fff1f2;
 }
 
+.admin-profiles-actions button.is-danger,
+.responsive-data-card__actions button.is-danger {
+  margin-inline-start: auto;
+}
+
+.admin-profiles-actions button.is-warning,
+.responsive-data-card__actions button.is-warning {
+  color: #92400e;
+  border-color: rgba(245, 158, 11, 0.5);
+  background: #fffbeb;
+}
+
 .admin-profiles-actions button:disabled,
 .admin-profiles-modal button:disabled,
 .admin-profiles-toolbar button:disabled {
@@ -339,8 +351,40 @@
   gap: 7px;
 }
 
+.admin-profiles-modal select {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  border-radius: 12px;
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.admin-profiles-sensitiveConfirmation {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  padding: 12px;
+  border-radius: 12px;
+  background: #fff7ed;
+}
+
+.admin-profiles-sensitiveConfirmation input {
+  width: 22px;
+  min-height: 22px;
+  padding: 0;
+}
+
+.admin-profiles-sensitiveConfirmation span {
+  color: #9a3412;
+  font-size: 0.9rem;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
 .admin-profiles-modal footer {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 10px;
 }

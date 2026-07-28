@@ -13,6 +13,7 @@ vi.mock('../services/adminProfileManagementService', () => ({
   deactivateProfile: vi.fn(),
   reactivateProfile: vi.fn(),
   deleteProfile: vi.fn(),
+  updateProfileRole: vi.fn(),
 }))
 
 const mockedListProfiles = vi.mocked(listProfiles)

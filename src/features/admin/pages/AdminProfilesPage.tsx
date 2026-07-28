@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { ROLE_LABELS, normalizeRole } from '../../../config/roles'
+import {
+  ADMIN_ASSIGNABLE_ROLES,
+  ROLE_LABELS,
+  isAdminAssignableRole,
+  isSensitiveAdminRole,
+  normalizeRole,
+  type AdminAssignableRole,
+} from '../../../config/roles'
 import {
   MobileDetailCard,
   ResponsiveDataList,
@@ -14,6 +21,7 @@ import {
   deleteProfile,
   listProfiles,
   reactivateProfile,
+  updateProfileRole,
   type AdminProfileAction,
   type AdminProfileRow,
 } from '../services/adminProfileManagementService'
@@ -58,8 +66,8 @@ function isActive(profile: AdminProfileRow) {
   return profile.is_active !== false
 }
 
-function isElevatedRole(role?: string | null) {
-  return ['admin', 'responsable_technique'].includes(normalizeRole(role))
+function isAdminProfileRole(role?: string | null) {
+  return normalizeRole(role) === 'admin'
 }
 
 function getDisplayName(profile: AdminProfileRow) {
@@ -111,14 +119,16 @@ function formatDate(value?: string | null) {
 }
 
 function getActionLabel(action: AdminProfileAction) {
-  if (action === 'deactivate') return 'Désactiver'
+  if (action === 'deactivate') return 'Suspendre'
   if (action === 'reactivate') return 'Réactiver'
+  if (action === 'update_role') return 'Modifier le rôle'
   return 'Supprimer définitivement'
 }
 
 function getSuccessMessage(action: AdminProfileAction) {
-  if (action === 'deactivate') return 'Profil désactivé.'
+  if (action === 'deactivate') return 'Profil suspendu.'
   if (action === 'reactivate') return 'Profil réactivé.'
+  if (action === 'update_role') return 'Rôle modifié.'
   return 'Profil supprimé.'
 }
 
@@ -140,6 +150,10 @@ function runProfileAction(profileId: string, action: AdminProfileAction) {
   return deleteProfile(profileId)
 }
 
+function getActivationLabel(profile: AdminProfileRow) {
+  return normalizeProfileStatus(profile.profile_status) === 'suspended' ? 'Réactiver' : 'Activer'
+}
+
 export default function AdminProfilesPage() {
   const { profile: currentProfile } = useAuth()
   const [profiles, setProfiles] = useState<AdminProfileRow[]>([])
@@ -152,15 +166,17 @@ export default function AdminProfilesPage() {
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
   const [pendingAction, setPendingAction] = useState<PendingAction>(null)
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
+  const [selectedRole, setSelectedRole] = useState<AdminAssignableRole>('member')
+  const [sensitiveRoleConfirmed, setSensitiveRoleConfirmed] = useState(false)
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(
     null,
   )
   const [technicalError, setTechnicalError] = useState<string | null>(null)
 
-  const activeElevatedCount = useMemo(
+  const activeAdminCount = useMemo(
     () =>
       profiles.filter(
-        (item) => isActive(item) && isElevatedRole(item.role),
+        (item) => isActive(item) && isAdminProfileRole(item.role),
       ).length,
     [profiles],
   )
@@ -257,11 +273,14 @@ export default function AdminProfilesPage() {
   }
 
   function wouldRemoveLastActiveAdmin(profile: AdminProfileRow) {
-    return isActive(profile) && isElevatedRole(profile.role) && activeElevatedCount <= 1
+    return isActive(profile) && isAdminProfileRole(profile.role) && activeAdminCount <= 1
   }
 
   function openAction(profile: AdminProfileRow, action: AdminProfileAction) {
     setDeleteConfirmation('')
+    const normalizedRole = normalizeRole(profile.role)
+    setSelectedRole(isAdminAssignableRole(normalizedRole) ? normalizedRole : 'member')
+    setSensitiveRoleConfirmed(false)
     setPendingAction({ profile, action })
   }
 
@@ -281,7 +300,28 @@ export default function AdminProfilesPage() {
     try {
       setActionLoadingId(profile.id)
       setToast(null)
-      const result = await runProfileAction(profile.id, action)
+      if (action === 'update_role' && !isAdminAssignableRole(selectedRole)) {
+        setToast({ type: 'error', message: 'Sélectionnez un rôle autorisé.' })
+        return
+      }
+
+      if (action === 'update_role' && isSensitiveAdminRole(selectedRole) && !sensitiveRoleConfirmed) {
+        setToast({ type: 'error', message: 'Confirmez explicitement ce rôle sensible.' })
+        return
+      }
+
+      if (
+        action === 'update_role' &&
+        wouldRemoveLastActiveAdmin(profile) &&
+        selectedRole !== 'admin'
+      ) {
+        setToast({ type: 'error', message: 'Le dernier administrateur actif doit conserver son rôle.' })
+        return
+      }
+
+      const result = action === 'update_role'
+        ? await updateProfileRole(profile.id, selectedRole)
+        : await runProfileAction(profile.id, action)
       setPendingAction(null)
       setDeleteConfirmation('')
       setToast({ type: 'success', message: result.warning || getSuccessMessage(action) })
@@ -449,9 +489,17 @@ export default function AdminProfilesPage() {
                       <td>{formatDate(item.updated_at)}</td>
                       <td>
                         <div className="admin-profiles-actions">
+                          <button
+                            type="button"
+                            onClick={() => openAction(item, 'update_role')}
+                            disabled={self || actionDisabled}
+                          >
+                            Gérer le rôle
+                          </button>
                           {active ? (
                             <button
                               type="button"
+                              className="is-warning"
                               onClick={() => openAction(item, 'deactivate')}
                               disabled={self || lastActiveAdmin || actionDisabled}
                               title={
@@ -462,7 +510,7 @@ export default function AdminProfilesPage() {
                                     : undefined
                               }
                             >
-                              Désactiver
+                              Suspendre
                             </button>
                           ) : (
                             <button
@@ -470,7 +518,7 @@ export default function AdminProfilesPage() {
                               onClick={() => openAction(item, 'reactivate')}
                               disabled={actionDisabled}
                             >
-                              Réactiver
+                              {getActivationLabel(item)}
                             </button>
                           )}
 
@@ -531,9 +579,17 @@ export default function AdminProfilesPage() {
                   ]}
                   actions={(
                     <>
+                      <button
+                        type="button"
+                        onClick={() => openAction(item, 'update_role')}
+                        disabled={self || actionDisabled}
+                      >
+                        Gérer le rôle
+                      </button>
                       {active ? (
                         <button
                           type="button"
+                          className="is-warning"
                           onClick={() => openAction(item, 'deactivate')}
                           disabled={self || lastActiveAdmin || actionDisabled}
                           title={
@@ -544,7 +600,7 @@ export default function AdminProfilesPage() {
                                 : undefined
                           }
                         >
-                          Désactiver
+                          Suspendre
                         </button>
                       ) : (
                         <button
@@ -552,7 +608,7 @@ export default function AdminProfilesPage() {
                           onClick={() => openAction(item, 'reactivate')}
                           disabled={actionDisabled}
                         >
-                          Réactiver
+                          {getActivationLabel(item)}
                         </button>
                       )}
 
@@ -598,7 +654,35 @@ export default function AdminProfilesPage() {
               Profil concerné : <strong>{getDisplayName(pendingAction.profile)}</strong>
             </p>
 
-            {pendingAction.action === 'delete' ? (
+            {pendingAction.action === 'update_role' ? (
+              <>
+                <label>
+                  <span>Nouveau rôle</span>
+                  <select
+                    value={selectedRole}
+                    onChange={(event) => {
+                      const role = event.target.value
+                      if (isAdminAssignableRole(role)) setSelectedRole(role)
+                      setSensitiveRoleConfirmed(false)
+                    }}
+                  >
+                    {ADMIN_ASSIGNABLE_ROLES.map((role) => (
+                      <option key={role} value={role}>{getRoleLabel(role)}</option>
+                    ))}
+                  </select>
+                </label>
+                {isSensitiveAdminRole(selectedRole) ? (
+                  <label className="admin-profiles-sensitiveConfirmation">
+                    <input
+                      type="checkbox"
+                      checked={sensitiveRoleConfirmed}
+                      onChange={(event) => setSensitiveRoleConfirmed(event.target.checked)}
+                    />
+                    <span>Je confirme l’attribution de ce rôle sensible.</span>
+                  </label>
+                ) : null}
+              </>
+            ) : pendingAction.action === 'delete' ? (
               <>
                 <p>Cette action est irréversible.</p>
                 <label>
@@ -611,10 +695,9 @@ export default function AdminProfilesPage() {
                 </label>
               </>
             ) : (
-              <p>
-                Cette action changera immédiatement le statut du profil. Elle peut être
-                annulée en réactivant le compte plus tard.
-              </p>
+              <p>{pendingAction.action === 'deactivate'
+                ? 'La suspension coupe immédiatement l’accès sans supprimer le profil. Une réactivation restera possible.'
+                : 'La réactivation rétablit immédiatement l’accès au profil.'}</p>
             )}
 
             <footer>
@@ -627,7 +710,12 @@ export default function AdminProfilesPage() {
                 onClick={confirmAction}
                 disabled={
                   actionLoadingId === pendingAction.profile.id ||
-                  (pendingAction.action === 'delete' && deleteConfirmation !== 'SUPPRIMER')
+                  (pendingAction.action === 'delete' && deleteConfirmation !== 'SUPPRIMER') ||
+                  (pendingAction.action === 'update_role' && (
+                    selectedRole === normalizeRole(pendingAction.profile.role) ||
+                    (isSensitiveAdminRole(selectedRole) && !sensitiveRoleConfirmed) ||
+                    (wouldRemoveLastActiveAdmin(pendingAction.profile) && selectedRole !== 'admin')
+                  ))
                 }
               >
                 {actionLoadingId === pendingAction.profile.id
