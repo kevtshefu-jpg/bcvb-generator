@@ -5,6 +5,7 @@ import { isAdminAssignableRole } from '../../../config/roles'
 import AdminProfilesPage from './AdminProfilesPage'
 import {
   deactivateProfile,
+  deleteProfile,
   listProfiles,
   reactivateProfile,
   updateProfileRole,
@@ -25,6 +26,7 @@ vi.mock('../services/adminProfileManagementService', () => ({
 
 const mockedListProfiles = vi.mocked(listProfiles)
 const mockedDeactivateProfile = vi.mocked(deactivateProfile)
+const mockedDeleteProfile = vi.mocked(deleteProfile)
 const mockedReactivateProfile = vi.mocked(reactivateProfile)
 const mockedUpdateProfileRole = vi.mocked(updateProfileRole)
 
@@ -147,6 +149,76 @@ describe('rôles et statuts des membres', () => {
     expect(await screen.findByText('Cette action n’a pas pu être effectuée.')).toBeInTheDocument()
     expect(screen.queryByText('Rôle modifié.')).not.toBeInTheDocument()
     expect(within(desktopRow('Coach Test')).getByText('Coach')).toBeInTheDocument()
+    expect(mockedListProfiles).toHaveBeenCalledTimes(1)
+  })
+
+  it('exige une confirmation forte et propose d’abord la suspension', async () => {
+    await renderProfiles([activeCoach])
+
+    fireEvent.click(within(desktopRow('Coach Test')).getByRole('button', { name: 'Supprimer' }))
+    const dialog = screen.getByRole('dialog', { name: 'Supprimer définitivement le profil' })
+
+    expect(within(dialog).getByText('Coach Test')).toBeInTheDocument()
+    expect(within(dialog).getByText('coach@example.test')).toBeInTheDocument()
+    expect(within(dialog).getByText('Suppression exceptionnelle et irréversible')).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'Suspendre le compte à la place' })).toBeEnabled()
+
+    const deleteButton = within(dialog).getByRole('button', { name: 'Supprimer définitivement' })
+    expect(deleteButton).toBeDisabled()
+    fireEvent.change(within(dialog).getByLabelText('Confirmation de suppression définitive'), {
+      target: { value: 'supprimer' },
+    })
+    expect(deleteButton).toBeDisabled()
+    fireEvent.change(within(dialog).getByLabelText('Confirmation de suppression définitive'), {
+      target: { value: 'SUPPRIMER' },
+    })
+    expect(deleteButton).toBeEnabled()
+  })
+
+  it('bascule vers la suspension recommandée sans lancer de suppression', async () => {
+    await renderProfiles([activeCoach])
+    fireEvent.click(within(desktopRow('Coach Test')).getByRole('button', { name: 'Supprimer' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Suspendre le compte à la place' }))
+
+    expect(screen.getByRole('dialog', { name: 'Suspendre le profil' })).toBeInTheDocument()
+    expect(mockedDeleteProfile).not.toHaveBeenCalled()
+  })
+
+  it('attend la confirmation serveur avant le succès et le rechargement', async () => {
+    let resolveDelete: ((value: Awaited<ReturnType<typeof deleteProfile>>) => void) | undefined
+    mockedDeleteProfile.mockImplementation(() => new Promise((resolve) => { resolveDelete = resolve }))
+    await renderProfiles([activeCoach])
+
+    fireEvent.click(within(desktopRow('Coach Test')).getByRole('button', { name: 'Supprimer' }))
+    const dialog = screen.getByRole('dialog', { name: 'Supprimer définitivement le profil' })
+    fireEvent.change(within(dialog).getByLabelText('Confirmation de suppression définitive'), {
+      target: { value: 'SUPPRIMER' },
+    })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Supprimer définitivement' }))
+
+    expect(screen.getByRole('button', { name: 'Traitement...' })).toBeDisabled()
+    expect(screen.getAllByText('Coach Test')).not.toHaveLength(0)
+    expect(screen.queryByText('Profil supprimé.')).not.toBeInTheDocument()
+
+    resolveDelete?.({ ok: true, action: 'delete' })
+    expect(await screen.findByText('Profil supprimé.')).toBeInTheDocument()
+    expect(mockedListProfiles).toHaveBeenCalledTimes(2)
+  })
+
+  it('conserve le profil affiché après un échec de suppression', async () => {
+    mockedDeleteProfile.mockRejectedValue(new Error('DEPENDENCY_CONFLICT'))
+    await renderProfiles([activeCoach])
+
+    fireEvent.click(within(desktopRow('Coach Test')).getByRole('button', { name: 'Supprimer' }))
+    const dialog = screen.getByRole('dialog', { name: 'Supprimer définitivement le profil' })
+    fireEvent.change(within(dialog).getByLabelText('Confirmation de suppression définitive'), {
+      target: { value: 'SUPPRIMER' },
+    })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Supprimer définitivement' }))
+
+    expect(await screen.findByText('La suppression définitive n’a pas pu être effectuée. Le profil est conservé.')).toBeInTheDocument()
+    expect(screen.getAllByText('Coach Test')).not.toHaveLength(0)
+    expect(screen.queryByText('Profil supprimé.')).not.toBeInTheDocument()
     expect(mockedListProfiles).toHaveBeenCalledTimes(1)
   })
 })

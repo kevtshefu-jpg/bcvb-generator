@@ -132,6 +132,22 @@ function getSuccessMessage(action: AdminProfileAction) {
   return 'Profil supprimé.'
 }
 
+function getVisibleActionError(action: AdminProfileAction, error: unknown) {
+  if (action !== 'delete' || !(error instanceof Error)) {
+    return 'Cette action n’a pas pu être effectuée.'
+  }
+
+  const safeMessages = [
+    'Ce profil possède des données liées et ne peut pas être supprimé.',
+    'Le dernier administrateur actif ne peut pas être supprimé.',
+    'Vous ne pouvez pas supprimer votre propre profil.',
+    'Profil cible introuvable.',
+  ]
+
+  return safeMessages.find((message) => error.message.includes(message))
+    || 'La suppression définitive n’a pas pu être effectuée. Le profil est conservé.'
+}
+
 function getBlockedReason({
   self,
   lastActiveAdmin,
@@ -328,7 +344,7 @@ export default function AdminProfilesPage() {
       await loadProfiles({ keepToast: true })
     } catch (error) {
       setTechnicalError(error instanceof Error ? error.message : String(error))
-      setToast({ type: 'error', message: 'Cette action n’a pas pu être effectuée.' })
+      setToast({ type: 'error', message: getVisibleActionError(action, error) })
     } finally {
       setActionLoadingId(null)
     }
@@ -653,6 +669,9 @@ export default function AdminProfilesPage() {
             <p>
               Profil concerné : <strong>{getDisplayName(pendingAction.profile)}</strong>
             </p>
+            <p className="admin-profiles-modal__email">
+              {pendingAction.profile.email || 'Email non renseigné'}
+            </p>
 
             {pendingAction.action === 'update_role' ? (
               <>
@@ -684,10 +703,25 @@ export default function AdminProfilesPage() {
               </>
             ) : pendingAction.action === 'delete' ? (
               <>
-                <p>Cette action est irréversible.</p>
+                <div className="admin-profiles-deleteWarning" role="note">
+                  <strong>Suppression exceptionnelle et irréversible</strong>
+                  <p>Le compte Auth et le profil seront supprimés uniquement si aucune donnée métier ne les bloque.</p>
+                </div>
+                {isActive(pendingAction.profile) ? (
+                  <button
+                    type="button"
+                    className="admin-profiles-suspendAlternative"
+                    onClick={() => openAction(pendingAction.profile, 'deactivate')}
+                  >
+                    Suspendre le compte à la place
+                  </button>
+                ) : (
+                  <p>Ce compte est déjà inactif. Vérifiez que sa suppression définitive est indispensable.</p>
+                )}
                 <label>
                   <span>Tape SUPPRIMER pour confirmer</span>
                   <input
+                    aria-label="Confirmation de suppression définitive"
                     value={deleteConfirmation}
                     onChange={(event) => setDeleteConfirmation(event.target.value)}
                     placeholder="SUPPRIMER"
