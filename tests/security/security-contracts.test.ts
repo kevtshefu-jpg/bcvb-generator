@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 const root = process.cwd()
 const migrationPath = resolve(root, 'supabase/migrations/20260719090000_harden_role_and_team_rls.sql')
 const legacyPolicyMigrationPath = resolve(root, 'supabase/migrations/20260719085900_replace_legacy_ai_email_policies.sql')
+const registrationDecisionMigrationPath = resolve(root, 'supabase/migrations/20260731120000_harden_registration_request_decisions.sql')
 const sensitiveFunctions = [
   'admin-delete-profile',
   'create-approved-user',
@@ -18,6 +19,20 @@ const sensitiveFunctions = [
 ]
 
 describe('contrats de sécurité RLS', () => {
+  it('réserve les décisions aux RPC atomiques et refuse les écritures directes', async () => {
+    const sql = await readFile(registrationDecisionMigrationPath, 'utf8')
+    expect(sql).toContain('claim_registration_request_approval')
+    expect(sql).toContain("coalesce(auth.role(), '') <> 'service_role'")
+    expect(sql).toContain("raise sqlstate 'PT404'")
+    expect(sql).toContain("raise sqlstate 'PT409'")
+    expect(sql).toContain("grant execute on function public.claim_registration_request_approval(uuid, uuid, boolean) to service_role")
+    expect(sql).toContain("revoke all on function public.claim_registration_request_approval(uuid, uuid, boolean) from public, anon, authenticated")
+    expect(sql).toContain("where id = request_id and status = 'pending'")
+    expect(sql).toContain("raise sqlstate 'PT409'")
+    expect(sql).toContain('drop policy if exists registration_requests_admin_update')
+    expect(sql).toContain('drop policy if exists profile_requests_admin_update')
+    expect(sql).toContain('public.is_current_user_admin()')
+  })
   it('remplace les policies historiques IA/email sans condition globale true', async () => {
     const [legacySql, hardeningSql] = await Promise.all([
       readFile(legacyPolicyMigrationPath, 'utf8'),
@@ -87,6 +102,19 @@ describe('contrats de sécurité RLS', () => {
 })
 
 describe('contrats des Edge Functions sensibles', () => {
+  it('verrouille une approbation et permet seulement la reprise email', async () => {
+    const [source, sql] = await Promise.all([
+      readFile(resolve(root, 'supabase/functions/create-approved-user/index.ts'), 'utf8'),
+      readFile(registrationDecisionMigrationPath, 'utf8'),
+    ])
+    expect(source).toContain(".rpc('claim_registration_request_approval'")
+    expect(source).toContain('REQUEST_ALREADY_PROCESSED')
+    expect(sql).toContain("activation_email_status = 'failed'")
+    expect(source).toContain('payload.retryActivation === true')
+    expect(source).toContain("type: 'recovery'")
+    expect(source).toContain('/reinitialisation-mot-de-passe')
+    expect(source).not.toMatch(/password\s*:/)
+  })
   for (const functionName of sensitiveFunctions) {
     it(`${functionName} vérifie le JWT, le profil actif et le statut`, async () => {
       const source = await readFile(resolve(root, `supabase/functions/${functionName}/index.ts`), 'utf8')
