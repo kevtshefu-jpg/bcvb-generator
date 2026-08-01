@@ -120,31 +120,3 @@ export async function rejectProfileRequest(requestId: string, adminNote?: string
 
   return data as ProfileRequestRow
 }
-
-export async function updateProfileRequestDraft(
-  requestId: string,
-  patch: Partial<
-    Pick<
-      ProfileRequestRow,
-      | 'requested_role'
-      | 'requested_category_id'
-      | 'requested_team'
-      | 'phone'
-      | 'admin_note'
-      | 'status'
-    >
-  >,
-) {
-  const { data, error } = await supabase
-    .from('profile_requests')
-    .update(patch)
-    .eq('id', requestId)
-    .select('*')
-    .single()
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return data as ProfileRequestRow
-}
