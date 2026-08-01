@@ -59,24 +59,39 @@ await must(admin.from('admin_notifications').insert({
   metadata: { registration_request_id: requestId, rls_test: true },
 }), 'création de la notification administrateur')
 
-await must(admin.from('registration_requests').update({
-  status: 'approved', approved_by: state.accounts.admin.id, approved_at: new Date().toISOString(),
-}).eq('id', requestId), 'validation de la demande')
+const { data: adminSession } = await admin.auth.getSession()
+async function invokeApproval(body) {
+  const response = await fetch(`${config.url}/functions/v1/create-approved-user`, {
+    method: 'POST',
+    headers: {
+      apikey: config.anonKey,
+      Authorization: `Bearer ${adminSession.session.access_token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+  return { status: response.status, data: await response.json() }
+}
+
+const approval = await invokeApproval({ requestId, finalRole: 'coach' })
+assert(approval.status === 200 && approval.data?.ok === true, 'approbation Edge confirmée', `HTTP ${approval.status}`)
+assert(approval.data?.activation_email_status === 'sent' || approval.data?.activation_email_status === 'failed', 'statut email enregistré')
+
+const duplicateApproval = await invokeApproval({ requestId, finalRole: 'coach' })
+assert(duplicateApproval.status === 409 && duplicateApproval.data?.code === 'REQUEST_ALREADY_PROCESSED', 'double approbation refusée', `HTTP ${duplicateApproval.status}`)
+
+const approvedRows = await must(service.from('registration_requests').select('status,activation_email_status').eq('id', requestId), 'lecture de la décision serveur')
+assert(approvedRows[0]?.status === 'approved', 'demande marquée approuvée par le serveur')
 
 const users = await must(service.auth.admin.listUsers({ page: 1, perPage: 1000 }), 'recherche du compte d’intégration')
 let integrationUser = users.users.find((user) => user.email?.toLowerCase() === email)
-if (integrationUser) {
-  const updated = await must(service.auth.admin.updateUserById(integrationUser.id, { password, email_confirm: true }), 'mise à jour du compte Auth idempotente')
-  integrationUser = updated.user
-} else {
-  const created = await must(service.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { rls_test: true } }), 'création du compte Auth')
-  integrationUser = created.user
-}
+assert(Boolean(integrationUser), 'création du compte Auth par la fonction Edge')
+const updated = await must(service.auth.admin.updateUserById(integrationUser.id, { password, email_confirm: true }), 'simulation locale de l’activation du lien')
+integrationUser = updated.user
 assert(Boolean(integrationUser?.id), 'identifiant Auth créé')
 
-await must(admin.from('profiles').upsert({
-  id: integrationUser.id, email, full_name: 'Integration RLS', role: 'coach', is_active: true, profile_status: 'active',
-}, { onConflict: 'id' }), 'création du profil applicatif')
+const profiles = await must(service.from('profiles').select('id,role,is_active').eq('id', integrationUser.id), 'lecture du profil applicatif créé')
+assert(profiles.length === 1 && profiles[0].role === 'coach' && profiles[0].is_active === true, 'profil applicatif cohérent')
 await must(admin.from('team_staff_assignments').upsert({
   team_id: state.fixtures.teamA, profile_id: integrationUser.id, assignment_role: 'assistant_coach', is_active: true, created_by: state.accounts.admin.id,
 }, { onConflict: 'team_id,profile_id,assignment_role' }), 'affectation du coach à Team A')

@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
+import { isAdminAssignableRole, isSensitiveAdminRole } from '../_shared/adminProfileRoles.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,6 +21,7 @@ type RegistrationRequestRow = {
   requested_team?: string | null
   notes?: string | null
   status?: string | null
+  activation_email_status?: string | null
   created_at?: string | null
 }
 
@@ -28,6 +30,7 @@ type CreateApprovedUserPayload = {
   id?: string
   finalRole?: string
   role?: string
+  retryActivation?: boolean
 }
 
 type EmailContact = {
@@ -42,6 +45,7 @@ type ApiErrorCode =
   | 'ROLE_FORBIDDEN'
   | 'INVALID_PAYLOAD'
   | 'REQUEST_NOT_FOUND'
+  | 'REQUEST_ALREADY_PROCESSED'
   | 'INTERNAL_ERROR'
 
 class ApiError extends Error {
@@ -151,25 +155,22 @@ function isDuplicateUserError(message: string) {
 }
 
 function normalizeRole(value: unknown) {
-  const raw = normalizeText(value).toLowerCase()
+  const raw = normalizeText(value).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 
   if (!raw) return 'member'
+  const normalized = raw.replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+  const aliases: Record<string, string> = {
+    membre: 'member',
+    technical_manager: 'responsable_technique',
+    parent_referent: 'parent_referent',
+  }
+  return aliases[normalized] || normalized
+}
 
-  if (raw.includes('responsable')) return 'responsable_technique'
-  if (raw.includes('admin')) return 'admin'
-  if (raw.includes('coach')) return 'coach'
-  if (raw.includes('aide')) return 'coach'
-  if (raw.includes('dirigeant')) return 'dirigeant'
-  if (raw.includes('parent référent') || raw.includes('parent_referent')) return 'parent_referent'
-  if (raw.includes('parent')) return 'parent'
-  if (raw.includes('joueur')) return 'joueur'
-  if (raw.includes('bénévole') || raw.includes('benevole')) return 'benevole'
-  if (raw.includes('arbitre')) return 'arbitre'
-  if (raw.includes('otm')) return 'otm'
-  if (raw.includes('membre')) return 'member'
-  if (raw.includes('member')) return 'member'
-
-  return raw.replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '') || 'member'
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
+  })[character] || character)
 }
 
 function buildFullName(row: RegistrationRequestRow) {
@@ -196,16 +197,14 @@ async function findAuthUserByEmail(
   supabaseAdmin: ReturnType<typeof createClient>,
   email: string,
 ) {
-  const { data, error } = await supabaseAdmin.auth.admin.listUsers({
-    page: 1,
-    perPage: 1000,
-  })
-
-  if (error) {
-    throw new Error(`Recherche utilisateur Auth impossible : ${error.message}`)
+  const perPage = 1000
+  for (let page = 1; ; page += 1) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage })
+    if (error) throw new Error(`Recherche utilisateur Auth impossible : ${error.message}`)
+    const match = data.users.find((user) => normalizeEmail(user.email) === email)
+    if (match) return match
+    if (data.users.length < perPage) return null
   }
-
-  return data.users.find((user) => normalizeEmail(user.email) === email) || null
 }
 
 async function assertAdminCaller(
@@ -262,21 +261,28 @@ async function updateRegistrationApprovalStatus(
     activation_email_status: activationEmailStatus,
   }
 
-  const { error } = await supabaseAdmin
+  const { data: updatedRow, error } = await supabaseAdmin
     .from('registration_requests')
     .update(fullPatch)
     .eq('id', requestId)
+    .eq('status', 'processing')
+    .select('id')
+    .maybeSingle()
 
-  if (!error) return
+  if (!error && updatedRow) return
+  if (!error) throw new Error('Compte créé, mais la réservation de la demande a été perdue.')
 
   if (isMissingColumnError(error.message)) {
-    const { error: fallbackError } = await supabaseAdmin
+    const { data: fallbackRow, error: fallbackError } = await supabaseAdmin
       .from('registration_requests')
       .update({ status: 'approved' })
       .eq('id', requestId)
+      .eq('status', 'processing')
+      .select('id')
+      .maybeSingle()
 
-    if (fallbackError) {
-      throw new Error(`Compte créé, mais demande non mise à jour : ${fallbackError.message}`)
+    if (fallbackError || !fallbackRow) {
+      throw new Error(`Compte créé, mais demande non mise à jour : ${fallbackError?.message || 'réservation perdue'}`)
     }
 
     return
@@ -348,12 +354,14 @@ async function sendActivationEmail(email: string, fullName: string, activationLi
   const apiKey = Deno.env.get('BREVO_API_KEY')
   if (!apiKey) throw new Error('BREVO_API_KEY manquant.')
 
+  const safeFullName = escapeHtml(fullName)
+  const safeActivationLink = escapeHtml(activationLink)
   const htmlContent = `
-    <p>Bonjour ${fullName},</p>
+    <p>Bonjour ${safeFullName},</p>
     <p>Votre accès au référentiel BCVB a été validé.</p>
     <p>Vous pouvez créer votre mot de passe avec ce lien sécurisé :</p>
-    <p><a href="${activationLink}">Créer mon mot de passe</a></p>
-    <p>Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>${activationLink}</p>
+    <p><a href="${safeActivationLink}">Créer mon mot de passe</a></p>
+    <p>Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>${safeActivationLink}</p>
     <p>À bientôt,<br>BCVB Référentiel</p>
   `
 
@@ -481,14 +489,13 @@ Deno.serve(async (request) => {
       .from('registration_requests')
       .select('*')
       .eq('id', requestId)
-      .eq('status', 'pending')
-      .single()
+      .maybeSingle()
 
     if (requestError || !requestRow) {
       return errorResponse(new ApiError(
         404,
         'REQUEST_NOT_FOUND',
-        'Demande introuvable ou déjà traitée.',
+        'Demande introuvable.',
       ))
     }
 
@@ -504,16 +511,11 @@ Deno.serve(async (request) => {
         'member',
     )
 
-    const allowedRoles = new Set([
-      'admin', 'responsable_technique', 'dirigeant', 'coach', 'team_staff',
-      'parent_referent', 'joueur', 'parent', 'benevole', 'arbitre', 'otm', 'member',
-    ])
-
-    if (!allowedRoles.has(finalRole)) {
+    if (!isAdminAssignableRole(finalRole)) {
       return errorResponse(new ApiError(400, 'INVALID_PAYLOAD', 'Rôle final invalide.'))
     }
 
-    if (['admin', 'responsable_technique'].includes(finalRole) && adminUser.role !== 'admin') {
+    if (isSensitiveAdminRole(finalRole) && adminUser.role !== 'admin') {
       return jsonResponse(
         { ok: false, error: 'Seul un administrateur peut attribuer un rôle élevé.' },
         403,
@@ -523,6 +525,27 @@ Deno.serve(async (request) => {
     if (!email) {
       return jsonResponse({ ok: false, error: 'Email manquant dans la demande.' }, 400)
     }
+
+    const isEmailRetry = payload.retryActivation === true
+    const { data: claimedRequest, error: claimError } = await supabaseAdmin
+      .rpc('claim_registration_request_approval', {
+        request_id: requestId,
+        approved_by_value: adminUser.user.id,
+        retry_activation: isEmailRetry,
+      })
+      .single()
+
+    if (claimError?.code === 'PT404') {
+      return errorResponse(new ApiError(404, 'REQUEST_NOT_FOUND', 'Demande introuvable.'))
+    }
+    if (claimError?.code === 'PT409') {
+      return errorResponse(new ApiError(409, 'REQUEST_ALREADY_PROCESSED', 'Demande déjà traitée ou en cours.'))
+    }
+    if (claimError || !claimedRequest) {
+      throw new Error(`Réservation de la demande impossible : ${claimError?.message || 'réponse absente'}`)
+    }
+
+    try {
 
     let userId: string | null = null
     let userAlreadyExisted = false
@@ -550,26 +573,14 @@ Deno.serve(async (request) => {
         })
 
       if (createUserError) {
-        return jsonResponse(
-          {
-            ok: false,
-            error: `Création du compte Auth impossible : ${createUserError.message}`,
-          },
-          500,
-        )
+        throw new Error(`Création du compte Auth impossible : ${createUserError.message}`)
       }
 
       userId = createdUserData.user?.id || null
     }
 
     if (!userId) {
-      return jsonResponse(
-        {
-          ok: false,
-          error: "Impossible de récupérer l'identifiant utilisateur.",
-        },
-        500,
-      )
+      throw new Error("Impossible de récupérer l'identifiant utilisateur.")
     }
 
     const { data: existingProfile, error: existingProfileError } = await supabaseAdmin
@@ -579,13 +590,7 @@ Deno.serve(async (request) => {
       .maybeSingle()
 
     if (existingProfileError) {
-      return jsonResponse(
-        {
-          ok: false,
-          error: `Impossible de vérifier le profil existant : ${existingProfileError.message}`,
-        },
-        500,
-      )
+      throw new Error(`Impossible de vérifier le profil existant : ${existingProfileError.message}`)
     }
 
     const protectedRoles = ['admin', 'responsable_technique']
@@ -648,6 +653,18 @@ Deno.serve(async (request) => {
           ? 'Compte créé et email d’activation envoyé.'
           : 'Compte créé, mais l’email d’activation n’a pas pu être envoyé.',
     })
+    } catch (processingError) {
+      const rollbackPatch = isEmailRetry
+        ? { status: 'approved', activation_email_status: 'failed' }
+        : { status: 'pending', approved_by: null }
+      const { error: rollbackError } = await supabaseAdmin
+        .from('registration_requests')
+        .update(rollbackPatch)
+        .eq('id', requestId)
+        .eq('status', 'processing')
+      if (rollbackError) console.error('[create-approved-user] claim rollback failed')
+      throw processingError
+    }
   } catch (error) {
     if (error instanceof ApiError) return errorResponse(error)
 
