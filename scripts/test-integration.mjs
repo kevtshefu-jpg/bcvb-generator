@@ -92,9 +92,11 @@ assert(Boolean(integrationUser?.id), 'identifiant Auth créé')
 
 const profiles = await must(service.from('profiles').select('id,role,is_active').eq('id', integrationUser.id), 'lecture du profil applicatif créé')
 assert(profiles.length === 1 && profiles[0].role === 'coach' && profiles[0].is_active === true, 'profil applicatif cohérent')
-await must(admin.from('team_staff_assignments').upsert({
-  team_id: state.fixtures.teamA, profile_id: integrationUser.id, assignment_role: 'assistant_coach', is_active: true, created_by: state.accounts.admin.id,
-}, { onConflict: 'team_id,profile_id,assignment_role' }), 'affectation du coach à Team A')
+await must(admin.rpc('assign_team_staff', {
+  target_team_id: state.fixtures.teamA,
+  target_profile_id: integrationUser.id,
+  target_assignment_role: 'assistant_coach',
+}), 'affectation transactionnelle du coach à Team A')
 
 const integration = createClient(config.url, config.anonKey, { auth: { persistSession: false, autoRefreshToken: false } })
 await must(integration.auth.signInWithPassword({ email, password }), 'connexion du compte approuvé')

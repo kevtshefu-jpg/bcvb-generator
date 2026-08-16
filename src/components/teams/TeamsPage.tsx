@@ -1,212 +1,25 @@
-import { useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import {
-  teamLinkedDocuments,
-  teamObjectives,
-  teamProfiles,
-  teamStaffMembers,
-  getTeamDocuments,
-  getTeamObjectives,
-  getTeamStaff,
-} from "../../lib/teams/teamProfiles";
-import { getTeamProfileBasePath } from "../../lib/teams/teamRoutes";
-import { buildTeamsDashboardData, computeTeamIndicators } from "../../lib/teams/teamStats";
-import { isHeadCoachRole } from "../../lib/teams/teamStaff";
-import { TeamDashboardCard } from "./TeamDashboardCard";
-import { MobileDetailCard, ResponsiveDataList } from "../ui/ResponsiveDataView";
-import { EmptyState } from "../ui/PageShell";
-import "../../styles/teams.css";
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { getTeamProfileBasePath } from '../../lib/teams/teamRoutes'
+import { loadTeams, type TeamRow } from '../../features/teams/teamManagementService'
+import '../../styles/teams.css'
 
 export function TeamsPage() {
-  const { pathname } = useLocation();
-  const [season, setSeason] = useState("2026-2027");
-  const [category, setCategory] = useState("all");
-  const [gender, setGender] = useState("all");
-  const [level, setLevel] = useState("all");
-  const [status, setStatus] = useState("all");
-  const [coach, setCoach] = useState("");
-  const [gym, setGym] = useState("");
-  const [championship, setChampionship] = useState("");
-  const [query, setQuery] = useState("");
-  const dashboard = useMemo(() => buildTeamsDashboardData(teamProfiles, teamStaffMembers, teamObjectives, teamLinkedDocuments), []);
-  const profileBasePath = getTeamProfileBasePath(pathname);
-  const seasons = [...new Set(teamProfiles.map((team) => team.season))];
-  const categories = [...new Set(teamProfiles.map((team) => team.category))];
-  const genders = [...new Set(teamProfiles.map((team) => team.gender || "mixte"))];
-  const levels = [...new Set(teamProfiles.map((team) => team.level))];
-  const statuses = [...new Set(teamProfiles.map((team) => team.status))];
-  const filteredTeams = teamProfiles.filter((team) => {
-    const teamStaff = getTeamStaff(team.id);
-    const headCoach = teamStaff.find((member) => isHeadCoachRole(member.role) && member.isActive);
-    const matchSeason = season === "all" || team.season === season;
-    const matchCategory = category === "all" || team.category === category;
-    const matchGender = gender === "all" || (team.gender || "mixte") === gender;
-    const matchLevel = level === "all" || team.level === level;
-    const matchStatus = status === "all" || team.status === status;
-    const matchCoach = !coach || `${headCoach?.name || ""} ${teamStaff.map((member) => member.name).join(" ")}`.toLowerCase().includes(coach.toLowerCase());
-    const matchGym = !gym || (team.mainGym || "").toLowerCase().includes(gym.toLowerCase());
-    const matchChampionship = !championship || (team.championship || "").toLowerCase().includes(championship.toLowerCase());
-    const matchQuery = !query || `${team.name} ${team.category} ${team.level} ${team.gender || ""} ${team.championship || ""} ${team.description || ""} ${(team.identityTags || []).join(" ")}`.toLowerCase().includes(query.toLowerCase());
-    return matchSeason && matchCategory && matchGender && matchLevel && matchStatus && matchCoach && matchGym && matchChampionship && matchQuery;
-  });
-
-  function exportSummary() {
-    const content = [
-      "nom;categorie;niveau;saison;statut;joueurs;presence;evaluation;objectifs",
-      ...filteredTeams.map((team) => {
-        const indicators = computeTeamIndicators(team, getTeamStaff(team.id), getTeamObjectives(team.id), getTeamDocuments(team.id));
-        return `${team.name};${team.category};${team.level};${team.season};${team.status};${indicators.playersCount};${indicators.averageAttendanceRate};${indicators.averageEvaluationScore};${indicators.objectivesProgressRate}`;
-      }),
-    ].join("\n");
-    const url = URL.createObjectURL(new Blob([content], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "synthese-equipes-bcvb.csv";
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function resetFilters() {
-    setSeason("all");
-    setCategory("all");
-    setGender("all");
-    setLevel("all");
-    setStatus("all");
-    setCoach("");
-    setGym("");
-    setChampionship("");
-    setQuery("");
-  }
-
-  return (
-    <main className="teams-page bcvb-page-shell bcvb-page-shell--wide">
-      <section className="bcvb-dashboard-hero teams-header">
-        <div>
-          <p className="bcvb-eyebrow">Gestion des équipes</p>
-          <h1 className="bcvb-title-xl">Équipes, staffs, objectifs et suivi sportif BCVB</h1>
-          <p className="bcvb-subtitle">Centraliser les équipes, les staffs, les objectifs, les documents et le suivi sportif BCVB.</p>
-        </div>
-        <div className="teams-header-actions">
-          <Link className="bcvb-button-primary" to="/effectifs/import">Créer une équipe</Link>
-          <a className="bcvb-button-secondary" href="/effectifs/import">Importer équipes</a>
-          <button className="bcvb-button-secondary" type="button" onClick={exportSummary}>Exporter synthèse</button>
-        </div>
-      </section>
-
-      <section className="teams-dashboard-strip">
-        <article><span>Équipes actives</span><strong>{dashboard.activeTeamsCount}</strong></article>
-        <article><span>Sans coach principal</span><strong>{dashboard.teamsWithoutHeadCoach}</strong></article>
-        <article><span>Sans objectifs</span><strong>{dashboard.teamsWithoutSeasonObjectives}</strong></article>
-        <article><span>Sans planification</span><strong>{dashboard.teamsWithoutActivePlanning}</strong></article>
-        <article><span>Présences manquantes</span><strong>{dashboard.teamsWithMissingAttendance}</strong></article>
-        <article><span>Sans évaluation récente</span><strong>{dashboard.teamsWithoutRecentEvaluation}</strong></article>
-      </section>
-
-      <section className="teams-filters">
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher équipe, niveau, championnat" />
-        <select value={season} onChange={(event) => setSeason(event.target.value)}>
-          <option value="all">Toutes saisons</option>
-          {seasons.map((item) => <option key={item}>{item}</option>)}
-        </select>
-        <select value={category} onChange={(event) => setCategory(event.target.value)}>
-          <option value="all">Toutes catégories</option>
-          {categories.map((item) => <option key={item}>{item}</option>)}
-        </select>
-        <select value={gender} onChange={(event) => setGender(event.target.value)}>
-          <option value="all">Tous sexes</option>
-          {genders.map((item) => <option key={item}>{item}</option>)}
-        </select>
-        <select value={level} onChange={(event) => setLevel(event.target.value)}>
-          <option value="all">Tous niveaux</option>
-          {levels.map((item) => <option key={item}>{item}</option>)}
-        </select>
-        <select value={status} onChange={(event) => setStatus(event.target.value)}>
-          <option value="all">Tous statuts</option>
-          {statuses.map((item) => <option key={item}>{item}</option>)}
-        </select>
-        <input value={coach} onChange={(event) => setCoach(event.target.value)} placeholder="Coach" />
-        <input value={gym} onChange={(event) => setGym(event.target.value)} placeholder="Salle" />
-        <input value={championship} onChange={(event) => setChampionship(event.target.value)} placeholder="Championnat" />
-      </section>
-
-      <section className="teams-grid">
-        {filteredTeams.map((team) => (
-          <TeamDashboardCard
-            key={team.id}
-            team={team}
-            staff={getTeamStaff(team.id)}
-            indicators={computeTeamIndicators(team, getTeamStaff(team.id), getTeamObjectives(team.id), getTeamDocuments(team.id))}
-          />
-        ))}
-      </section>
-
-      {filteredTeams.length === 0 ? (
-        <EmptyState
-          cause="no_results"
-          title="Aucune équipe visible"
-          description="Aucune équipe ne correspond aux filtres actuels. Réinitialisez-les pour afficher les équipes disponibles."
-          action={<button type="button" onClick={resetFilters}>Réinitialiser les filtres</button>}
-        />
-      ) : null}
-
-      <section className="team-table-card">
-        <h2>Tableau équipes</h2>
-        <div className="team-table-scroll responsive-data-table">
-          <table className="bcvb-table-premium">
-            <thead><tr><th>Équipe</th><th>Catégorie</th><th>Niveau</th><th>Coach principal</th><th>Statut</th><th>Fiche</th></tr></thead>
-            <tbody>
-              {filteredTeams.map((team) => {
-                const headCoach = getTeamStaff(team.id).find((member) => isHeadCoachRole(member.role) && member.isActive);
-                return (
-                  <tr key={team.id}>
-                    <td>{team.name}</td>
-                    <td>{team.category}</td>
-                    <td>{team.level}</td>
-                    <td>{headCoach?.name || "À affecter"}</td>
-                    <td>{team.status}</td>
-                    <td><Link to={`${profileBasePath}/${team.id}`}>Ouvrir</Link></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <div className="responsive-data-mobile">
-          <ResponsiveDataList
-            empty={(
-              <EmptyState
-                cause="no_results"
-                title="Aucune équipe trouvée"
-                description="Ajuste les filtres ou réinitialise la recherche pour retrouver les équipes du référentiel."
-                action={<button type="button" onClick={resetFilters}>Réinitialiser les filtres</button>}
-              />
-            )}
-          >
-            {filteredTeams.map((team) => {
-              const teamStaff = getTeamStaff(team.id);
-              const headCoach = teamStaff.find((member) => isHeadCoachRole(member.role) && member.isActive);
-              return (
-                <MobileDetailCard
-                  key={team.id}
-                  eyebrow={team.category}
-                  title={team.name}
-                  subtitle={team.championship || team.description || "Fiche équipe BCVB"}
-                  badge={<span className="bcvb-status-pill">{team.status}</span>}
-                  items={[
-                    { label: "Niveau", value: team.level },
-                    { label: "Saison", value: team.season },
-                    { label: "Coach principal", value: headCoach?.name || "À affecter", full: true },
-                    { label: "Salle", value: team.mainGym || "—", full: true },
-                  ]}
-                  actions={<Link to={`${profileBasePath}/${team.id}`}>Ouvrir la fiche</Link>}
-                />
-              );
-            })}
-          </ResponsiveDataList>
-        </div>
-      </section>
-    </main>
-  );
+  const { pathname } = useLocation()
+  const [teams, setTeams] = useState<TeamRow[]>([])
+  const [query, setQuery] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const basePath = getTeamProfileBasePath(pathname)
+  useEffect(() => { let alive = true; loadTeams().then((rows) => alive && setTeams(rows)).catch((cause) => alive && setError(cause instanceof Error ? cause.message : 'Chargement impossible.')).finally(() => alive && setLoading(false)); return () => { alive = false } }, [])
+  const filtered = useMemo(() => teams.filter((team) => `${team.name} ${team.category} ${team.level} ${team.season}`.toLowerCase().includes(query.trim().toLowerCase())), [teams, query])
+  return <main className="teams-page bcvb-page-shell bcvb-page-shell--wide">
+    <section className="bcvb-dashboard-hero teams-header"><div><p className="bcvb-eyebrow">Gestion des équipes</p><h1 className="bcvb-title-xl">Équipes et encadrement</h1><p className="bcvb-subtitle">Données actives du club, chargées depuis Supabase.</p></div></section>
+    <section className="teams-filters teams-filters--compact" aria-label="Filtrer les équipes"><label><span>Rechercher</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nom, catégorie, niveau ou saison" /></label></section>
+    {loading && <section className="team-state-card" role="status">Chargement des équipes…</section>}
+    {error && <section className="team-alert-card" role="alert"><h2>Équipes indisponibles</h2><p>{error}</p></section>}
+    {!loading && !error && filtered.length === 0 && <section className="team-state-card"><h2>Aucune équipe</h2><p>Aucune équipe active ne correspond à cette recherche.</p></section>}
+    <section className="teams-grid teams-grid--operational">{filtered.map((team) => <article className="team-card" key={team.id}><div className="team-card__top"><span>{team.category || 'Catégorie non renseignée'}</span><strong>{team.season || 'Saison non renseignée'}</strong></div><h2>{team.name}</h2><dl><div><dt>Niveau</dt><dd>{team.level || 'Non renseigné'}</dd></div></dl><Link className="bcvb-button-primary team-touch-action" to={`${basePath}/${team.id}`}>Ouvrir la fiche</Link></article>)}</section>
+  </main>
 }
-
-export default TeamsPage;
+export default TeamsPage

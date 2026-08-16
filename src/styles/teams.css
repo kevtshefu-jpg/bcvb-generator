@@ -5,6 +5,41 @@
   min-width: 0;
 }
 
+.teams-filters--compact { grid-template-columns: minmax(0, 520px); }
+.teams-filters--compact label, .team-staff-editor label { display: grid; gap: 6px; font-weight: 800; }
+.teams-grid--operational { grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); }
+.team-state-card { padding: 22px; border-radius: 20px; background: #fff; border: 1px solid rgba(7, 16, 31, .08); }
+.team-profile-layout--contained { grid-template-columns: minmax(0, 960px); }
+.team-staff-sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.team-staff-role { min-width: 0; padding: 14px; border: 1px solid rgba(7, 16, 31, .1); border-radius: 16px; }
+.team-staff-role > div, .team-staff-role article { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.team-staff-role h3 { margin: 0; }
+.team-staff-role > div > span { color: #5c6472; font-weight: 700; }
+.team-staff-role article { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(7, 16, 31, .08); }
+.team-staff-role article div { min-width: 0; display: grid; gap: 3px; }
+.team-staff-role article strong, .team-staff-role article small { overflow-wrap: anywhere; }
+.team-staff-editor { display: grid; grid-template-columns: minmax(150px, .7fr) minmax(220px, 1.4fr) auto; align-items: end; gap: 12px; margin-top: 18px; padding-top: 18px; border-top: 1px solid rgba(7, 16, 31, .1); }
+.team-staff-editor h3 { grid-column: 1 / -1; margin: 0; }
+.team-staff-editor select { width: 100%; min-width: 0; min-height: 44px; padding: 9px 11px; border: 1px solid rgba(7, 16, 31, .15); border-radius: 12px; background: white; }
+.team-touch-action { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+.team-operation-message { padding: 12px; border-radius: 12px; font-weight: 800; }
+.team-operation-message--success { color: #116329; background: #e2f6e8; }
+.team-operation-message--error, .team-alert-card--warning { color: #8b1a1a; background: #fff0d8; }
+.team-player-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 10px; margin-bottom: 16px; }
+.team-player-grid article { display: grid; gap: 4px; padding: 12px; border-radius: 14px; background: #f7f8fa; }
+
+@media (max-width: 700px) {
+  .team-staff-sections, .team-staff-editor { grid-template-columns: minmax(0, 1fr); }
+  .team-staff-role > div, .team-staff-role article { align-items: stretch; flex-direction: column; }
+  .team-staff-role article button { width: 100%; }
+}
+
+@media (max-width: 430px) {
+  .teams-page { gap: 14px; }
+  .team-staff-panel, .team-table-card, .team-alert-card, .team-state-card { padding: 14px; border-radius: 16px; }
+  .bcvb-title-xl { overflow-wrap: anywhere; }
+}
+
 .teams-header,
 .teams-profile-header {
   align-items: stretch;

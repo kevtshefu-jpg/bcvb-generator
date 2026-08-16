@@ -278,6 +278,97 @@ for (const [table, ownId, otherId] of [
   check(memberError?.code === '42501', 'membre: diagnostic équipes sans staff refusé', memberError?.message)
 }
 
+// GO-02B — contrat transactionnel des affectations staff.
+{
+  const coachAId = fixtureState.accounts.coachA.id
+  const coachBId = fixtureState.accounts.coachB.id
+  const memberId = fixtureState.accounts.member.id
+  const inactiveId = fixtureState.accounts.inactive.id
+  const absentId = crypto.randomUUID()
+
+  const { error: directWriteError } = await clients.admin.from('team_staff_assignments').insert({
+    team_id: teamA,
+    profile_id: memberId,
+    assignment_role: 'parent_referent',
+    is_active: true,
+  })
+  check(directWriteError?.code === '42501', 'admin: écriture staff directe refusée au profit de la RPC', formatPostgrestError(directWriteError))
+
+  for (const name of ['dirigeant', 'coachA', 'member', 'inactive']) {
+    const { error } = await clients[name].rpc('assign_team_staff', {
+      target_team_id: teamA,
+      target_profile_id: memberId,
+      target_assignment_role: 'parent_referent',
+    })
+    check(error?.code === '42501', `${name}: mutation staff refusée`, formatPostgrestError(error))
+  }
+
+  for (const [profileId, label] of [[inactiveId, 'inactif'], [absentId, 'absent']]) {
+    const { error } = await clients.admin.rpc('assign_team_staff', {
+      target_team_id: teamA,
+      target_profile_id: profileId,
+      target_assignment_role: 'assistant_coach',
+    })
+    check(error?.code === 'P0002', `profil ${label}: affectation refusée`, formatPostgrestError(error))
+  }
+
+  const { data: assistant, error: assistantError } = await clients.admin.rpc('assign_team_staff', {
+    target_team_id: teamA,
+    target_profile_id: coachBId,
+    target_assignment_role: 'assistant_coach',
+  })
+  check(!assistantError && assistant?.ok === true, 'admin: assistant ajouté par RPC', assistantError?.message)
+  const { data: assistantTeam } = await clients.admin.from('teams').select('assistant_coach_ids').eq('id', teamA).single()
+  check(assistantTeam?.assistant_coach_ids?.includes(coachBId), 'assistant_coach_ids synchronisé après ajout')
+
+  const { error: duplicateError } = await clients.admin.rpc('assign_team_staff', {
+    target_team_id: teamA,
+    target_profile_id: coachBId,
+    target_assignment_role: 'assistant_coach',
+  })
+  check(duplicateError?.code === '23505', 'doublon actif refusé', formatPostgrestError(duplicateError))
+  const { data: assistantRowsAfterFailure } = await clients.admin.from('team_staff_assignments').select('id').eq('team_id', teamA).eq('assignment_role', 'assistant_coach').eq('is_active', true)
+  check(assistantRowsAfterFailure?.length === 1, 'échec transactionnel sans moitié de mutation assistant')
+
+  const { error: removeAssistantError } = await clients.admin.rpc('remove_team_staff', { target_assignment_id: assistant.assignment_id })
+  check(!removeAssistantError, 'admin: assistant retiré', removeAssistantError?.message)
+  const { data: assistantHistory } = await clients.admin.from('team_staff_assignments').select('is_active').eq('id', assistant.assignment_id).single()
+  const { data: teamWithoutAssistant } = await clients.admin.from('teams').select('assistant_coach_ids').eq('id', teamA).single()
+  check(assistantHistory?.is_active === false, 'historique assistant conservé comme inactif')
+  check(teamWithoutAssistant?.assistant_coach_ids?.length === 0, 'assistant_coach_ids synchronisé après retrait')
+
+  const { data: parentAssignment, error: parentError } = await clients.technicalManager.rpc('assign_team_staff', {
+    target_team_id: teamA,
+    target_profile_id: memberId,
+    target_assignment_role: 'parent_referent',
+  })
+  check(!parentError && parentAssignment?.ok === true, 'responsable technique: parent référent ajouté', parentError?.message)
+  const { error: removeParentError } = await clients.technicalManager.rpc('remove_team_staff', { target_assignment_id: parentAssignment?.assignment_id })
+  check(!removeParentError, 'responsable technique: parent référent retiré', removeParentError?.message)
+  const { data: optionalRows } = await clients.admin.from('team_staff_assignments').select('assignment_role').eq('team_id', teamA).in('assignment_role', ['assistant_coach', 'parent_referent']).eq('is_active', true)
+  check(optionalRows?.length === 0, 'assistant et parent référent restent optionnels')
+
+  const { data: replacement, error: replacementError } = await clients.admin.rpc('assign_team_staff', {
+    target_team_id: teamA,
+    target_profile_id: coachBId,
+    target_assignment_role: 'head_coach',
+  })
+  check(!replacementError && replacement?.ok === true, 'coach principal remplacé atomiquement', replacementError?.message)
+  const { data: headRows } = await clients.admin.from('team_staff_assignments').select('profile_id,is_active').eq('team_id', teamA).eq('assignment_role', 'head_coach')
+  const { data: replacedTeam } = await clients.admin.from('teams').select('head_coach_id').eq('id', teamA).single()
+  check(headRows?.filter((row) => row.is_active).length === 1 && headRows.find((row) => row.profile_id === coachAId)?.is_active === false, 'ancien coach désactivé et un seul coach actif')
+  check(replacedTeam?.head_coach_id === coachBId, 'teams.head_coach_id synchronisé')
+
+  const concurrentResults = await Promise.all([
+    clients.admin.rpc('assign_team_staff', { target_team_id: teamB, target_profile_id: coachAId, target_assignment_role: 'head_coach' }),
+    clients.technicalManager.rpc('assign_team_staff', { target_team_id: teamB, target_profile_id: memberId, target_assignment_role: 'head_coach' }),
+  ])
+  check(concurrentResults.every((result) => !result.error && result.data?.ok === true), 'deux remplacements concurrents sérialisés')
+  const { data: concurrentHeads } = await clients.admin.from('team_staff_assignments').select('profile_id,is_active').eq('team_id', teamB).eq('assignment_role', 'head_coach')
+  check(concurrentHeads?.filter((row) => row.is_active).length === 1, 'concurrence: jamais plus d’un coach principal actif')
+  check((concurrentHeads || []).length >= 3, 'historique des remplacements concurrents conservé')
+}
+
 await Promise.all(Object.values(clients).map((client) => client.auth.signOut()))
 
 if (failures) {

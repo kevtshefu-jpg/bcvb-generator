@@ -104,6 +104,18 @@ await upsertRows('profiles', Object.entries(definitions).map(([name, definition]
   profile_status: definition.active ? 'active' : 'inactive',
 })))
 
+// Les tests transactionnels remplacent volontairement les coachs de ces deux
+// équipes réservées. Remet le staff actif à zéro pour rendre le seed idempotent,
+// tout en conservant les lignes historiques inactives.
+{
+  const { error } = await adminClient
+    .from('team_staff_assignments')
+    .update({ is_active: false, updated_at: new Date().toISOString() })
+    .in('team_id', [ids.teamA, ids.teamB])
+    .eq('is_active', true)
+  if (error) throw new Error(`team_staff_assignments reset fixtures: ${error.message}`)
+}
+
 await upsertRows('teams', [
   {
     id: ids.teamA,
