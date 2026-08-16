@@ -155,6 +155,24 @@ for (const table of ['ai_expert_modes', 'document_ai_results', 'email_events']) 
 
 {
   const randomRequestId = crypto.randomUUID()
+  for (const name of ['admin', 'technicalManager', 'dirigeant', 'coachA', 'member', 'inactive']) {
+    const { error } = await clients[name].rpc('claim_registration_request_approval', {
+      request_id: randomRequestId,
+      approved_by_value: fixtureState.accounts.admin.id,
+      retry_activation: false,
+    })
+    check(Boolean(error), `${name}: réservation d’approbation service_role inaccessible`, formatPostgrestError(error))
+  }
+
+  for (const name of ['admin', 'technicalManager']) {
+    const { data, error } = await clients[name]
+      .from('registration_requests')
+      .update({ status: 'approved' })
+      .eq('id', fixtures.registrationRequest)
+      .select('id')
+    check(!error && data?.length === 0, `${name}: écriture directe de décision refusée`, error?.message || `lignes=${data?.length}`)
+  }
+
   const { error: coachError } = await clients.coachA.rpc('reject_profile_request', {
     request_id: randomRequestId,
     admin_note_value: 'test RLS',

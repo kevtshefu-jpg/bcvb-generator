@@ -161,6 +161,73 @@ async function authUserCount() {
 
 {
   const adminToken = await accessTokenFor(admin)
+  const requestId = crypto.randomUUID()
+  const rejectedRequestId = crypto.randomUUID()
+  const invalidRoleRequestId = crypto.randomUUID()
+  const email = `rls.concurrent-approval-${crypto.randomUUID()}@bcvb.test`
+  const rejectedEmail = `rls.rejected-approval-${crypto.randomUUID()}@bcvb.test`
+  const invalidRoleEmail = `rls.invalid-role-${crypto.randomUUID()}@bcvb.test`
+  let createdUserId = null
+
+  try {
+    const { error: fixtureError } = await serviceClient.from('registration_requests').insert([
+      { id: requestId, first_name: 'Concurrence', last_name: 'GO01E', email, role_requested: 'coach', status: 'pending' },
+      { id: rejectedRequestId, first_name: 'Refusée', last_name: 'GO01E', email: rejectedEmail, role_requested: 'member', status: 'rejected' },
+      { id: invalidRoleRequestId, first_name: 'Rôle', last_name: 'Invalide', email: invalidRoleEmail, role_requested: 'member', status: 'pending' },
+    ])
+    if (fixtureError) throw new Error(`Fixtures approbation concurrente impossibles : ${fixtureError.message}`)
+
+    const authCountBefore = await authUserCount()
+    const concurrentResults = await Promise.all([
+      invokeCreateApprovedUser({ token: adminToken, body: { requestId, finalRole: 'coach' } }),
+      invokeCreateApprovedUser({ token: adminToken, body: { requestId, finalRole: 'coach' } }),
+    ])
+    const successes = concurrentResults.filter((result) => result.status === 200 && result.data?.ok === true)
+    const conflicts = concurrentResults.filter((result) => result.status === 409 && result.data?.code === 'REQUEST_ALREADY_PROCESSED')
+    assert(successes.length === 1, 'deux approbations concurrentes: une seule réussit')
+    assert(conflicts.length === 1, 'deux approbations concurrentes: la seconde reçoit HTTP 409')
+    assert(await authUserCount() === authCountBefore + 1, 'approbations concurrentes: un seul compte Auth créé')
+
+    createdUserId = successes[0].data?.user_id
+    const { data: profiles, error: profilesError } = await serviceClient
+      .from('profiles').select('id, role').eq('email', email)
+    assert(!profilesError && profiles?.length === 1 && profiles[0].role === 'coach', 'approbations concurrentes: un seul profil créé avec le rôle final')
+
+    const alreadyApproved = await invokeCreateApprovedUser({ token: adminToken, body: { requestId, finalRole: 'coach' } })
+    assert(alreadyApproved.status === 409, 'demande déjà approuvée refusée en HTTP 409')
+
+    const rejected = await invokeCreateApprovedUser({ token: adminToken, body: { requestId: rejectedRequestId, finalRole: 'member' } })
+    assert(rejected.status === 409, 'demande rejetée refusée en HTTP 409')
+
+    const invalidRole = await invokeCreateApprovedUser({ token: adminToken, body: { requestId: invalidRoleRequestId, finalRole: 'super_admin' } })
+    assert(invalidRole.status === 400 && invalidRole.data?.code === 'INVALID_PAYLOAD', 'rôle final invalide refusé avant réservation')
+    assert(await authUserCount() === authCountBefore + 1, 'aucun compte Auth créé pour le rôle invalide ou la demande rejetée')
+
+    const { data: approvedRequest, error: approvedRequestError } = await serviceClient
+      .from('registration_requests').select('status, activation_email_status').eq('id', requestId).single()
+    assert(!approvedRequestError && approvedRequest.status === 'approved', 'demande concurrente finalisée en approved')
+    assert(approvedRequest.activation_email_status === 'failed', 'échec email local distingué de la création du compte')
+
+    const retry = await invokeCreateApprovedUser({
+      token: adminToken,
+      body: { requestId, finalRole: 'coach', retryActivation: true },
+    })
+    assert(retry.status === 200 && retry.data?.user_already_existed === true, 'reprise email idempotente après échec partiel')
+    assert(await authUserCount() === authCountBefore + 1, 'reprise email: aucun compte Auth supplémentaire')
+    const { data: profilesAfterRetry } = await serviceClient.from('profiles').select('id').eq('email', email)
+    assert(profilesAfterRetry?.length === 1, 'reprise email: aucun profil supplémentaire')
+  } finally {
+    if (!createdUserId) {
+      const { data } = await serviceClient.auth.admin.listUsers({ page: 1, perPage: 1000 })
+      createdUserId = data?.users.find((user) => user.email === email)?.id || null
+    }
+    await serviceClient.from('registration_requests').delete().in('id', [requestId, rejectedRequestId, invalidRoleRequestId])
+    if (createdUserId) await serviceClient.auth.admin.deleteUser(createdUserId)
+  }
+}
+
+{
+  const adminToken = await accessTokenFor(admin)
   const memberToken = await accessTokenFor(member)
   const inactiveToken = await accessTokenFor(inactive)
   const authCountBefore = await authUserCount()
