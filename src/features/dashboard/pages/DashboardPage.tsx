@@ -18,6 +18,8 @@ import {
   isJoueur,
   isParent,
 } from '../../auth/utils/roles'
+import TechnicalDashboard from '../../technical-dashboard/TechnicalDashboard'
+import { getTechnicalDashboardRole } from '../../technical-dashboard/technicalDashboardAccess'
 
 type DashboardAction = {
   label: string
@@ -516,6 +518,17 @@ export default function DashboardPage() {
         <h2>Chargement bloqué</h2>
         <p>{sessionError}</p>
         <a className="bcvb-button" href="/connexion">Se reconnecter</a>
+      </section>
+    )
+  }
+
+  const technicalDashboardRole = getTechnicalDashboardRole(role)
+  if (!PRESENTATION_MODE && technicalDashboardRole) {
+    return (
+      <section className="dashboard-page bcvb-page">
+        <PageShell variant="wide">
+          <TechnicalDashboard role={technicalDashboardRole} />
+        </PageShell>
       </section>
     )
   }
