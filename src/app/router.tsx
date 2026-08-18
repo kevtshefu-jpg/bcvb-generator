@@ -44,6 +44,7 @@ const ContentCreatorTutorial = lazy(() => import('../pages/tutorials/ContentCrea
 const PlatformTutorial = lazy(() => import('../pages/tutorials/PlatformTutorial'))
 const RosterImportPage = lazy(() => import('../pages/RosterImportPage'))
 const PlanningBuilderPage = lazy(() => import('../pages/PlanningBuilderPage'))
+const OperationalPlanningPage = lazy(() => import('../features/operational-planning/OperationalPlanningPage'))
 const SessionBuilderPage = lazy(() => import('../pages/SessionBuilderPage'))
 const SessionLibraryPage = lazy(() => import('../modules/sessions/SessionLibraryPage'))
 const SituationLibraryPage = lazy(() => import('../modules/sessions/SituationLibraryPage'))
@@ -400,10 +401,6 @@ export const router = createBrowserRouter([
             element: <RosterImportPage />,
           },
           {
-            path: 'planning',
-            element: <PlanningBuilderPage />,
-          },
-          {
             path: 'presences',
             element: <AttendancePage />,
           },
@@ -420,6 +417,12 @@ export const router = createBrowserRouter([
             element: <SituationLibraryPage />,
           },
         ],
+      },
+
+      // Planning opérationnel partagé, distinct de la planification sportive.
+      {
+        element: <RequireAuth allowedRoles={['admin', 'responsable_technique', 'dirigeant', 'coach', 'team_staff', 'parent_referent']} />,
+        children: [{ path: 'planning', element: <OperationalPlanningPage /> }],
       },
 
       // =========================

@@ -23,6 +23,7 @@ const source: TechnicalDashboardSource = {
   pendingRegistrations: 2,
   pendingProfileRequests: 1,
   unreadAdminNotifications: 0,
+  trainingSlots: [],
 }
 
 describe('calculs du tableau technique', () => {
@@ -41,6 +42,16 @@ describe('calculs du tableau technique', () => {
     const model = buildTechnicalDashboardModel({ ...source, staffAssignments: null, profiles: null, pendingRegistrations: null, pendingProfileRequests: null, unreadAdminNotifications: null })
     expect(model.assignedCoachCount).toBeNull()
     expect(model.alerts.some((item) => item.id === 'registrations')).toBe(false)
+  })
+
+  it('utilise la même date locale que le formulaire autour de minuit', () => {
+    const model = buildTechnicalDashboardModel({
+      ...source,
+      trainingSlots: [{ id: 'slot-1', team_id: 'team-a', weekday: 1, start_time: '18:00', end_time: '19:00', location_name: 'Salle A', valid_from: '2026-08-17', valid_until: null, is_active: true }],
+    }, new Date('2026-08-16T22:30:00.000Z'), 'Europe/Paris')
+
+    expect(model.schedule[0].isToday).toBe(true)
+    expect(model.teamsWithoutActiveSlot).toBe(1)
   })
 
   it('autorise DT, RT, admin et dirigeant, mais refuse un coach', () => {
@@ -67,6 +78,8 @@ describe('calculs du tableau technique', () => {
     expect(css).toContain('min-height:44px')
     expect(service).toContain("supabase.from('teams')")
     expect(service).toContain("supabase.from('team_staff_assignments')")
+    expect(service).toContain("supabase.from('training_slots')")
+    expect(service).not.toContain('getMockAnnualPlannings')
     expect(service).not.toMatch(/localStorage|mock|fixture/i)
   })
 })

@@ -13,6 +13,7 @@ const response = {
   pendingRegistrations: 1,
   pendingProfileRequests: 0,
   unreadAdminNotifications: 0,
+  trainingSlots: [],
 }
 
 describe('TechnicalDashboard', () => {
@@ -24,7 +25,7 @@ describe('TechnicalDashboard', () => {
     expect(screen.getByText('Coach principal manquant')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Ouvrir la fiche équipe' })).toHaveAttribute('href', '/club/equipes/team-a')
     expect(screen.getByRole('link', { name: 'Inscriptions' })).toHaveAttribute('href', '/admin/inscriptions')
-    expect(screen.getByText('Aucun planning partagé exploitable')).toBeInTheDocument()
+    expect(screen.getByText('Aucun créneau partagé actif')).toBeInTheDocument()
     expect(screen.getByText('Coach adjoint : non renseigné · Parent référent : non renseigné')).toBeInTheDocument()
     expect(screen.queryByText('Staff incomplet')).not.toBeInTheDocument()
     expect(screen.queryByText(/Postes à couvrir/)).not.toBeInTheDocument()

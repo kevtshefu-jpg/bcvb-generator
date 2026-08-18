@@ -31,7 +31,10 @@ export type TechnicalDashboardSource = {
   pendingRegistrations: number | null
   pendingProfileRequests: number | null
   unreadAdminNotifications: number | null
+  trainingSlots: TechnicalTrainingSlotRow[]
 }
+
+export type TechnicalTrainingSlotRow = { id:string; team_id:string; weekday:number; start_time:string; end_time:string; location_name:string|null; valid_from:string; valid_until:string|null; is_active:boolean }
 
 export type TechnicalTeamSummary = TechnicalTeamRow & {
   hasHeadCoach: boolean
@@ -48,4 +51,6 @@ export type TechnicalDashboardModel = {
   assignedCoachCount: number | null
   parentReferentCount: number | null
   alerts: Array<{ id: string; label: string; count: number; path: string | null }>
+  schedule: Array<TechnicalTrainingSlotRow & { teamName:string; category:string; isToday:boolean; hasConflict:boolean }>
+  teamsWithoutActiveSlot: number
 }
