@@ -367,6 +367,57 @@ for (const [table, ownId, otherId] of [
   const { data: concurrentHeads } = await clients.admin.from('team_staff_assignments').select('profile_id,is_active').eq('team_id', teamB).eq('assignment_role', 'head_coach')
   check(concurrentHeads?.filter((row) => row.is_active).length === 1, 'concurrence: jamais plus d’un coach principal actif')
   check((concurrentHeads || []).length >= 3, 'historique des remplacements concurrents conservé')
+  // Restaure l'isolation initiale des fixtures pour les contrats suivants.
+  for (const targetTeam of [teamA, teamB]) {
+    const { data: activeHeads } = await clients.admin.from('team_staff_assignments').select('id').eq('team_id', targetTeam).eq('assignment_role', 'head_coach').eq('is_active', true)
+    for (const head of activeHeads || []) await clients.admin.rpc('remove_team_staff', { target_assignment_id: head.id })
+  }
+  await clients.admin.rpc('assign_team_staff', { target_team_id: teamA, target_profile_id: coachAId, target_assignment_role: 'head_coach' })
+  await clients.admin.rpc('assign_team_staff', { target_team_id: teamB, target_profile_id: coachBId, target_assignment_role: 'head_coach' })
+}
+
+// GO-02C — planning opérationnel partagé.
+{
+  const locationA = `Salle RLS ${crypto.randomUUID()}`
+  const save = (client, overrides = {}) => client.rpc('save_training_slot', {
+    target_slot_id: null, target_team_id: teamA, target_season: 'RLS-TEST', target_weekday: 2,
+    target_start_time: '18:00', target_end_time: '19:30', target_location_name: locationA,
+    target_valid_from: '2026-09-01', target_valid_until: '2027-06-30', allow_conflict: false, ...overrides,
+  })
+  for (const name of ['dirigeant','coachA','member','inactive']) {
+    const { error } = await save(clients[name])
+    check(error?.code === '42501', `${name}: écriture planning opérationnel refusée`, formatPostgrestError(error))
+  }
+  const { error: conflictReadDenied } = await clients.member.rpc('find_training_slot_conflicts',{target_team_id:teamA,target_weekday:2,target_start_time:'18:00',target_end_time:'19:00',target_location_name:locationA,target_valid_from:'2026-09-01',target_valid_until:null,excluded_slot_id:null})
+  check(conflictReadDenied?.code==='42501','membre: diagnostic global des conflits inaccessible',formatPostgrestError(conflictReadDenied))
+  const { error: missingTeam } = await save(clients.admin,{target_team_id:crypto.randomUUID()})
+  check(Boolean(missingTeam),'équipe inexistante refusée',formatPostgrestError(missingTeam))
+  const { error: invalidDay } = await save(clients.admin,{target_weekday:8})
+  check(invalidDay?.code==='22023','jour invalide refusé',formatPostgrestError(invalidDay))
+  const { error: invalidTime } = await save(clients.admin,{target_start_time:'20:00',target_end_time:'19:00'})
+  check(invalidTime?.code==='22023','horaire invalide refusé',formatPostgrestError(invalidTime))
+
+  const { data: adminSlot,error:adminSlotError }=await save(clients.admin)
+  check(!adminSlotError&&adminSlot?.ok===true,'admin: création créneau confirmée',adminSlotError?.message)
+  const { data: rtSlot,error:rtSlotError }=await save(clients.technicalManager,{target_team_id:teamB,target_location_name:`${locationA} annexe`})
+  check(!rtSlotError&&rtSlot?.ok===true,'responsable technique: création créneau confirmée',rtSlotError?.message)
+  const { data: conflict,error:conflictError }=await save(clients.admin,{target_team_id:teamB,target_start_time:'19:00',target_end_time:'20:00'})
+  check(!conflictError&&conflict?.ok===false&&conflict?.code==='SLOT_CONFLICT','conflit même salle détecté')
+  const { data: successive,error:successiveError }=await save(clients.admin,{target_team_id:teamB,target_start_time:'19:30',target_end_time:'20:30'})
+  check(!successiveError&&successive?.ok===true,'créneaux successifs autorisés',successiveError?.message)
+  const { data: coachAVisible }=await clients.coachA.from('training_slots').select('id').eq('id',adminSlot.slot_id)
+  const { data: coachBHidden }=await clients.coachA.from('training_slots').select('id').eq('id',rtSlot.slot_id)
+  check(coachAVisible?.length===1&&coachBHidden?.length===0,'coach: lecture limitée à ses équipes')
+
+  const { data: modified,error:modifyError }=await save(clients.admin,{target_slot_id:adminSlot.slot_id,target_start_time:'17:45'})
+  check(!modifyError&&modified?.ok===true,'modification créneau confirmée serveur',modifyError?.message)
+  const { data: modifiedRow }=await clients.admin.from('training_slots').select('start_time').eq('id',adminSlot.slot_id).single()
+  check(modifiedRow?.start_time?.startsWith('17:45'),'modification réellement persistée')
+  const { data: disabled,error:disableError }=await clients.admin.rpc('deactivate_training_slot',{target_slot_id:adminSlot.slot_id})
+  check(!disableError&&disabled?.ok===true,'désactivation confirmée serveur',disableError?.message)
+  const { data: disabledRow }=await clients.admin.from('training_slots').select('is_active').eq('id',adminSlot.slot_id).single()
+  check(disabledRow?.is_active===false,'créneau désactivé sans suppression physique')
+  for(const id of [rtSlot.slot_id,successive.slot_id]) await clients.admin.rpc('deactivate_training_slot',{target_slot_id:id})
 }
 
 await Promise.all(Object.values(clients).map((client) => client.auth.signOut()))
