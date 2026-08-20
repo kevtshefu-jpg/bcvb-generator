@@ -15,7 +15,7 @@ if (fixtureState.target?.projectRef !== projectRef) {
   throw new Error(`Fixtures créées pour ${fixtureState.target?.projectRef || 'une cible inconnue'}, cible actuelle ${projectRef}. Relancer seed:rls.`)
 }
 
-const accountNames = ['admin', 'technicalManager', 'coachA', 'coachB', 'dirigeant', 'member', 'inactive']
+const accountNames = ['admin', 'technicalManager', 'coachA', 'coachB', 'teamStaff', 'parentReferent', 'dirigeant', 'member', 'inactive']
 const missingAccounts = accountNames.filter((name) => !fixtureState.accounts?.[name]?.email || !fixtureState.accounts?.[name]?.password)
 if (missingAccounts.length) throw new Error(`Comptes absents du seed : ${missingAccounts.join(', ')}`)
 
@@ -68,6 +68,8 @@ for (const [name, expectedRole] of [
   ['technicalManager', 'responsable_technique'],
   ['coachA', 'coach'],
   ['coachB', 'coach'],
+  ['teamStaff', 'team_staff'],
+  ['parentReferent', 'parent_referent'],
   ['dirigeant', 'dirigeant'],
   ['member', 'member'],
   ['inactive', 'inactive'],
@@ -206,7 +208,24 @@ for (const table of ['ai_expert_modes', 'document_ai_results', 'email_events']) 
   )
 }
 
-const { teamA, teamB, playerA, playerB, contactA, contactB, sessionA, sessionB, situationA, situationB } = fixtures
+const {
+  teamA,
+  teamB,
+  playerA,
+  playerA2,
+  playerB,
+  playerB2,
+  contactA,
+  contactB,
+  sessionA,
+  sessionB,
+  situationA,
+  situationB,
+  attendanceSessionA,
+  attendanceSessionB,
+  attendanceRecordA,
+  attendanceRecordB,
+} = fixtures
 
 for (const [name, expectedA, expectedB] of [
   ['admin', true, true],
@@ -259,6 +278,92 @@ for (const [table, ownId, otherId] of [
   await expectVisible(clients.admin, table, otherId, `admin: ${table} de l’équipe B visible`)
   await expectHidden(clients.member, table, ownId, `membre: ${table} sensible invisible`)
   await expectHidden(clients.inactive, table, ownId, `profil inactif: ${table} sensible invisible`)
+}
+
+await expectVisible(clients.admin, 'attendance_sessions', attendanceSessionA, 'admin: séance Team A visible')
+await expectVisible(clients.technicalManager, 'attendance_sessions', attendanceSessionA, 'responsable technique: séance Team A visible')
+await expectVisible(clients.dirigeant, 'attendance_sessions', attendanceSessionA, 'dirigeant: séance Team A visible')
+await expectVisible(clients.coachA, 'attendance_sessions', attendanceSessionA, 'coach A: séance Team A visible')
+await expectHidden(clients.coachA, 'attendance_sessions', attendanceSessionB, 'coach A: séance Team B invisible')
+await expectHidden(clients.coachB, 'attendance_sessions', attendanceSessionA, 'coach B: séance Team A invisible')
+await expectHidden(clients.member, 'attendance_sessions', attendanceSessionA, 'membre: séance invisible')
+await expectHidden(clients.inactive, 'attendance_sessions', attendanceSessionA, 'profil inactif: séance invisible')
+
+await expectVisible(clients.coachA, 'attendance_records', attendanceRecordA, 'coach A: record Team A visible')
+await expectHidden(clients.coachA, 'attendance_records', attendanceRecordB, 'coach A: record Team B invisible')
+await expectHidden(clients.member, 'attendance_records', attendanceRecordA, 'membre: record invisible')
+
+// GO-02D — écritures officielles et validation serveur des présences.
+{
+  const coachAId = fixtureState.accounts.coachA.id
+  const attendancePayload = (sessionId, playerId, createdBy) => ({
+    id: crypto.randomUUID(),
+    session_id: sessionId,
+    player_id: playerId,
+    status: 'present',
+    source: 'coach',
+    created_by: createdBy,
+  })
+
+  const allowedRecord = attendancePayload(attendanceSessionA, playerA2, coachAId)
+  const { data: createdRecord, error: createOwnError } = await clients.coachA
+    .from('attendance_records')
+    .insert(allowedRecord)
+    .select('id')
+    .single()
+  check(!createOwnError && createdRecord?.id === allowedRecord.id, 'coach A: création présence Team A autorisée', formatPostgrestError(createOwnError))
+
+  if (createdRecord?.id) {
+    await clients.admin.from('attendance_records').delete().eq('id', createdRecord.id)
+  }
+
+  for (const [clientName, sessionId, playerId, label] of [
+    ['coachA', attendanceSessionB, playerB2, 'coach A: création présence Team B refusée'],
+    ['dirigeant', attendanceSessionA, playerA2, 'dirigeant: écriture présence refusée'],
+    ['teamStaff', attendanceSessionA, playerA2, 'team_staff: écriture officielle refusée'],
+    ['member', attendanceSessionA, playerA2, 'membre: écriture refusée'],
+  ]) {
+    const actorId = fixtureState.accounts[clientName].id
+    const { error } = await clients[clientName]
+      .from('attendance_records')
+      .insert(attendancePayload(sessionId, playerId, actorId))
+    check(error?.code === '42501', label, formatPostgrestError(error))
+  }
+
+  const { error: directValidationError } = await clients.coachA
+    .from('attendance_records')
+    .update({ validated_by_coach: true, updated_by: coachAId })
+    .eq('id', attendanceRecordA)
+  check(directValidationError?.code === '42501', 'écriture directe validated_by_coach=true refusée', formatPostgrestError(directValidationError))
+
+  const validationCases = [
+    ['admin', attendanceSessionA, true, 'admin: validation séance autorisée'],
+    ['technicalManager', attendanceSessionA, true, 'responsable technique: validation autorisée'],
+    ['coachA', attendanceSessionA, true, 'coach A: validation Team A autorisée'],
+    ['coachA', attendanceSessionB, false, 'coach A: validation Team B refusée'],
+    ['dirigeant', attendanceSessionA, false, 'dirigeant: validation refusée'],
+    ['parentReferent', attendanceSessionA, false, 'parent référent: validation refusée'],
+    ['member', attendanceSessionA, false, 'membre: validation refusée'],
+    ['inactive', attendanceSessionA, false, 'profil inactif: validation refusée'],
+  ]
+
+  for (const [clientName, sessionId, allowed, label] of validationCases) {
+    const { data, error } = await clients[clientName].rpc('validate_attendance_session', {
+      target_session_id: sessionId,
+    })
+    check(
+      allowed ? !error && data?.ok === true && data?.session_id === sessionId : error?.code === '42501',
+      label,
+      error ? formatPostgrestError(error) : `session_id=${data?.session_id || 'absent'}`,
+    )
+  }
+
+  const { data: validatedRecord, error: validatedRecordError } = await clients.admin
+    .from('attendance_records')
+    .select('validated_by_coach')
+    .eq('id', attendanceRecordA)
+    .single()
+  check(!validatedRecordError && validatedRecord?.validated_by_coach === true, 'RPC: validated_by_coach=true confirmé après validation', formatPostgrestError(validatedRecordError))
 }
 
 {

@@ -14,6 +14,8 @@ const definitions = {
   admin: { email: 'rls.admin@bcvb.test', role: 'admin', active: true, name: 'RLS Admin' },
   coachA: { email: 'rls.coach-a@bcvb.test', role: 'coach', active: true, name: 'RLS Coach A' },
   coachB: { email: 'rls.coach-b@bcvb.test', role: 'coach', active: true, name: 'RLS Coach B' },
+  teamStaff: { email: 'rls.team-staff@bcvb.test', role: 'team_staff', active: true, name: 'RLS Staff équipe' },
+  parentReferent: { email: 'rls.parent-referent@bcvb.test', role: 'parent_referent', active: true, name: 'RLS Parent référent' },
   dirigeant: { email: 'rls.dirigeant@bcvb.test', role: 'dirigeant', active: true, name: 'RLS Dirigeant' },
   technicalManager: { email: 'rls.responsable-technique@bcvb.test', role: 'responsable_technique', active: true, name: 'RLS Responsable technique' },
   member: { email: 'rls.member@bcvb.test', role: 'member', active: true, name: 'RLS Membre' },
@@ -39,6 +41,10 @@ const ids = {
   situationB: '60000000-0000-4000-8000-000000000002',
   registrationRequest: '70000000-0000-4000-8000-000000000002',
   adminNotification: '80000000-0000-4000-8000-000000000002',
+  attendanceSessionA: '90000000-0000-4000-8000-000000000001',
+  attendanceSessionB: '90000000-0000-4000-8000-000000000002',
+  attendanceRecordA: '91000000-0000-4000-8000-000000000001',
+  attendanceRecordB: '91000000-0000-4000-8000-000000000002',
 }
 
 const previousState = await loadFixtureState()
@@ -175,6 +181,65 @@ await upsertRows('situations', [
   { id: ids.situationB, session_id: ids.sessionB, team_id: ids.teamB, title: 'Situation privée RLS B', category: 'U15', owner_id: accounts.coachB.id, created_by: accounts.coachB.id, visibility: 'private', status: 'draft' },
 ])
 
+await upsertRows('attendance_sessions', [
+  {
+    id: ids.attendanceSessionA,
+    team_id: ids.teamA,
+    session_date: '2026-08-20',
+    title: 'Appel Team A',
+    session_type: 'entrainement',
+    status: 'draft',
+    created_by: accounts.admin.id,
+  },
+  {
+    id: ids.attendanceSessionB,
+    team_id: ids.teamB,
+    session_date: '2026-08-20',
+    title: 'Appel Team B',
+    session_type: 'entrainement',
+    status: 'draft',
+    created_by: accounts.admin.id,
+  },
+])
+
+const { error: attendanceCleanupError } = await adminClient
+  .from('attendance_records')
+  .delete()
+  .in('id', [ids.attendanceRecordA, ids.attendanceRecordB])
+
+if (attendanceCleanupError) {
+  throw new Error(`attendance_records cleanup: ${attendanceCleanupError.message}`)
+}
+
+const { error: attendanceInsertError } = await adminClient
+  .from('attendance_records')
+  .insert([
+    {
+      id: ids.attendanceRecordA,
+      session_id: ids.attendanceSessionA,
+      player_id: ids.playerA,
+      status: 'present',
+      source: 'admin',
+      parent_confirmed: false,
+      validated_by_coach: false,
+      created_by: accounts.admin.id,
+    },
+    {
+      id: ids.attendanceRecordB,
+      session_id: ids.attendanceSessionB,
+      player_id: ids.playerB,
+      status: 'present',
+      source: 'admin',
+      parent_confirmed: false,
+      validated_by_coach: false,
+      created_by: accounts.admin.id,
+    },
+  ])
+
+if (attendanceInsertError) {
+  throw new Error(`attendance_records fixtures: ${attendanceInsertError.message}`)
+}
+
 await upsertRows('registration_requests', [{
   id: ids.registrationRequest,
   first_name: 'Fixture',
@@ -203,13 +268,19 @@ const state = {
     teamA: ids.teamA,
     teamB: ids.teamB,
     playerA: ids.playerA,
+    playerA2: ids.playerA2,
     playerB: ids.playerB,
+    playerB2: ids.playerB2,
     contactA: ids.contactA,
     contactB: ids.contactB,
     sessionA: ids.sessionA,
     sessionB: ids.sessionB,
     situationA: ids.situationA,
     situationB: ids.situationB,
+    attendanceSessionA: ids.attendanceSessionA,
+    attendanceSessionB: ids.attendanceSessionB,
+    attendanceRecordA: ids.attendanceRecordA,
+    attendanceRecordB: ids.attendanceRecordB,
     registrationRequest: ids.registrationRequest,
     adminNotification: ids.adminNotification,
   },
@@ -220,5 +291,5 @@ await chmod(fixtureFile, 0o600)
 
 for (const name of Object.keys(definitions)) process.stdout.write(`✓ ${name}: ${accounts[name].id} (${accounts[name].email})\n`)
 for (const [name, id] of Object.entries(ids)) process.stdout.write(`✓ ${name}: ${id}\n`)
-process.stdout.write('✓ Team A, Team B, affectations, joueurs, contacts, séances et situations prêts\n')
+process.stdout.write('✓ Team A, Team B, affectations, joueurs, contacts, séances, situations et présences prêts\n')
 process.stdout.write(`✓ Fixtures enregistrées localement dans ${fixtureFile}\n`)
