@@ -1,3 +1,4 @@
+cat > src/features/attendance/attendanceService.ts <<'TS'
 import { supabase } from '../../lib/supabase'
 import type {
   AttendancePlayer,
@@ -103,15 +104,13 @@ export async function loadAttendancePlayers(
 
     if (!player || player.archived_at || player.deleted_at) return []
 
-    return [
-      {
-        id: player.id,
-        firstName: player.first_name,
-        lastName: player.last_name,
-        category: player.category || undefined,
-        teamId,
-      },
-    ]
+    return [{
+      id: player.id,
+      firstName: player.first_name,
+      lastName: player.last_name,
+      category: player.category || undefined,
+      teamId,
+    }]
   })
 }
 
@@ -168,6 +167,7 @@ export async function createAttendanceSession(input: {
     .single()
 
   if (error) throw new Error(error.message)
+
   return mapSession(data as SessionRow)
 }
 
@@ -213,11 +213,16 @@ export async function saveAttendanceRecord(input: {
         ? Math.max(1, Number(input.delayMinutes || 0))
         : null,
     injury_note:
-      input.status === 'injured' ? input.injuryNote?.trim() || null : null,
+      input.status === 'injured'
+        ? input.injuryNote?.trim() || null
+        : null,
     logistic_note: input.logisticNote?.trim() || null,
     coach_comment: input.coachComment?.trim() || null,
     source: input.source || 'coach',
+
+    // Une saisie client n'est jamais une validation officielle.
     validated_by_coach: false,
+
     created_by: userData.user.id,
     updated_by: userData.user.id,
   }
@@ -233,6 +238,7 @@ export async function saveAttendanceRecord(input: {
     .single()
 
   if (error) throw new Error(error.message)
+
   return mapRecord(data as RecordRow)
 }
 
@@ -241,7 +247,9 @@ export async function validateAttendanceSession(
 ): Promise<void> {
   const { data, error } = await supabase.rpc(
     'validate_attendance_session',
-    { target_session_id: sessionId },
+    {
+      target_session_id: sessionId,
+    },
   )
 
   if (error) throw new Error(error.message)
@@ -293,3 +301,4 @@ function mapRecord(row: RecordRow): AttendanceRecord {
     updatedAt: row.updated_at,
   }
 }
+TS

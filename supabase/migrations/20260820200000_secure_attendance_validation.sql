@@ -74,6 +74,12 @@ begin
     updated_at = now()
   where id = target_session_id;
 
+perform set_config(
+  'bcvb.attendance_validation_rpc',
+  'allowed',
+  true
+);
+
   update public.attendance_records
   set
     validated_by_coach = true,
