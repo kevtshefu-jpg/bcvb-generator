@@ -205,7 +205,7 @@ await upsertRows('attendance_sessions', [
 const { error: attendanceCleanupError } = await adminClient
   .from('attendance_records')
   .delete()
-  .in('id', [ids.attendanceRecordA, ids.attendanceRecordB])
+  .in('session_id', [ids.attendanceSessionA, ids.attendanceSessionB])
 
 if (attendanceCleanupError) {
   throw new Error(`attendance_records cleanup: ${attendanceCleanupError.message}`)

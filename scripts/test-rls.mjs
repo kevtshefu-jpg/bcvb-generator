@@ -296,6 +296,7 @@ await expectHidden(clients.member, 'attendance_records', attendanceRecordA, 'mem
 // GO-02D — écritures officielles et validation serveur des présences.
 {
   const coachAId = fixtureState.accounts.coachA.id
+  const coachAConcurrent = await authenticatedClient(...accounts.coachA)
   const attendancePayload = (sessionId, playerId, createdBy) => ({
     id: crypto.randomUUID(),
     session_id: sessionId,
@@ -307,14 +308,83 @@ await expectHidden(clients.member, 'attendance_records', attendanceRecordA, 'mem
 
   const allowedRecord = attendancePayload(attendanceSessionA, playerA2, coachAId)
   const { data: createdRecord, error: createOwnError } = await clients.coachA
-    .from('attendance_records')
-    .insert(allowedRecord)
-    .select('id')
-    .single()
-  check(!createOwnError && createdRecord?.id === allowedRecord.id, 'coach A: création présence Team A autorisée', formatPostgrestError(createOwnError))
+    .rpc('save_attendance_record', { record_payload: { ...allowedRecord, id: null }, expected_version: null })
+  check(!createOwnError && createdRecord?.ok === true, 'coach A: création présence Team A autorisée', formatPostgrestError(createOwnError))
 
-  if (createdRecord?.id) {
-    await clients.admin.from('attendance_records').delete().eq('id', createdRecord.id)
+  const { error: concurrentInsertError } = await clients.coachA.rpc('save_attendance_record', {
+    record_payload: { ...allowedRecord, id: null, status: 'absent_excused' }, expected_version: null,
+  })
+  check(concurrentInsertError?.code === 'PT409', 'création concurrente du même relevé refusée comme conflit', formatPostgrestError(concurrentInsertError))
+
+  const sensitiveSentinel = 'GO-02E.8 note sensible'
+  const { data: draftUpdate, error: draftUpdateError } = await clients.coachA
+    .rpc('save_attendance_record', { record_payload: {
+      id: attendanceRecordA,
+      session_id: attendanceSessionA,
+      player_id: playerA,
+      status: 'absent_excused',
+      reason: sensitiveSentinel,
+      injury_note: sensitiveSentinel,
+      logistic_note: sensitiveSentinel,
+      coach_comment: sensitiveSentinel,
+      source: 'coach',
+    }, expected_version: 1 })
+  check(!draftUpdateError && draftUpdate?.version === 2, 'coach A: modification version 1 produit version 2', formatPostgrestError(draftUpdateError))
+
+  const { error: staleUpdateError } = await coachAConcurrent.rpc('save_attendance_record', {
+    record_payload: { id: attendanceRecordA, session_id: attendanceSessionA, player_id: playerA, status: 'present', source: 'coach' },
+    expected_version: 1,
+  })
+  check(staleUpdateError?.code === 'PT409', 'version obsolète refusée comme conflit', formatPostgrestError(staleUpdateError))
+
+  const { data: nextUpdate, error: nextUpdateError } = await clients.coachA.rpc('save_attendance_record', {
+    record_payload: { id: attendanceRecordA, session_id: attendanceSessionA, player_id: playerA, status: 'absent_excused', reason: sensitiveSentinel, injury_note: sensitiveSentinel, logistic_note: sensitiveSentinel, coach_comment: sensitiveSentinel, source: 'coach' },
+    expected_version: 2,
+  })
+  check(!nextUpdateError && nextUpdate?.version === 3, 'relecture version 2 puis sauvegarde produit version 3', formatPostgrestError(nextUpdateError))
+
+  const idempotentPayload = {
+    team_id: teamA,
+    training_slot_id: null,
+    session_date: '2025-01-15',
+    title: 'Test idempotence concurrente',
+    session_type: 'entrainement',
+    start_time: '06:07',
+    end_time: '07:07',
+    location_name: 'Terrain test',
+  }
+  const concurrentSessions = await Promise.all([
+    clients.coachA.rpc('create_attendance_session_idempotent', { session_payload: idempotentPayload }),
+    coachAConcurrent.rpc('create_attendance_session_idempotent', { session_payload: idempotentPayload }),
+  ])
+  check(
+    concurrentSessions.every(({ error }) => !error)
+      && concurrentSessions[0].data?.id === concurrentSessions[1].data?.id,
+    'double création concurrente: les deux appels retournent la même séance',
+    concurrentSessions.map(({ error }) => formatPostgrestError(error)).join(' | '),
+  )
+  const { data: idempotentRows, error: idempotentReadError } = await clients.coachA
+    .from('attendance_sessions')
+    .select('id')
+    .eq('team_id', teamA)
+    .eq('session_date', idempotentPayload.session_date)
+    .eq('session_type', idempotentPayload.session_type)
+    .eq('start_time', idempotentPayload.start_time)
+  check(
+    !idempotentReadError && idempotentRows?.length === 1,
+    'double création concurrente: une seule séance persiste',
+    idempotentReadError?.message || `lignes=${idempotentRows?.length}`,
+  )
+
+  for (const [clientName, sessionId, playerId, label] of [
+    ['coachA', attendanceSessionB, playerB2, 'coach A: RPC présence Team B refusée'],
+    ['dirigeant', attendanceSessionA, playerA2, 'dirigeant: RPC écriture présence refusée'],
+  ]) {
+    const { error } = await clients[clientName].rpc('save_attendance_record', {
+      record_payload: { ...attendancePayload(sessionId, playerId, fixtureState.accounts[clientName].id), id: null },
+      expected_version: null,
+    })
+    check(error?.code === '42501', label, formatPostgrestError(error))
   }
 
   for (const [clientName, sessionId, playerId, label] of [
@@ -364,6 +434,93 @@ await expectHidden(clients.member, 'attendance_records', attendanceRecordA, 'mem
     .eq('id', attendanceRecordA)
     .single()
   check(!validatedRecordError && validatedRecord?.validated_by_coach === true, 'RPC: validated_by_coach=true confirmé après validation', formatPostgrestError(validatedRecordError))
+
+  const { error: lockedUpdateError } = await clients.coachA
+    .from('attendance_records')
+    .update({ status: 'present', updated_by: coachAId })
+    .eq('id', attendanceRecordA)
+  check(lockedUpdateError?.code === '42501', 'séance validée: UPDATE direct refusé', formatPostgrestError(lockedUpdateError))
+
+  const { error: lockedInsertError } = await clients.coachA
+    .from('attendance_records')
+    .insert(attendancePayload(attendanceSessionA, playerA2, coachAId))
+  check(lockedInsertError?.code === '42501', 'séance validée: INSERT direct refusé', formatPostgrestError(lockedInsertError))
+
+  const { error: lockedDeleteError } = await clients.admin
+    .from('attendance_records')
+    .delete()
+    .eq('id', attendanceRecordA)
+  check(lockedDeleteError?.code === '42501', 'séance validée: DELETE direct refusé', formatPostgrestError(lockedDeleteError))
+
+  const { error: lockedRpcUpdateError } = await clients.coachA.rpc('save_attendance_record', {
+    record_payload: { id: attendanceRecordA, session_id: attendanceSessionA, player_id: playerA, status: 'present', source: 'coach' },
+    expected_version: 3,
+  })
+  check(lockedRpcUpdateError?.code === '42501', 'séance validée: mutation RPC refusée', formatPostgrestError(lockedRpcUpdateError))
+
+  const { error: unlockSessionError } = await clients.coachA
+    .from('attendance_sessions')
+    .update({ status: 'draft' })
+    .eq('id', attendanceSessionA)
+  check(unlockSessionError?.code === '42501', 'séance validée: retour direct à draft refusé', formatPostgrestError(unlockSessionError))
+
+  const { error: deleteSessionError } = await clients.admin
+    .from('attendance_sessions')
+    .delete()
+    .eq('id', attendanceSessionA)
+  check(deleteSessionError?.code === '42501', 'séance validée: suppression directe refusée', formatPostgrestError(deleteSessionError))
+
+  for (const [clientName, label] of [
+    ['admin', 'admin'],
+    ['technicalManager', 'responsable technique'],
+    ['coachA', 'coach A'],
+  ]) {
+    const { data, error } = await clients[clientName].rpc('read_attendance_records', {
+      target_session_id: attendanceSessionA,
+      target_player_id: null,
+    })
+    const record = data?.find((item) => item.id === attendanceRecordA)
+    check(!error && record?.coach_comment === sensitiveSentinel, `${label}: commentaire coach sensible accessible`, formatPostgrestError(error))
+    check(
+      record?.reason === sensitiveSentinel
+        && record?.injury_note === sensitiveSentinel
+        && record?.logistic_note === sensitiveSentinel,
+      `${label}: autres notes attendance sensibles accessibles`,
+    )
+  }
+
+  const { data: leaderRecords, error: leaderReadError } = await clients.dirigeant.rpc('read_attendance_records', {
+    target_session_id: attendanceSessionA,
+    target_player_id: null,
+  })
+  const leaderRecord = leaderRecords?.find((item) => item.id === attendanceRecordA)
+  check(!leaderReadError && leaderRecord?.coach_comment === null, 'dirigeant: commentaire coach non transmis par le serveur', formatPostgrestError(leaderReadError))
+  check(
+    leaderRecord?.reason === null
+      && leaderRecord?.injury_note === null
+      && leaderRecord?.logistic_note === null,
+    'dirigeant: autres notes attendance sensibles non transmises',
+  )
+
+  const { error: directSensitiveReadError } = await clients.dirigeant
+    .from('attendance_records')
+    .select('coach_comment')
+    .eq('id', attendanceRecordA)
+  check(directSensitiveReadError?.code === '42501', 'dirigeant: SELECT direct coach_comment refusé', formatPostgrestError(directSensitiveReadError))
+
+  const { data: otherTeamRecords, error: otherTeamReadError } = await clients.coachA.rpc('read_attendance_records', {
+    target_session_id: attendanceSessionB,
+    target_player_id: null,
+  })
+  check(!otherTeamReadError && otherTeamRecords?.length === 0, 'coach A: read model Team B vide', formatPostgrestError(otherTeamReadError))
+
+  for (const clientName of ['member', 'inactive']) {
+    const { data, error } = await clients[clientName].rpc('read_attendance_records', {
+      target_session_id: attendanceSessionA,
+      target_player_id: null,
+    })
+    check(!error && data?.length === 0, `${clientName}: read model attendance vide`, formatPostgrestError(error))
+  }
 }
 
 {

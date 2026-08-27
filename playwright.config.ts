@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const attendanceAuthFile = 'test-results/.auth/coach-a.json'
+
 export default defineConfig({
   testDir: './tests/e2e',
   // L'AuthProvider contacte Supabase au chargement. Une exécution séquentielle
@@ -15,8 +17,29 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'chromium-desktop', use: { ...devices['Desktop Chrome'] } },
-    { name: 'chromium-mobile', use: { ...devices['Pixel 7'] } },
+    {
+      name: 'attendance-auth-setup',
+      testMatch: /attendance\.auth\.setup\.ts/,
+    },
+    {
+      name: 'chromium-desktop',
+      testIgnore: [/attendance\.auth\.setup\.ts/, /attendance-responsive\.spec\.ts/],
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'chromium-mobile',
+      testIgnore: [/attendance\.auth\.setup\.ts/, /attendance-responsive\.spec\.ts/],
+      use: { ...devices['Pixel 7'] },
+    },
+    {
+      name: 'attendance-authenticated',
+      testMatch: /attendance-responsive\.spec\.ts/,
+      dependencies: ['attendance-auth-setup'],
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: attendanceAuthFile,
+      },
+    },
   ],
   webServer: {
     command: 'npm run dev -- --host 127.0.0.1 --port 4173',

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   AttendanceDraft,
   AttendancePlayer,
@@ -15,15 +15,16 @@ import {
   createAttendanceSession,
   saveAttendanceRecord,
   validateAttendanceSession,
+  AttendanceConflictError,
 } from "../../features/attendance/attendanceService";
 import { getPlanningLocalDay } from "../../features/operational-planning/planningLocalDate";
 import {
   canEditAttendance,
   canExportAttendance,
-  canParentReferentConfirmLogistics,
   canValidateAttendance,
   canViewSensitiveAttendanceNotes,
 } from "../../lib/attendance/attendancePermissions";
+import { runSingleAttendanceMutation } from "../../lib/attendance/attendanceMutationGuard";
 import {
   buildAttendanceAlerts,
   computePlayerAttendanceStats,
@@ -47,8 +48,8 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-function draftKey(teamId: string, sessionDate: string) {
-  return `bcvb.attendance.draft.${teamId}.${sessionDate}`;
+function draftKey(session: AttendanceSession) {
+  return `bcvb.attendance.draft.${session.teamId}.${session.date}.${session.id}`;
 }
 
 function formatTime(iso: string) {
@@ -68,6 +69,8 @@ export function AttendancePage() {
   const [mutationLoading, setMutationLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [draftDirty, setDraftDirty] = useState(false);
+  const [conflictServerRecords, setConflictServerRecords] = useState<AttendanceRecord[] | null>(null);
+  const mutationInFlightRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -152,17 +155,18 @@ export function AttendancePage() {
   }, []);
   const [lastSavedAt, setLastSavedAt] = useState("");
   const [storedDraft, setStoredDraft] = useState<AttendanceDraft | null>(null);
-  const [logisticsNote, setLogisticsNote] = useState("");
   const canEdit = canEditAttendance(role, selectedTeamId);
   const canValidate = canValidateAttendance(role);
   const canExport = canExportAttendance(role);
   const canViewNotes = canViewSensitiveAttendanceNotes(role);
-  const canConfirmLogistics = canParentReferentConfirmLogistics(role);
   const currentDraftKey = session
-    ? draftKey(session.teamId, session.date)
+    ? draftKey(session)
     : null;
 
-  const sessionStats = useMemo(() => computeSessionStats(records), [records]);
+  const sessionStats = useMemo(
+    () => computeSessionStats(records, teamPlayers.length),
+    [records, teamPlayers.length],
+  );
   const playerStats = useMemo(
     () => session
       ? teamPlayers.map((player) =>
@@ -191,6 +195,9 @@ export function AttendancePage() {
           attendanceRate: 0,
           unexcusedAbsenceRate: 0,
           alertCount: 0,
+          recordedCount: 0,
+          missingRecords: 0,
+          completionRate: 0,
         };
       }
 
@@ -215,7 +222,8 @@ export function AttendancePage() {
         : {
             score: 0,
             label: "à compléter" as const,
-            missingSessions: 0,
+            missingRecords: 0,
+            completionRate: 0,
             missingReasons: 0,
             unvalidatedRecords: 0,
             recommendedActions: [
@@ -258,29 +266,29 @@ export function AttendancePage() {
     };
 
     window.localStorage.setItem(
-      draftKey(nextSession.teamId, nextSession.date),
+      draftKey(nextSession),
       JSON.stringify(draft),
     );
 
   }
 
   useEffect(() => {
-    if (!session || storedDraft || !draftDirty) return undefined;
+    if (!session || !draftDirty) return undefined;
 
     const interval = window.setInterval(() => {
       persistDraft();
     }, 3000);
 
     return () => window.clearInterval(interval);
-  }, [draftDirty, records, session, storedDraft]);
+  }, [draftDirty, records, session]);
 
   useEffect(() => {
     const onBeforeUnload = () => {
-      if (!storedDraft && draftDirty) persistDraft();
+      if (draftDirty) persistDraft();
     };
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [draftDirty, records, session, storedDraft]);
+  }, [draftDirty, records, session]);
 
   function updateDraftRecords(nextRecords: AttendanceRecord[]) {
     setRecords(nextRecords);
@@ -288,7 +296,26 @@ export function AttendancePage() {
     setLastSavedAt("");
   }
 
+  function createDraftRecord(playerId: string, status: AttendanceRecord["status"]) {
+    if (!session || session.locked || !canEdit) return;
+    if (records.some((record) => record.playerId === playerId)) return;
+
+    updateDraftRecords([
+      ...records,
+      {
+        id: `draft-${session.id}-${playerId}`,
+        sessionId: session.id,
+        teamId: session.teamId,
+        playerId,
+        status,
+        source: role === "admin" ? "admin" : "coach",
+        updatedAt: nowIso(),
+      },
+    ]);
+  }
+
   async function changeTeam(teamId: string) {
+    if (teamId === selectedTeamId) return;
     if (draftDirty) persistDraft();
     setSelectedTeamId(teamId);
 
@@ -332,8 +359,12 @@ export function AttendancePage() {
   }
 
   async function changeAttendanceSession(sessionId: string) {
+    if (sessionId === session?.id) return;
+
     const selectedSession = sessions.find((item) => item.id === sessionId);
     if (!selectedSession) return;
+
+    if (draftDirty) persistDraft();
 
     try {
       setLoading(true);
@@ -362,6 +393,12 @@ export function AttendancePage() {
     setStoredDraft(null);
   }
 
+  function discardStoredDraft() {
+    if (!currentDraftKey) return;
+    window.localStorage.removeItem(currentDraftKey);
+    setStoredDraft(null);
+  }
+
   async function resetCall() {
     if (!session) return;
 
@@ -370,7 +407,7 @@ export function AttendancePage() {
       setLoadError(null);
       setRecords(await loadAttendanceRecords(session.id));
       setDraftDirty(false);
-      window.localStorage.removeItem(draftKey(session.teamId, session.date));
+      window.localStorage.removeItem(draftKey(session));
       setStoredDraft(null);
     } catch (error) {
       setLoadError(
@@ -383,7 +420,7 @@ export function AttendancePage() {
     }
   }
 
-  async function saveCall(
+  async function persistCall(
     clearDraftAfterSuccess = true,
   ): Promise<AttendanceRecord[] | null> {
     if (!session) return null;
@@ -398,6 +435,8 @@ export function AttendancePage() {
 
       const savedRecords = await Promise.all(
         records.map((record) => saveAttendanceRecord({
+          recordId: record.id.startsWith("draft-") ? undefined : record.id,
+          version: record.version,
           sessionId: session.id,
           playerId: record.playerId,
           status: record.status,
@@ -411,17 +450,29 @@ export function AttendancePage() {
       );
 
       setRecords(savedRecords);
+      setConflictServerRecords(null);
       setLastSavedAt(formatTime(nowIso()));
       setDraftDirty(false);
       if (clearDraftAfterSuccess) {
-        window.localStorage.removeItem(draftKey(session.teamId, session.date));
+        window.localStorage.removeItem(draftKey(session));
         setStoredDraft(null);
       }
       return savedRecords;
     } catch (error) {
       persistDraft(session, records);
+      setDraftDirty(true);
+      setLastSavedAt("");
+      if (error instanceof AttendanceConflictError) {
+        try {
+          setConflictServerRecords(await loadAttendanceRecords(session.id));
+        } catch {
+          setConflictServerRecords(null);
+        }
+      }
       setLoadError(
-        error instanceof Error
+        error instanceof AttendanceConflictError
+          ? "Cet appel a été modifié depuis votre dernier chargement. Vos modifications locales ont été conservées."
+          : error instanceof Error
           ? error.message
           : "Enregistrement des présences impossible.",
       );
@@ -431,52 +482,71 @@ export function AttendancePage() {
     }
   }
 
+  function reloadAfterConflict() {
+    if (!conflictServerRecords || !session) return;
+    setRecords(conflictServerRecords);
+    setConflictServerRecords(null);
+    setLoadError(null);
+    setDraftDirty(false);
+    window.localStorage.removeItem(draftKey(session));
+    setStoredDraft(null);
+  }
+
+  async function saveCall() {
+    return runSingleAttendanceMutation(
+      mutationInFlightRef,
+      () => persistCall(true),
+    );
+  }
+
   async function lockCall() {
-    if (!session) return;
-    if (!canValidate) {
-      setLoadError("Validation de l’appel interdite.");
-      return;
-    }
-
-    const sessionToValidate = session;
-    persistDraft(sessionToValidate, records);
-    const savedRecords = await saveCall(false);
-    if (!savedRecords) return;
-
-    try {
-      setMutationLoading(true);
-      setLoadError(null);
-      await validateAttendanceSession(sessionToValidate.id);
-
-      const [serverSessions, serverRecords] = await Promise.all([
-        listAttendanceSessions(selectedTeamId),
-        loadAttendanceRecords(sessionToValidate.id),
-      ]);
-      const validatedSession = serverSessions.find(
-        (item) => item.id === sessionToValidate.id,
-      );
-
-      if (!validatedSession) {
-        throw new Error("La séance validée n’a pas été retrouvée côté serveur.");
+    await runSingleAttendanceMutation(mutationInFlightRef, async () => {
+      if (!session) return;
+      if (!canValidate) {
+        setLoadError("Validation de l’appel interdite.");
+        return;
       }
 
-      setSessions(serverSessions);
-      setSession(validatedSession);
-      setRecords(serverRecords);
-      setDraftDirty(false);
-      window.localStorage.removeItem(
-        draftKey(sessionToValidate.teamId, sessionToValidate.date),
-      );
-      setStoredDraft(null);
-    } catch (error) {
-      setLoadError(
-        error instanceof Error
-          ? error.message
-          : "Validation de l’appel impossible.",
-      );
-    } finally {
-      setMutationLoading(false);
-    }
+      const sessionToValidate = session;
+      persistDraft(sessionToValidate, records);
+      const savedRecords = await persistCall(false);
+      if (!savedRecords) return;
+
+      try {
+        setMutationLoading(true);
+        setLoadError(null);
+        await validateAttendanceSession(sessionToValidate.id);
+
+        const [serverSessions, serverRecords] = await Promise.all([
+          listAttendanceSessions(selectedTeamId),
+          loadAttendanceRecords(sessionToValidate.id),
+        ]);
+        const validatedSession = serverSessions.find(
+          (item) => item.id === sessionToValidate.id,
+        );
+
+        if (!validatedSession) {
+          throw new Error("La séance validée n’a pas été retrouvée côté serveur.");
+        }
+
+        setSessions(serverSessions);
+        setSession(validatedSession);
+        setRecords(serverRecords);
+        setDraftDirty(false);
+        window.localStorage.removeItem(
+          draftKey(sessionToValidate),
+        );
+        setStoredDraft(null);
+      } catch (error) {
+        setLoadError(
+          error instanceof Error
+            ? error.message
+            : "Validation de l’appel impossible.",
+        );
+      } finally {
+        setMutationLoading(false);
+      }
+    });
   }
 
   async function copyPreviousCall() {
@@ -541,38 +611,40 @@ export function AttendancePage() {
   }
 
   async function createCall() {
-    if (!selectedTeamId || !canEdit) return;
+    await runSingleAttendanceMutation(mutationInFlightRef, async () => {
+      if (!selectedTeamId || !canEdit) return;
 
-    try {
-      setMutationLoading(true);
-      setLoadError(null);
-      const created = await createAttendanceSession({
-        teamId: selectedTeamId,
-        date: getPlanningLocalDay().date,
-        title: "Appel séance",
-        type: "entrainement",
-      });
-      const serverSessions = await listAttendanceSessions(selectedTeamId);
-      const serverSession = serverSessions.find((item) => item.id === created.id);
+      try {
+        setMutationLoading(true);
+        setLoadError(null);
+        const created = await createAttendanceSession({
+          teamId: selectedTeamId,
+          date: getPlanningLocalDay().date,
+          title: "Appel séance",
+          type: "entrainement",
+        });
+        const serverSessions = await listAttendanceSessions(selectedTeamId);
+        const serverSession = serverSessions.find((item) => item.id === created.id);
 
-      if (!serverSession) {
-        throw new Error("La séance créée n’a pas été retrouvée côté serveur.");
+        if (!serverSession) {
+          throw new Error("La séance créée n’a pas été retrouvée côté serveur.");
+        }
+
+        const serverRecords = await loadAttendanceRecords(created.id);
+        setSessions(serverSessions);
+        setSession(serverSession);
+        setRecords(serverRecords);
+        setDraftDirty(false);
+      } catch (error) {
+        setLoadError(
+          error instanceof Error
+            ? error.message
+            : "Création de l’appel impossible.",
+        );
+      } finally {
+        setMutationLoading(false);
       }
-
-      const serverRecords = await loadAttendanceRecords(created.id);
-      setSessions(serverSessions);
-      setSession(serverSession);
-      setRecords(serverRecords);
-      setDraftDirty(false);
-    } catch (error) {
-      setLoadError(
-        error instanceof Error
-          ? error.message
-          : "Création de l’appel impossible.",
-      );
-    } finally {
-      setMutationLoading(false);
-    }
+    });
   }
 
   return (
@@ -583,6 +655,7 @@ export function AttendancePage() {
         <section className="attendance-card" role="alert">
           <strong>Opération impossible</strong>
           <p>{loadError}</p>
+          {conflictServerRecords && <button type="button" onClick={reloadAfterConflict}>Recharger la version serveur</button>}
         </section>
       )}
 
@@ -592,7 +665,10 @@ export function AttendancePage() {
             <strong>Appel en cours détecté</strong>
             <p>Dernière sauvegarde : {formatTime(storedDraft.updatedAt)}.</p>
           </div>
-          <button className="bcvb-button-primary" type="button" onClick={resumeDraft}>Reprendre l’appel en cours</button>
+          <div>
+            <button className="bcvb-button-primary" type="button" onClick={resumeDraft}>Reprendre l’appel en cours</button>
+            <button type="button" onClick={discardStoredDraft}>Ignorer ce brouillon</button>
+          </div>
         </section>
       )}
 
@@ -621,6 +697,7 @@ export function AttendancePage() {
                 lastSavedAt={lastSavedAt}
                 mutationLoading={mutationLoading}
                 onRecordsChange={updateDraftRecords}
+                onCreateRecord={createDraftRecord}
                 onSave={() => void saveCall()}
                 onReset={() => void resetCall()}
                 onCopyPrevious={() => void copyPreviousCall()}
@@ -633,10 +710,6 @@ export function AttendancePage() {
                 session={session}
                 players={teamPlayers}
                 records={records}
-                canSignal={canConfirmLogistics}
-                logisticsNote={logisticsNote}
-                onLogisticsNoteChange={setLogisticsNote}
-                onRecordChange={setRecords}
               />
             </>
           ) : (

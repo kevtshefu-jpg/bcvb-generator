@@ -8,13 +8,66 @@ import {
 } from "../../lib/attendance/attendanceScoring";
 import { AttendanceStatusBadge } from "./AttendanceStatusBadge";
 
+const priorityStatuses = attendanceStatuses.filter((status) =>
+  ["present", "absent_excused", "absent_unexcused", "late", "injured"].includes(status)
+);
+const secondaryStatuses = attendanceStatuses.filter((status) =>
+  !priorityStatuses.includes(status)
+);
+
 type AttendancePlayerRowProps = {
   player: AttendancePlayer;
-  record: AttendanceRecord;
+  record?: AttendanceRecord;
   canEdit: boolean;
   canViewNotes: boolean;
   onChange: (record: AttendanceRecord) => void;
+  onCreate: (status: AttendanceRecord["status"]) => void;
 };
+
+function UnrecordedStatusControls({
+  canEdit,
+  onCreate,
+}: {
+  canEdit: boolean;
+  onCreate: (status: AttendanceRecord["status"]) => void;
+}) {
+  return (
+    <div className="attendance-status-controls">
+      <div className="attendance-status-quick" aria-label="Statuts prioritaires">
+        {priorityStatuses.map((status) => (
+          <button
+            key={status}
+            type="button"
+            disabled={!canEdit}
+            onClick={() => onCreate(status)}
+          >
+            {getAttendanceStatusLabel(status)}
+          </button>
+        ))}
+      </div>
+      {secondaryStatuses.length > 0 && (
+        <label className="attendance-status-secondary">
+          <span>Autres statuts</span>
+          <select
+            aria-label="Autres statuts"
+            disabled={!canEdit}
+            value=""
+            onChange={(event) => {
+              if (event.target.value) {
+                onCreate(event.target.value as AttendanceRecord["status"]);
+              }
+            }}
+          >
+            <option value="">Choisir</option>
+            {secondaryStatuses.map((status) => (
+              <option key={status} value={status}>{getAttendanceStatusLabel(status)}</option>
+            ))}
+          </select>
+        </label>
+      )}
+    </div>
+  );
+}
 
 function getAttendanceRowState(record: AttendanceRecord) {
   const delay = record.delayMinutes ?? record.arrivalDelayMinutes;
@@ -28,18 +81,87 @@ function getAttendanceRowState(record: AttendanceRecord) {
   return { delay, warnings, historyLabel };
 }
 
+function AttendanceStatusControls({
+  record,
+  canEdit,
+  onStatusChange,
+}: {
+  record: AttendanceRecord;
+  canEdit: boolean;
+  onStatusChange: (status: AttendanceRecord["status"]) => void;
+}) {
+  const secondaryValue = secondaryStatuses.includes(record.status)
+    ? record.status
+    : "";
+
+  return (
+    <div className="attendance-status-controls">
+      <div className="attendance-status-quick" aria-label="Statuts prioritaires">
+        {priorityStatuses.map((status) => (
+          <button
+            key={status}
+            type="button"
+            disabled={!canEdit}
+            className={record.status === status ? "is-active" : ""}
+            onClick={() => onStatusChange(status)}
+          >
+            {getAttendanceStatusLabel(status)}
+          </button>
+        ))}
+      </div>
+      {secondaryStatuses.length > 0 && (
+        <label className="attendance-status-secondary">
+          <span>Autres statuts</span>
+          <select
+            disabled={!canEdit}
+            value={secondaryValue}
+            onChange={(event) => {
+              if (event.target.value) {
+                onStatusChange(event.target.value as AttendanceRecord["status"]);
+              }
+            }}
+          >
+            <option value="">Choisir</option>
+            {secondaryStatuses.map((status) => (
+              <option key={status} value={status}>{getAttendanceStatusLabel(status)}</option>
+            ))}
+          </select>
+        </label>
+      )}
+    </div>
+  );
+}
+
 export function AttendancePlayerRow({
   player,
   record,
   canEdit,
   canViewNotes,
   onChange,
+  onCreate,
 }: AttendancePlayerRowProps) {
+  if (!record) {
+    return (
+      <tr className="attendance-player-row attendance-player-row--unrecorded">
+        <td>
+          <strong>{player.firstName} {player.lastName}</strong>
+          <span>{player.teamName || "Équipe"} · {player.category || "Catégorie"}</span>
+          <strong className="attendance-muted">Non renseigné</strong>
+        </td>
+        <td><UnrecordedStatusControls canEdit={canEdit} onCreate={onCreate} /></td>
+        <td className="attendance-muted">Non renseigné</td>
+        <td className="attendance-muted">Non renseigné</td>
+        <td className="attendance-muted">{canViewNotes ? "Non renseigné" : "Masqué"}</td>
+        <td><Link to="/effectifs" className="attendance-link-button">Fiche joueur</Link></td>
+      </tr>
+    );
+  }
+  const currentRecord = record;
   const { delay, warnings, historyLabel } = getAttendanceRowState(record);
 
   function patch(patchRecord: Partial<AttendanceRecord>) {
     onChange({
-      ...record,
+      ...currentRecord,
       ...patchRecord,
       updatedAt: new Date().toISOString(),
     });
@@ -50,42 +172,38 @@ export function AttendancePlayerRow({
       <td>
         <strong>{player.firstName} {player.lastName}</strong>
         <span>{player.teamName || "Équipe"} · {player.category || "Catégorie"}</span>
+        <AttendanceStatusBadge status={record.status} />
         <small className={`attendance-history-indicator attendance-history-indicator--${historyLabel.replace(/\s+/g, "-")}`}>{historyLabel}</small>
       </td>
       <td>
-        <div className="attendance-status-quick">
-          {attendanceStatuses.map((status) => (
-            <button
-              key={status}
-              type="button"
-              disabled={!canEdit}
-              className={record.status === status ? "is-active" : ""}
-              onClick={() => patch({ status, reason: status === "present" ? "" : record.reason })}
-            >
-              {getAttendanceStatusLabel(status)}
-            </button>
-          ))}
-        </div>
-      </td>
-      <td><AttendanceStatusBadge status={record.status} /></td>
-      <td>
-        <input
-          disabled={!canEdit}
-          value={record.reason || ""}
-          onChange={(event) => patch({ reason: event.target.value })}
-          placeholder={requiresAttendanceReason(record.status) ? "Motif requis" : "Motif"}
+        <AttendanceStatusControls
+          record={record}
+          canEdit={canEdit}
+          onStatusChange={(status) => patch({ status, reason: status === "present" ? "" : record.reason })}
         />
+      </td>
+      <td>
+        {requiresAttendanceReason(record.status) && (
+          <input
+            disabled={!canEdit}
+            value={record.reason || ""}
+            onChange={(event) => patch({ reason: event.target.value })}
+            placeholder="Motif requis"
+          />
+        )}
         {warnings.length > 0 && <small>{warnings.join(" ")}</small>}
       </td>
       <td>
-        <input
-          disabled={!canEdit || record.status !== "late"}
-          type="number"
-          min="0"
-          value={delay || ""}
-          onChange={(event) => patch({ delayMinutes: Number(event.target.value) || 0, arrivalDelayMinutes: Number(event.target.value) || 0 })}
-          placeholder="min"
-        />
+        {record.status === "late" && (
+          <input
+            disabled={!canEdit}
+            type="number"
+            min="0"
+            value={delay || ""}
+            onChange={(event) => patch({ delayMinutes: Number(event.target.value) || 0, arrivalDelayMinutes: Number(event.target.value) || 0 })}
+            placeholder="min"
+          />
+        )}
         {record.status === "injured" && (
           <input
             disabled={!canEdit}
@@ -107,7 +225,6 @@ export function AttendancePlayerRow({
           <span className="attendance-muted">Masqué</span>
         )}
       </td>
-      <td>{new Date(record.updatedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</td>
       <td><Link to="/effectifs" className="attendance-link-button">Fiche joueur</Link></td>
     </tr>
   );
@@ -119,12 +236,29 @@ export function AttendancePlayerCard({
   canEdit,
   canViewNotes,
   onChange,
+  onCreate,
 }: AttendancePlayerRowProps) {
+  if (!record) {
+    return (
+      <article className="attendance-player-card attendance-player-card--unrecorded">
+        <header>
+          <div>
+            <strong>{player.firstName} {player.lastName}</strong>
+            <span>{player.teamName || "Équipe"} · {player.category || "Catégorie"}</span>
+          </div>
+          <strong className="attendance-muted">Non renseigné</strong>
+        </header>
+        <UnrecordedStatusControls canEdit={canEdit} onCreate={onCreate} />
+        <Link to="/effectifs" className="attendance-link-button">Fiche joueur</Link>
+      </article>
+    );
+  }
+  const currentRecord = record;
   const { delay, warnings, historyLabel } = getAttendanceRowState(record);
 
   function patch(patchRecord: Partial<AttendanceRecord>) {
     onChange({
-      ...record,
+      ...currentRecord,
       ...patchRecord,
       updatedAt: new Date().toISOString(),
     });
@@ -142,43 +276,39 @@ export function AttendancePlayerCard({
 
       <small className={`attendance-history-indicator attendance-history-indicator--${historyLabel.replace(/\s+/g, "-")}`}>{historyLabel}</small>
 
-      <div className="attendance-status-quick">
-        {attendanceStatuses.map((status) => (
-          <button
-            key={status}
-            type="button"
-            disabled={!canEdit}
-            className={record.status === status ? "is-active" : ""}
-            onClick={() => patch({ status, reason: status === "present" ? "" : record.reason })}
-          >
-            {getAttendanceStatusLabel(status)}
-          </button>
-        ))}
-      </div>
+      <AttendanceStatusControls
+        record={record}
+        canEdit={canEdit}
+        onStatusChange={(status) => patch({ status, reason: status === "present" ? "" : record.reason })}
+      />
 
-      <label>
-        <span>Motif</span>
-        <input
-          disabled={!canEdit}
-          value={record.reason || ""}
-          onChange={(event) => patch({ reason: event.target.value })}
-          placeholder={requiresAttendanceReason(record.status) ? "Motif requis" : "Motif"}
-        />
-      </label>
+      {requiresAttendanceReason(record.status) && (
+        <label>
+          <span>Motif</span>
+          <input
+            disabled={!canEdit}
+            value={record.reason || ""}
+            onChange={(event) => patch({ reason: event.target.value })}
+            placeholder="Motif requis"
+          />
+        </label>
+      )}
       {warnings.length > 0 && <small className="attendance-player-card__warning">{warnings.join(" ")}</small>}
 
       <div className="attendance-player-card__grid">
-        <label>
-          <span>Retard</span>
-          <input
-            disabled={!canEdit || record.status !== "late"}
-            type="number"
-            min="0"
-            value={delay || ""}
-            onChange={(event) => patch({ delayMinutes: Number(event.target.value) || 0, arrivalDelayMinutes: Number(event.target.value) || 0 })}
-            placeholder="min"
-          />
-        </label>
+        {record.status === "late" && (
+          <label>
+            <span>Retard</span>
+            <input
+              disabled={!canEdit}
+              type="number"
+              min="0"
+              value={delay || ""}
+              onChange={(event) => patch({ delayMinutes: Number(event.target.value) || 0, arrivalDelayMinutes: Number(event.target.value) || 0 })}
+              placeholder="min"
+            />
+          </label>
+        )}
         <div>
           <span>Mise à jour</span>
           <strong>{new Date(record.updatedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</strong>

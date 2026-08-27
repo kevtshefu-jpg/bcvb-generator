@@ -9,7 +9,11 @@ export function AttendancePlayerSummary({
 }) {
   const visibleStats = stats
     .slice()
-    .sort((a, b) => a.attendanceRate - b.attendanceRate)
+    .sort((a, b) => {
+      if (a.recordedCount === 0) return 1;
+      if (b.recordedCount === 0) return -1;
+      return a.attendanceRate - b.attendanceRate;
+    })
     .slice(0, 5);
 
   return (
@@ -24,7 +28,11 @@ export function AttendancePlayerSummary({
           return (
             <article key={item.playerId}>
               <strong>{player ? `${player.firstName} ${player.lastName}` : item.playerId}</strong>
-              <span>{item.attendanceRate}% · {item.reliabilityLabel}</span>
+              <span>
+                {item.recordedCount === 0
+                  ? "Non renseigné"
+                  : `${item.attendanceRate}% · ${item.reliabilityLabel}`}
+              </span>
             </article>
           );
         })}
@@ -32,4 +40,3 @@ export function AttendancePlayerSummary({
     </section>
   );
 }
-

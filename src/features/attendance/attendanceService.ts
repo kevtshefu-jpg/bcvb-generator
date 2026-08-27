@@ -69,6 +69,14 @@ type RecordRow = {
   updated_by: string | null
   created_at: string
   updated_at: string
+  version: number
+}
+
+export class AttendanceConflictError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'AttendanceConflictError'
+  }
 }
 
 export async function listAttendanceTeams(): Promise<AttendanceTeamRow[]> {
@@ -147,9 +155,8 @@ export async function createAttendanceSession(input: {
     throw new Error('Authentification requise.')
   }
 
-  const { data, error } = await supabase
-    .from('attendance_sessions')
-    .insert({
+  const { data, error } = await supabase.rpc('create_attendance_session_idempotent', {
+    session_payload: {
       team_id: input.teamId,
       training_slot_id: input.trainingSlotId || null,
       session_date: input.date,
@@ -159,33 +166,31 @@ export async function createAttendanceSession(input: {
       end_time: input.endTime || null,
       location_name: input.location?.trim() || null,
       created_by: userData.user.id,
-    })
-    .select(
-      'id, team_id, session_date, title, session_type, start_time, end_time, location_name, notes, status, created_by, created_at, updated_at',
-    )
-    .single()
+    },
+  })
 
   if (error) throw new Error(error.message)
-
-  return mapSession(data as SessionRow)
+  const sessions = await listAttendanceSessions(input.teamId)
+  const created = sessions.find((session) => session.id === data?.id)
+  if (!created) throw new Error("La séance créée n'a pas été confirmée par le serveur.")
+  return created
 }
 
 export async function loadAttendanceRecords(
   sessionId: string,
 ): Promise<AttendanceRecord[]> {
-  const { data, error } = await supabase
-    .from('attendance_records')
-    .select(
-      'id, session_id, player_id, status, reason, delay_minutes, injury_note, logistic_note, coach_comment, source, parent_confirmed, validated_by_coach, created_by, updated_by, created_at, updated_at',
-    )
-    .eq('session_id', sessionId)
+  const { data, error } = await supabase.rpc('read_attendance_records_versioned', {
+    target_session_id: sessionId,
+    target_player_id: null,
+  })
 
   if (error) throw new Error(error.message)
-
   return ((data || []) as RecordRow[]).map(mapRecord)
 }
 
 export async function saveAttendanceRecord(input: {
+  recordId?: string
+  version?: number
   sessionId: string
   playerId: string
   status: AttendanceStatus
@@ -226,19 +231,34 @@ export async function saveAttendanceRecord(input: {
     updated_by: userData.user.id,
   }
 
-  const { data, error } = await supabase
-    .from('attendance_records')
-    .upsert(payload, {
-      onConflict: 'session_id,player_id',
-    })
-    .select(
-      'id, session_id, player_id, status, reason, delay_minutes, injury_note, logistic_note, coach_comment, source, parent_confirmed, validated_by_coach, created_by, updated_by, created_at, updated_at',
-    )
-    .single()
+  const { data: saveResult, error } = await supabase.rpc('save_attendance_record', {
+    record_payload: { ...payload, id: input.recordId || null },
+    expected_version: input.version ?? null,
+  })
 
+  if (error?.code === 'PT409') throw new AttendanceConflictError(error.message)
   if (error) throw new Error(error.message)
 
-  return mapRecord(data as RecordRow)
+  const { data: savedRows, error: readError } = await supabase.rpc(
+    'read_attendance_records_versioned',
+    {
+      target_session_id: input.sessionId,
+      target_player_id: input.playerId,
+    },
+  )
+
+  if (readError) throw new Error(readError.message)
+
+  const savedRecord = ((savedRows || []) as RecordRow[])[0]
+
+  if (!savedRecord) {
+    throw new Error("L'enregistrement de la présence n'a pas été confirmé par le serveur.")
+  }
+
+  return {
+    ...mapRecord(savedRecord),
+    version: Number(saveResult?.version),
+  }
 }
 
 export async function validateAttendanceSession(
@@ -298,5 +318,6 @@ function mapRecord(row: RecordRow): AttendanceRecord {
     updatedBy: row.updated_by || undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    version: row.version,
   }
 }
