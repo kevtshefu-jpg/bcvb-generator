@@ -11,3 +11,6 @@ playwright-report
 test-results
 supabase/.env.local
 supabase/.branches/
+
+# Supabase local CLI artifacts
+supabase/.temp/
