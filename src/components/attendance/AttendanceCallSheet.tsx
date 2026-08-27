@@ -16,6 +16,7 @@ export function AttendanceCallSheet({
   onReset,
   onCopyPrevious,
   onLock,
+  mutationLoading = false,
 }: {
   players: AttendancePlayer[];
   records: AttendanceRecord[];
@@ -28,10 +29,11 @@ export function AttendanceCallSheet({
   onReset: () => void;
   onCopyPrevious: () => void;
   onLock: () => void;
+  mutationLoading?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<AttendanceStatus | "all">("all");
-  const effectiveCanEdit = canEdit && !locked;
+  const effectiveCanEdit = canEdit && !locked && !mutationLoading;
 
   const visiblePlayers = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -68,7 +70,7 @@ export function AttendanceCallSheet({
           <span>Appel rapide</span>
           <h2>Statuts joueurs</h2>
         </div>
-        <strong>{lastSavedAt ? `Sauvegardé à ${lastSavedAt}` : "Autosave actif"}</strong>
+        <strong>{lastSavedAt ? `Enregistré à ${lastSavedAt}` : "Brouillon local actif"}</strong>
       </div>
 
       <div className="attendance-toolbar">
@@ -81,8 +83,8 @@ export function AttendanceCallSheet({
         <button type="button" disabled={!effectiveCanEdit} onClick={() => setAll("absent_unexcused")}>Tout non excusé</button>
         <button type="button" disabled={!effectiveCanEdit} onClick={onReset}>Réinitialiser appel</button>
         <button type="button" disabled={!effectiveCanEdit} onClick={onCopyPrevious}>Copier séance précédente</button>
-        <button type="button" disabled={!canEdit} onClick={onSave}>Sauvegarder</button>
-        <button type="button" disabled={!canEdit} onClick={onLock}>{locked ? "Appel validé" : "Valider appel coach"}</button>
+        <button type="button" disabled={!canEdit || Boolean(locked) || mutationLoading} onClick={onSave}>Sauvegarder</button>
+        <button type="button" disabled={!canEdit || Boolean(locked) || mutationLoading} onClick={onLock}>{locked ? "Appel validé" : "Valider appel coach"}</button>
       </div>
 
       <div className="attendance-table-scroll responsive-data-table">

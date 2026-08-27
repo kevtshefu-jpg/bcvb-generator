@@ -48,4 +48,41 @@ describe('contrats GO-02D du service présences', () => {
     expect(source).toContain("validated_by_coach: false")
     expect(source).not.toContain("Boolean(input.validatedByCoach)")
   })
+
+  it('raccorde les mutations de la page sans fabriquer de présences', async () => {
+    const [page, callSheet] = await Promise.all([
+      readFile(
+        resolve(process.cwd(), 'src/components/attendance/AttendancePage.tsx'),
+        'utf8',
+      ),
+      readFile(
+        resolve(process.cwd(), 'src/components/attendance/AttendanceCallSheet.tsx'),
+        'utf8',
+      ),
+    ])
+
+    expect(page).toContain('saveAttendanceRecord')
+    expect(page).toContain('validateAttendanceSession')
+    expect(page).toContain('createAttendanceSession')
+    expect(page).not.toContain('validatedByCoach: true')
+    expect(page).not.toContain('locked: true')
+    expect(page).not.toMatch(/index % 5|index % 6/)
+    expect(page).not.toMatch(/Noah|Lina|Adam|Sofia|Ilyes/)
+    expect(page).not.toMatch(/status:\s*["']present["']/)
+    expect(callSheet).toContain('Brouillon local actif')
+  })
+
+  it('affiche les métadonnées de séance sans édition locale', async () => {
+    const selector = await readFile(
+      resolve(process.cwd(), 'src/components/attendance/AttendanceSessionSelector.tsx'),
+      'utf8',
+    )
+
+    expect(selector).not.toMatch(
+      /onChange[^\n]*(?:session\.(?:date|type|title|startTime|location)|(?:date|type|title|startTime|location):)/,
+    )
+    expect(selector).not.toContain('onChange: (session: AttendanceSession) => void')
+    expect(selector).toContain('session.startTime || "Non renseigné"')
+    expect(selector).toContain('session.location || "Non renseigné"')
+  })
 })

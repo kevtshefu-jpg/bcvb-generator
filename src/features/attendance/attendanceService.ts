@@ -1,4 +1,3 @@
-cat > src/features/attendance/attendanceService.ts <<'TS'
 import { supabase } from '../../lib/supabase'
 import type {
   AttendancePlayer,
@@ -8,7 +7,7 @@ import type {
   AttendanceStatus,
 } from '../../types/attendance'
 
-type TeamRow = {
+export type AttendanceTeamRow = {
   id: string
   name: string
   category: string
@@ -72,7 +71,7 @@ type RecordRow = {
   updated_at: string
 }
 
-export async function listAttendanceTeams(): Promise<TeamRow[]> {
+export async function listAttendanceTeams(): Promise<AttendanceTeamRow[]> {
   const { data, error } = await supabase
     .from('teams')
     .select('id, name, category, season')
@@ -81,7 +80,7 @@ export async function listAttendanceTeams(): Promise<TeamRow[]> {
     .order('name')
 
   if (error) throw new Error(error.message)
-  return (data || []) as TeamRow[]
+  return (data || []) as AttendanceTeamRow[]
 }
 
 export async function loadAttendancePlayers(
@@ -301,4 +300,3 @@ function mapRecord(row: RecordRow): AttendanceRecord {
     updatedAt: row.updated_at,
   }
 }
-TS
