@@ -327,6 +327,44 @@ for (const [table, ownId, otherId] of [
 }
 
 {
+  const sessionPayload = (title) => ({ title, category: 'U15', level: 'fixture', theme: 'Passe', sub_theme: '', visibility: 'private', duration_minutes: 20, expected_players: 8, source_type: 'manual', source_file_name: '', source_raw_text: '', source_text: '', content_json: { objectives: ['Fixture RPC'] }, quality_score: 60 })
+  const createArgs = { target_team_id: teamA, target_coach_id: fixtureState.accounts.coachA.id, session_payload: sessionPayload('Création RPC RLS'), situations_payload: [{ id: crypto.randomUUID(), order_index: 1, title: 'Bloc RPC', duration_minutes: 20, theme: 'Passe', sub_theme: '', pedagogical_phase: 'je-m-exerce', content_json: {} }], tags_payload: [' rpc ', 'rpc'] }
+  const { data: createdRpc, error: createdRpcError } = await clients.coachA.rpc('create_session_draft', createArgs)
+  check(!createdRpcError && createdRpc?.version === 1, 'RPC session: coach autorisé crée un draft version 1', formatPostgrestError(createdRpcError))
+  const { data: createdRow } = await clients.coachA.from('sessions').select('status,owner_id,version,session_situations(id),session_tags(tag)').eq('id', createdRpc?.id).single()
+  check(createdRow?.status === 'draft' && createdRow?.owner_id === fixtureState.accounts.coachA.id && createdRow?.session_situations?.length === 1 && createdRow?.session_tags?.length === 1, 'RPC session: owner, blocs et tags imposés atomiquement')
+
+  for (const [name, args] of [
+    ['coachB', createArgs], ['member', createArgs], ['inactive', createArgs],
+  ]) {
+    const { error } = await clients[name].rpc('create_session_draft', args)
+    check(error?.code === '42501', `RPC session: création refusée pour ${name}`, formatPostgrestError(error))
+  }
+  const beforeInvalidCreate = await clients.admin.from('sessions').select('id').eq('title', 'Création enfant invalide')
+  const { error: invalidChildCreate } = await clients.coachA.rpc('create_session_draft', { ...createArgs, session_payload: sessionPayload('Création enfant invalide'), situations_payload: [{ order_index: 1, title: 'A', duration_minutes: 10 }, { order_index: 1, title: 'B', duration_minutes: 10 }] })
+  const afterInvalidCreate = await clients.admin.from('sessions').select('id').eq('title', 'Création enfant invalide')
+  check(Boolean(invalidChildCreate) && beforeInvalidCreate.data?.length === afterInvalidCreate.data?.length, 'RPC session: enfant invalide rollback la création')
+
+  const { error: nonOwnerSave } = await clients.coachSameTeam.rpc('save_session_draft', { target_session_id: createdRpc?.id, expected_version: 1, session_payload: sessionPayload('Interdit'), situations_payload: [], tags_payload: [] })
+  check(nonOwnerSave?.code === '42501', 'RPC session: coach même équipe non-owner refusé', formatPostgrestError(nonOwnerSave))
+  for (const name of ['coachB', 'member', 'inactive']) {
+    const { error } = await clients[name].rpc('save_session_draft', { target_session_id: createdRpc?.id, expected_version: 1, session_payload: sessionPayload('Interdit'), situations_payload: [], tags_payload: [] })
+    check(error?.code === '42501', `RPC session: sauvegarde refusée pour ${name}`, formatPostgrestError(error))
+  }
+  const { error: coachPublicSave } = await clients.coachA.rpc('save_session_draft', { target_session_id: createdRpc?.id, expected_version: 1, session_payload: { ...sessionPayload('Visibilité interdite'), visibility: 'public' }, situations_payload: [], tags_payload: [] })
+  check(coachPublicSave?.code === '42501', 'RPC session: coach ne peut pas élargir la visibilité du draft', formatPostgrestError(coachPublicSave))
+  for (const [label, id, version] of [['published', sessionPublishedA, 1], ['archived', sessionArchivedA, 1], ['soft-deleted', sessionDeletedA, 1]]) {
+    const { error } = await clients.admin.rpc('save_session_draft', { target_session_id: id, expected_version: version, session_payload: sessionPayload('Transition interdite'), situations_payload: [], tags_payload: [] })
+    check(error?.code === '42501', `RPC session: save ${label} refusé`, formatPostgrestError(error))
+  }
+  const { error: takeoverPayload } = await clients.coachA.rpc('save_session_draft', { target_session_id: createdRpc?.id, expected_version: 1, session_payload: { ...sessionPayload('Takeover'), owner_id: fixtureState.accounts.coachSameTeam.id }, situations_payload: [], tags_payload: [] })
+  check(takeoverPayload?.code === '22023', 'RPC session: owner/team takeover absent du contrat', formatPostgrestError(takeoverPayload))
+  const { error: directVersionSession } = await clients.coachA.from('sessions').update({ version: 999 }).eq('id', createdRpc?.id)
+  const { error: directVersionSituation } = await clients.coachA.from('situations').update({ version: 999 }).eq('id', situationA)
+  check(directVersionSession?.code === '42501' && directVersionSituation?.code === '42501', 'version=999 directe refusée sur sessions et situations')
+}
+
+{
   const publicSessionId = crypto.randomUUID()
   const publicSituationId = crypto.randomUUID()
   const { error: publicSessionError } = await clients.admin.from('sessions').insert({
@@ -393,33 +431,33 @@ for (const [table, ownId, otherId] of [
   check(!ownSituationError, 'coach propriétaire: création draft situation autorisée', formatPostgrestError(ownSituationError))
   const { data: ownSituation } = await clients.coachA.from('situations').select('id, version, updated_at').eq('id', ownSituationId).single()
 
-  const { data: ownerUpdate, error: ownerUpdateError } = await clients.coachA
+  const { error: ownerUpdateError } = await clients.coachA
     .from('sessions').update({ title: 'Draft propriétaire modifié', updated_at: '2000-01-01T00:00:00.000Z' }).eq('id', ownSessionId).select('id, version, updated_at')
-  check(!ownerUpdateError && ownerUpdate?.length === 1, 'coach propriétaire: modification de son draft autorisée', formatPostgrestError(ownerUpdateError))
-  check(ownerUpdate?.[0]?.version === 1 && ownSession?.version === 1, 'session: version préparée sans incrément implicite')
-  check(ownerUpdate?.[0]?.updated_at !== '2000-01-01T00:00:00.000Z' && ownerUpdate?.[0]?.updated_at !== ownSession?.updated_at, 'session: updated_at imposé par le serveur')
+  check(ownerUpdateError?.code === '42501', 'coach propriétaire: UPDATE direct session refusé au profit de la RPC', formatPostgrestError(ownerUpdateError))
+  const { data: unchangedSession } = await clients.coachA.from('sessions').select('version,updated_at').eq('id', ownSessionId).single()
+  check(unchangedSession?.version === 1 && unchangedSession?.updated_at === ownSession?.updated_at, 'session: version et updated_at inchangés après UPDATE direct refusé')
 
-  const { data: ownerSituationUpdate, error: ownerSituationUpdateError } = await clients.coachA
+  const { error: ownerSituationUpdateError } = await clients.coachA
     .from('situations').update({ title: 'Draft situation modifié', updated_at: '2000-01-01T00:00:00.000Z' }).eq('id', ownSituationId).select('id, version, updated_at')
-  check(!ownerSituationUpdateError && ownerSituationUpdate?.length === 1, 'coach propriétaire: modification de sa situation draft autorisée', formatPostgrestError(ownerSituationUpdateError))
-  check(ownerSituationUpdate?.[0]?.version === 1 && ownSituation?.version === 1, 'situation: version préparée sans incrément implicite')
-  check(ownerSituationUpdate?.[0]?.updated_at !== '2000-01-01T00:00:00.000Z', 'situation: updated_at imposé par le serveur')
+  check(ownerSituationUpdateError?.code === '42501', 'coach propriétaire: UPDATE direct situation refusé', formatPostgrestError(ownerSituationUpdateError))
+  const { data: unchangedSituation } = await clients.coachA.from('situations').select('version,updated_at').eq('id', ownSituationId).single()
+  check(unchangedSituation?.version === 1 && unchangedSituation?.updated_at === ownSituation?.updated_at, 'situation: version et updated_at inchangés après UPDATE direct refusé')
 
-  const { data: sameTeamUpdate } = await clients.coachSameTeam
+  const { error: sameTeamUpdateError } = await clients.coachSameTeam
     .from('sessions').update({ title: 'Prise de contrôle refusée' }).eq('id', sessionA).select('id')
-  check(sameTeamUpdate?.length === 0, 'coach même équipe: modification session autre coach refusée')
+  check(sameTeamUpdateError?.code === '42501', 'coach même équipe: modification session autre coach refusée')
 
-  const { data: ownershipTakeover } = await clients.coachSameTeam
+  const { error: ownershipTakeoverError } = await clients.coachSameTeam
     .from('sessions')
     .update({ owner_id: fixtureState.accounts.coachSameTeam.id, coach_id: fixtureState.accounts.coachSameTeam.id })
     .eq('id', sessionA).select('id')
-  check(ownershipTakeover?.length === 0, 'coach même équipe: prise owner_id/coach_id refusée')
+  check(ownershipTakeoverError?.code === '42501', 'coach même équipe: prise owner_id/coach_id refusée')
 
-  const { data: situationTakeover } = await clients.coachSameTeam
+  const { error: situationTakeoverError } = await clients.coachSameTeam
     .from('situations')
     .update({ owner_id: fixtureState.accounts.coachSameTeam.id, created_by: fixtureState.accounts.coachSameTeam.id })
     .eq('id', situationA).select('id')
-  check(situationTakeover?.length === 0, 'coach même équipe: prise owner_id/created_by situation refusée')
+  check(situationTakeoverError?.code === '42501', 'coach même équipe: prise owner_id/created_by situation refusée')
 
   const { error: childWriteError } = await clients.coachSameTeam.from('session_situations').insert({
     session_id: sessionA,
@@ -444,7 +482,8 @@ for (const [table, ownId, otherId] of [
   const { error: ownerLogError } = await clients.coachA.from('session_visibility_logs').insert({
     id: logId, session_id: ownSessionId, action: 'fixture', user_id: fixtureState.accounts.coachA.id,
   })
-  check(!ownerChildrenError && !ownerImportError && !ownerLogError, 'coach propriétaire: enfants de draft autorisés')
+  check(!ownerChildrenError && !ownerImportError, 'coach propriétaire: fichiers et imports de draft autorisés')
+  check(ownerLogError?.code === '42501', 'coach propriétaire: fabrication directe de log audit refusée', formatPostgrestError(ownerLogError))
   await expectHidden(clients.coachSameTeam, 'session_files', fileId, 'coach même équipe: fichier session privée invisible')
   await expectHidden(clients.coachSameTeam, 'session_imports', importId, 'coach même équipe: import privé invisible')
   await expectHidden(clients.coachSameTeam, 'session_visibility_logs', logId, 'coach même équipe: log session privée invisible')
@@ -453,18 +492,18 @@ for (const [table, ownId, otherId] of [
   })
   check(foreignFileError?.code === '42501', 'coach même équipe: écriture fichier autre coach refusée', formatPostgrestError(foreignFileError))
 
-  const { data: publishedUpdate } = await clients.coachA
+  const { error: publishedUpdateError } = await clients.coachA
     .from('sessions').update({ title: 'Publication altérée' }).eq('id', sessionPublishedA).select('id')
-  check(publishedUpdate?.length === 0, 'coach propriétaire: session published protégée')
-  const { data: archivedUpdate } = await clients.coachA
+  check(publishedUpdateError?.code === '42501', 'coach propriétaire: session published protégée')
+  const { error: archivedUpdateError } = await clients.coachA
     .from('sessions').update({ title: 'Archive altérée' }).eq('id', sessionArchivedA).select('id')
-  check(archivedUpdate?.length === 0, 'coach propriétaire: session archived protégée')
-  const { data: publishedSituationUpdate } = await clients.coachA
+  check(archivedUpdateError?.code === '42501', 'coach propriétaire: session archived protégée')
+  const { error: publishedSituationUpdateError } = await clients.coachA
     .from('situations').update({ title: 'Publication altérée' }).eq('id', situationPublishedA).select('id')
-  check(publishedSituationUpdate?.length === 0, 'coach propriétaire: situation published protégée')
-  const { data: archivedSituationUpdate } = await clients.coachA
+  check(publishedSituationUpdateError?.code === '42501', 'coach propriétaire: situation published protégée')
+  const { error: archivedSituationUpdateError } = await clients.coachA
     .from('situations').update({ title: 'Archive altérée' }).eq('id', situationArchivedA).select('id')
-  check(archivedSituationUpdate?.length === 0, 'coach propriétaire: situation archived protégée')
+  check(archivedSituationUpdateError?.code === '42501', 'coach propriétaire: situation archived protégée')
 
   const { data: coachDelete } = await clients.coachA.from('sessions').delete().eq('id', ownSessionId).select('id')
   check(coachDelete?.length === 0, 'coach propriétaire: hard delete session refusé')
@@ -483,11 +522,11 @@ for (const [table, ownId, otherId] of [
   const { error: duplicateOrderError } = await clients.coachA.from('session_situations').insert({
     session_id: sessionA, order_index: 1, title: 'Ordre dupliqué',
   })
-  check(duplicateOrderError?.code === '23505', 'session_situations: doublon order_index rejeté', formatPostgrestError(duplicateOrderError))
+  check(duplicateOrderError?.code === '42501', 'session_situations: écriture directe refusée', formatPostgrestError(duplicateOrderError))
   const { error: duplicateSessionTagError } = await clients.coachA.from('session_tags').insert({
     session_id: sessionA, tag: 'rls-session-a',
   })
-  check(duplicateSessionTagError?.code === '23505', 'session_tags: doublon tag rejeté', formatPostgrestError(duplicateSessionTagError))
+  check(duplicateSessionTagError?.code === '42501', 'session_tags: écriture directe refusée', formatPostgrestError(duplicateSessionTagError))
   const { error: duplicateSituationTagError } = await clients.coachA.from('situation_tags').insert({
     situation_id: situationA, tag: 'rls-situation-a',
   })
