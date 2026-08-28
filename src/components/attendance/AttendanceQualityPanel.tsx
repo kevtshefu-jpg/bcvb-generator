@@ -18,6 +18,8 @@ export function AttendanceQualityPanel({
       <strong className={`attendance-quality-label attendance-quality-label--${quality.label.replace(/\s+/g, "-")}`}>{quality.label}</strong>
       <div className="attendance-stat-grid">
         <span>Joueurs <strong>{totalPlayers}</strong></span>
+        <span>Relevés manquants <strong>{quality.missingRecords}</strong></span>
+        <span>Complétude <strong>{quality.completionRate}%</strong></span>
         <span>Présents <strong>{stats.presentCount}</strong></span>
         <span>Abs. excusés <strong>{stats.absentExcusedCount}</strong></span>
         <span>Abs. non excusés <strong>{stats.absentUnexcusedCount}</strong></span>
@@ -32,4 +34,3 @@ export function AttendanceQualityPanel({
     </aside>
   );
 }
-

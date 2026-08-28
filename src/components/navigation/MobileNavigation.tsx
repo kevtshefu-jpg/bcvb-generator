@@ -326,17 +326,6 @@ export default function MobileNavigation() {
               group: 'Espace admin',
             },
             {
-              id: 'mobile-admin-members',
-              label: 'Gestion des membres',
-              shortLabel: 'Membres',
-              subtitle: 'Profils, rôles et statuts',
-              to: '/admin/membres',
-              icon: 'user',
-              variant: 'red',
-              adminOnly: true,
-              group: 'Gestion des membres',
-            },
-            {
               id: 'mobile-admin-registrations',
               label: 'Inscriptions',
               shortLabel: 'Inscriptions',

@@ -6,31 +6,56 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seed:rls": "node scripts/create-test-users.mjs",
+    "test:preprod:check": "node scripts/check-rls-environment.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:security": "vitest run tests/security",
+    "test:react": "vitest run src",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "pretest:rls": "npm run seed:rls",
+    "test:rls": "node scripts/test-rls.mjs",
+    "test:edge": "node scripts/test-edge-functions.mjs",
+    "test:integration": "npm run test:preprod:check && npm run test:rls && npm run test:edge && node scripts/test-integration.mjs",
+    "test:all:local": "npm run test && npm run test:e2e"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.101.1",
+    "@supabase/supabase-js": "^2.110.7",
     "exceljs": "^4.4.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "konva": "^9.3.22",
     "mammoth": "^1.12.0",
-    "papaparse": "^5.5.3",
+    "papaparse": "^5.5.4",
     "pdfjs-dist": "^4.10.38",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-konva": "^18.2.16",
     "react-markdown": "^10.1.0",
-    "react-router-dom": "^7.13.2",
-    "tesseract.js": "^7.0.0",
-    "xlsx": "^0.18.5"
+    "react-router-dom": "^7.18.1",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "@playwright/test": "^1.61.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/papaparse": "^5.5.2",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "jsdom": "^29.1.1",
     "typescript": "^5.5.3",
-    "vite": "^5.4.1"
+    "vite": "^5.4.1",
+    "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "brace-expansion": "5.0.8",
+    "tmp": "0.2.7",
+    "uuid": "11.1.1",
+    "dompurify": "3.4.12"
   }
 }

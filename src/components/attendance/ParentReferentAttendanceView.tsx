@@ -5,18 +5,10 @@ export function ParentReferentAttendanceView({
   session,
   players,
   records,
-  canSignal,
-  logisticsNote,
-  onLogisticsNoteChange,
-  onRecordChange,
 }: {
   session: AttendanceSession;
   players: AttendancePlayer[];
   records: AttendanceRecord[];
-  canSignal: boolean;
-  logisticsNote: string;
-  onLogisticsNoteChange: (value: string) => void;
-  onRecordChange: (records: AttendanceRecord[]) => void;
 }) {
   return (
     <section className="parent-referent-attendance-view">
@@ -31,10 +23,6 @@ export function ParentReferentAttendanceView({
       <ParentReferentAttendancePanel
         players={players}
         records={records}
-        canConfirm={canSignal}
-        logisticsNote={logisticsNote}
-        onLogisticsNoteChange={onLogisticsNoteChange}
-        onRecordChange={onRecordChange}
       />
     </section>
   );

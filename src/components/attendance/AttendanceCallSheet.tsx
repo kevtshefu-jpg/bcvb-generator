@@ -12,10 +12,12 @@ export function AttendanceCallSheet({
   canViewNotes,
   lastSavedAt,
   onRecordsChange,
+  onCreateRecord,
   onSave,
   onReset,
   onCopyPrevious,
   onLock,
+  mutationLoading = false,
 }: {
   players: AttendancePlayer[];
   records: AttendanceRecord[];
@@ -24,14 +26,16 @@ export function AttendanceCallSheet({
   canViewNotes: boolean;
   lastSavedAt?: string;
   onRecordsChange: (records: AttendanceRecord[]) => void;
+  onCreateRecord: (playerId: string, status: AttendanceStatus) => void;
   onSave: () => void;
   onReset: () => void;
   onCopyPrevious: () => void;
   onLock: () => void;
+  mutationLoading?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<AttendanceStatus | "all">("all");
-  const effectiveCanEdit = canEdit && !locked;
+  const effectiveCanEdit = canEdit && !locked && !mutationLoading;
 
   const visiblePlayers = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -68,21 +72,30 @@ export function AttendanceCallSheet({
           <span>Appel rapide</span>
           <h2>Statuts joueurs</h2>
         </div>
-        <strong>{lastSavedAt ? `Sauvegardé à ${lastSavedAt}` : "Autosave actif"}</strong>
+        <strong>{lastSavedAt ? `Enregistré à ${lastSavedAt}` : "Brouillon local actif"}</strong>
       </div>
 
       <div className="attendance-toolbar">
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher un joueur" />
-        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as AttendanceStatus | "all")}>
-          <option value="all">Tous statuts</option>
-          {attendanceStatuses.map((status) => <option key={status} value={status}>{getAttendanceStatusLabel(status)}</option>)}
-        </select>
-        <button type="button" disabled={!effectiveCanEdit} onClick={() => setAll("present")}>Tout le monde présent</button>
-        <button type="button" disabled={!effectiveCanEdit} onClick={() => setAll("absent_unexcused")}>Tout non excusé</button>
-        <button type="button" disabled={!effectiveCanEdit} onClick={onReset}>Réinitialiser appel</button>
-        <button type="button" disabled={!effectiveCanEdit} onClick={onCopyPrevious}>Copier séance précédente</button>
-        <button type="button" disabled={!canEdit} onClick={onSave}>Sauvegarder</button>
-        <button type="button" disabled={!canEdit} onClick={onLock}>{locked ? "Appel validé" : "Valider appel coach"}</button>
+        <div className="attendance-toolbar__primary" aria-label="Actions principales">
+          <button className="attendance-action-primary" type="button" disabled={!canEdit || Boolean(locked) || mutationLoading} onClick={onSave}>Sauvegarder</button>
+          <button className="attendance-action-validate" type="button" disabled={!canEdit || Boolean(locked) || mutationLoading} onClick={onLock}>{locked ? "Appel validé" : "Valider appel coach"}</button>
+        </div>
+        <div className="attendance-toolbar__entry" aria-label="Recherche et saisie rapide">
+          <input aria-label="Rechercher un joueur" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher un joueur" />
+          <select aria-label="Filtrer par statut" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as AttendanceStatus | "all")}>
+            <option value="all">Tous statuts</option>
+            {attendanceStatuses.map((status) => <option key={status} value={status}>{getAttendanceStatusLabel(status)}</option>)}
+          </select>
+          <button type="button" disabled={!effectiveCanEdit} onClick={() => setAll("present")}>Tout le monde présent</button>
+        </div>
+        <details className="attendance-toolbar__secondary">
+          <summary>Actions secondaires</summary>
+          <div>
+            <button className="attendance-action-danger" type="button" disabled={!effectiveCanEdit} onClick={() => setAll("absent_unexcused")}>Tout non excusé</button>
+            <button type="button" disabled={!effectiveCanEdit} onClick={onReset}>Réinitialiser appel</button>
+            <button type="button" disabled={!effectiveCanEdit} onClick={onCopyPrevious}>Copier séance précédente</button>
+          </div>
+        </details>
       </div>
 
       <div className="attendance-table-scroll responsive-data-table">
@@ -91,18 +104,15 @@ export function AttendanceCallSheet({
             <tr>
               <th>Joueur</th>
               <th>Statut rapide</th>
-              <th>Statut</th>
               <th>Motif</th>
               <th>Retard</th>
               <th>Commentaire coach</th>
-              <th>Mise à jour</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {visiblePlayers.map((player) => {
               const record = records.find((item) => item.playerId === player.id);
-              if (!record) return null;
               return (
                 <AttendancePlayerRow
                   key={player.id}
@@ -111,17 +121,17 @@ export function AttendanceCallSheet({
                   canEdit={effectiveCanEdit}
                   canViewNotes={canViewNotes}
                   onChange={updateRecord}
+                  onCreate={(status) => onCreateRecord(player.id, status)}
                 />
               );
             })}
-            {visiblePlayers.length === 0 && <tr><td colSpan={8}>Aucun joueur ne correspond au filtre.</td></tr>}
+            {visiblePlayers.length === 0 && <tr><td colSpan={6}>Aucun joueur ne correspond au filtre.</td></tr>}
           </tbody>
         </table>
       </div>
       <div className="responsive-data-mobile attendance-player-card-list">
         {visiblePlayers.map((player) => {
           const record = records.find((item) => item.playerId === player.id);
-          if (!record) return null;
           return (
             <AttendancePlayerCard
               key={player.id}
@@ -130,6 +140,7 @@ export function AttendanceCallSheet({
               canEdit={effectiveCanEdit}
               canViewNotes={canViewNotes}
               onChange={updateRecord}
+              onCreate={(status) => onCreateRecord(player.id, status)}
             />
           );
         })}

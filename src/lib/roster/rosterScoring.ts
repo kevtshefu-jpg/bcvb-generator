@@ -52,7 +52,7 @@ export function scoreRosterQuality(result: RosterImportResult | null): RosterQua
   if (playersWithoutTeam > 0) actions.push("Affecter les joueurs sans équipe à une équipe et une saison.");
   if (playersWithoutContact > 0) actions.push("Compléter les contacts familles prioritaires.");
   if (probableDuplicates > 0) actions.push("Arbitrer les doublons probables avant import définitif.");
-  if (rows.length === 0) actions.push("Importer un fichier CSV, XLS ou XLSX pour lancer le contrôle.");
+  if (rows.length === 0) actions.push("Importer un fichier CSV ou XLSX pour lancer le contrôle.");
 
   return {
     score,
@@ -108,4 +108,3 @@ export function buildPlanningContextFromTeam(team: Partial<Team>, players: Array
     suggestedPriorities: Array.from(new Set([...(team.objectives || []), ...suggestedPriorities])),
   };
 }
-

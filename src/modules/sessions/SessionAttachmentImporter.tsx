@@ -28,7 +28,6 @@ export function SessionAttachmentImporter({ label = 'Pièce jointe', extractedTe
     }
 
     setMessage('Lecture automatique non disponible localement. Colle le texte extrait ou utilise la consigne de transcription.')
-    if (!extractedText) onExtractedTextChange(`Fichier importé : ${file.name}\nColle ici le texte OCR ou la transcription de la fiche.`)
   }
 
   async function copyOcrPrompt() {

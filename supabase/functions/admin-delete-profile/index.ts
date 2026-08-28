@@ -1,4 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
+import {
+  isAdminAssignableRole,
+  type AdminAssignableRole,
+} from '../_shared/adminProfileRoles.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -6,11 +10,12 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-type AdminProfileAction = 'deactivate' | 'reactivate' | 'delete'
+type AdminProfileAction = 'deactivate' | 'reactivate' | 'delete' | 'update_role'
 
 type ActionPayload = {
   profileId?: string
   action?: AdminProfileAction
+  role?: string
 }
 
 type ProfileRow = {
@@ -19,6 +24,32 @@ type ProfileRow = {
   full_name?: string | null
   role?: string | null
   is_active?: boolean | null
+  profile_status?: string | null
+}
+
+type ApiErrorCode =
+  | 'AUTH_REQUIRED'
+  | 'INVALID_JWT'
+  | 'PROFILE_FORBIDDEN'
+  | 'ROLE_FORBIDDEN'
+  | 'INVALID_PAYLOAD'
+  | 'PROFILE_NOT_FOUND'
+  | 'SELF_ACTION_FORBIDDEN'
+  | 'LAST_ADMIN_CONFLICT'
+  | 'DEPENDENCY_CONFLICT'
+  | 'INTERNAL_ERROR'
+
+class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    readonly code: ApiErrorCode,
+    message: string,
+    readonly details?: string,
+    readonly hint?: string,
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
 }
 
 function jsonResponse(body: unknown, status = 200) {
@@ -29,6 +60,17 @@ function jsonResponse(body: unknown, status = 200) {
       'Content-Type': 'application/json',
     },
   })
+}
+
+function errorResponse(error: ApiError) {
+  return jsonResponse({
+    ok: false,
+    code: error.code,
+    error: error.message,
+    message: error.message,
+    ...(error.details ? { details: error.details } : {}),
+    ...(error.hint ? { hint: error.hint } : {}),
+  }, error.status)
 }
 
 function normalizeText(value: unknown) {
@@ -42,28 +84,8 @@ function normalizeRole(value: unknown) {
   return role || 'member'
 }
 
-function isAdminRole(value: unknown) {
-  return ['admin', 'responsable_technique'].includes(normalizeRole(value))
-}
-
-function isMissingColumnError(message: string) {
-  const value = message.toLowerCase()
-
-  return (
-    value.includes('could not find') ||
-    value.includes('schema cache') ||
-    (value.includes('column') && value.includes('does not exist'))
-  )
-}
-
-function isMissingAuthUserError(message: string) {
-  const value = message.toLowerCase()
-
-  return (
-    value.includes('user not found') ||
-    value.includes('not found') ||
-    value.includes('no user')
-  )
+function isStrictAdminRole(value: unknown) {
+  return normalizeRole(value) === 'admin'
 }
 
 function getBearerToken(request: Request) {
@@ -71,27 +93,31 @@ function getBearerToken(request: Request) {
 }
 
 async function getCallerProfile(
-  supabaseUser: ReturnType<typeof createClient>,
   supabaseAdmin: ReturnType<typeof createClient>,
+  token: string,
 ) {
-  const { data: userData, error: userError } = await supabaseUser.auth.getUser()
+  const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token)
 
   if (userError || !userData.user) {
-    throw new Error('Session invalide ou expirée.')
+    throw new ApiError(401, 'INVALID_JWT', 'Session invalide ou expirée.')
   }
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
-    .select('id, email, full_name, role, is_active')
+    .select('id, email, full_name, role, is_active, profile_status')
     .eq('id', userData.user.id)
     .maybeSingle()
 
   if (profileError) {
-    throw new Error(`Impossible de vérifier les permissions : ${profileError.message}`)
+    throw new ApiError(500, 'INTERNAL_ERROR', 'Impossible de vérifier les autorisations.')
   }
 
-  if (!profile?.is_active || !isAdminRole(profile.role)) {
-    throw new Error('Vous n’avez pas les droits administrateur.')
+  if (!profile || !profile.is_active || profile.profile_status !== 'active') {
+    throw new ApiError(403, 'PROFILE_FORBIDDEN', 'Profil absent ou inactif.')
+  }
+
+  if (!isStrictAdminRole(profile.role)) {
+    throw new ApiError(403, 'ROLE_FORBIDDEN', 'Accès administrateur requis.')
   }
 
   return profile as ProfileRow
@@ -103,16 +129,16 @@ async function getTargetProfile(
 ) {
   const { data, error } = await supabaseAdmin
     .from('profiles')
-    .select('id, email, full_name, role, is_active')
+    .select('id, email, full_name, role, is_active, profile_status')
     .eq('id', profileId)
     .maybeSingle()
 
   if (error) {
-    throw new Error(`Profil cible introuvable : ${error.message}`)
+    throw new ApiError(500, 'INTERNAL_ERROR', 'Impossible de vérifier le profil cible.')
   }
 
   if (!data) {
-    throw new Error('Profil cible introuvable.')
+    throw new ApiError(404, 'PROFILE_NOT_FOUND', 'Profil cible introuvable.')
   }
 
   return data as ProfileRow
@@ -122,22 +148,35 @@ async function assertNotLastActiveAdmin(
   supabaseAdmin: ReturnType<typeof createClient>,
   targetProfile: ProfileRow,
   action: AdminProfileAction,
+  nextRole?: AdminAssignableRole,
 ) {
   if (action === 'reactivate') return
-  if (!targetProfile.is_active || !isAdminRole(targetProfile.role)) return
+  if (
+    !targetProfile.is_active ||
+    targetProfile.profile_status !== 'active' ||
+    normalizeRole(targetProfile.role) !== 'admin'
+  ) return
+  if (action === 'update_role' && nextRole === 'admin') return
 
   const { count, error } = await supabaseAdmin
     .from('profiles')
     .select('id', { count: 'exact', head: true })
     .eq('is_active', true)
-    .in('role', ['admin', 'responsable_technique'])
+    .eq('profile_status', 'active')
+    .eq('role', 'admin')
 
   if (error) {
-    throw new Error(`Impossible de vérifier les admins actifs : ${error.message}`)
+    throw new ApiError(500, 'INTERNAL_ERROR', 'Impossible de vérifier les administrateurs actifs.')
   }
 
   if ((count || 0) <= 1) {
-    throw new Error('Impossible de supprimer ou désactiver le dernier administrateur actif.')
+    throw new ApiError(
+      409,
+      'LAST_ADMIN_CONFLICT',
+      action === 'delete'
+        ? 'Le dernier administrateur actif ne peut pas être supprimé.'
+        : 'Le dernier administrateur actif ne peut pas être modifié.',
+    )
   }
 }
 
@@ -148,7 +187,7 @@ async function updateProfileStatus(
 ) {
   const fullPatch = {
     is_active: isActive,
-    profile_status: isActive ? 'active' : 'inactive',
+    profile_status: isActive ? 'active' : 'suspended',
     updated_at: new Date().toISOString(),
   }
 
@@ -157,62 +196,82 @@ async function updateProfileStatus(
     .update(fullPatch)
     .eq('id', profileId)
 
-  if (!error) return
+  if (error) throw new Error(`Mise à jour du profil impossible : ${error.message}`)
+}
 
-  if (!isMissingColumnError(error.message)) {
-    throw new Error(`Mise à jour du profil impossible : ${error.message}`)
-  }
-
-  const { error: fallbackError } = await supabaseAdmin
+async function updateProfileRole(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  profileId: string,
+  role: AdminAssignableRole,
+) {
+  const { error } = await supabaseAdmin
     .from('profiles')
-    .update({ is_active: isActive })
+    .update({ role, updated_at: new Date().toISOString() })
     .eq('id', profileId)
 
-  if (fallbackError) {
-    throw new Error(`Mise à jour du profil impossible : ${fallbackError.message}`)
-  }
+  if (error) throw new Error(`Modification du rôle impossible : ${error.message}`)
 }
 
 async function deleteProfileAndAuthUser(
+  supabaseUser: ReturnType<typeof createClient>,
   supabaseAdmin: ReturnType<typeof createClient>,
-  profileId: string,
+  actorProfileId: string,
+  targetProfileId: string,
 ) {
-  const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(profileId)
-  let warning: string | null = null
+  const { data, error } = await supabaseUser.rpc('delete_profile_atomically', {
+    actor_profile_id: actorProfileId,
+    target_profile_id: targetProfileId,
+  })
 
-  if (authError) {
-    if (isMissingAuthUserError(authError.message)) {
-      console.warn(
-        '[admin-delete-profile] Auth user already missing, public profile deleted:',
-        authError.message,
-      )
-
-      warning = 'Profil supprimé. Le compte Auth était déjà absent.'
-    } else {
-      const { data: stillExists } = await supabaseAdmin
-        .from('profiles')
-        .select('id')
-        .eq('id', profileId)
-        .maybeSingle()
-
-      if (stillExists) {
-        throw new Error(`Suppression du compte Auth impossible, profil conservé : ${authError.message}`)
-      }
-
-      throw new Error(`Suppression du compte Auth impossible : ${authError.message}`)
+  if (error) {
+    if (error.code === 'PT403') {
+      throw new ApiError(403, 'SELF_ACTION_FORBIDDEN', error.message)
     }
+    if (error.code === 'PT404') {
+      throw new ApiError(404, 'PROFILE_NOT_FOUND', error.message)
+    }
+    if (error.code === 'PT409') {
+      const lastAdmin = error.message.toLowerCase().includes('dernier administrateur')
+      throw new ApiError(
+        409,
+        lastAdmin ? 'LAST_ADMIN_CONFLICT' : 'DEPENDENCY_CONFLICT',
+        error.message,
+        error.details || undefined,
+        error.hint || undefined,
+      )
+    }
+    throw new ApiError(500, 'INTERNAL_ERROR', 'La suppression définitive a échoué.')
   }
 
-  const { error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .delete()
-    .eq('id', profileId)
-
-  if (profileError) {
-    throw new Error(`Compte Auth supprimé, mais suppression du profil impossible : ${profileError.message}`)
+  const result = data as { deleted?: boolean; audit_recorded?: boolean } | null
+  if (!result?.deleted || !result.audit_recorded) {
+    throw new ApiError(500, 'INTERNAL_ERROR', 'La suppression définitive n’a pas été confirmée.')
   }
 
-  return warning ? { warning } : null
+  const [{ data: remainingProfile, error: profileCheckError }, authCheck] = await Promise.all([
+    supabaseAdmin.from('profiles').select('id').eq('id', targetProfileId).maybeSingle(),
+    supabaseAdmin.auth.admin.getUserById(targetProfileId),
+  ])
+
+  const authError = authCheck.error as ({ status?: number; code?: string; message?: string } | null)
+  const authUserIsAbsent = Boolean(
+    authError && (
+      authError.status === 404 ||
+      authError.code === 'user_not_found' ||
+      authError.message?.trim().toLowerCase() === 'user not found'
+    ),
+  )
+
+  if (
+    profileCheckError ||
+    remainingProfile ||
+    (authError && !authUserIsAbsent) ||
+    authCheck.data?.user
+  ) {
+    throw new ApiError(500, 'INTERNAL_ERROR', 'La suppression définitive n’a pas été confirmée.')
+  }
+
+  return { warning: null }
 }
 
 async function writeAuditLog(
@@ -283,37 +342,13 @@ Deno.serve(async (request) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
     if (!supabaseUrl || !anonKey || !serviceRoleKey) {
-      return jsonResponse({ ok: false, error: 'Configuration Supabase incomplète.' }, 500)
+      return errorResponse(new ApiError(500, 'INTERNAL_ERROR', 'Une erreur interne est survenue.'))
     }
 
     const token = getBearerToken(request)
     if (!token) {
-      return jsonResponse({ ok: false, error: 'Session admin manquante.' })
+      return errorResponse(new ApiError(401, 'AUTH_REQUIRED', 'Authentification requise.'))
     }
-
-    const payload = (await request.json()) as ActionPayload
-    const profileId = normalizeText(payload.profileId)
-    const action = payload.action
-
-    if (!profileId) {
-      return jsonResponse({ ok: false, error: 'profileId manquant.' })
-    }
-
-    if (!action || !['deactivate', 'reactivate', 'delete'].includes(action)) {
-      return jsonResponse({ ok: false, error: 'Action profil invalide.' })
-    }
-
-    const supabaseUser = createClient(supabaseUrl, anonKey, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    })
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: {
@@ -321,22 +356,50 @@ Deno.serve(async (request) => {
         persistSession: false,
       },
     })
+    const supabaseUser = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
 
-    const callerProfile = await getCallerProfile(supabaseUser, supabaseAdmin)
+    const callerProfile = await getCallerProfile(supabaseAdmin, token)
+
+    let payload: ActionPayload
+    try {
+      payload = (await request.json()) as ActionPayload
+    } catch {
+      throw new ApiError(400, 'INVALID_PAYLOAD', 'Corps de requête invalide.')
+    }
+
+    const profileId = normalizeText(payload.profileId)
+    const action = payload.action
+
+    if (!profileId) {
+      throw new ApiError(400, 'INVALID_PAYLOAD', 'Identifiant de profil manquant.')
+    }
+
+    if (!action || !['deactivate', 'reactivate', 'delete', 'update_role'].includes(action)) {
+      throw new ApiError(400, 'INVALID_PAYLOAD', 'Action profil invalide.')
+    }
+
+    const requestedRole = action === 'update_role' ? payload.role : undefined
+    if (action === 'update_role' && !isAdminAssignableRole(requestedRole)) {
+      throw new ApiError(400, 'INVALID_PAYLOAD', 'Rôle profil invalide.')
+    }
+
     const targetProfile = await getTargetProfile(supabaseAdmin, profileId)
 
     if (callerProfile.id === targetProfile.id) {
       const selfActionMessage =
         action === 'delete'
           ? 'Vous ne pouvez pas supprimer votre propre profil.'
-          : 'Vous ne pouvez pas modifier votre propre profil.'
+          : action === 'update_role'
+            ? 'Vous ne pouvez pas modifier votre propre rôle.'
+            : 'Vous ne pouvez pas modifier votre propre profil.'
 
-      return jsonResponse(
-        { ok: false, error: selfActionMessage },
-      )
+      throw new ApiError(403, 'SELF_ACTION_FORBIDDEN', selfActionMessage)
     }
 
-    await assertNotLastActiveAdmin(supabaseAdmin, targetProfile, action)
+    await assertNotLastActiveAdmin(supabaseAdmin, targetProfile, action, requestedRole)
 
     let warning: string | null = null
 
@@ -344,16 +407,25 @@ Deno.serve(async (request) => {
       await updateProfileStatus(supabaseAdmin, profileId, false)
     } else if (action === 'reactivate') {
       await updateProfileStatus(supabaseAdmin, profileId, true)
+    } else if (action === 'update_role') {
+      await updateProfileRole(supabaseAdmin, profileId, requestedRole as AdminAssignableRole)
     } else {
-      const deleteResult = await deleteProfileAndAuthUser(supabaseAdmin, profileId)
+      const deleteResult = await deleteProfileAndAuthUser(
+        supabaseUser,
+        supabaseAdmin,
+        callerProfile.id,
+        profileId,
+      )
       warning = deleteResult?.warning || null
     }
 
-    await writeAuditLog(supabaseAdmin, {
-      actor: callerProfile,
-      target: targetProfile,
-      action,
-    })
+    if (action !== 'delete') {
+      await writeAuditLog(supabaseAdmin, {
+        actor: callerProfile,
+        target: targetProfile,
+        action,
+      })
+    }
 
     return jsonResponse({
       ok: true,
@@ -361,15 +433,12 @@ Deno.serve(async (request) => {
       profileId,
       profile_id: profileId,
       warning,
+      ...(action === 'update_role' ? { role: requestedRole } : {}),
     })
   } catch (error) {
-    console.error('[admin-delete-profile] action failed:', error)
+    if (error instanceof ApiError) return errorResponse(error)
 
-    return jsonResponse(
-      {
-        ok: false,
-        error: error instanceof Error ? error.message : 'Erreur admin inconnue.',
-      },
-    )
+    console.error('[admin-delete-profile] unexpected failure')
+    return errorResponse(new ApiError(500, 'INTERNAL_ERROR', 'Une erreur interne est survenue.'))
   }
 })

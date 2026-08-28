@@ -21,6 +21,7 @@ import { EvaluationObjectivesPanel } from "./EvaluationObjectivesPanel";
 import { EvaluationTeamSummary } from "./EvaluationTeamSummary";
 import { EvaluationTemplateSelector } from "./EvaluationTemplateSelector";
 import { EvaluationHistoryTimeline } from "./EvaluationHistoryTimeline";
+import { EmptyState } from "../ui/PageShell";
 import "../../styles/evaluations.css";
 
 const teams: EvaluationTeam[] = [
@@ -229,15 +230,18 @@ export function EvaluationsPage() {
   }
 
   if (!permissions.canView) {
+    return <main className="evaluations-page"><EmptyState cause="unauthorized" title="Aucune évaluation visible" description="Aucune évaluation n’est disponible pour votre rôle." /></main>;
+  }
+
+  if (teamPlayers.length === 0) {
     return (
       <main className="evaluations-page">
-        <section className="bcvb-dashboard-hero">
-          <div>
-            <p className="bcvb-eyebrow">Évaluations joueurs</p>
-            <h1 className="bcvb-title-xl">Accès réservé</h1>
-            <p className="bcvb-subtitle">Les évaluations techniques sont réservées aux coachs, responsables techniques, dirigeants autorisés et admins.</p>
-          </div>
-        </section>
+        <EmptyState
+          cause="no_data"
+          title="Aucun joueur à évaluer"
+          description="Aucun joueur n’est actuellement disponible dans cette équipe. Choisissez une autre équipe ou ajoutez son effectif."
+          action={<a href="/coach/equipes">Voir mes équipes</a>}
+        />
       </main>
     );
   }

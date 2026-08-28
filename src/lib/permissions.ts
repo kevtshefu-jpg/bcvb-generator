@@ -80,10 +80,11 @@ export const ROLE_PERMISSIONS: Record<AppRole, Permission[]> = {
 }
 
 export function hasPermission(role: string | null | undefined, permission: Permission) {
-  const key = (role || 'member') as AppRole
+  if (!role || !(role in ROLE_PERMISSIONS)) return false
+  const key = role as AppRole
   return ROLE_PERMISSIONS[key]?.includes(permission) ?? false
 }
 
 export function hasAnyRole(role: string | null | undefined, allowedRoles: string[]) {
-  return allowedRoles.includes(role || 'member')
+  return Boolean(role && role in ROLE_PERMISSIONS && allowedRoles.includes(role))
 }

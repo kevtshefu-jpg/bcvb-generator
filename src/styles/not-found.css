@@ -1,0 +1,108 @@
+.not-found-page {
+  display: grid;
+  min-width: 0;
+  min-height: min(620px, calc(100dvh - 180px));
+  place-items: center;
+  padding: clamp(16px, 4vw, 48px);
+  overflow-x: clip;
+}
+
+.not-found-card {
+  display: grid;
+  width: min(100%, 760px);
+  min-width: 0;
+  gap: clamp(24px, 5vw, 42px);
+  padding: clamp(24px, 6vw, 56px);
+  border: 1px solid #d0d5dd;
+  border-radius: clamp(20px, 4vw, 32px);
+  background: linear-gradient(145deg, #ffffff 0%, #fff6f7 100%);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+}
+
+.not-found-card__content {
+  min-width: 0;
+}
+
+.not-found-card h1 {
+  margin: 8px 0 0;
+  color: #111827;
+  font-size: clamp(2.2rem, 8vw, 5rem);
+  line-height: 0.98;
+  overflow-wrap: anywhere;
+}
+
+.not-found-card h1:focus-visible {
+  outline: 3px solid #c8102e;
+  outline-offset: 6px;
+}
+
+.not-found-card__content > p:last-child {
+  max-width: 560px;
+  margin: 18px 0 0;
+  color: #344054;
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  line-height: 1.6;
+}
+
+.not-found-card__actions {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.not-found-card__primary,
+.not-found-card__secondary {
+  display: inline-flex;
+  min-height: 48px;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #9f0c24;
+  border-radius: 999px;
+  padding: 10px 20px;
+  font: inherit;
+  font-weight: 850;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.not-found-card__primary {
+  color: #ffffff;
+  background: #9f0c24;
+}
+
+.not-found-card__secondary {
+  color: #111827;
+  background: #ffffff;
+  border-color: #344054;
+}
+
+.not-found-card__primary:focus-visible,
+.not-found-card__secondary:focus-visible {
+  outline: 3px solid #f5b700;
+  outline-offset: 3px;
+}
+
+@media (max-width: 430px) {
+  .not-found-page {
+    min-height: calc(100dvh - 130px);
+    padding: 12px;
+  }
+
+  .not-found-card {
+    gap: 22px;
+    padding: 24px 18px;
+  }
+
+  .not-found-card__actions {
+    display: grid;
+  }
+
+  .not-found-card__primary,
+  .not-found-card__secondary {
+    width: 100%;
+  }
+}

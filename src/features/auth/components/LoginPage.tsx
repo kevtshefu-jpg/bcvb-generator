@@ -3,6 +3,8 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Link } from 'react-router-dom'
 import { formatUserFacingError } from '../../../lib/userFacingError'
+import { isProfileAllowed } from '../utils/profileAccess'
+import { AccessSuspendedState, ErrorState, LoadingState } from '../../../components/ui/PageShell'
 
 function getDefaultPathByRole(role?: string | null) {
   if (role === 'admin' || role === 'responsable_technique') return '/admin'
@@ -12,7 +14,7 @@ function getDefaultPathByRole(role?: string | null) {
 }
 
 export default function LoginPage() {
-  const { signIn, user, profile, loading } = useAuth()
+  const { signIn, signOut, user, profile, loading, profileError } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -24,13 +26,21 @@ export default function LoginPage() {
   const from = (location.state as { from?: { pathname?: string } })?.from?.pathname
 
   useEffect(() => {
-    if (!loading && user && profile?.is_active) {
+    if (!loading && user && isProfileAllowed(profile)) {
       navigate(from || getDefaultPathByRole(profile.role), { replace: true })
     }
   }, [loading, user, profile, navigate, from])
 
-  if (!loading && user && profile?.is_active) {
+  if (!loading && user && isProfileAllowed(profile)) {
     return <Navigate to={from || getDefaultPathByRole(profile.role)} replace />
+  }
+
+  if (loading) {
+    return <main className="bcvb-page-loading"><LoadingState title="Vérification de votre session" description="Votre espace sera disponible dans un instant." /></main>
+  }
+
+  if (!loading && user && (profileError || !isProfileAllowed(profile))) {
+    return <AccessSuspendedState action={<button type="button" className="bcvb-button" onClick={() => void signOut()}>Se déconnecter</button>} />
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -71,11 +81,7 @@ export default function LoginPage() {
           required
         />
 
-        {error && (
-          <div role="alert" style={{ color: 'crimson', lineHeight: 1.45 }}>
-            {error}
-          </div>
-        )}
+        {error ? <ErrorState title="Connexion impossible" description={error} /> : null}
 
         <button type="submit" disabled={submitting}>
           {submitting ? 'Connexion...' : 'Se connecter'}

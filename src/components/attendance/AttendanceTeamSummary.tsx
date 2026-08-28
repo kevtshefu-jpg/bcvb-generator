@@ -10,6 +10,8 @@ export function AttendanceTeamSummary({ stats }: { stats: AttendanceTeamStats })
       <div className="attendance-stat-grid">
         <span>Séances <strong>{stats.totalSessions}</strong></span>
         <span>Joueurs <strong>{stats.playerCount}</strong></span>
+        <span>Non renseignés <strong>{stats.missingRecords}</strong></span>
+        <span>Complétude <strong>{stats.completionRate}%</strong></span>
         <span>Présents <strong>{stats.presentCount}</strong></span>
         <span>Non excusés <strong>{stats.absentUnexcusedCount}</strong></span>
         <span>Retards <strong>{stats.lateCount}</strong></span>
@@ -18,4 +20,3 @@ export function AttendanceTeamSummary({ stats }: { stats: AttendanceTeamStats })
     </section>
   );
 }
-

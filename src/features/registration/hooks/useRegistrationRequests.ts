@@ -3,6 +3,7 @@ import { fetchRegistrationRequests, type RegistrationRequestRow } from '../servi
 import {
   approveRegistrationAndCreateUser,
   rejectRegistrationRequest,
+  retryRegistrationActivation,
 } from '../services/registrationApprovalService'
 import { formatUserFacingError } from '../../../lib/userFacingError'
 
@@ -12,7 +13,7 @@ type RegistrationRequestActionInput = {
   requested_role?: string | null
 }
 
-export function useRegistrationRequests(approvedBy?: string) {
+export function useRegistrationRequests() {
   const [requests, setRequests] = useState<RegistrationRequestRow[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -71,11 +72,26 @@ export function useRegistrationRequests(approvedBy?: string) {
     try {
       setError(null)
       setLastApprovalMessage(null)
-      await rejectRegistrationRequest(item.id, approvedBy)
+      await rejectRegistrationRequest(item.id)
       const rows = await fetchRegistrationRequests()
       setRequests(rows)
     } catch (err) {
       setError(formatUserFacingError(err, 'La demande n’a pas pu être refusée. Réessaie ou recharge la liste.'))
+    }
+  }
+
+  async function retryActivation(item: RegistrationRequestActionInput) {
+    try {
+      setError(null)
+      setLastApprovalMessage(null)
+      const result = await retryRegistrationActivation(
+        item.id,
+        item.role_requested || item.requested_role || undefined,
+      )
+      setLastApprovalMessage(result.message || 'Email d’activation renvoyé.')
+      setRequests(await fetchRegistrationRequests())
+    } catch (err) {
+      setError(formatUserFacingError(err, 'L’email d’activation n’a pas pu être renvoyé. Le compte reste créé.'))
     }
   }
 
@@ -85,6 +101,7 @@ export function useRegistrationRequests(approvedBy?: string) {
     error,
     approve,
     reject,
+    retryActivation,
     lastApprovalMessage,
   }
 }

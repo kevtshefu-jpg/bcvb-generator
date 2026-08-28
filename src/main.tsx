@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
 import { router } from './app/router'
@@ -54,7 +54,17 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
       <AuthProvider>
-        <RouterProvider router={router} />
+        <Suspense fallback={
+          <main className="bcvb-page-loading" aria-live="polite" aria-busy="true">
+            <div className="bcvb-loading-card">
+              <p className="bcvb-eyebrow">BCVB Référentiel</p>
+              <h1>Chargement de la page…</h1>
+              <p>Préparation de ton espace.</p>
+            </div>
+          </main>
+        }>
+          <RouterProvider router={router} />
+        </Suspense>
       </AuthProvider>
     </ErrorBoundary>
   </React.StrictMode>

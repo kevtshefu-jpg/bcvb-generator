@@ -3,21 +3,19 @@ import {
   approveProfileRequest,
   fetchProfileRequests,
   rejectProfileRequest,
-  updateProfileRequestDraft,
   type ProfileRequestRow,
   type ProfileRequestStatus,
 } from '../services/profileRequestService'
+import { PageShell } from '../../../components/ui/PageShell'
+import { ADMIN_ASSIGNABLE_ROLES, ROLE_LABELS } from '../../../config/roles'
+import { formatUserFacingError } from '../../../lib/userFacingError'
 
-const ROLE_OPTIONS = [
-  { value: 'member', label: 'Membre' },
-  { value: 'coach', label: 'Coach' },
-  { value: 'joueur', label: 'Joueur' },
-  { value: 'parent', label: 'Parent' },
-  { value: 'parent_referent', label: 'Parent référent' },
-  { value: 'dirigeant', label: 'Dirigeant' },
-  { value: 'responsable_technique', label: 'Responsable technique' },
-  { value: 'admin', label: 'Admin' },
-]
+import './AdminProfileRequestsPage.css'
+
+const ROLE_OPTIONS = ADMIN_ASSIGNABLE_ROLES.map((value) => ({
+  value,
+  label: ROLE_LABELS[value],
+}))
 
 const STATUS_OPTIONS: Array<{ value: ProfileRequestStatus | 'all'; label: string }> = [
   { value: 'pending', label: 'En attente' },
@@ -45,6 +43,7 @@ export default function AdminProfileRequestsPage() {
   const [actionId, setActionId] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [drafts, setDrafts] = useState<Record<string, { finalRole: string; categoryId: string; adminNote: string }>>({})
 
   const pendingCount = useMemo(
     () => requests.filter((request) => request.status === 'pending').length,
@@ -58,8 +57,13 @@ export default function AdminProfileRequestsPage() {
 
       const rows = await fetchProfileRequests(status)
       setRequests(rows)
+      setDrafts(Object.fromEntries(rows.map((request) => [request.id, {
+        finalRole: request.requested_role || 'member',
+        categoryId: request.requested_category_id || '',
+        adminNote: request.admin_note || '',
+      }])))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Impossible de charger les demandes.')
+      setError(formatUserFacingError(err, 'Impossible de charger les demandes pour le moment.'))
     } finally {
       setLoading(false)
     }
@@ -69,33 +73,32 @@ export default function AdminProfileRequestsPage() {
     loadRequests()
   }, [loadRequests])
 
-  async function handleFieldChange(
-    request: ProfileRequestRow,
-    patch: Partial<Pick<ProfileRequestRow, 'requested_role' | 'requested_category_id' | 'requested_team' | 'phone' | 'admin_note'>>,
-  ) {
-    try {
-      setError(null)
-
-      const updated = await updateProfileRequestDraft(request.id, patch)
-
-      setRequests((current) =>
-        current.map((item) => (item.id === request.id ? updated : item)),
-      )
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Modification impossible.')
-    }
+  function updateDraft(request: ProfileRequestRow, patch: Partial<{ finalRole: string; categoryId: string; adminNote: string }>) {
+    setDrafts((current) => ({
+      ...current,
+      [request.id]: {
+        ...current[request.id],
+        finalRole: request.requested_role || 'member',
+        categoryId: request.requested_category_id || '',
+        adminNote: request.admin_note || '',
+        ...patch,
+      },
+    }))
   }
 
   async function handleApprove(request: ProfileRequestRow) {
+    const draft = drafts[request.id]
+    if (!window.confirm(`Valider le profil de ${request.full_name} avec le rôle « ${ROLE_LABELS[(draft?.finalRole || 'member') as keyof typeof ROLE_LABELS] || draft?.finalRole} » ?`)) return
+
     try {
       setActionId(request.id)
       setError(null)
 
       const updated = await approveProfileRequest({
         requestId: request.id,
-        finalRole: request.requested_role || 'member',
-        finalCategoryId: request.requested_category_id,
-        adminNote: request.admin_note,
+        finalRole: draft?.finalRole || request.requested_role || 'member',
+        finalCategoryId: draft?.categoryId || null,
+        adminNote: draft?.adminNote || null,
       })
 
       setRequests((current) =>
@@ -104,28 +107,21 @@ export default function AdminProfileRequestsPage() {
 
       setMessage(`Demande validée pour ${request.full_name}.`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Validation impossible.')
+      setError(formatUserFacingError(err, 'La demande n’a pas pu être validée. Recharge la liste puis réessaie.'))
     } finally {
       setActionId(null)
     }
   }
 
   async function handleReject(request: ProfileRequestRow) {
-    const reason = window.prompt(
-      `Pourquoi refuser la demande de ${request.full_name} ?`,
-      request.admin_note || '',
-    )
-
-    if (!reason?.trim()) {
-      setMessage('Refus annulé : un motif est nécessaire.')
-      return
-    }
+    const note = drafts[request.id]?.adminNote?.trim() || null
+    if (!window.confirm(`Refuser la demande de ${request.full_name} ?${note ? ' La note administrateur sera enregistrée.' : ''}`)) return
 
     try {
       setActionId(request.id)
       setError(null)
 
-      const updated = await rejectProfileRequest(request.id, reason.trim())
+      const updated = await rejectProfileRequest(request.id, note)
 
       setRequests((current) =>
         current.map((item) => (item.id === request.id ? updated : item)),
@@ -133,7 +129,7 @@ export default function AdminProfileRequestsPage() {
 
       setMessage(`Demande refusée pour ${request.full_name}.`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Refus impossible.')
+      setError(formatUserFacingError(err, 'La demande n’a pas pu être refusée. Recharge la liste puis réessaie.'))
     } finally {
       setActionId(null)
     }
@@ -141,6 +137,7 @@ export default function AdminProfileRequestsPage() {
 
   return (
     <section className="admin-profile-requests-page bcvb-page">
+      <PageShell variant="wide">
       <div className="admin-profile-requests-hero">
         <div>
           <p className="bcvb-eyebrow">Administration</p>
@@ -202,15 +199,18 @@ export default function AdminProfileRequestsPage() {
 
             <div className="admin-profile-request-grid">
               <label>
-                <span>Rôle demandé / final</span>
+                <span>Rôle demandé</span>
+                <strong className="admin-profile-request-value">
+                  {ROLE_LABELS[request.requested_role as keyof typeof ROLE_LABELS] || request.requested_role}
+                </strong>
+              </label>
+
+              <label>
+                <span>Rôle final</span>
                 <select
-                  value={request.requested_role}
+                  value={drafts[request.id]?.finalRole || request.requested_role}
                   disabled={request.status !== 'pending'}
-                  onChange={(event) =>
-                    handleFieldChange(request, {
-                      requested_role: event.target.value,
-                    })
-                  }
+                  onChange={(event) => updateDraft(request, { finalRole: event.target.value })}
                 >
                   {ROLE_OPTIONS.map((role) => (
                     <option value={role.value} key={role.value}>
@@ -223,30 +223,14 @@ export default function AdminProfileRequestsPage() {
               <label>
                 <span>Catégorie / équipe</span>
                 <input
-                  value={request.requested_category_id || ''}
+                  value={drafts[request.id]?.categoryId ?? request.requested_category_id ?? ''}
                   disabled={request.status !== 'pending'}
-                  onChange={(event) =>
-                    handleFieldChange(request, {
-                      requested_category_id: event.target.value || null,
-                    })
-                  }
+                  onChange={(event) => updateDraft(request, { categoryId: event.target.value })}
                   placeholder="U15M, SF1, dirigeant, parent..."
                 />
               </label>
 
-              <label>
-                <span>Téléphone</span>
-                <input
-                  value={request.phone || ''}
-                  disabled={request.status !== 'pending'}
-                  onChange={(event) =>
-                    handleFieldChange(request, {
-                      phone: event.target.value || null,
-                    })
-                  }
-                  placeholder="06..."
-                />
-              </label>
+              <div><span>Téléphone</span><strong className="admin-profile-request-value">{request.phone || '—'}</strong></div>
             </div>
 
             {request.motivation || request.message ? (
@@ -259,13 +243,9 @@ export default function AdminProfileRequestsPage() {
             <label className="admin-profile-request-admin-note">
               <span>Note admin</span>
               <textarea
-                value={request.admin_note || ''}
+                value={drafts[request.id]?.adminNote ?? request.admin_note ?? ''}
                 disabled={request.status !== 'pending'}
-                onChange={(event) =>
-                  handleFieldChange(request, {
-                    admin_note: event.target.value || null,
-                  })
-                }
+                onChange={(event) => updateDraft(request, { adminNote: event.target.value })}
                 placeholder="Décision, précision, catégorie, remarque interne..."
               />
             </label>
@@ -300,6 +280,7 @@ export default function AdminProfileRequestsPage() {
           </article>
         ))}
       </div>
+      </PageShell>
     </section>
   )
 }

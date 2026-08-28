@@ -1,5 +1,5 @@
 import ActionFeedback from '../../../components/feedback/ActionFeedback'
-import { ErrorState, LoadingState } from '../../../components/ui/PageShell'
+import { ErrorState, LoadingState, RetryAction } from '../../../components/ui/PageShell'
 
 type LibraryFeedbackProps = {
   safeLoading: boolean
@@ -62,7 +62,7 @@ export default function LibraryFeedback({
               ? 'La bibliothèque sera disponible dès que les données répondent.'
               : 'Les documents n’ont pas pu être chargés. Réessayez dans un instant.'
           }
-          action={<button type="button" onClick={onRetry}>Réessayer</button>}
+          action={<RetryAction onClick={onRetry} />}
         />
       ) : null}
 

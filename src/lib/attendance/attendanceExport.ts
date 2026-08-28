@@ -10,12 +10,18 @@ function playerName(players: AttendancePlayer[], playerId: string) {
   return player ? `${player.firstName} ${player.lastName}` : playerId;
 }
 
-function sessionForRecord(sessions: AttendanceSession[], record: AttendanceRecord) {
-  return sessions.find((session) => session.id === record.sessionId);
+function recordForPlayer(
+  records: AttendanceRecord[],
+  sessionId: string,
+  playerId: string,
+) {
+  return records.find(
+    (record) => record.sessionId === sessionId && record.playerId === playerId,
+  );
 }
 
-function playerForRecord(players: AttendancePlayer[], record: AttendanceRecord) {
-  return players.find((player) => player.id === record.playerId);
+function percentageOrUnrecorded(value: number, recordedCount: number) {
+  return recordedCount > 0 ? `${value}%` : "Non renseigné";
 }
 
 export function exportAttendanceCsv(
@@ -25,21 +31,20 @@ export function exportAttendanceCsv(
 ): string {
   return [
     ["date", "equipe", "seance", "joueur", "statut", "motif", "retard", "source", "validation_coach"].join(";"),
-    ...records.map((record) => {
-      const session = sessionForRecord(sessions, record);
-      const player = playerForRecord(players, record);
+    ...sessions.flatMap((session) => players.map((player) => {
+      const record = recordForPlayer(records, session.id, player.id);
       return [
-        session?.date,
-        player?.teamName || record.teamId,
-        session?.title || record.sessionId,
-        playerName(players, record.playerId),
-        getAttendanceStatusLabel(record.status),
-        record.reason,
-        record.delayMinutes ?? record.arrivalDelayMinutes,
-        record.source || "coach",
-        record.validatedByCoach ? "oui" : "non",
+        session.date,
+        player.teamName || session.teamId,
+        session.title,
+        `${player.firstName} ${player.lastName}`,
+        record ? getAttendanceStatusLabel(record.status) : "Non renseigné",
+        record?.reason,
+        record?.delayMinutes ?? record?.arrivalDelayMinutes,
+        record?.source,
+        record ? (record.validatedByCoach ? "oui" : "non") : "Non renseigné",
       ].map(csvCell).join(";");
-    }),
+    })),
   ].join("\n");
 }
 
@@ -50,16 +55,19 @@ export function exportAttendanceSessionCsv(
 ): string {
   return [
     ["session", "date", "joueur", "statut", "motif", "retard_minutes", "parent_confirme", "commentaire"].join(";"),
-    ...records.map((record) => [
+    ...players.map((player) => {
+      const record = recordForPlayer(records, session.id, player.id);
+      return [
       session.title,
       session.date,
-      playerName(players, record.playerId),
-      getAttendanceStatusLabel(record.status),
-      record.reason,
-      record.delayMinutes ?? record.arrivalDelayMinutes,
-      record.parentConfirmed ? "oui" : "non",
-      record.coachComment,
-    ].map(csvCell).join(";")),
+      `${player.firstName} ${player.lastName}`,
+      record ? getAttendanceStatusLabel(record.status) : "Non renseigné",
+      record?.reason,
+      record?.delayMinutes ?? record?.arrivalDelayMinutes,
+      record ? (record.parentConfirmed ? "oui" : "non") : "Non renseigné",
+      record?.coachComment,
+    ].map(csvCell).join(";");
+    }),
   ].join("\n");
 }
 
@@ -75,9 +83,9 @@ export function exportAttendanceTeamCsv(stats: AttendanceStats[], players: Atten
       stat.absentUnexcusedCount,
       stat.lateCount,
       stat.injuredCount,
-      `${stat.attendanceRate}%`,
-      `${stat.punctualityRate}%`,
-      `${stat.reliabilityScore}%`,
+      percentageOrUnrecorded(stat.attendanceRate, stat.recordedCount),
+      percentageOrUnrecorded(stat.punctualityRate, stat.recordedCount),
+      percentageOrUnrecorded(stat.reliabilityScore, stat.recordedCount),
     ].map(csvCell).join(";")),
   ].join("\n");
 }
@@ -96,12 +104,17 @@ export function buildAttendanceSummaryMarkdown(
     "",
     `Date : ${session.date}`,
     `Lieu : ${session.location || "Non renseigné"}`,
-    `Présents : ${present}/${records.length}`,
+    `Présents : ${present}/${records.length} relevés renseignés (${players.length} attendus)`,
     `Retards : ${late}`,
     `Absences non excusées : ${unexcused}`,
     "",
     "## Détail",
-    ...records.map((record) => `- ${playerName(players, record.playerId)} : ${getAttendanceStatusLabel(record.status)}${record.reason ? ` (${record.reason})` : ""}`),
+    ...players.map((player) => {
+      const record = recordForPlayer(records, session.id, player.id);
+      return record
+        ? `- ${player.firstName} ${player.lastName} : ${getAttendanceStatusLabel(record.status)}${record.reason ? ` (${record.reason})` : ""}`
+        : `- ${player.firstName} ${player.lastName} : Non renseigné`;
+    }),
   ].join("\n");
 }
 

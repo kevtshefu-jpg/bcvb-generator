@@ -83,7 +83,7 @@ export default function ImportPlayersPage() {
 
         <div className="dashboard-page__badge">
           <span className="dashboard-page__badgeLabel">Formats</span>
-          <strong>CSV · XLSX · XLS</strong>
+          <strong>CSV · XLSX</strong>
         </div>
       </div>
 
@@ -93,7 +93,7 @@ export default function ImportPlayersPage() {
         <div style={{ marginTop: 16 }}>
           <input
             type="file"
-            accept=".csv,.xlsx,.xls"
+            accept=".csv,.xlsx"
             onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
           />
         </div>
@@ -117,7 +117,7 @@ export default function ImportPlayersPage() {
       {!loading && rows.length === 0 && !error && (
         <EmptyState
           title="Aucun fichier joueur chargé"
-          description="Importe un fichier CSV, XLSX ou XLS pour prévisualiser les joueurs avant validation."
+          description="Importe un fichier CSV ou XLSX (5 Mo maximum, sans formule) pour prévisualiser les joueurs avant validation."
         />
       )}
 

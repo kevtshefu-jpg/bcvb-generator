@@ -1,20 +1,27 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { ROLE_LABELS, normalizeRole } from '../../../config/roles'
 import {
-  EmptyState,
+  ADMIN_ASSIGNABLE_ROLES,
+  ROLE_LABELS,
+  isAdminAssignableRole,
+  isSensitiveAdminRole,
+  normalizeRole,
+  type AdminAssignableRole,
+} from '../../../config/roles'
+import {
   MobileDetailCard,
   ResponsiveDataList,
   StatusBadge,
 } from '../../../components/ui/ResponsiveDataView'
 import { PageHeader } from '../../../components/ui/PageHeader'
-import { ErrorState, LoadingState, PageShell, StatCard, SuccessFeedback } from '../../../components/ui/PageShell'
+import { EmptyState as CommonEmptyState, ErrorState, LoadingState, PageShell, RetryAction, StatCard, SuccessFeedback } from '../../../components/ui/PageShell'
 import { useAuth } from '../../auth/context/AuthContext'
 import {
   deactivateProfile,
   deleteProfile,
   listProfiles,
   reactivateProfile,
+  updateProfileRole,
   type AdminProfileAction,
   type AdminProfileRow,
 } from '../services/adminProfileManagementService'
@@ -22,6 +29,7 @@ import {
 import './AdminProfilesPage.css'
 
 type StatusFilter = 'all' | 'active' | 'inactive'
+type ProfileStatusFilter = 'all' | string
 type PendingAction = {
   profile: AdminProfileRow
   action: AdminProfileAction
@@ -46,12 +54,20 @@ function normalizeText(value: unknown) {
   return String(value || '').trim()
 }
 
+function normalizeSearchValue(value: unknown) {
+  return normalizeText(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('fr-FR')
+    .replace(/\s+/g, ' ')
+}
+
 function isActive(profile: AdminProfileRow) {
   return profile.is_active !== false
 }
 
-function isElevatedRole(role?: string | null) {
-  return ['admin', 'responsable_technique'].includes(normalizeRole(role))
+function isAdminProfileRole(role?: string | null) {
+  return normalizeRole(role) === 'admin'
 }
 
 function getDisplayName(profile: AdminProfileRow) {
@@ -61,6 +77,33 @@ function getDisplayName(profile: AdminProfileRow) {
 function getRoleLabel(role?: string | null) {
   const normalized = normalizeRole(role)
   return ROLE_LABELS[normalized as keyof typeof ROLE_LABELS] || normalized
+}
+
+function normalizeProfileStatus(status?: string | null) {
+  return normalizeSearchValue(status).replace(/\s+/g, '_') || 'non_renseigne'
+}
+
+function getProfileStatusLabel(status?: string | null) {
+  const normalized = normalizeProfileStatus(status)
+  const labels: Record<string, string> = {
+    active: 'Validé',
+    approved: 'Validé',
+    inactive: 'Inactif',
+    pending: 'À vérifier',
+    pending_review: 'À vérifier',
+    requested: 'Demandé',
+    rejected: 'Refusé',
+    suspended: 'Suspendu',
+    unverified: 'À vérifier',
+    non_renseigne: 'Non renseigné',
+  }
+
+  return labels[normalized] || normalizeText(status).replace(/_/g, ' ')
+}
+
+function getReviewPriority(profile: AdminProfileRow) {
+  const status = normalizeProfileStatus(profile.profile_status)
+  return isActive(profile) && ['active', 'approved'].includes(status) ? 1 : 0
 }
 
 function formatDate(value?: string | null) {
@@ -76,15 +119,33 @@ function formatDate(value?: string | null) {
 }
 
 function getActionLabel(action: AdminProfileAction) {
-  if (action === 'deactivate') return 'Désactiver'
+  if (action === 'deactivate') return 'Suspendre'
   if (action === 'reactivate') return 'Réactiver'
+  if (action === 'update_role') return 'Modifier le rôle'
   return 'Supprimer définitivement'
 }
 
 function getSuccessMessage(action: AdminProfileAction) {
-  if (action === 'deactivate') return 'Profil désactivé.'
+  if (action === 'deactivate') return 'Profil suspendu.'
   if (action === 'reactivate') return 'Profil réactivé.'
+  if (action === 'update_role') return 'Rôle modifié.'
   return 'Profil supprimé.'
+}
+
+function getVisibleActionError(action: AdminProfileAction, error: unknown) {
+  if (action !== 'delete' || !(error instanceof Error)) {
+    return 'Cette action n’a pas pu être effectuée.'
+  }
+
+  const safeMessages = [
+    'Ce profil possède des données liées et ne peut pas être supprimé.',
+    'Le dernier administrateur actif ne peut pas être supprimé.',
+    'Vous ne pouvez pas supprimer votre propre profil.',
+    'Profil cible introuvable.',
+  ]
+
+  return safeMessages.find((message) => error.message.includes(message))
+    || 'La suppression définitive n’a pas pu être effectuée. Le profil est conservé.'
 }
 
 function getBlockedReason({
@@ -105,24 +166,33 @@ function runProfileAction(profileId: string, action: AdminProfileAction) {
   return deleteProfile(profileId)
 }
 
+function getActivationLabel(profile: AdminProfileRow) {
+  return normalizeProfileStatus(profile.profile_status) === 'suspended' ? 'Réactiver' : 'Activer'
+}
+
 export default function AdminProfilesPage() {
   const { profile: currentProfile } = useAuth()
   const [profiles, setProfiles] = useState<AdminProfileRow[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [profileStatusFilter, setProfileStatusFilter] = useState<ProfileStatusFilter>('all')
   const [loading, setLoading] = useState(true)
+  const [loadFailed, setLoadFailed] = useState(false)
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
   const [pendingAction, setPendingAction] = useState<PendingAction>(null)
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
+  const [selectedRole, setSelectedRole] = useState<AdminAssignableRole>('member')
+  const [sensitiveRoleConfirmed, setSensitiveRoleConfirmed] = useState(false)
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(
     null,
   )
+  const [technicalError, setTechnicalError] = useState<string | null>(null)
 
-  const activeElevatedCount = useMemo(
+  const activeAdminCount = useMemo(
     () =>
       profiles.filter(
-        (item) => isActive(item) && isElevatedRole(item.role),
+        (item) => isActive(item) && isAdminProfileRole(item.role),
       ).length,
     [profiles],
   )
@@ -139,8 +209,18 @@ export default function AdminProfilesPage() {
     })
   }, [profiles])
 
+  const availableProfileStatuses = useMemo(() => {
+    const statuses = new Map<string, string>()
+    profiles.forEach((profile) => {
+      const value = normalizeProfileStatus(profile.profile_status)
+      statuses.set(value, getProfileStatusLabel(profile.profile_status))
+    })
+    return Array.from(statuses, ([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'fr'))
+  }, [profiles])
+
   const filteredProfiles = useMemo(() => {
-    const query = normalizeText(searchTerm).toLowerCase()
+    const queryTerms = normalizeSearchValue(searchTerm).split(' ').filter(Boolean)
 
     return profiles.filter((item) => {
       const normalizedRole = normalizeRole(item.role)
@@ -149,16 +229,32 @@ export default function AdminProfilesPage() {
       if (roleFilter !== 'all' && normalizedRole !== roleFilter) return false
       if (statusFilter === 'active' && !active) return false
       if (statusFilter === 'inactive' && active) return false
+      if (
+        profileStatusFilter !== 'all' &&
+        normalizeProfileStatus(item.profile_status) !== profileStatusFilter
+      ) return false
 
-      if (!query) return true
+      if (queryTerms.length === 0) return true
 
       const searchable = [item.full_name, item.email, normalizedRole, getRoleLabel(normalizedRole)]
-        .map((value) => normalizeText(value).toLowerCase())
+        .map(normalizeSearchValue)
         .join(' ')
 
-      return searchable.includes(query)
-    })
-  }, [profiles, roleFilter, searchTerm, statusFilter])
+      return queryTerms.every((term) => searchable.includes(term))
+    }).sort((a, b) => (
+      getReviewPriority(a) - getReviewPriority(b) ||
+      getDisplayName(a).localeCompare(getDisplayName(b), 'fr', { sensitivity: 'base' })
+    ))
+  }, [profiles, profileStatusFilter, roleFilter, searchTerm, statusFilter])
+
+  const activeFilterCount = [roleFilter, statusFilter, profileStatusFilter]
+    .filter((value) => value !== 'all').length
+
+  function resetFilters() {
+    setRoleFilter('all')
+    setStatusFilter('all')
+    setProfileStatusFilter('all')
+  }
 
   const activeCount = useMemo(
     () => profiles.filter((item) => isActive(item)).length,
@@ -170,17 +266,15 @@ export default function AdminProfilesPage() {
   const loadProfiles = useCallback(async (options?: { keepToast?: boolean }) => {
     try {
       setLoading(true)
+      setLoadFailed(false)
+      setTechnicalError(null)
       if (!options?.keepToast) setToast(null)
       const rows = await listProfiles()
       setProfiles(rows)
     } catch (error) {
-      setToast({
-        type: 'error',
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Impossible de charger les profils.',
-      })
+      setLoadFailed(true)
+      setTechnicalError(error instanceof Error ? error.message : String(error))
+      setToast({ type: 'error', message: 'Les profils n’ont pas pu être chargés.' })
     } finally {
       setLoading(false)
     }
@@ -195,11 +289,14 @@ export default function AdminProfilesPage() {
   }
 
   function wouldRemoveLastActiveAdmin(profile: AdminProfileRow) {
-    return isActive(profile) && isElevatedRole(profile.role) && activeElevatedCount <= 1
+    return isActive(profile) && isAdminProfileRole(profile.role) && activeAdminCount <= 1
   }
 
   function openAction(profile: AdminProfileRow, action: AdminProfileAction) {
     setDeleteConfirmation('')
+    const normalizedRole = normalizeRole(profile.role)
+    setSelectedRole(isAdminAssignableRole(normalizedRole) ? normalizedRole : 'member')
+    setSensitiveRoleConfirmed(false)
     setPendingAction({ profile, action })
   }
 
@@ -219,19 +316,35 @@ export default function AdminProfilesPage() {
     try {
       setActionLoadingId(profile.id)
       setToast(null)
-      const result = await runProfileAction(profile.id, action)
+      if (action === 'update_role' && !isAdminAssignableRole(selectedRole)) {
+        setToast({ type: 'error', message: 'Sélectionnez un rôle autorisé.' })
+        return
+      }
+
+      if (action === 'update_role' && isSensitiveAdminRole(selectedRole) && !sensitiveRoleConfirmed) {
+        setToast({ type: 'error', message: 'Confirmez explicitement ce rôle sensible.' })
+        return
+      }
+
+      if (
+        action === 'update_role' &&
+        wouldRemoveLastActiveAdmin(profile) &&
+        selectedRole !== 'admin'
+      ) {
+        setToast({ type: 'error', message: 'Le dernier administrateur actif doit conserver son rôle.' })
+        return
+      }
+
+      const result = action === 'update_role'
+        ? await updateProfileRole(profile.id, selectedRole)
+        : await runProfileAction(profile.id, action)
       setPendingAction(null)
       setDeleteConfirmation('')
       setToast({ type: 'success', message: result.warning || getSuccessMessage(action) })
       await loadProfiles({ keepToast: true })
     } catch (error) {
-      setToast({
-        type: 'error',
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Erreur de permission ou action impossible.',
-      })
+      setTechnicalError(error instanceof Error ? error.message : String(error))
+      setToast({ type: 'error', message: getVisibleActionError(action, error) })
     } finally {
       setActionLoadingId(null)
     }
@@ -239,12 +352,12 @@ export default function AdminProfilesPage() {
 
   return (
     <section className="admin-profiles-page bcvb-page">
-      <PageShell>
+      <PageShell variant="wide">
       <PageHeader
         eyebrow="Administration"
         title="Gestion des membres"
-        subtitle="Gérez les accès, statuts et profils utilisateurs. Désactiver coupe l’accès sans supprimer l’historique."
-        action={<button type="button" className="bcvb-premium-button bcvb-premium-button--primary" onClick={() => loadProfiles()} disabled={loading}>Actualiser</button>}
+        subtitle="Recherchez un membre et contrôlez son rôle et son statut."
+        action={<button type="button" className="bcvb-premium-button bcvb-premium-button--ghost" onClick={() => loadProfiles()} disabled={loading}>Actualiser</button>}
       />
 
       <div className="admin-profiles-hero__stats">
@@ -253,64 +366,97 @@ export default function AdminProfilesPage() {
         <StatCard label="Inactifs" value={inactiveCount} />
       </div>
 
-      <div className="bcvb-feature-card">
-        <h3>Repères de sécurité</h3>
-        <p>Désactiver est réversible. Supprimer définitivement est réservé aux comptes créés par erreur et demande une confirmation forte.</p>
-      </div>
-
       <section className="admin-profiles-toolbar" aria-label="Filtres profils">
-        <label>
-          <span>Recherche</span>
-          <input
-            type="search"
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Nom ou email"
-          />
-        </label>
+        <div className="admin-profiles-search">
+          <label htmlFor="admin-member-search">Rechercher un membre</label>
+          <div className="admin-profiles-search__field">
+            <input
+              id="admin-member-search"
+              type="search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Nom ou email"
+            />
+            {searchTerm ? (
+              <button type="button" onClick={() => setSearchTerm('')} aria-label="Effacer la recherche">
+                Effacer
+              </button>
+            ) : null}
+          </div>
+        </div>
 
-        <label>
-          <span>Rôle</span>
-          <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
-            <option value="all">Tous les rôles</option>
-            {availableRoles.map((role) => (
-              <option key={role} value={role}>
-                {getRoleLabel(role)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <details className="admin-profiles-filters">
+          <summary>Filtres{activeFilterCount ? ` (${activeFilterCount})` : ''}</summary>
+          <div className="admin-profiles-filters__content">
+            <label>
+              <span>Rôle</span>
+              <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
+                <option value="all">Tous les rôles</option>
+                {availableRoles.map((role) => (
+                  <option key={role} value={role}>
+                    {getRoleLabel(role)}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-        <label>
-          <span>Statut</span>
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-          >
-            <option value="all">Tous</option>
-            <option value="active">Actifs</option>
-            <option value="inactive">Inactifs</option>
-          </select>
-        </label>
+            <label>
+              <span>Statut</span>
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+              >
+                <option value="all">Tous</option>
+                <option value="active">Actifs</option>
+                <option value="inactive">Inactifs</option>
+              </select>
+            </label>
 
-        <button type="button" onClick={() => loadProfiles()} disabled={loading}>
-          Recharger
-        </button>
+            <label>
+              <span>État du profil</span>
+              <select
+                value={profileStatusFilter}
+                onChange={(event) => setProfileStatusFilter(event.target.value)}
+              >
+                <option value="all">Tous les états</option>
+                {availableProfileStatuses.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </label>
+
+            <button
+              type="button"
+              className="admin-profiles-filters__reset"
+              onClick={resetFilters}
+              disabled={activeFilterCount === 0}
+            >
+              Réinitialiser les filtres
+            </button>
+          </div>
+        </details>
+
+        {!loading && !loadFailed ? (
+          <p className="admin-profiles-results" role="status" aria-live="polite">
+            {filteredProfiles.length} {filteredProfiles.length > 1 ? 'profils affichés' : 'profil affiché'} sur {profiles.length}
+          </p>
+        ) : null}
       </section>
 
       {toast ? (
         toast.type === 'success'
           ? <SuccessFeedback title="Action terminée" description={toast.message} />
-          : <ErrorState description={toast.message} />
+          : <ErrorState description={toast.message} action={<RetryAction onClick={() => loadProfiles()} />} technicalDetail={technicalError} isAdmin />
       ) : null}
 
-      <div className="admin-profiles-tableWrap responsive-data-table">
+      {!loadFailed ? <div className="admin-profiles-tableWrap responsive-data-table">
         <table className="admin-profiles-table">
           <thead>
             <tr>
               <th>Profil</th>
               <th>Rôle</th>
               <th>Statut</th>
+              <th>État du profil</th>
               <th>Création</th>
               <th>Mise à jour</th>
               <th>Actions</th>
@@ -319,13 +465,13 @@ export default function AdminProfilesPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6}><LoadingState title="Chargement des profils" description="La liste des membres est en cours de récupération." /></td>
+                <td colSpan={7}><LoadingState title="Chargement des profils" description="La liste des membres est en cours de récupération." /></td>
               </tr>
             ) : null}
 
             {!loading && filteredProfiles.length === 0 ? (
               <tr>
-                <td colSpan={6}>Aucun profil ne correspond aux filtres.</td>
+                <td colSpan={7}><CommonEmptyState cause={profiles.length === 0 ? 'no_data' : 'no_results'} title="Aucun profil trouvé" /></td>
               </tr>
             ) : null}
 
@@ -354,13 +500,22 @@ export default function AdminProfilesPage() {
                           {active ? 'Actif' : 'Inactif'}
                         </span>
                       </td>
+                      <td>{getProfileStatusLabel(item.profile_status)}</td>
                       <td>{formatDate(item.created_at)}</td>
                       <td>{formatDate(item.updated_at)}</td>
                       <td>
                         <div className="admin-profiles-actions">
+                          <button
+                            type="button"
+                            onClick={() => openAction(item, 'update_role')}
+                            disabled={self || actionDisabled}
+                          >
+                            Gérer le rôle
+                          </button>
                           {active ? (
                             <button
                               type="button"
+                              className="is-warning"
                               onClick={() => openAction(item, 'deactivate')}
                               disabled={self || lastActiveAdmin || actionDisabled}
                               title={
@@ -371,7 +526,7 @@ export default function AdminProfilesPage() {
                                     : undefined
                               }
                             >
-                              Désactiver
+                              Suspendre
                             </button>
                           ) : (
                             <button
@@ -379,7 +534,7 @@ export default function AdminProfilesPage() {
                               onClick={() => openAction(item, 'reactivate')}
                               disabled={actionDisabled}
                             >
-                              Réactiver
+                              {getActivationLabel(item)}
                             </button>
                           )}
 
@@ -409,13 +564,13 @@ export default function AdminProfilesPage() {
               : null}
           </tbody>
         </table>
-      </div>
-      <div className="responsive-data-mobile admin-profiles-mobileList">
+      </div> : null}
+      {!loadFailed ? <div className="responsive-data-mobile admin-profiles-mobileList">
         {loading ? (
-          <EmptyState title="Chargement des profils..." description="La liste des membres est en cours de récupération." />
+          <LoadingState title="Chargement des profils" description="La liste des membres est en cours de récupération." />
         ) : (
           <ResponsiveDataList
-            empty={<EmptyState title="Aucun profil trouvé" description="Aucun profil ne correspond aux filtres actuels." />}
+            empty={<CommonEmptyState cause={profiles.length === 0 ? 'no_data' : 'no_results'} title="Aucun profil trouvé" />}
           >
             {filteredProfiles.map((item) => {
               const active = isActive(item)
@@ -435,13 +590,22 @@ export default function AdminProfilesPage() {
                   items={[
                     { label: 'Création', value: formatDate(item.created_at) },
                     { label: 'Mise à jour', value: formatDate(item.updated_at) },
+                    { label: 'État du profil', value: getProfileStatusLabel(item.profile_status) },
                     { label: 'Sécurité', value: blockedReason || 'Action possible', full: true },
                   ]}
                   actions={(
                     <>
+                      <button
+                        type="button"
+                        onClick={() => openAction(item, 'update_role')}
+                        disabled={self || actionDisabled}
+                      >
+                        Gérer le rôle
+                      </button>
                       {active ? (
                         <button
                           type="button"
+                          className="is-warning"
                           onClick={() => openAction(item, 'deactivate')}
                           disabled={self || lastActiveAdmin || actionDisabled}
                           title={
@@ -452,7 +616,7 @@ export default function AdminProfilesPage() {
                                 : undefined
                           }
                         >
-                          Désactiver
+                          Suspendre
                         </button>
                       ) : (
                         <button
@@ -460,7 +624,7 @@ export default function AdminProfilesPage() {
                           onClick={() => openAction(item, 'reactivate')}
                           disabled={actionDisabled}
                         >
-                          Réactiver
+                          {getActivationLabel(item)}
                         </button>
                       )}
 
@@ -486,7 +650,7 @@ export default function AdminProfilesPage() {
             })}
           </ResponsiveDataList>
         )}
-      </div>
+      </div> : null}
 
       {pendingAction ? (
         <div className="admin-profiles-modalBackdrop" role="presentation">
@@ -505,13 +669,59 @@ export default function AdminProfilesPage() {
             <p>
               Profil concerné : <strong>{getDisplayName(pendingAction.profile)}</strong>
             </p>
+            <p className="admin-profiles-modal__email">
+              {pendingAction.profile.email || 'Email non renseigné'}
+            </p>
 
-            {pendingAction.action === 'delete' ? (
+            {pendingAction.action === 'update_role' ? (
               <>
-                <p>Cette action est irréversible.</p>
+                <label>
+                  <span>Nouveau rôle</span>
+                  <select
+                    value={selectedRole}
+                    onChange={(event) => {
+                      const role = event.target.value
+                      if (isAdminAssignableRole(role)) setSelectedRole(role)
+                      setSensitiveRoleConfirmed(false)
+                    }}
+                  >
+                    {ADMIN_ASSIGNABLE_ROLES.map((role) => (
+                      <option key={role} value={role}>{getRoleLabel(role)}</option>
+                    ))}
+                  </select>
+                </label>
+                {isSensitiveAdminRole(selectedRole) ? (
+                  <label className="admin-profiles-sensitiveConfirmation">
+                    <input
+                      type="checkbox"
+                      checked={sensitiveRoleConfirmed}
+                      onChange={(event) => setSensitiveRoleConfirmed(event.target.checked)}
+                    />
+                    <span>Je confirme l’attribution de ce rôle sensible.</span>
+                  </label>
+                ) : null}
+              </>
+            ) : pendingAction.action === 'delete' ? (
+              <>
+                <div className="admin-profiles-deleteWarning" role="note">
+                  <strong>Suppression exceptionnelle et irréversible</strong>
+                  <p>Le compte Auth et le profil seront supprimés uniquement si aucune donnée métier ne les bloque.</p>
+                </div>
+                {isActive(pendingAction.profile) ? (
+                  <button
+                    type="button"
+                    className="admin-profiles-suspendAlternative"
+                    onClick={() => openAction(pendingAction.profile, 'deactivate')}
+                  >
+                    Suspendre le compte à la place
+                  </button>
+                ) : (
+                  <p>Ce compte est déjà inactif. Vérifiez que sa suppression définitive est indispensable.</p>
+                )}
                 <label>
                   <span>Tape SUPPRIMER pour confirmer</span>
                   <input
+                    aria-label="Confirmation de suppression définitive"
                     value={deleteConfirmation}
                     onChange={(event) => setDeleteConfirmation(event.target.value)}
                     placeholder="SUPPRIMER"
@@ -519,10 +729,9 @@ export default function AdminProfilesPage() {
                 </label>
               </>
             ) : (
-              <p>
-                Cette action changera immédiatement le statut du profil. Elle peut être
-                annulée en réactivant le compte plus tard.
-              </p>
+              <p>{pendingAction.action === 'deactivate'
+                ? 'La suspension coupe immédiatement l’accès sans supprimer le profil. Une réactivation restera possible.'
+                : 'La réactivation rétablit immédiatement l’accès au profil.'}</p>
             )}
 
             <footer>
@@ -535,7 +744,12 @@ export default function AdminProfilesPage() {
                 onClick={confirmAction}
                 disabled={
                   actionLoadingId === pendingAction.profile.id ||
-                  (pendingAction.action === 'delete' && deleteConfirmation !== 'SUPPRIMER')
+                  (pendingAction.action === 'delete' && deleteConfirmation !== 'SUPPRIMER') ||
+                  (pendingAction.action === 'update_role' && (
+                    selectedRole === normalizeRole(pendingAction.profile.role) ||
+                    (isSensitiveAdminRole(selectedRole) && !sensitiveRoleConfirmed) ||
+                    (wouldRemoveLastActiveAdmin(pendingAction.profile) && selectedRole !== 'admin')
+                  ))
                 }
               >
                 {actionLoadingId === pendingAction.profile.id

@@ -1,5 +1,13 @@
 // src/config/roles.ts
 
+export {
+  ADMIN_ASSIGNABLE_ROLES,
+  ADMIN_SENSITIVE_ROLES,
+  isAdminAssignableRole,
+  isSensitiveAdminRole,
+  type AdminAssignableRole,
+} from '../../supabase/functions/_shared/adminProfileRoles'
+
 export type UserRole =
   | 'admin'
   | 'responsable_technique'
@@ -60,6 +68,7 @@ export function isTeamStaff(role?: string | null) {
 }
 
 export function canAccessLibrary(role?: string | null) {
+  if (!role) return false
   return [
     'admin',
     'responsable_technique',

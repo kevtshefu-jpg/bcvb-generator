@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import type { AdminPlatformConfig } from "../../types/admin";
 import { adminPlatformDefaults, loadAdminPlatformConfig, saveAdminPlatformConfig } from "../../lib/admin/adminDefaults";
 import AdminSaveBar from "./AdminSaveBar";
@@ -12,8 +13,11 @@ import ReferentialsPanel from "./ReferentialsPanel";
 import RolePermissionsPanel from "./RolePermissionsPanel";
 import SeasonManagerPanel from "./SeasonManagerPanel";
 import "../../styles/admin-settings.css";
+import { useAuth } from "../../features/auth/context/AuthContext";
+import { MEMBER_MANAGEMENT_PATH, canAccessMemberManagement } from "../../features/admin/memberManagementRoute";
 
 export default function AdminSettingsPage() {
+  const { profile } = useAuth();
   const [config, setConfig] = useState<AdminPlatformConfig>(() => loadAdminPlatformConfig());
   const [activeSection, setActiveSection] = useState<AdminSettingsSection>("roles");
   const [dirty, setDirty] = useState(false);
@@ -125,6 +129,19 @@ export default function AdminSettingsPage() {
           </article>
         </div>
       </section>
+
+      {canAccessMemberManagement(profile?.role) ? (
+        <section className="bcvb-section-card" aria-labelledby="member-management-title">
+          <div>
+            <p className="bcvb-section-card__eyebrow">Accès administrateur</p>
+            <h2 id="member-management-title">Gestion des membres</h2>
+            <p>Rechercher un profil, contrôler son statut et ouvrir les actions de gestion.</p>
+          </div>
+          <Link className="bcvb-premium-button bcvb-premium-button--primary" to={MEMBER_MANAGEMENT_PATH}>
+            Ouvrir la gestion des membres
+          </Link>
+        </section>
+      ) : null}
 
       <section className="admin-settings-layout">
         <AdminSettingsSidebar activeSection={activeSection} onChange={setActiveSection} metrics={metrics} />

@@ -153,6 +153,7 @@
 }
 
 .admin-profile-request-grid label,
+.admin-profile-request-grid > div,
 .admin-profile-request-admin-note {
   display: grid;
   gap: 7px;
@@ -165,6 +166,14 @@
   font-weight: 950;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.admin-profile-request-value {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  overflow-wrap: anywhere;
+  color: #0f172a;
 }
 
 .admin-profile-request-grid input,

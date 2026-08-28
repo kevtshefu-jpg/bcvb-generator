@@ -1,4 +1,5 @@
 import { supabase } from '../../../lib/supabase'
+import type { AdminAssignableRole } from '../../../config/roles'
 
 export type AdminProfileRow = {
   id: string
@@ -11,7 +12,7 @@ export type AdminProfileRow = {
   updated_at?: string | null
 }
 
-export type AdminProfileAction = 'deactivate' | 'reactivate' | 'delete'
+export type AdminProfileAction = 'deactivate' | 'reactivate' | 'delete' | 'update_role'
 
 async function getFunctionErrorMessage(error: unknown) {
   const context = (error as { context?: { json?: () => Promise<unknown>; text?: () => Promise<string> } })?.context
@@ -52,18 +53,24 @@ export async function listProfiles() {
   return (data || []) as AdminProfileRow[]
 }
 
-async function runAdminProfileAction(profileId: string, action: AdminProfileAction) {
+async function runAdminProfileAction(
+  profileId: string,
+  action: AdminProfileAction,
+  role?: AdminAssignableRole,
+) {
   const { data, error } = await supabase.functions.invoke<{
     ok?: boolean
     error?: string
     profileId?: string
     profile_id?: string
     action?: AdminProfileAction
+    role?: AdminAssignableRole
     warning?: string | null
   }>('admin-delete-profile', {
     body: {
       profileId,
       action,
+      ...(role ? { role } : {}),
     },
   })
 
@@ -88,6 +95,10 @@ export function reactivateProfile(profileId: string) {
 
 export function deleteProfile(profileId: string) {
   return runAdminProfileAction(profileId, 'delete')
+}
+
+export function updateProfileRole(profileId: string, role: AdminAssignableRole) {
+  return runAdminProfileAction(profileId, 'update_role', role)
 }
 
 export const fetchAdminProfiles = listProfiles

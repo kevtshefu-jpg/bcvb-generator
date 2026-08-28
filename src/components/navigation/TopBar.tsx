@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../features/auth/context/AuthContext'
 import { formatRole, getRoleHomeLabel } from '../../features/auth/utils/roles'
-import { PRESENTATION_LABELS } from '../../config/presentationMode'
+import { PRESENTATION_LABELS, PRESENTATION_MODE } from '../../config/presentationMode'
+import { isAdmin } from '../../config/roles'
 import CurrentModuleContext from '../../features/ux/components/CurrentModuleContext'
 import { Breadcrumbs } from './Breadcrumbs'
 import { PrimaryNavigation } from './PrimaryNavigation'
+import ExperienceControls from '../../features/ux/components/ExperienceControls'
 
 function getRoleIcon(role?: string | null): string {
   switch (role) {
@@ -72,6 +74,11 @@ export function TopBar() {
         <PrimaryNavigation role={profile?.role} />
 
         <div className="topbar__right" aria-label="Informations utilisateur">
+          {PRESENTATION_MODE && isAdmin(profile?.role) && (
+            <span className="topbar__role bcvb-badge-safe" role="status">
+              Mode présentation
+            </span>
+          )}
           <div className="topbar__identityCard bcvb-card-safe">
             <span className="topbar__identityLabel bcvb-text-safe">
               👤 Session active
@@ -106,6 +113,7 @@ export function TopBar() {
         <Breadcrumbs role={profile?.role} />
         <CurrentModuleContext role={profile?.role} />
       </div>
+      <ExperienceControls />
     </>
   )
 }

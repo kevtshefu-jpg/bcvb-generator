@@ -10,6 +10,7 @@ import type {
   AttendanceTeamStats,
 } from "../../types/attendance";
 import { getAttendanceReliabilityWeight } from "./attendanceScoring";
+import { computeAttendanceCoverage } from "./attendanceMetrics";
 
 function countsFor(records: AttendanceRecord[]) {
   const total = records.length;
@@ -53,13 +54,16 @@ export function computePlayerAttendanceStats(
     const absentUnexcusedCount = playerRecords.filter((record) => record.status === "absent_unexcused").length;
     const lateCount = playerRecords.filter((record) => record.status === "late").length;
     const injuredCount = playerRecords.filter((record) => record.status === "injured").length;
-    const expected = Math.max(1, totalSessions);
-    const attendanceRate = Math.round((presentCount / expected) * 100);
-    const unexcusedAbsenceRate = Math.round((absentUnexcusedCount / expected) * 100);
+    const counts = countsFor(playerRecords);
+    const coverage = computeAttendanceCoverage(counts.total, totalSessions);
+    const attendanceRate = counts.attendanceRate;
+    const unexcusedAbsenceRate = counts.total
+      ? Math.round((absentUnexcusedCount / counts.total) * 100)
+      : 0;
 
     return {
       playerId,
-      totalSessions,
+      totalSessions: counts.total,
       presentCount,
       absentExcusedCount,
       absentUnexcusedCount,
@@ -74,6 +78,7 @@ export function computePlayerAttendanceStats(
           : attendanceRate >= 65
             ? "à surveiller"
             : "alerte",
+      ...coverage,
     };
   }
 
@@ -83,6 +88,7 @@ export function computePlayerAttendanceStats(
   const playerRecords = records.filter((record) => record.playerId === playerId);
   const sessionDates = sessions.map((session) => session.date).sort();
   const counts = countsFor(playerRecords);
+  const coverage = computeAttendanceCoverage(counts.total, sessions.length);
 
   return {
     playerId,
@@ -96,6 +102,7 @@ export function computePlayerAttendanceStats(
     attendanceRate: counts.attendanceRate,
     punctualityRate: counts.punctualityRate,
     reliabilityScore: counts.reliabilityScore,
+    ...coverage,
   };
 }
 
@@ -125,7 +132,9 @@ export function computeTeamAttendanceStats(
     const absentUnexcusedCount = records.filter((record) => record.status === "absent_unexcused").length;
     const lateCount = records.filter((record) => record.status === "late").length;
     const injuredCount = records.filter((record) => record.status === "injured").length;
-    const expected = Math.max(1, playerCount * totalSessions);
+    const expected = playerCount * totalSessions;
+    const counts = countsFor(records);
+    const coverage = computeAttendanceCoverage(counts.total, expected);
 
     return {
       teamId,
@@ -137,9 +146,12 @@ export function computeTeamAttendanceStats(
       absentUnexcusedCount,
       lateCount,
       injuredCount,
-      attendanceRate: Math.round((presentCount / expected) * 100),
-      unexcusedAbsenceRate: Math.round((absentUnexcusedCount / expected) * 100),
+      attendanceRate: counts.attendanceRate,
+      unexcusedAbsenceRate: counts.total
+        ? Math.round((absentUnexcusedCount / counts.total) * 100)
+        : 0,
       alertCount: absentUnexcusedCount,
+      ...coverage,
     };
   }
 
@@ -150,6 +162,7 @@ export function computeTeamAttendanceStats(
   const sessionIds = new Set(teamSessions.map((session) => session.id));
   const teamRecords = records.filter((record) => sessionIds.has(record.sessionId));
   const counts = countsFor(teamRecords);
+  const coverage = computeAttendanceCoverage(counts.total, counts.total);
 
   return {
     teamId,
@@ -163,12 +176,15 @@ export function computeTeamAttendanceStats(
     attendanceRate: counts.attendanceRate,
     punctualityRate: counts.punctualityRate,
     reliabilityScore: counts.reliabilityScore,
+    ...coverage,
   };
 }
 
 export function buildAttendanceAlerts(stats: AttendanceStats): AttendanceAlert[] {
   const alerts: AttendanceAlert[] = [];
   const scope = stats.playerId ? { playerId: stats.playerId } : { teamId: stats.teamId };
+
+  if (stats.recordedCount === 0) return alerts;
 
   if (stats.attendanceRate < 60) {
     alerts.push({
@@ -265,8 +281,12 @@ export function buildAttendanceDashboardData(
   };
 }
 
-export function computeSessionStats(records: AttendanceRecord[]): AttendanceStats {
+export function computeSessionStats(
+  records: AttendanceRecord[],
+  expectedPlayerCount = records.length,
+): AttendanceStats {
   const counts = countsFor(records);
+  const coverage = computeAttendanceCoverage(counts.total, expectedPlayerCount);
   return {
     periodLabel: "Séance courante",
     totalSessions: 1,
@@ -278,5 +298,6 @@ export function computeSessionStats(records: AttendanceRecord[]): AttendanceStat
     attendanceRate: counts.attendanceRate,
     punctualityRate: counts.punctualityRate,
     reliabilityScore: counts.reliabilityScore,
+    ...coverage,
   };
 }

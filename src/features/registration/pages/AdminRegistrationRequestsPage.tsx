@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 
 import { ROLE_LABELS, normalizeRole } from '../../../config/roles'
-import { useAuth } from '../../auth/context/AuthContext'
 import RegistrationDiagnosticsPanel from '../components/RegistrationDiagnosticsPanel'
 import { useRegistrationRequests } from '../hooks/useRegistrationRequests'
 import { EmptyState } from '../../../components/ui/ResponsiveDataView'
@@ -161,9 +160,8 @@ function matchesSearch(item: RegistrationRequestLike, searchTerm: string) {
 }
 
 export default function AdminRegistrationRequestsPage() {
-  const { user } = useAuth()
-  const { requests, loading, error, approve, reject, lastApprovalMessage } =
-    useRegistrationRequests(user?.id)
+  const { requests, loading, error, approve, reject, retryActivation, lastApprovalMessage } =
+    useRegistrationRequests()
 
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending')
@@ -289,9 +287,19 @@ export default function AdminRegistrationRequestsPage() {
     }
   }
 
+  async function handleRetryActivation(item: RegistrationRequestLike) {
+    if (!window.confirm(`Renvoyer un nouveau lien d’activation sécurisé à ${item.email} ?`)) return
+    try {
+      setActionLoadingId(item.id)
+      await retryActivation(item)
+    } finally {
+      setActionLoadingId(null)
+    }
+  }
+
   return (
     <section className="admin-registration-page">
-      <PageShell>
+      <PageShell variant="wide">
       <PageHeader
         eyebrow="Administration"
         title="Demandes d’inscription"
@@ -563,6 +571,15 @@ export default function AdminRegistrationRequestsPage() {
                         Refuser
                       </button>
                     </>
+                  ) : item.status === 'approved' && item.activation_email_status === 'failed' ? (
+                    <button
+                      type="button"
+                      className="admin-registration-card__button admin-registration-card__button--primary"
+                      disabled={isActionLoading}
+                      onClick={() => handleRetryActivation(item)}
+                    >
+                      {isActionLoading ? 'Renvoi en cours…' : 'Renvoyer le lien d’activation'}
+                    </button>
                   ) : (
                     <button
                       type="button"

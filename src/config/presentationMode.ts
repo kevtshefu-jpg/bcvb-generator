@@ -1,4 +1,6 @@
-export const PRESENTATION_MODE = true
+// Activation volontaire uniquement. Une variable absente, vide ou différente de
+// "true" conserve toujours le comportement normal et sécurisé de l'application.
+export const PRESENTATION_MODE = import.meta.env.VITE_ENABLE_PRESENTATION_MODE === 'true'
 
 export const PRESENTATION_LABELS = {
   appTitle: 'BCVB Référentiel',

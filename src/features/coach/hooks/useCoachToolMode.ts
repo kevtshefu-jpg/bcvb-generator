@@ -27,6 +27,16 @@ export function useCoachToolMode() {
     }
   }, [mode])
 
+  useEffect(() => {
+    function handleGlobalMode(event: Event) {
+      const nextMode = (event as CustomEvent<CoachToolMode>).detail
+      if (nextMode === 'novice' || nextMode === 'expert') setModeState(nextMode)
+    }
+
+    window.addEventListener('bcvb:coach-tool-mode', handleGlobalMode)
+    return () => window.removeEventListener('bcvb:coach-tool-mode', handleGlobalMode)
+  }, [])
+
   return {
     mode,
     isNovice: mode === 'novice',

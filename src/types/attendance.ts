@@ -64,6 +64,7 @@ export interface AttendanceRecord {
   parentConfirmed?: boolean;
   coachComment?: string;
   updatedAt: string;
+  version?: number;
 }
 
 export interface AttendancePlayerView {
@@ -96,6 +97,9 @@ export interface AttendanceStats {
   attendanceRate: number;
   punctualityRate: number;
   reliabilityScore: number;
+  recordedCount: number;
+  missingRecords: number;
+  completionRate: number;
 }
 
 export interface AttendanceTeamStats {
@@ -111,6 +115,9 @@ export interface AttendanceTeamStats {
   attendanceRate: number;
   unexcusedAbsenceRate: number;
   alertCount: number;
+  recordedCount: number;
+  missingRecords: number;
+  completionRate: number;
 }
 
 export interface AttendancePlayerStats {
@@ -124,12 +131,16 @@ export interface AttendancePlayerStats {
   attendanceRate: number;
   unexcusedAbsenceRate: number;
   reliabilityLabel: "excellent" | "bon" | "à surveiller" | "alerte";
+  recordedCount: number;
+  missingRecords: number;
+  completionRate: number;
 }
 
 export interface AttendanceQualityScore {
   score: number;
   label: "excellent" | "bon" | "à compléter" | "insuffisant";
-  missingSessions: number;
+  missingRecords: number;
+  completionRate: number;
   missingReasons: number;
   unvalidatedRecords: number;
   recommendedActions: string[];

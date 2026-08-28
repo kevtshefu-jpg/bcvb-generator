@@ -9,6 +9,9 @@ export function AttendanceStatsPanel({ stats, totalPlayers }: { stats: Attendanc
       </div>
       <div className="attendance-stat-grid">
         <span>Total joueurs <strong>{totalPlayers}</strong></span>
+        <span>Relevés <strong>{stats.recordedCount}</strong></span>
+        <span>Non renseignés <strong>{stats.missingRecords}</strong></span>
+        <span>Complétude <strong>{stats.completionRate}%</strong></span>
         <span>Présents <strong>{stats.presentCount}</strong></span>
         <span>Abs. excusées <strong>{stats.absentExcusedCount}</strong></span>
         <span>Abs. non excusées <strong>{stats.absentUnexcusedCount}</strong></span>
@@ -20,4 +23,3 @@ export function AttendanceStatsPanel({ stats, totalPlayers }: { stats: Attendanc
     </aside>
   );
 }
-

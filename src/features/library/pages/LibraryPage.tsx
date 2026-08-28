@@ -113,7 +113,7 @@ export default function LibraryPage() {
 
   const { safeLoading, hasTimedOut } = useSafeLoading(loading, 2500)
 
-  const role = profile?.role ?? 'member'
+  const role = profile?.role
   const isAdminRole = role === 'admin' || role === 'responsable_technique'
   const isCoachRole = role === 'coach' || role === 'responsable_technique'
 
@@ -721,7 +721,7 @@ export default function LibraryPage() {
   )
 
   return (
-    <section className="library-page bcvb-page bcvb-premium-page">
+    <section className="library-page bcvb-page bcvb-premium-page bcvb-page-shell bcvb-page-shell--wide">
       <LibraryMobileExperience
         documents={mobileDocuments}
         isAdmin={isAdminRole}
@@ -801,6 +801,7 @@ export default function LibraryPage() {
               <LibraryEmptyState
                 loading={safeLoading}
                 hasDocuments={visibleDocuments.length > 0}
+                onReset={resetFilters}
               />
             ) : null}
 

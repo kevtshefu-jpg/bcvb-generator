@@ -49,13 +49,13 @@ export function RosterImportPanel({
         <input
           ref={inputRef}
           type="file"
-          accept=".csv,.xlsx,.xls"
+          accept=".csv,.xlsx"
           hidden
           disabled={!canImport}
           onChange={(event) => handleFile(event.target.files?.[0] || null)}
         />
         <strong>{result?.fileName || "Déposer un fichier effectif"}</strong>
-        <p>Formats acceptés : CSV, XLS, XLSX. Aucune donnée n’est enregistrée avant validation autorisée.</p>
+        <p>Formats acceptés : CSV et XLSX (5 Mo maximum, valeurs statiques uniquement). Aucune donnée n’est enregistrée avant validation autorisée.</p>
         <button className="bcvb-button-primary" type="button" disabled={!canImport} onClick={() => inputRef.current?.click()}>
           Choisir un fichier
         </button>

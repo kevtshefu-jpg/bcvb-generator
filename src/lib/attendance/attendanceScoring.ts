@@ -4,6 +4,7 @@ import {
   getAttendanceStatusTone as getStatusTone,
   statusRequiresReason,
 } from "./attendanceUtils";
+import { computeAttendanceCoverage } from "./attendanceMetrics";
 
 export const attendanceStatuses: AttendanceStatus[] = [
   "present",
@@ -13,6 +14,10 @@ export const attendanceStatuses: AttendanceStatus[] = [
   "injured",
   "exempt",
   "observation",
+  "exempted",
+  "club_selection",
+  "external_selection",
+  "other",
 ];
 
 export function requiresAttendanceReason(status: AttendanceStatus): boolean {
@@ -66,7 +71,10 @@ export function computeAttendanceQualityScore(
 ): AttendanceQualityScore {
   const expectedRecords = sessions.length * expectedPlayerCount;
   const currentRecords = records.length;
-  const missingSessions = Math.max(0, expectedRecords - currentRecords);
+  const { missingRecords, completionRate } = computeAttendanceCoverage(
+    currentRecords,
+    expectedRecords,
+  );
   const missingReasons = records.filter(
     (record) => statusRequiresReason(record.status) && !record.reason?.trim()
   ).length;
@@ -74,13 +82,12 @@ export function computeAttendanceQualityScore(
     (record) => record.source === "parent_referent" && !record.validatedByCoach
   ).length;
 
-  let score = 100;
-  score -= Math.min(35, missingSessions * 2);
+  let score = completionRate;
   score -= Math.min(25, missingReasons * 3);
   score -= Math.min(20, unvalidatedRecords * 2);
 
   const recommendedActions: string[] = [];
-  if (missingSessions > 0) recommendedActions.push("Compléter les appels manquants.");
+  if (missingRecords > 0) recommendedActions.push("Compléter les relevés manquants.");
   if (missingReasons > 0) recommendedActions.push("Ajouter les motifs obligatoires pour les absences, retards ou blessures.");
   if (unvalidatedRecords > 0) recommendedActions.push("Valider les présences signalées par les parents référents.");
   if (recommendedActions.length === 0) recommendedActions.push("Suivi des présences exploitable.");
@@ -90,7 +97,8 @@ export function computeAttendanceQualityScore(
   return {
     score: finalScore,
     label: finalScore >= 90 ? "excellent" : finalScore >= 75 ? "bon" : finalScore >= 60 ? "à compléter" : "insuffisant",
-    missingSessions,
+    missingRecords,
+    completionRate,
     missingReasons,
     unvalidatedRecords,
     recommendedActions,

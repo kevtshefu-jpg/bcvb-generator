@@ -249,6 +249,20 @@ export const SITE_CATEGORIES = [
     subModules: ['parent/referent', 'parents-referents/planifications', 'logistique', 'equipe/communication'],
   },
   {
+    id: 'admin-members',
+    label: 'Gestion des membres',
+    shortLabel: 'Membres',
+    group: 'Administration',
+    path: '/admin/membres',
+    color: 'red',
+    roles: ['admin'],
+    adminOnly: true,
+    description: 'Rechercher les profils et gérer leurs accès depuis la page administrative de référence.',
+    purpose: 'Ouvrir directement la gestion fiable des membres.',
+    mainActions: ['Rechercher un membre', 'Contrôler un accès', 'Gérer un statut'],
+    subModules: [],
+  },
+  {
     id: 'admin-settings',
     label: 'Paramètres et administration',
     shortLabel: 'Admin',
@@ -271,6 +285,7 @@ export function normalizeSiteRole(role) {
 }
 
 export function canAccessCategory(category, role) {
+  if (!role || !SITE_ROLES.includes(role)) return false
   if (normalizeSiteRole(role) === 'admin') return true
   return category.roles.includes(normalizeSiteRole(role))
 }
