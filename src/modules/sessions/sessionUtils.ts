@@ -12,6 +12,25 @@ export function getTotalSituationDuration(session: TrainingSessionV2) {
   return session.situations.reduce((sum, situation) => sum + Number(situation.durationMinutes || 0), 0)
 }
 
+export type SessionDurationValidation = {
+  announcedMinutes: number
+  calculatedMinutes: number
+  differenceMinutes: number
+  valid: boolean
+}
+
+export function validateSessionDuration(session: TrainingSessionV2): SessionDurationValidation {
+  const announcedMinutes = Number(session.durationMinutes || 0)
+  const calculatedMinutes = getTotalSituationDuration(session)
+
+  return {
+    announcedMinutes,
+    calculatedMinutes,
+    differenceMinutes: calculatedMinutes - announcedMinutes,
+    valid: announcedMinutes === calculatedMinutes,
+  }
+}
+
 export function reorderSituations(situations: SessionSituation[]) {
   return situations.map((situation, index) => ({ ...situation, order: index + 1 }))
 }
