@@ -1,5 +1,8 @@
 export const sessionVisibilityOptions = [
   'private',
+  'team',
+  'club',
+  'public',
   'public_technicians',
   'club_reference',
   'archived',
@@ -182,7 +185,7 @@ export type BcvbIdentityLinks = {
 
 export type SessionSituation = {
   id: string
-  order: number
+  order?: number
   title: string
   category: string
   subTheme: string
@@ -228,12 +231,12 @@ export type SessionSituation = {
   commonMistakes: string[]
   coachCorrections: string[]
   matchTransfer: string
-  visibility: SessionVisibility
-  status: SessionStatus
+  visibility?: SessionVisibility
+  status?: SessionStatus
   createdBy: string
   ownerId: string
   level: string
-  qualityScore: number
+  qualityScore?: number
   qualityWarnings: string[]
   publishedAt: string
   archivedAt: string
@@ -241,6 +244,9 @@ export type SessionSituation = {
   metrics: SessionMetric[]
   courtFrames: SessionCourtFrame[]
   notes: string
+  version?: number
+  createdAt?: string
+  updatedAt?: string
 }
 
 export type TrainingSessionV2 = {
@@ -261,7 +267,7 @@ export type TrainingSessionV2 = {
   sourceFileName: string
   sourceRawText: string
   sourceExtractedText: string
-  transformedFromSource: boolean
+  transformedFromSource?: boolean
   bcvbAdaptationLevel: BcvbAdaptationLevel
   date: string
   location: string
@@ -299,6 +305,7 @@ export type TrainingSessionV2 = {
     nextSessionLink: string
     groupNotes: string
   }
+  version?: number
 }
 
 export function createId(prefix = 'bcvb') {

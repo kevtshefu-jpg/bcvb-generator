@@ -24,7 +24,8 @@ function currentUserFromProfile(profile: ReturnType<typeof useAuth>['profile']):
   return { id: profile?.id || '', role: profile?.role || 'member' }
 }
 
-function visibilityLabel(visibility: string) {
+function visibilityLabel(visibility?: string) {
+  if (!visibility) return 'Non renseignée'
   if (visibility === 'private') return 'Privée'
   if (visibility === 'public_technicians') return 'Techniciens'
   if (visibility === 'club_reference') return 'Référence BCVB'

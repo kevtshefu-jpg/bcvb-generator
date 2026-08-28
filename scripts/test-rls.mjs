@@ -225,6 +225,8 @@ const {
   sessionB,
   sessionPublishedA,
   sessionArchivedA,
+  sessionRichA,
+  sessionDeletedA,
   situationA,
   situationB,
   situationPublishedA,
@@ -232,6 +234,8 @@ const {
   sessionSituationA,
   sessionTagA,
   situationTagA,
+  richBlockFirst,
+  richBlockSecond,
   attendanceSessionA,
   attendanceSessionB,
   attendanceRecordA,
@@ -305,6 +309,21 @@ for (const [table, ownId, otherId] of [
   await expectHidden(clients.member, table, ownId, `membre: ${table} private invisible`)
   await expectHidden(clients.inactive, table, ownId, `profil inactif: ${table} private invisible`)
   await expectHidden(clients.coachA, table, otherId, `coach propriétaire: ${table} autre équipe invisible`)
+}
+
+{
+  const projection = 'id,title,category,theme,sub_theme,team_id,coach_id,owner_id,visibility,status,duration_minutes,expected_players,quality_score,version,content_json,session_situations(id,order_index,title,duration_minutes,content_json),session_tags(tag)'
+  const { data: richRows, error: richError } = await clients.member.from('sessions').select(projection).eq('id', sessionRichA).is('deleted_at', null).single()
+  check(!richError && richRows?.id === sessionRichA && richRows?.version === 7, 'service read: membre actif lit la séance club riche avec sa version', formatPostgrestError(richError))
+  const orderedBlocks = [...(richRows?.session_situations || [])].sort((a, b) => a.order_index - b.order_index)
+  check(orderedBlocks.map(({ id }) => id).join(',') === [richBlockFirst, richBlockSecond].join(','), 'service read: session_situations restituées dans l’ordre canonique')
+  check(orderedBlocks[0]?.content_json?.courtFrames?.[0]?.id === 'court-server-1' && orderedBlocks[0]?.content_json?.courtFrames?.[0]?.objects?.[0]?.id === 'attack-server-1', 'service read: IDs riches du terrain préservés')
+  const tags = (richRows?.session_tags || []).map(({ tag }) => tag).sort()
+  check(tags.join(',') === ['fixture-read', 'fixture-rich'].join(','), 'service read: tags relationnels restitués sans doublon')
+  const { data: inactiveRich } = await clients.inactive.from('sessions').select('id').eq('id', sessionRichA)
+  check(inactiveRich?.length === 0, 'service read: profil inactif ne lit pas la séance club')
+  const { data: deletedRows, error: deletedError } = await clients.admin.from('sessions').select('id').eq('id', sessionDeletedA).is('deleted_at', null)
+  check(!deletedError && deletedRows?.length === 0, 'service read: soft-deleted exclu par défaut', formatPostgrestError(deletedError))
 }
 
 {

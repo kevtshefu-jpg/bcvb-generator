@@ -42,7 +42,7 @@ export function duplicateSituation(situation: SessionSituation) {
   return createSituation({
     ...copy,
     title: `${situation.title} - copie`,
-    order: situation.order + 1,
+    order: (situation.order ?? 0) + 1,
     courtFrames: courtFrames.map((frame, index) => ({
       ...frame,
       id: '',
