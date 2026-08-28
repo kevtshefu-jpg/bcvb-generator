@@ -76,4 +76,38 @@ describe('sessionWriteService contre Supabase local', () => {
     const directVersion = await clientA.from('sessions').update({ version: 999 }).eq('id', created.id)
     expect(directVersion.error?.code).toBe('42501')
   }, 15_000)
+
+  it('exerce les méthodes explicites du workflow MVP', async () => {
+    const env = envFile(`${process.cwd()}/.env.rls.local`)
+    expect(env.RLS_TEST_ENVIRONMENT).toBe('local')
+    const fixture = JSON.parse(readFileSync(`${process.cwd()}/.rls-test-fixtures.json`, 'utf8')) as {
+      accounts: { coachA: { id: string; email: string; password: string }; admin: { email: string; password: string } }
+      fixtures: { teamA: string }
+    }
+    const signIn = async (account: { email: string; password: string }) => {
+      const client = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
+      expect((await client.auth.signInWithPassword(account)).error).toBeNull()
+      return createSessionWriteService(client)
+    }
+    const coach = await signIn(fixture.accounts.coachA)
+    const admin = await signIn(fixture.accounts.admin)
+    const createTeamDraft = (title: string) => coach.createSessionDraft({
+      teamId: fixture.fixtures.teamA, coachId: fixture.accounts.coachA.id,
+      session: { ...payload(title), visibility: 'team' }, situations: blocks(), tags: ['workflow-service'],
+    })
+
+    const draft = await createTeamDraft('Workflow service publication')
+    const review = await coach.submitSessionForReview({ sessionId: draft.id, expectedVersion: 1 })
+    expect(review).toMatchObject({ status: 'to_review', version: 2 })
+    const published = await admin.publishSession({ sessionId: draft.id, expectedVersion: 2 })
+    expect(published).toMatchObject({ status: 'published', version: 3 })
+    const archived = await admin.archiveSession({ sessionId: draft.id, expectedVersion: 3 })
+    expect(archived).toMatchObject({ status: 'archived', version: 4 })
+
+    const correctionDraft = await createTeamDraft('Workflow service correction')
+    const correctionReview = await coach.submitSessionForReview({ sessionId: correctionDraft.id, expectedVersion: 1 })
+    expect(correctionReview).toMatchObject({ status: 'to_review', version: 2 })
+    const returned = await admin.returnSessionToDraft({ sessionId: correctionDraft.id, expectedVersion: 2 })
+    expect(returned).toMatchObject({ status: 'draft', version: 3 })
+  }, 15_000)
 })
