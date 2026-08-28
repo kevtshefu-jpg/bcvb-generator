@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { mapSessionRowToDomain, mapSituationRowToDomain, type SessionRow, type SessionSituationRow, type SituationRow } from './sessionMapper'
 
 export type SessionReadFilters = { category?: string; theme?: string; status?: string; visibility?: string; teamId?: string }
+export type SessionTeamOption = { id: string; name: string; category: string | null }
 
 export class SessionReadError extends Error {
   constructor(message: string) {
@@ -42,6 +43,11 @@ export function createSessionReadService(client: SupabaseClient) {
       if (error) throw readError('session', error)
       return (data as unknown as SessionResultRow[]).map((row) => mapSessionRowToDomain(row, row.session_situations || [], (row.session_tags || []).map(({ tag }) => tag)))
     },
+    async listSessionTeams() {
+      const { data, error } = await client.from('teams').select('id, name, category').is('archived_at', null).order('name')
+      if (error) throw new SessionReadError('Impossible de charger les équipes accessibles.')
+      return (data || []) as SessionTeamOption[]
+    },
     async getSituationById(id: string) {
       const { data, error } = await client.from('situations').select(situationProjection).eq('id', id).is('deleted_at', null).maybeSingle()
       if (error) throw readError('situation', error)
@@ -65,6 +71,7 @@ export function createSessionReadService(client: SupabaseClient) {
 const sessionReadService = createSessionReadService(supabase)
 export const getSessionById = sessionReadService.getSessionById
 export const listServerSessions = sessionReadService.listSessions
+export const listSessionTeams = sessionReadService.listSessionTeams
 export const getSituationById = sessionReadService.getSituationById
 export const listServerSituations = sessionReadService.listSituations
 

@@ -3,6 +3,8 @@ import { randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
 import { createSessionWriteService, SessionWriteConflictError, type SessionDraftPayload } from './sessionWriteService'
+import { createSession, createSituation } from './sessionModels'
+import { ensurePersistentSituationIds, mapBuilderSessionToWritePayload } from './sessionBuilderServerAdapter'
 
 function envFile(path: string) {
   return Object.fromEntries(readFileSync(path, 'utf8').split(/\r?\n/).flatMap((line) => {
@@ -21,6 +23,40 @@ const blocks = () => [
 ]
 
 describe('sessionWriteService contre Supabase local', () => {
+  it('exerce le payload réel du Builder de la création à la soumission', async () => {
+    const env = envFile(`${process.cwd()}/.env.rls.local`)
+    const fixture = JSON.parse(readFileSync(`${process.cwd()}/.rls-test-fixtures.json`, 'utf8')) as { accounts: { coachA: { id: string; email: string; password: string } }; fixtures: { teamA: string } }
+    const makeClient = async () => {
+      const client = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
+      expect((await client.auth.signInWithPassword(fixture.accounts.coachA)).error).toBeNull()
+      return client
+    }
+    const clientA = await makeClient(); const clientB = await makeClient()
+    const serviceA = createSessionWriteService(clientA); const serviceB = createSessionWriteService(clientB)
+    const builder = ensurePersistentSituationIds(createSession({
+      teamId: fixture.fixtures.teamA, coachId: fixture.accounts.coachA.id, title: 'Builder réel', category: 'U15',
+      theme: 'Passe', subTheme: 'Fixation-passe', durationMinutes: 20, expectedPlayers: 8, qualityScore: 61,
+      objectives: ['Créer un avantage'], equipment: ['Ballons'], tags: ['builder'],
+      situations: [createSituation({ title: 'Bloc Builder', theme: 'Passe', subTheme: 'Fixation-passe', durationMinutes: 20 })],
+    }), randomUUID)
+    const initial = mapBuilderSessionToWritePayload(builder)
+    const created = await serviceA.createSessionDraft({ teamId: builder.teamId, coachId: fixture.accounts.coachA.id, ...initial })
+    expect(created).toMatchObject({ title: 'Builder réel', version: 1, objectives: ['Créer un avantage'], equipment: ['Ballons'] })
+    expect(created.situations[0].id).toBe(builder.situations[0].id)
+    expect(created.situations[0].courtFrames[0].objects.map(({ type }) => type)).toEqual(['offense_player', 'defense_player', 'ball'])
+    expect(created.situations[0].courtFrames[0].arrows[0].type).toBe('arrow_dribble')
+
+    const changed = { ...created, title: 'Builder modifié', situations: created.situations.map((item) => ({ ...item, notes: 'Terrain modifié' })) }
+    const saved = await serviceA.saveSessionDraft({ sessionId: created.id, expectedVersion: 1, ...mapBuilderSessionToWritePayload(changed) })
+    expect(saved).toMatchObject({ title: 'Builder modifié', version: 2 })
+    expect(saved.situations[0].id).toBe(created.situations[0].id)
+    expect(saved.situations[0].notes).toBe('Terrain modifié')
+    await expect(serviceB.saveSessionDraft({ sessionId: created.id, expectedVersion: 1, ...mapBuilderSessionToWritePayload(changed) })).rejects.toBeInstanceOf(SessionWriteConflictError)
+    const submitted = await serviceA.submitSessionForReview({ sessionId: created.id, expectedVersion: 2 })
+    expect(submitted).toMatchObject({ status: 'to_review', version: 3 })
+    await expect(serviceA.saveSessionDraft({ sessionId: created.id, expectedVersion: 3, ...mapBuilderSessionToWritePayload(submitted) })).rejects.toThrow()
+  }, 15_000)
+
   it('crée, sauvegarde, détecte le conflit et garantit le rollback atomique', async () => {
     const env = envFile(`${process.cwd()}/.env.rls.local`)
     expect(env.RLS_TEST_ENVIRONMENT).toBe('local')

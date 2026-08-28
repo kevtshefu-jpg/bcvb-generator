@@ -1,30 +1,27 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../features/auth/context/AuthContext'
 import {
   sessionCategories,
   sessionThemes,
   sessionVisibilityOptions,
-  type SessionVisibility,
   type TrainingSessionV2,
 } from './sessionModels'
 import { analyzeSessionQuality } from './sessionQuality'
 import {
   canAccessSession,
   canDeleteSession,
-  canEditSession,
   deleteSession,
   duplicateSession,
   hardDeleteSession,
   listSessions,
-  publishSession,
   saveSession,
   saveSessionDraft,
-  updateSessionVisibility,
   type SessionUser,
 } from './sessionStorage'
 import { exportSessionToJson, exportSessionToMarkdown, printSessionPdf } from './sessionExport'
 import { transformRawTextToSession } from './sessionTransformer'
+import { listServerSessions } from './sessionService'
 import '../../styles/sessions.css'
 import '../../styles/courts.css'
 
@@ -94,6 +91,20 @@ export default function SessionLibraryPage() {
   const [sessions, setSessions] = useState(() => listSessions())
   const [filters, setFilters] = useState(initialFilters)
   const [message, setMessage] = useState('')
+  const [serverSessions, setServerSessions] = useState<TrainingSessionV2[]>([])
+  const [serverLoading, setServerLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    void listServerSessions().then((items) => {
+      if (active) setServerSessions(items)
+    }).catch(() => {
+      if (active) setMessage('Impossible de charger les séances sauvegardées sur BCVB.')
+    }).finally(() => {
+      if (active) setServerLoading(false)
+    })
+    return () => { active = false }
+  }, [])
 
   const visibleSessions = useMemo(() => sessions
     .filter((session) => canAccessSession(session, currentUser))
@@ -166,18 +177,6 @@ export default function SessionLibraryPage() {
     navigate('/coach/seances')
   }
 
-  function publish(session: TrainingSessionV2) {
-    const updated = publishSession(session.id, currentUser)
-    setMessage(updated?.status === 'to_review' ? 'Séance proposée en publication.' : 'Séance publiée comme référence BCVB.')
-    reload()
-  }
-
-  function updateVisibility(session: TrainingSessionV2, visibility: SessionVisibility) {
-    const updated = updateSessionVisibility(session.id, visibility, currentUser)
-    setMessage(updated ? 'Visibilité mise à jour.' : 'Visibilité non modifiée.')
-    reload()
-  }
-
   function archive(session: TrainingSessionV2) {
     if (!window.confirm('Cette action est définitive. Archiver cette séance ?')) return
     const result = deleteSession(session.id, currentUser)
@@ -236,10 +235,32 @@ export default function SessionLibraryPage() {
 
       {message && <p className="session-warning">{message}</p>}
 
+      <section className="session-card" aria-labelledby="server-session-library-title">
+        <header className="session-section-header">
+          <div>
+            <p className="bcvb-eyebrow">Source officielle</p>
+            <h2 id="server-session-library-title">Séances sauvegardées sur BCVB</h2>
+          </div>
+        </header>
+        {serverLoading ? <p>Chargement depuis BCVB…</p> : serverSessions.length === 0 ? <p>Aucune séance serveur accessible.</p> : (
+          <div className="session-library-grid">
+            {serverSessions.map((serverSession) => (
+              <article className="session-library-card" key={serverSession.id}>
+                <div><span>{serverSession.category}</span><h3>{serverSession.title}</h3></div>
+                <p>{serverSession.theme || 'Thème non renseigné'} · version {serverSession.version}</p>
+                <button type="button" onClick={() => navigate(`/coach/seances?sessionId=${encodeURIComponent(serverSession.id)}`)}>Ouvrir depuis BCVB</button>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <header className="session-section-header">
+        <div><p className="bcvb-eyebrow">Récupération navigateur</p><h2>Brouillons locaux historiques</h2></div>
+      </header>
       <section className="session-library-grid">
         {visibleSessions.map((session) => {
           const report = analyzeSessionQuality(session)
-          const editable = canEditSession(session, currentUser)
           const deletable = canDeleteSession(session, currentUser)
           return (
             <article className="session-library-card" key={session.id}>
@@ -267,13 +288,6 @@ export default function SessionLibraryPage() {
                 <button type="button" onClick={() => exportSessionToJson(session)}>JSON</button>
                 <button type="button" onClick={() => exportSessionToMarkdown(session)}>Markdown</button>
                 <button type="button" onClick={printSessionPdf}>PDF</button>
-                {editable && <button type="button" onClick={() => publish(session)}>Publier</button>}
-                {editable && <button type="button" onClick={() => updateVisibility(session, 'private')}>Rendre privée</button>}
-                {isAdmin && (
-                  <select value={session.visibility} onChange={(event) => updateVisibility(session, event.target.value as SessionVisibility)}>
-                    {sessionVisibilityOptions.map((visibility) => <option key={visibility} value={visibility}>{visibilityLabel(visibility)}</option>)}
-                  </select>
-                )}
                 {deletable && <button type="button" onClick={() => archive(session)}>Supprimer</button>}
                 {isAdmin && <button type="button" onClick={() => hardDelete(session)}>Supprimer définitivement</button>}
               </div>

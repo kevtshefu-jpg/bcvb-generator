@@ -20,6 +20,12 @@ export class SessionWriteConflictError extends Error {
 export class SessionWriteError extends Error {
   constructor(message: string) { super(message); this.name = 'SessionWriteError' }
 }
+export class SessionWriteAccessError extends SessionWriteError {
+  constructor() { super("Vous n'êtes pas autorisé à sauvegarder cette séance."); this.name = 'SessionWriteAccessError' }
+}
+export class SessionWriteValidationError extends SessionWriteError {
+  constructor() { super('Les données de la séance sont invalides ou incomplètes.'); this.name = 'SessionWriteValidationError' }
+}
 export class SessionTransitionError extends Error {
   constructor(message: string) { super(message); this.name = 'SessionTransitionError' }
 }
@@ -29,7 +35,13 @@ export function createSessionWriteService(client: SupabaseClient) {
   const execute = async (name: 'create_session_draft' | 'save_session_draft' | 'submit_session_for_review' | 'publish_session' | 'archive_session' | 'return_session_to_draft', args: Record<string, unknown>, transition = false) => {
     const { data, error } = await client.rpc(name, args)
     if (error?.code === 'PT409') throw new SessionWriteConflictError(error.message)
-    if (error && transition) throw new SessionTransitionError(error.message)
+    if (error && transition) {
+      if (error.code === '42501') throw new SessionTransitionError("Vous n'êtes pas autorisé à effectuer cette transition.")
+      if (error.code === '22023') throw new SessionTransitionError("Cette transition n'est pas autorisée dans l'état actuel de la séance.")
+      throw new SessionTransitionError('La transition serveur de la séance a échoué.')
+    }
+    if (error?.code === '42501') throw new SessionWriteAccessError()
+    if (error?.code === '22023') throw new SessionWriteValidationError()
     if (error) throw new SessionWriteError('La sauvegarde serveur de la séance a échoué.')
     const id = data && typeof data === 'object' && typeof data.id === 'string' ? data.id : null
     if (!id) throw new SessionWriteError("La séance sauvegardée n'a pas été confirmée par le serveur.")

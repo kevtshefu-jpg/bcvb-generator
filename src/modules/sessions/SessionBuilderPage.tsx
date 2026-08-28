@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../features/auth/context/AuthContext'
 import CoachToolModeGuide from '../../features/coach-tools/mode/CoachToolModeGuide'
 import CoachToolModeToggle from '../../features/coach-tools/mode/CoachToolModeToggle'
@@ -28,14 +28,26 @@ import {
   duplicateSession,
   hardDeleteSession,
   loadSessionDraft,
-  publishSession,
   restoreSessionWorkspace,
   saveLastRoute,
-  saveSession,
   saveSessionWorkspace,
   saveSituation,
-  updateSessionVisibility,
 } from './sessionStorage'
+import { getSessionById, listSessionTeams, SessionReadError, type SessionTeamOption } from './sessionService'
+import {
+  createSessionDraft as createServerSessionDraft,
+  saveSessionDraft as saveServerSessionDraft,
+  submitSessionForReview,
+  SessionTransitionError,
+  SessionWriteConflictError,
+  SessionWriteError,
+} from './sessionWriteService'
+import {
+  ensurePersistentSituationIds,
+  mapBuilderSessionToWritePayload,
+  syncStateAfterEdit,
+  type SessionBuilderSyncState,
+} from './sessionBuilderServerAdapter'
 import { exportSessionToJson, exportSessionToMarkdown, printSessionPdf } from './sessionExport'
 import { textToList } from './sessionUtils'
 import { buildSessionUpgradePrompt } from './sessionTransformer'
@@ -90,6 +102,9 @@ function formatSavedTime(value: string | null) {
 
 function getVisibilityLabel(visibility: TrainingSessionV2['visibility']) {
   if (visibility === 'private') return 'Privée'
+  if (visibility === 'team') return 'Équipe'
+  if (visibility === 'club') return 'Club'
+  if (visibility === 'public') return 'Publique'
   if (visibility === 'public_technicians') return 'Techniciens'
   if (visibility === 'club_reference') return 'Référence BCVB'
   return 'Archivée'
@@ -187,6 +202,7 @@ function clearCourtFrameObjects(
 
 export default function SessionBuilderPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { profile } = useAuth()
   const { mode, isExpert, setMode } = useCoachToolMode()
 
@@ -194,10 +210,15 @@ export default function SessionBuilderPage() {
     id: profile?.id || '',
     role: profile?.role || 'member',
   }
-
   const isAdmin = currentUser.role === 'admin'
 
   const [session, setSession] = useState<TrainingSessionV2>(() => buildInitialSession())
+  const requestedServerId = searchParams.get('sessionId')
+  const [serverSessionId, setServerSessionId] = useState<string | null>(null)
+  const [serverVersion, setServerVersion] = useState<number | null>(null)
+  const [syncState, setSyncState] = useState<SessionBuilderSyncState>(requestedServerId ? 'loading' : 'local_only')
+  const [teams, setTeams] = useState<SessionTeamOption[]>([])
+  const mutationLock = useRef(false)
   const [showTemplates, setShowTemplates] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [importMode, setImportMode] = useState<SessionImportMode>('full-session')
@@ -210,6 +231,7 @@ export default function SessionBuilderPage() {
   const [message, setMessage] = useState('')
   const [upgradePrompt, setUpgradePrompt] = useState('')
   const [activeSection, setActiveSection] = useState<SessionSectionId>('session-infos')
+  const readOnly = session.status !== 'draft' || syncState === 'submitted'
 
   const totalSituations = session.situations.length
   const qualityScore = getQualityScore(session)
@@ -238,6 +260,41 @@ export default function SessionBuilderPage() {
 
     return () => window.clearTimeout(timer)
   }, [previewMode, session])
+
+  useEffect(() => {
+    void listSessionTeams().then(setTeams).catch(() => setMessage('Impossible de charger les équipes accessibles.'))
+  }, [])
+
+  useEffect(() => {
+    if (!requestedServerId) return
+    let active = true
+    setSyncState('loading')
+    void getSessionById(requestedServerId).then((loaded) => {
+      if (!active) return
+      setSession(loaded)
+      setServerSessionId(loaded.id)
+      setServerVersion(loaded.version ?? null)
+      setSyncState(loaded.status === 'to_review' ? 'submitted' : 'saved')
+      setLastSavedAt(loaded.updatedAt)
+      autosaveSession(loaded)
+      setMessage('Séance chargée depuis BCVB.')
+    }).catch((error: unknown) => {
+      if (!active) return
+      setSyncState('error')
+      setMessage(error instanceof SessionReadError ? error.message : 'Impossible de charger la séance BCVB.')
+    })
+    return () => { active = false }
+  }, [requestedServerId])
+
+  useEffect(() => {
+    if (syncState !== 'dirty') return
+    const preventUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', preventUnload)
+    return () => window.removeEventListener('beforeunload', preventUnload)
+  }, [syncState])
 
   useEffect(() => {
     const workspace = restoreSessionWorkspace()
@@ -292,6 +349,7 @@ export default function SessionBuilderPage() {
         updatedAt: new Date().toISOString(),
       })
     )
+    setSyncState((current) => syncStateAfterEdit(current))
   }
 
   function newSession() {
@@ -305,20 +363,98 @@ export default function SessionBuilderPage() {
     )
 
     setShowMoreActions(false)
+    setServerSessionId(null)
+    setServerVersion(null)
+    setSearchParams({}, { replace: true })
+    setSyncState('local_only')
     setMessage('Nouvelle séance créée avec terrains corrigés.')
   }
 
-  function saveCurrentSession() {
-    const saved = saveSession({
-      ...session,
-      ownerId: session.ownerId || currentUser.id,
-      createdBy: session.createdBy || currentUser.id,
-      coachName: session.coachName || profile?.full_name || '',
-    })
+  async function saveCurrentSession() {
+    if (mutationLock.current || readOnly) return
+    if (!currentUser.id) {
+      setSyncState('error')
+      setMessage('Authentification requise pour sauvegarder sur BCVB.')
+      return
+    }
+    if (!session.teamId) {
+      setSyncState('error')
+      setMessage('Sélectionnez une équipe accessible avant de sauvegarder sur BCVB.')
+      return
+    }
+    mutationLock.current = true
+    setSyncState('saving')
+    try {
+      const persistable = ensurePersistentSituationIds({
+        ...session,
+        coachId: session.coachId || currentUser.id,
+        ownerId: session.ownerId || currentUser.id,
+        createdBy: session.createdBy || currentUser.id,
+        coachName: session.coachName || profile?.full_name || '',
+      })
+      setSession(persistable)
+      const payload = mapBuilderSessionToWritePayload(persistable)
+      const saved = serverSessionId && serverVersion !== null
+        ? await saveServerSessionDraft({ sessionId: serverSessionId, expectedVersion: serverVersion, ...payload })
+        : await createServerSessionDraft({ teamId: persistable.teamId, coachId: currentUser.id, ...payload })
+      setSession(saved)
+      setServerSessionId(saved.id)
+      setServerVersion(saved.version ?? null)
+      setSearchParams({ sessionId: saved.id }, { replace: true })
+      setSyncState('saved')
+      setLastSavedAt(saved.updatedAt)
+      autosaveSession(saved)
+      setMessage('Séance sauvegardée sur BCVB.')
+    } catch (error: unknown) {
+      if (error instanceof SessionWriteConflictError) {
+        setSyncState('conflict')
+        setMessage('Conflit : une version plus récente existe sur BCVB. Votre travail local est conservé.')
+      } else {
+        setSyncState('error')
+        setMessage(error instanceof SessionWriteError || error instanceof Error ? error.message : 'Erreur de sauvegarde BCVB.')
+      }
+    } finally {
+      mutationLock.current = false
+    }
+  }
 
-    setSession(saved)
-    setLastSavedAt(saved.updatedAt)
-    setMessage('Séance enregistrée dans la bibliothèque.')
+  async function reloadServerSession() {
+    if (!serverSessionId || mutationLock.current) return
+    if (!window.confirm('Recharger la version serveur et remplacer vos modifications locales ?')) return
+    mutationLock.current = true
+    setSyncState('loading')
+    try {
+      const loaded = await getSessionById(serverSessionId)
+      setSession(loaded)
+      setServerVersion(loaded.version ?? null)
+      setSyncState(loaded.status === 'to_review' ? 'submitted' : 'saved')
+      autosaveSession(loaded)
+      setMessage('Version serveur rechargée.')
+    } catch (error: unknown) {
+      setSyncState('error')
+      setMessage(error instanceof SessionReadError ? error.message : 'Impossible de recharger la version serveur.')
+    } finally {
+      mutationLock.current = false
+    }
+  }
+
+  async function submitCurrentSession() {
+    if (mutationLock.current || !serverSessionId || serverVersion === null || syncState !== 'saved' || session.status !== 'draft') return
+    mutationLock.current = true
+    setSyncState('saving')
+    try {
+      const submitted = await submitSessionForReview({ sessionId: serverSessionId, expectedVersion: serverVersion })
+      setSession(submitted)
+      setServerVersion(submitted.version ?? null)
+      setSyncState('submitted')
+      autosaveSession(submitted)
+      setMessage('Séance soumise pour publication.')
+    } catch (error: unknown) {
+      setSyncState(error instanceof SessionWriteConflictError ? 'conflict' : 'error')
+      setMessage(error instanceof SessionTransitionError || error instanceof Error ? error.message : 'La soumission a échoué.')
+    } finally {
+      mutationLock.current = false
+    }
   }
 
   function duplicateCurrentSession() {
@@ -486,40 +622,6 @@ export default function SessionBuilderPage() {
     })
 
     setMessage('Situation importée, ajoutée à la séance et sauvegardée en bibliothèque.')
-  }
-
-  function publishCurrentSession() {
-    const saved = saveSession(session)
-    const published = publishSession(saved.id, currentUser)
-
-    const nextStatus: TrainingSessionV2['status'] = isAdmin ? 'published' : 'to_review'
-    const nextVisibility: TrainingSessionV2['visibility'] = isAdmin
-      ? 'club_reference'
-      : 'public_technicians'
-
-    const next =
-      published ||
-      ({
-        ...saved,
-        status: nextStatus,
-        visibility: nextVisibility,
-      } as TrainingSessionV2)
-
-    updateSession(next)
-
-    setMessage(
-      isAdmin
-        ? 'Séance publiée dans la bibliothèque commune.'
-        : 'Séance proposée en publication.'
-    )
-  }
-
-  function makePrivate() {
-    const saved = saveSession(session)
-    const updated = updateSessionVisibility(saved.id, 'private', currentUser)
-
-    updateSession(updated || { ...saved, visibility: 'private' })
-    setMessage('Séance rendue privée.')
   }
 
   function removeCurrentSession(hard = false) {
@@ -714,31 +816,12 @@ export default function SessionBuilderPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    saveCurrentSession()
+                    void saveCurrentSession()
                     setShowMoreActions(false)
                   }}
+                  disabled={syncState === 'saving' || readOnly}
                 >
-                  Enregistrer
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    publishCurrentSession()
-                    setShowMoreActions(false)
-                  }}
-                >
-                  Publier dans la bibliothèque
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    makePrivate()
-                    setShowMoreActions(false)
-                  }}
-                >
-                  Rendre privée
+                  Sauvegarder sur BCVB
                 </button>
               </div>
 
@@ -845,11 +928,38 @@ export default function SessionBuilderPage() {
         </>
       )}
 
-      {showClassification && (
+      {showClassification && !readOnly && (
         <SessionClassificationPanel session={session} onChange={updateSession} isAdmin={isAdmin} />
       )}
 
       {message && <p className="session-warning">{message}</p>}
+
+      <section className={`session-sync-state session-sync-state--${syncState}`} aria-live="polite">
+        <strong>{({
+          local_only: 'Non sauvegardé sur BCVB', dirty: 'Modifications non sauvegardées', saving: 'Sauvegarde en cours…',
+          saved: 'Sauvegardé sur BCVB', conflict: 'Conflit — rechargez la version serveur', error: 'Erreur de sauvegarde',
+          submitted: 'Soumise pour publication', loading: 'Chargement depuis BCVB…',
+        } satisfies Record<SessionBuilderSyncState, string>)[syncState]}</strong>
+        {serverVersion !== null && <span>Version {serverVersion}</span>}
+        {syncState === 'conflict' && <button type="button" onClick={() => void reloadServerSession()}>Recharger la version serveur</button>}
+      </section>
+
+      {!serverSessionId && (
+        <label className="session-server-team">
+          <span>Équipe de la séance BCVB</span>
+          <select
+            value={session.teamId}
+            disabled={syncState === 'saving'}
+            onChange={(event) => {
+              const team = teams.find(({ id }) => id === event.target.value)
+              updateSession({ ...session, teamId: event.target.value, teamLabel: team?.name || session.teamLabel })
+            }}
+          >
+            <option value="">Sélectionner une équipe accessible</option>
+            {teams.map((team) => <option key={team.id} value={team.id}>{team.name}{team.category ? ` — ${team.category}` : ''}</option>)}
+          </select>
+        </label>
+      )}
 
       <div className="session-status-strip">
         <span className={`session-visibility session-visibility--${session.visibility}`}>
@@ -926,6 +1036,7 @@ export default function SessionBuilderPage() {
         </button>
       </nav>
 
+      <fieldset className="session-builder-editor" disabled={readOnly || syncState === 'loading'}>
       <div className="session-layout session-workspace session-editor-layout session-editor-layout--bottom-dock">
         <section className="session-main session-workspace__main session-editor-main">
           <section id="session-infos" className="session-anchor-block">
@@ -1213,6 +1324,7 @@ export default function SessionBuilderPage() {
           </section>
         </section>
       </div>
+      </fieldset>
 
       <aside
         className="session-fixed-dock"
@@ -1233,7 +1345,15 @@ export default function SessionBuilderPage() {
               <span className="session-dock-card__label">
                 {restored ? 'Brouillon restauré' : 'Sauvegarde'}
               </span>
-              <strong>{formatSavedTime(lastSavedAt)}</strong>
+              <strong>{syncState === 'saved' || syncState === 'submitted' ? formatSavedTime(lastSavedAt) : 'Brouillon navigateur'}</strong>
+              <div className="session-dock-actions">
+                <button type="button" onClick={() => void saveCurrentSession()} disabled={syncState === 'saving' || syncState === 'loading' || readOnly}>
+                  {syncState === 'saving' ? 'Sauvegarde…' : 'Sauvegarder sur BCVB'}
+                </button>
+                <button type="button" onClick={() => void submitCurrentSession()} disabled={syncState !== 'saved' || session.status !== 'draft'}>
+                  Soumettre
+                </button>
+              </div>
             </article>
 
             <article className="session-dock-card">

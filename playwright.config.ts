@@ -33,7 +33,7 @@ export default defineConfig({
     },
     {
       name: 'attendance-authenticated',
-      testMatch: /attendance-responsive\.spec\.ts/,
+      testMatch: /(attendance-responsive|session-builder-server)\.spec\.ts/,
       dependencies: ['attendance-auth-setup'],
       use: {
         ...devices['Desktop Chrome'],
