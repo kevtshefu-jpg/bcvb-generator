@@ -15,7 +15,7 @@ if (fixtureState.target?.projectRef !== projectRef) {
   throw new Error(`Fixtures créées pour ${fixtureState.target?.projectRef || 'une cible inconnue'}, cible actuelle ${projectRef}. Relancer seed:rls.`)
 }
 
-const accountNames = ['admin', 'technicalManager', 'coachA', 'coachB', 'teamStaff', 'parentReferent', 'dirigeant', 'member', 'inactive']
+const accountNames = ['admin', 'technicalManager', 'coachA', 'coachSameTeam', 'coachB', 'teamStaff', 'parentReferent', 'dirigeant', 'member', 'inactive']
 const missingAccounts = accountNames.filter((name) => !fixtureState.accounts?.[name]?.email || !fixtureState.accounts?.[name]?.password)
 if (missingAccounts.length) throw new Error(`Comptes absents du seed : ${missingAccounts.join(', ')}`)
 
@@ -62,11 +62,15 @@ const clients = Object.fromEntries(await Promise.all(
     await authenticatedClient(email, password),
   ]),
 ))
+const anonClient = createClient(url, anonKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+})
 
 for (const [name, expectedRole] of [
   ['admin', 'admin'],
   ['technicalManager', 'responsable_technique'],
   ['coachA', 'coach'],
+  ['coachSameTeam', 'coach'],
   ['coachB', 'coach'],
   ['teamStaff', 'team_staff'],
   ['parentReferent', 'parent_referent'],
@@ -219,8 +223,15 @@ const {
   contactB,
   sessionA,
   sessionB,
+  sessionPublishedA,
+  sessionArchivedA,
   situationA,
   situationB,
+  situationPublishedA,
+  situationArchivedA,
+  sessionSituationA,
+  sessionTagA,
+  situationTagA,
   attendanceSessionA,
   attendanceSessionB,
   attendanceRecordA,
@@ -232,6 +243,7 @@ for (const [name, expectedA, expectedB] of [
   ['technicalManager', true, true],
   ['dirigeant', true, true],
   ['coachA', true, false],
+  ['coachSameTeam', true, false],
   ['coachB', false, true],
   ['member', false, false],
   ['inactive', false, false],
@@ -265,8 +277,6 @@ await expectHidden(clients.inactive, 'teams', teamA, 'profil inactif: équipe in
 for (const [table, ownId, otherId] of [
   ['players', playerA, playerB],
   ['player_contacts', contactA, contactB],
-  ['sessions', sessionA, sessionB],
-  ['situations', situationA, situationB],
 ]) {
   await expectVisible(clients.coachA, table, ownId, `coach A: ${table} de son équipe visible`)
   await expectHidden(clients.coachA, table, otherId, `coach A: ${table} de l’équipe B invisible`)
@@ -278,6 +288,225 @@ for (const [table, ownId, otherId] of [
   await expectVisible(clients.admin, table, otherId, `admin: ${table} de l’équipe B visible`)
   await expectHidden(clients.member, table, ownId, `membre: ${table} sensible invisible`)
   await expectHidden(clients.inactive, table, ownId, `profil inactif: ${table} sensible invisible`)
+}
+
+for (const [table, ownId, otherId] of [
+  ['sessions', sessionA, sessionB],
+  ['situations', situationA, situationB],
+]) {
+  await expectVisible(clients.admin, table, ownId, `admin: ${table} private visible`)
+  await expectVisible(clients.technicalManager, table, ownId, `responsable technique: ${table} private visible`)
+  await expectVisible(clients.coachA, table, ownId, `coach propriétaire: ${table} private visible`)
+  await expectHidden(clients.coachSameTeam, table, ownId, `coach même équipe non propriétaire: ${table} private invisible`)
+  await expectHidden(clients.coachB, table, ownId, `coach hors équipe: ${table} private invisible`)
+  await expectHidden(clients.dirigeant, table, ownId, `dirigeant: ${table} private invisible`)
+  await expectHidden(clients.teamStaff, table, ownId, `staff équipe: ${table} private invisible`)
+  await expectHidden(clients.parentReferent, table, ownId, `parent référent: ${table} private invisible`)
+  await expectHidden(clients.member, table, ownId, `membre: ${table} private invisible`)
+  await expectHidden(clients.inactive, table, ownId, `profil inactif: ${table} private invisible`)
+  await expectHidden(clients.coachA, table, otherId, `coach propriétaire: ${table} autre équipe invisible`)
+}
+
+{
+  const publicSessionId = crypto.randomUUID()
+  const publicSituationId = crypto.randomUUID()
+  const { error: publicSessionError } = await clients.admin.from('sessions').insert({
+    id: publicSessionId,
+    title: 'Séance publique canonique RLS',
+    visibility: 'public',
+    status: 'published',
+  })
+  const { error: publicSituationError } = await clients.admin.from('situations').insert({
+    id: publicSituationId,
+    title: 'Situation publique canonique RLS',
+    visibility: 'public',
+    status: 'published',
+  })
+  check(!publicSessionError && !publicSituationError, 'fixtures public canoniques créées', formatPostgrestError(publicSessionError || publicSituationError))
+
+  await expectVisible(clients.member, 'sessions', sessionPublishedA, 'membre actif du club: session club visible')
+  await expectVisible(clients.member, 'situations', situationPublishedA, 'membre actif du club: situation club visible')
+  await expectHidden(clients.inactive, 'sessions', sessionPublishedA, 'profil inactif: session club invisible')
+  await expectHidden(clients.inactive, 'situations', situationPublishedA, 'profil inactif: situation club invisible')
+  await expectHidden(clients.member, 'sessions', sessionA, 'membre actif du club: session private invisible')
+  await expectHidden(clients.member, 'situations', situationA, 'membre actif du club: situation private invisible')
+  await expectVisible(clients.member, 'sessions', publicSessionId, 'utilisateur authentifié actif: session public visible')
+  await expectVisible(clients.member, 'situations', publicSituationId, 'utilisateur authentifié actif: situation public visible')
+
+  for (const [table, id] of [['sessions', publicSessionId], ['situations', publicSituationId]]) {
+    const { data, error } = await anonClient.from(table).select('id').eq('id', id)
+    check(Boolean(error) && !data, `anon: ${table} public reste inaccessible en GO-03D.2`, formatPostgrestError(error))
+  }
+
+  await clients.admin.from('sessions').delete().eq('id', publicSessionId)
+  await clients.admin.from('situations').delete().eq('id', publicSituationId)
+}
+
+{
+  const ownSessionId = crypto.randomUUID()
+  const ownSituationId = crypto.randomUUID()
+  const adminDeleteId = crypto.randomUUID()
+  const managerDeleteId = crypto.randomUUID()
+  const adminSituationDeleteId = crypto.randomUUID()
+  const managerSituationDeleteId = crypto.randomUUID()
+
+  const { error: ownSessionError } = await clients.coachA.from('sessions').insert({
+    id: ownSessionId,
+    title: 'Draft propriétaire autorisé',
+    team_id: teamA,
+    coach_id: fixtureState.accounts.coachA.id,
+    owner_id: fixtureState.accounts.coachA.id,
+    visibility: 'private',
+    status: 'draft',
+  })
+  check(!ownSessionError, 'coach propriétaire: création draft session autorisée', formatPostgrestError(ownSessionError))
+  const { data: ownSession } = await clients.coachA.from('sessions').select('id, version, updated_at').eq('id', ownSessionId).single()
+
+  const { error: ownSituationError } = await clients.coachA.from('situations').insert({
+    id: ownSituationId,
+    title: 'Draft situation propriétaire autorisé',
+    team_id: teamA,
+    owner_id: fixtureState.accounts.coachA.id,
+    created_by: fixtureState.accounts.coachA.id,
+    visibility: 'private',
+    status: 'draft',
+  })
+  check(!ownSituationError, 'coach propriétaire: création draft situation autorisée', formatPostgrestError(ownSituationError))
+  const { data: ownSituation } = await clients.coachA.from('situations').select('id, version, updated_at').eq('id', ownSituationId).single()
+
+  const { data: ownerUpdate, error: ownerUpdateError } = await clients.coachA
+    .from('sessions').update({ title: 'Draft propriétaire modifié', updated_at: '2000-01-01T00:00:00.000Z' }).eq('id', ownSessionId).select('id, version, updated_at')
+  check(!ownerUpdateError && ownerUpdate?.length === 1, 'coach propriétaire: modification de son draft autorisée', formatPostgrestError(ownerUpdateError))
+  check(ownerUpdate?.[0]?.version === 1 && ownSession?.version === 1, 'session: version préparée sans incrément implicite')
+  check(ownerUpdate?.[0]?.updated_at !== '2000-01-01T00:00:00.000Z' && ownerUpdate?.[0]?.updated_at !== ownSession?.updated_at, 'session: updated_at imposé par le serveur')
+
+  const { data: ownerSituationUpdate, error: ownerSituationUpdateError } = await clients.coachA
+    .from('situations').update({ title: 'Draft situation modifié', updated_at: '2000-01-01T00:00:00.000Z' }).eq('id', ownSituationId).select('id, version, updated_at')
+  check(!ownerSituationUpdateError && ownerSituationUpdate?.length === 1, 'coach propriétaire: modification de sa situation draft autorisée', formatPostgrestError(ownerSituationUpdateError))
+  check(ownerSituationUpdate?.[0]?.version === 1 && ownSituation?.version === 1, 'situation: version préparée sans incrément implicite')
+  check(ownerSituationUpdate?.[0]?.updated_at !== '2000-01-01T00:00:00.000Z', 'situation: updated_at imposé par le serveur')
+
+  const { data: sameTeamUpdate } = await clients.coachSameTeam
+    .from('sessions').update({ title: 'Prise de contrôle refusée' }).eq('id', sessionA).select('id')
+  check(sameTeamUpdate?.length === 0, 'coach même équipe: modification session autre coach refusée')
+
+  const { data: ownershipTakeover } = await clients.coachSameTeam
+    .from('sessions')
+    .update({ owner_id: fixtureState.accounts.coachSameTeam.id, coach_id: fixtureState.accounts.coachSameTeam.id })
+    .eq('id', sessionA).select('id')
+  check(ownershipTakeover?.length === 0, 'coach même équipe: prise owner_id/coach_id refusée')
+
+  const { data: situationTakeover } = await clients.coachSameTeam
+    .from('situations')
+    .update({ owner_id: fixtureState.accounts.coachSameTeam.id, created_by: fixtureState.accounts.coachSameTeam.id })
+    .eq('id', situationA).select('id')
+  check(situationTakeover?.length === 0, 'coach même équipe: prise owner_id/created_by situation refusée')
+
+  const { error: childWriteError } = await clients.coachSameTeam.from('session_situations').insert({
+    session_id: sessionA,
+    order_index: 2,
+    title: 'Bloc interdit',
+  })
+  check(childWriteError?.code === '42501', 'coach même équipe: écriture enfant session refusée', formatPostgrestError(childWriteError))
+
+  await expectHidden(clients.coachSameTeam, 'session_situations', sessionSituationA, 'coach même équipe: enfant session privée invisible')
+  await expectHidden(clients.coachSameTeam, 'session_tags', sessionTagA, 'coach même équipe: tag session privée invisible')
+  await expectHidden(clients.coachSameTeam, 'situation_tags', situationTagA, 'coach même équipe: tag situation privée invisible')
+
+  const fileId = crypto.randomUUID()
+  const importId = crypto.randomUUID()
+  const logId = crypto.randomUUID()
+  const { error: ownerChildrenError } = await clients.coachA.from('session_files').insert({
+    id: fileId, session_id: ownSessionId, file_name: 'fixture.txt', file_type: 'text/plain',
+  })
+  const { error: ownerImportError } = await clients.coachA.from('session_imports').insert({
+    id: importId, session_id: ownSessionId, situation_id: ownSituationId, created_by: fixtureState.accounts.coachA.id,
+  })
+  const { error: ownerLogError } = await clients.coachA.from('session_visibility_logs').insert({
+    id: logId, session_id: ownSessionId, action: 'fixture', user_id: fixtureState.accounts.coachA.id,
+  })
+  check(!ownerChildrenError && !ownerImportError && !ownerLogError, 'coach propriétaire: enfants de draft autorisés')
+  await expectHidden(clients.coachSameTeam, 'session_files', fileId, 'coach même équipe: fichier session privée invisible')
+  await expectHidden(clients.coachSameTeam, 'session_imports', importId, 'coach même équipe: import privé invisible')
+  await expectHidden(clients.coachSameTeam, 'session_visibility_logs', logId, 'coach même équipe: log session privée invisible')
+  const { error: foreignFileError } = await clients.coachSameTeam.from('session_files').insert({
+    session_id: sessionA, file_name: 'interdit.txt', file_type: 'text/plain',
+  })
+  check(foreignFileError?.code === '42501', 'coach même équipe: écriture fichier autre coach refusée', formatPostgrestError(foreignFileError))
+
+  const { data: publishedUpdate } = await clients.coachA
+    .from('sessions').update({ title: 'Publication altérée' }).eq('id', sessionPublishedA).select('id')
+  check(publishedUpdate?.length === 0, 'coach propriétaire: session published protégée')
+  const { data: archivedUpdate } = await clients.coachA
+    .from('sessions').update({ title: 'Archive altérée' }).eq('id', sessionArchivedA).select('id')
+  check(archivedUpdate?.length === 0, 'coach propriétaire: session archived protégée')
+  const { data: publishedSituationUpdate } = await clients.coachA
+    .from('situations').update({ title: 'Publication altérée' }).eq('id', situationPublishedA).select('id')
+  check(publishedSituationUpdate?.length === 0, 'coach propriétaire: situation published protégée')
+  const { data: archivedSituationUpdate } = await clients.coachA
+    .from('situations').update({ title: 'Archive altérée' }).eq('id', situationArchivedA).select('id')
+  check(archivedSituationUpdate?.length === 0, 'coach propriétaire: situation archived protégée')
+
+  const { data: coachDelete } = await clients.coachA.from('sessions').delete().eq('id', ownSessionId).select('id')
+  check(coachDelete?.length === 0, 'coach propriétaire: hard delete session refusé')
+  const { data: coachSituationDelete } = await clients.coachA.from('situations').delete().eq('id', ownSituationId).select('id')
+  check(coachSituationDelete?.length === 0, 'coach propriétaire: hard delete situation refusé')
+
+  const { error: invalidVisibilityError } = await clients.admin.from('sessions').insert({
+    id: crypto.randomUUID(), title: 'Visibilité invalide', visibility: 'club_reference', status: 'draft',
+  })
+  check(invalidVisibilityError?.code === '23514', 'sessions: visibilité non canonique rejetée', formatPostgrestError(invalidVisibilityError))
+  const { error: invalidStatusError } = await clients.admin.from('situations').insert({
+    id: crypto.randomUUID(), title: 'Statut invalide', visibility: 'private', status: 'ready-court',
+  })
+  check(invalidStatusError?.code === '23514', 'situations: statut non canonique rejeté', formatPostgrestError(invalidStatusError))
+
+  const { error: duplicateOrderError } = await clients.coachA.from('session_situations').insert({
+    session_id: sessionA, order_index: 1, title: 'Ordre dupliqué',
+  })
+  check(duplicateOrderError?.code === '23505', 'session_situations: doublon order_index rejeté', formatPostgrestError(duplicateOrderError))
+  const { error: duplicateSessionTagError } = await clients.coachA.from('session_tags').insert({
+    session_id: sessionA, tag: 'rls-session-a',
+  })
+  check(duplicateSessionTagError?.code === '23505', 'session_tags: doublon tag rejeté', formatPostgrestError(duplicateSessionTagError))
+  const { error: duplicateSituationTagError } = await clients.coachA.from('situation_tags').insert({
+    situation_id: situationA, tag: 'rls-situation-a',
+  })
+  check(duplicateSituationTagError?.code === '23505', 'situation_tags: doublon tag rejeté', formatPostgrestError(duplicateSituationTagError))
+
+  await clients.admin.from('sessions').insert([
+    { id: adminDeleteId, title: 'Suppression admin', visibility: 'private', status: 'draft' },
+    { id: managerDeleteId, title: 'Suppression RT', visibility: 'private', status: 'draft' },
+  ])
+  const { data: adminDeleted } = await clients.admin.from('sessions').delete().eq('id', adminDeleteId).select('id')
+  check(adminDeleted?.length === 1, 'admin: hard delete session autorisé')
+  const { data: managerDeleted } = await clients.technicalManager.from('sessions').delete().eq('id', managerDeleteId).select('id')
+  check(managerDeleted?.length === 1, 'responsable technique: hard delete session autorisé')
+
+  await clients.admin.from('situations').insert([
+    { id: adminSituationDeleteId, title: 'Suppression situation admin', visibility: 'private', status: 'draft' },
+    { id: managerSituationDeleteId, title: 'Suppression situation RT', visibility: 'private', status: 'draft' },
+  ])
+  const { data: adminSituationDeleted } = await clients.admin.from('situations').delete().eq('id', adminSituationDeleteId).select('id')
+  check(adminSituationDeleted?.length === 1, 'admin: hard delete situation autorisé')
+  const { data: managerSituationDeleted } = await clients.technicalManager.from('situations').delete().eq('id', managerSituationDeleteId).select('id')
+  check(managerSituationDeleted?.length === 1, 'responsable technique: hard delete situation autorisé')
+
+  await clients.admin.from('sessions').delete().eq('id', ownSessionId)
+  await clients.admin.from('situations').delete().eq('id', ownSituationId)
+
+  const { data: sameTeamAssignment } = await clients.admin
+    .from('team_staff_assignments')
+    .select('id')
+    .eq('team_id', teamA)
+    .eq('profile_id', fixtureState.accounts.coachSameTeam.id)
+    .eq('assignment_role', 'assistant_coach')
+    .eq('is_active', true)
+    .single()
+  const { error: sameTeamCleanupError } = await clients.admin.rpc('remove_team_staff', {
+    target_assignment_id: sameTeamAssignment?.id,
+  })
+  check(!sameTeamCleanupError, 'fixture coach même équipe retirée avant les scénarios staff historiques', formatPostgrestError(sameTeamCleanupError))
 }
 
 await expectVisible(clients.admin, 'attendance_sessions', attendanceSessionA, 'admin: séance Team A visible')
