@@ -15,9 +15,10 @@
     "test:react": "vitest run src",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
+    "pretest:rls": "npm run seed:rls",
     "test:rls": "node scripts/test-rls.mjs",
     "test:edge": "node scripts/test-edge-functions.mjs",
-    "test:integration": "npm run test:preprod:check && npm run seed:rls && npm run test:rls && npm run test:edge && node scripts/test-integration.mjs",
+    "test:integration": "npm run test:preprod:check && npm run test:rls && npm run test:edge && node scripts/test-integration.mjs",
     "test:all:local": "npm run test && npm run test:e2e"
   },
   "dependencies": {
