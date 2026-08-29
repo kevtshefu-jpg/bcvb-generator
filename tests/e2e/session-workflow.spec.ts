@@ -32,6 +32,12 @@ async function acceptNextConfirmation(page: Page) {
   page.once('dialog', (dialog) => dialog.accept())
 }
 
+async function reloadSession(page: Page, sessionId: string) {
+  const target = `/coach/seances?sessionId=${sessionId}`
+  if (new URL(page.url()).pathname + new URL(page.url()).search === target) await page.reload()
+  else await page.goto(target)
+}
+
 test('workflow pilote multi-rôles, publication et responsive', async ({ browser }) => {
   test.setTimeout(150_000)
   const coachContext: BrowserContext = await browser.newContext({ storageState: coachAuth })
@@ -47,7 +53,7 @@ test('workflow pilote multi-rôles, publication et responsive', async ({ browser
 
   let card = await reviewCard(reviewer, teamTitle)
   await expect(card.getByRole('button', { name: 'Publier' })).toBeDisabled()
-  for (const width of [390, 1440]) {
+  for (const width of [320, 390, 768, 1440]) {
     await reviewer.setViewportSize({ width, height: 900 })
     const dimensions = await reviewer.evaluate(() => ({
       clientWidth: document.documentElement.clientWidth,
@@ -65,7 +71,7 @@ test('workflow pilote multi-rôles, publication et responsive', async ({ browser
   await card.getByRole('button', { name: 'Renvoyer en correction' }).click()
   await expect(reviewer.getByText('Séance renvoyée en correction.')).toBeVisible({ timeout: 20_000 })
 
-  await coach.goto(`/coach/seances?sessionId=${teamId}`)
+  await reloadSession(coach, teamId)
   await expect(coach.getByText('Brouillon', { exact: true })).toBeVisible({ timeout: 20_000 })
   await expect(coach.getByLabel('Titre séance')).toBeEnabled()
   await coach.getByRole('button', { name: 'Soumettre', exact: true }).click()
@@ -77,7 +83,7 @@ test('workflow pilote multi-rôles, publication et responsive', async ({ browser
   await card.getByRole('button', { name: 'Publier' }).click()
   await expect(reviewer.getByText("Séance publiée pour l'équipe.")).toBeVisible({ timeout: 20_000 })
 
-  await coach.goto(`/coach/seances?sessionId=${teamId}`)
+  await reloadSession(coach, teamId)
   await expect(coach.getByText('Publiée', { exact: true })).toBeVisible({ timeout: 20_000 })
   await expect(coach.getByText('Diffusion : Équipe', { exact: true })).toBeVisible()
   await expect(coach.getByLabel('Titre séance')).toBeDisabled()
@@ -97,7 +103,7 @@ test('workflow pilote multi-rôles, publication et responsive', async ({ browser
   await card.getByRole('button', { name: 'Publier' }).click()
   await expect(reviewer.getByText('Séance publiée comme référence club.')).toBeVisible({ timeout: 20_000 })
 
-  for (const width of [390, 1440]) {
+  for (const width of [320, 390, 768, 1440]) {
     await reviewer.setViewportSize({ width, height: 900 })
     await reviewer.goto('/coach/seances/bibliotheque')
     const dimensions = await reviewer.evaluate(() => ({

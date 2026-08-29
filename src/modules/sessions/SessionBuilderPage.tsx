@@ -789,15 +789,6 @@ export default function SessionBuilderPage() {
                   Bibliothèque séances
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigate('/coach/situations/bibliotheque')
-                    setShowMoreActions(false)
-                  }}
-                >
-                  Bibliothèque situations
-                </button>
               </div>
 
               <div className="session-more-actions__group">

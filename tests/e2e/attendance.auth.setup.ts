@@ -39,7 +39,9 @@ setup('authentifie coachA via Supabase local', async ({ page }) => {
   await page.getByRole('button', { name: 'Se connecter' }).click()
 
   await expect(page).toHaveURL(/\/(dashboard|admin)$/, { timeout: 20_000 })
-  await expect(page.getByText('RLS Coach A', { exact: true })).toBeVisible()
+  await expect(
+    page.getByLabel('Informations utilisateur').getByText('RLS Coach A', { exact: true }),
+  ).toBeVisible()
   expect([...authOrigins]).toEqual([localSupabaseOrigin])
 
   await page.context().storageState({ path: authFile })
@@ -56,6 +58,10 @@ setup('authentifie coachA via Supabase local', async ({ page }) => {
   await page.getByPlaceholder('Mot de passe').fill(reviewer?.password || '')
   await page.getByRole('button', { name: 'Se connecter' }).click()
   await expect(page).toHaveURL(/\/(dashboard|admin)$/, { timeout: 20_000 })
-  await expect(page.getByText('RLS Responsable technique', { exact: true })).toBeVisible()
+  await expect(
+    page
+      .getByLabel('Informations utilisateur')
+      .getByText('RLS Responsable technique', { exact: true }),
+  ).toBeVisible()
   await page.context().storageState({ path: reviewerAuthFile })
 })

@@ -13,6 +13,7 @@
     "test:watch": "vitest",
     "test:security": "vitest run tests/security",
     "test:react": "vitest run src",
+    "pretest:e2e": "node --env-file=.env.rls.local scripts/create-test-users.mjs",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "pretest:rls": "npm run seed:rls",
