@@ -135,8 +135,8 @@ describe('sessionWriteService contre Supabase local', () => {
     const draft = await createTeamDraft('Workflow service publication')
     const review = await coach.submitSessionForReview({ sessionId: draft.id, expectedVersion: 1 })
     expect(review).toMatchObject({ status: 'to_review', version: 2 })
-    const published = await admin.publishSession({ sessionId: draft.id, expectedVersion: 2 })
-    expect(published).toMatchObject({ status: 'published', version: 3 })
+    const published = await admin.publishSession({ sessionId: draft.id, expectedVersion: 2, visibility: 'club' })
+    expect(published).toMatchObject({ status: 'published', visibility: 'club', version: 3 })
     const archived = await admin.archiveSession({ sessionId: draft.id, expectedVersion: 3 })
     expect(archived).toMatchObject({ status: 'archived', version: 4 })
 

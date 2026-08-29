@@ -13,6 +13,7 @@ export type SessionSituationWriteInput = {
 export type SessionDraftCreateInput = { teamId: string; coachId: string; session: SessionDraftPayload; situations: SessionSituationWriteInput[]; tags: string[] }
 export type SessionDraftSaveInput = { sessionId: string; expectedVersion: number; session: SessionDraftPayload; situations: SessionSituationWriteInput[]; tags: string[] }
 export type SessionTransitionInput = { sessionId: string; expectedVersion: number }
+export type SessionPublishInput = SessionTransitionInput & { visibility: 'team' | 'club' }
 
 export class SessionWriteConflictError extends Error {
   constructor(message: string) { super(message); this.name = 'SessionWriteConflictError' }
@@ -57,8 +58,8 @@ export function createSessionWriteService(client: SupabaseClient) {
     submitSessionForReview(input: SessionTransitionInput) {
       return execute('submit_session_for_review', { target_session_id: input.sessionId, expected_version: input.expectedVersion }, true)
     },
-    publishSession(input: SessionTransitionInput) {
-      return execute('publish_session', { target_session_id: input.sessionId, expected_version: input.expectedVersion }, true)
+    publishSession(input: SessionPublishInput) {
+      return execute('publish_session', { target_session_id: input.sessionId, expected_version: input.expectedVersion, target_visibility: input.visibility }, true)
     },
     archiveSession(input: SessionTransitionInput) {
       return execute('archive_session', { target_session_id: input.sessionId, expected_version: input.expectedVersion }, true)

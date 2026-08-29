@@ -406,46 +406,87 @@ for (const [table, ownId, otherId] of [
   }
 
   const transitionArgs = (id, version) => ({ target_session_id: id, expected_version: version })
+  const publishArgs = (id, version, visibility) => ({ ...transitionArgs(id, version), target_visibility: visibility })
   const { data: submittedPrivate, error: submitPrivateError } = await clients.coachA.rpc('submit_session_for_review', transitionArgs(createdRpc?.id, 1))
   check(!submitPrivateError && submittedPrivate?.status === 'to_review' && submittedPrivate?.version === 2, 'workflow session: coach owner soumet draft → to_review', formatPostgrestError(submitPrivateError))
-  const { error: coachPublishError } = await clients.coachA.rpc('publish_session', transitionArgs(createdRpc?.id, 2))
+  await expectHidden(clients.member, 'sessions', createdRpc?.id, 'workflow session: to_review private non diffusée au membre')
+  const { error: legacyPublishError } = await clients.admin.rpc('publish_session', transitionArgs(createdRpc?.id, 2))
+  check(Boolean(legacyPublishError), 'workflow session: ancienne signature publish_session inexécutable', formatPostgrestError(legacyPublishError))
+  const { error: coachPublishError } = await clients.coachA.rpc('publish_session', publishArgs(createdRpc?.id, 2, 'team'))
   check(coachPublishError?.code === '42501', 'workflow session: coach ne publie pas', formatPostgrestError(coachPublishError))
-  const { error: privatePublishError } = await clients.admin.rpc('publish_session', transitionArgs(createdRpc?.id, 2))
-  check(privatePublishError?.code === '22023', 'workflow session: publication private refusée', formatPostgrestError(privatePublishError))
+  for (const name of ['member', 'dirigeant', 'inactive']) {
+    const { error } = await clients[name].rpc('publish_session', publishArgs(createdRpc?.id, 2, 'team'))
+    check(error?.code === '42501', `workflow session: publication refusée pour ${name}`, formatPostgrestError(error))
+  }
+  for (const [label, visibility] of [['private', 'private'], ['public', 'public'], ['vide', ''], ['null', null], ['legacy', 'club_reference']]) {
+    const { error } = await clients.admin.rpc('publish_session', publishArgs(createdRpc?.id, 2, visibility))
+    check(error?.code === '22023', `workflow session: visibilité ${label} refusée`, formatPostgrestError(error))
+  }
+  const { data: failedPublishState } = await clients.admin.from('sessions').select('status,visibility,version,published_at').eq('id', createdRpc?.id).single()
+  const { data: failedPublishLogs } = await clients.admin.from('session_visibility_logs').select('action').eq('session_id', createdRpc?.id)
+  check(failedPublishState?.status === 'to_review' && failedPublishState?.visibility === 'private' && failedPublishState?.version === 2 && !failedPublishState?.published_at && failedPublishLogs?.every(({ action }) => action !== 'published'), 'workflow session: échecs publication sans mutation ni log')
   const { data: returnedPrivate, error: returnPrivateError } = await clients.admin.rpc('return_session_to_draft', transitionArgs(createdRpc?.id, 2))
   check(!returnPrivateError && returnedPrivate?.status === 'draft' && returnedPrivate?.version === 3, 'workflow session: admin retourne to_review → draft', formatPostgrestError(returnPrivateError))
 
   const teamArgs = { ...createArgs, session_payload: { ...sessionPayload('Workflow team'), visibility: 'team' }, situations_payload: [{ id: crypto.randomUUID(), order_index: 1, title: 'Bloc immuable', duration_minutes: 20, theme: 'Passe', sub_theme: '', pedagogical_phase: 'je-m-exerce', content_json: { objective: 'Immuable' } }], tags_payload: ['workflow-team'] }
   const { data: teamDraft, error: teamDraftError } = await clients.coachA.rpc('create_session_draft', teamArgs)
-  const immutableProjection = 'title,content_json,duration_minutes,quality_score,session_situations(id,order_index,title,content_json),session_tags(tag)'
+  const immutableProjection = 'title,category,level,theme,sub_theme,duration_minutes,expected_players,quality_score,content_json,team_id,coach_id,owner_id,source_type,source_file_name,source_raw_text,source_text,session_situations(id,order_index,title,duration_minutes,theme,sub_theme,pedagogical_phase,content_json),session_tags(tag)'
   const beforeTeam = await clients.coachA.from('sessions').select(immutableProjection).eq('id', teamDraft?.id).single()
+  const beforeTeamTransition = await clients.coachA.from('sessions').select('updated_at').eq('id', teamDraft?.id).single()
   const { data: teamReview, error: teamReviewError } = await clients.coachA.rpc('submit_session_for_review', transitionArgs(teamDraft?.id, 1))
   const { error: coachArchiveError } = await clients.coachA.rpc('archive_session', transitionArgs(teamDraft?.id, 2))
-  const { data: teamPublished, error: teamPublishError } = await clients.admin.rpc('publish_session', transitionArgs(teamDraft?.id, 2))
-  check(!teamDraftError && !teamReviewError && teamReview?.version === 2 && !teamPublishError && teamPublished?.status === 'published' && teamPublished?.version === 3 && Boolean(teamPublished?.published_at), 'workflow session: publication team RT/admin réussie', formatPostgrestError(teamDraftError || teamReviewError || teamPublishError))
+  const { data: teamPublished, error: teamPublishError } = await clients.admin.rpc('publish_session', publishArgs(teamDraft?.id, 2, 'team'))
+  check(!teamDraftError && !teamReviewError && teamReview?.version === 2 && !teamPublishError && teamPublished?.status === 'published' && teamPublished?.visibility === 'team' && teamPublished?.version === 3 && Boolean(teamPublished?.published_at), 'workflow session: admin publie private/team vers team', formatPostgrestError(teamDraftError || teamReviewError || teamPublishError))
+  await expectVisible(clients.coachSameTeam, 'sessions', teamDraft?.id, 'workflow diffusion team: coach autorisé équipe lit')
+  await expectHidden(clients.coachB, 'sessions', teamDraft?.id, 'workflow diffusion team: coach hors équipe ne lit pas')
   check(coachArchiveError?.code === '42501', 'workflow session: coach ne peut pas archiver', formatPostgrestError(coachArchiveError))
   const afterTeam = await clients.admin.from('sessions').select(immutableProjection).eq('id', teamDraft?.id).single()
   check(JSON.stringify(beforeTeam.data) === JSON.stringify(afterTeam.data), 'workflow session: contenu parent/blocs/tags immuable pendant publication')
+  const { data: teamTransitionState } = await clients.admin.from('sessions').select('status,visibility,version,published_at,archived_at,updated_at').eq('id', teamDraft?.id).single()
+  check(teamTransitionState?.status === 'published' && teamTransitionState?.visibility === 'team' && teamTransitionState?.version === 3 && Boolean(teamTransitionState?.published_at) && !teamTransitionState?.archived_at && teamTransitionState?.updated_at !== beforeTeamTransition.data?.updated_at, 'workflow session: publication atomique met à jour statut, visibilité, version et timestamps serveur')
+  const { error: stalePublishedError } = await clients.technicalManager.rpc('publish_session', publishArgs(teamDraft?.id, 2, 'club'))
+  check(stalePublishedError?.code === 'PT409', 'workflow session: publication stale refusée PT409', formatPostgrestError(stalePublishedError))
+  const { error: republishError } = await clients.admin.rpc('publish_session', publishArgs(teamDraft?.id, 3, 'club'))
+  check(republishError?.code === '22023', 'workflow session: published → published refusé', formatPostgrestError(republishError))
   const { error: publishedReturnError } = await clients.admin.rpc('return_session_to_draft', transitionArgs(teamDraft?.id, 3))
   check(publishedReturnError?.code === '22023', 'workflow session: published → draft refusé', formatPostgrestError(publishedReturnError))
   const { data: teamArchived, error: teamArchiveError } = await clients.technicalManager.rpc('archive_session', transitionArgs(teamDraft?.id, 3))
   check(!teamArchiveError && teamArchived?.status === 'archived' && teamArchived?.version === 4 && Boolean(teamArchived?.archived_at), 'workflow session: RT archive published → archived', formatPostgrestError(teamArchiveError))
+  const { error: archivedPublishError } = await clients.admin.rpc('publish_session', publishArgs(teamDraft?.id, 4, 'team'))
+  check(archivedPublishError?.code === '22023', 'workflow session: archived → published refusé', formatPostgrestError(archivedPublishError))
+  const { error: deletedPublishError } = await clients.admin.rpc('publish_session', publishArgs(sessionDeletedA, 1, 'team'))
+  check(deletedPublishError?.code === '42501', 'workflow session: soft-deleted → published refusé', formatPostgrestError(deletedPublishError))
   const { data: teamLogs } = await clients.admin.from('session_visibility_logs').select('id,action').eq('session_id', teamDraft?.id).order('created_at')
   check(teamLogs?.map(({ action }) => action).join(',') === 'submitted_for_review,published,archived', 'workflow session: exactement un log par transition réussie')
   const { error: directLogUpdate } = await clients.coachA.from('session_visibility_logs').update({ action: 'forged' }).eq('id', teamLogs?.[0]?.id)
   const { error: directLogDelete } = await clients.coachA.from('session_visibility_logs').delete().eq('id', teamLogs?.[0]?.id)
   check(directLogUpdate?.code === '42501' && directLogDelete?.code === '42501', 'workflow session: audit UPDATE/DELETE directs refusés')
 
-  const { data: clubDraft, error: clubDraftError } = await clients.admin.rpc('create_session_draft', { ...createArgs, session_payload: { ...sessionPayload('Workflow club concurrent'), visibility: 'club' }, situations_payload: [] })
+  const { data: clubDraft, error: clubDraftError } = await clients.coachA.rpc('create_session_draft', { ...createArgs, session_payload: { ...sessionPayload('Workflow club concurrent'), visibility: 'private' }, situations_payload: [] })
   const { error: clubReviewError } = await clients.coachA.rpc('submit_session_for_review', transitionArgs(clubDraft?.id, 1))
-  const { data: clubPublished, error: clubPublishError } = await clients.technicalManager.rpc('publish_session', transitionArgs(clubDraft?.id, 2))
-  check(!clubDraftError && !clubReviewError && !clubPublishError && clubPublished?.status === 'published', 'workflow session: publication club réussie par RT', formatPostgrestError(clubDraftError || clubReviewError || clubPublishError))
+  const { data: clubPublished, error: clubPublishError } = await clients.technicalManager.rpc('publish_session', publishArgs(clubDraft?.id, 2, 'club'))
+  check(!clubDraftError && !clubReviewError && !clubPublishError && clubPublished?.status === 'published' && clubPublished?.visibility === 'club' && clubPublished?.version === 3, 'workflow session: RT publie to_review private vers club', formatPostgrestError(clubDraftError || clubReviewError || clubPublishError))
+  await expectVisible(clients.member, 'sessions', clubDraft?.id, 'workflow diffusion club: membre actif lit')
+  const { error: anonClubError } = await anonClient.from('sessions').select('id').eq('id', clubDraft?.id)
+  check(anonClubError?.code === '42501', 'workflow diffusion club: anon reste refusé', formatPostgrestError(anonClubError))
+
+  const createSubmittedPrivate = async (title) => {
+    const { data: draft, error: draftError } = await clients.coachA.rpc('create_session_draft', { ...createArgs, session_payload: sessionPayload(title), situations_payload: [] })
+    const { error: reviewError } = await clients.coachA.rpc('submit_session_for_review', transitionArgs(draft?.id, 1))
+    return { draft, error: draftError || reviewError }
+  }
+  const rtTeam = await createSubmittedPrivate('Workflow RT vers team')
+  const { data: rtTeamPublished, error: rtTeamPublishError } = await clients.technicalManager.rpc('publish_session', publishArgs(rtTeam.draft?.id, 2, 'team'))
+  check(!rtTeam.error && !rtTeamPublishError && rtTeamPublished?.visibility === 'team', 'workflow session: RT publie vers team', formatPostgrestError(rtTeam.error || rtTeamPublishError))
+  const adminClub = await createSubmittedPrivate('Workflow admin vers club')
+  const { data: adminClubPublished, error: adminClubPublishError } = await clients.admin.rpc('publish_session', publishArgs(adminClub.draft?.id, 2, 'club'))
+  check(!adminClub.error && !adminClubPublishError && adminClubPublished?.visibility === 'club', 'workflow session: admin publie vers club', formatPostgrestError(adminClub.error || adminClubPublishError))
 
   const { data: concurrentDraft } = await clients.coachA.rpc('create_session_draft', { ...createArgs, session_payload: { ...sessionPayload('Workflow concurrence'), visibility: 'team' }, situations_payload: [] })
   await clients.coachA.rpc('submit_session_for_review', transitionArgs(concurrentDraft?.id, 1))
   const [clubA, clubB] = await Promise.all([
-    clients.admin.rpc('publish_session', transitionArgs(concurrentDraft?.id, 2)),
-    clients.technicalManager.rpc('publish_session', transitionArgs(concurrentDraft?.id, 2)),
+    clients.admin.rpc('publish_session', publishArgs(concurrentDraft?.id, 2, 'team')),
+    clients.technicalManager.rpc('publish_session', publishArgs(concurrentDraft?.id, 2, 'club')),
   ])
   const clubResults = [clubA, clubB]
   check(clubResults.filter(({ error }) => !error).length === 1 && clubResults.filter(({ error }) => error?.code === 'PT409').length === 1, 'workflow session: publication concurrente, un succès et un PT409', formatPostgrestError(clubA.error || clubB.error))
@@ -455,11 +496,11 @@ for (const [table, ownId, otherId] of [
 
   const { data: publicDraft } = await clients.admin.rpc('create_session_draft', { ...createArgs, session_payload: { ...sessionPayload('Workflow public refusé'), visibility: 'public' }, situations_payload: [] })
   await clients.coachA.rpc('submit_session_for_review', transitionArgs(publicDraft?.id, 1))
-  const { error: publicPublishError } = await clients.admin.rpc('publish_session', transitionArgs(publicDraft?.id, 2))
+  const { error: publicPublishError } = await clients.admin.rpc('publish_session', publishArgs(publicDraft?.id, 2, 'public'))
   const { data: publicLogs } = await clients.admin.from('session_visibility_logs').select('action').eq('session_id', publicDraft?.id)
   check(publicPublishError?.code === '22023' && publicLogs?.every(({ action }) => action !== 'published'), 'workflow session: publication public refusée sans log publié', formatPostgrestError(publicPublishError))
   const { data: directDraft } = await clients.coachA.rpc('create_session_draft', { ...createArgs, session_payload: { ...sessionPayload('Workflow saut refusé'), visibility: 'team' }, situations_payload: [] })
-  const { error: directPublishError } = await clients.admin.rpc('publish_session', transitionArgs(directDraft?.id, 1))
+  const { error: directPublishError } = await clients.admin.rpc('publish_session', publishArgs(directDraft?.id, 1, 'team'))
   check(directPublishError?.code === '22023', 'workflow session: draft → published direct refusé', formatPostgrestError(directPublishError))
 }
 
