@@ -966,7 +966,9 @@ export default function SessionBuilderPage() {
           {getVisibilityLabel(session.visibility)}
         </span>
 
-        <span>{session.status}</span>
+        <span>{session.status === 'draft' ? 'Brouillon' : session.status === 'to_review' ? 'À valider' : session.status === 'published' ? 'Publiée' : session.status === 'archived' ? 'Archivée' : session.status}</span>
+
+        {(session.status === 'published' || session.status === 'archived') && <span>Diffusion : {session.visibility === 'team' ? 'Équipe' : session.visibility === 'club' ? 'Référence club' : getVisibilityLabel(session.visibility)}</span>}
 
         <span>{session.transformedFromSource ? 'Transformée BCVB' : 'Création manuelle'}</span>
       </div>

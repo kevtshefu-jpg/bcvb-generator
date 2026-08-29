@@ -23,12 +23,12 @@ export default defineConfig({
     },
     {
       name: 'chromium-desktop',
-      testIgnore: [/attendance\.auth\.setup\.ts/, /attendance-responsive\.spec\.ts/],
+      testIgnore: [/attendance\.auth\.setup\.ts/, /attendance-responsive\.spec\.ts/, /session-workflow\.spec\.ts/],
       use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'chromium-mobile',
-      testIgnore: [/attendance\.auth\.setup\.ts/, /attendance-responsive\.spec\.ts/],
+      testIgnore: [/attendance\.auth\.setup\.ts/, /attendance-responsive\.spec\.ts/, /session-workflow\.spec\.ts/],
       use: { ...devices['Pixel 7'] },
     },
     {
@@ -39,6 +39,12 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         storageState: attendanceAuthFile,
       },
+    },
+    {
+      name: 'session-workflow',
+      testMatch: /session-workflow\.spec\.ts/,
+      dependencies: ['attendance-auth-setup'],
+      use: { ...devices['Desktop Chrome'] },
     },
   ],
   webServer: {
