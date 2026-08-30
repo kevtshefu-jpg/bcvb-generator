@@ -8,6 +8,7 @@ import { CollapsibleSection, PageShell, StatCard } from '../../../components/ui/
 import { useAuth } from '../../auth/context/AuthContext'
 import { MEMBER_MANAGEMENT_PATH, canAccessMemberManagement } from '../memberManagementRoute'
 import Rf3PilotInitialization from '../components/Rf3PilotInitialization'
+import Rf3ScheduleInitialization from '../components/Rf3ScheduleInitialization'
 
 type MemberRow = {
   id: string
@@ -265,6 +266,7 @@ export default function AdminPage() {
       </div>
 
       <Rf3PilotInitialization />
+      <Rf3ScheduleInitialization />
 
       {(error || countsError) ? (
         <div className="admin-page__message admin-page__message--error">
