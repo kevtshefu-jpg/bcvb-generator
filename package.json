@@ -12,6 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:security": "vitest run tests/security",
+    "pretest:rf3-import": "node --env-file=.env.rls.local scripts/create-test-users.mjs",
+    "test:rf3-import": "node --env-file=.env.rls.local scripts/test-rf3-import.mjs",
     "test:react": "vitest run src",
     "pretest:e2e": "node --env-file=.env.rls.local scripts/create-test-users.mjs",
     "test:e2e": "playwright test",
