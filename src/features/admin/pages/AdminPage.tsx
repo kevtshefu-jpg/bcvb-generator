@@ -7,6 +7,7 @@ import { PageHeader } from '../../../components/ui/PageHeader'
 import { CollapsibleSection, PageShell, StatCard } from '../../../components/ui/PageShell'
 import { useAuth } from '../../auth/context/AuthContext'
 import { MEMBER_MANAGEMENT_PATH, canAccessMemberManagement } from '../memberManagementRoute'
+import Rf3PilotInitialization from '../components/Rf3PilotInitialization'
 
 type MemberRow = {
   id: string
@@ -262,6 +263,8 @@ export default function AdminPage() {
         <StatCard label="Demandes profils" value={counts.pendingProfileRequests} hint="À vérifier" />
         <StatCard label="Statut" value={adminSummaryStatus} hint={counts.unreadNotifications ? `${counts.unreadNotifications} notification(s)` : 'Suivi à jour'} />
       </div>
+
+      <Rf3PilotInitialization />
 
       {(error || countsError) ? (
         <div className="admin-page__message admin-page__message--error">

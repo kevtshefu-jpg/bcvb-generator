@@ -1,0 +1,67 @@
+.rf3-pilot {
+  margin-top: 24px;
+  padding: clamp(20px, 3vw, 32px);
+  border: 1px solid var(--border-color, #dbe3ec);
+  border-radius: 18px;
+  background: var(--surface-color, #fff);
+}
+
+.rf3-pilot__heading,
+.rf3-pilot__actions,
+.rf3-pilot__dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.rf3-pilot__eyebrow { margin: 0 0 4px; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.rf3-pilot h2, .rf3-pilot h3 { margin: 0; }
+.rf3-pilot__status { padding: 6px 10px; border-radius: 999px; font-size: .85rem; font-weight: 700; background: #eef2f7; }
+.rf3-pilot__status--ready, .rf3-pilot__status--initialized { background: #e7f7ee; color: #17603a; }
+.rf3-pilot__status--inconsistent { background: #fff3d8; color: #724b00; }
+
+.rf3-pilot__summary,
+.rf3-pilot__result dl {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.rf3-pilot__summary div, .rf3-pilot__result dl div { padding: 12px; border-radius: 12px; background: #f6f8fb; }
+.rf3-pilot dt { font-size: .8rem; color: #596579; }
+.rf3-pilot dd { margin: 4px 0 0; font-weight: 700; }
+.rf3-pilot__message { padding: 12px 14px; border-radius: 10px; }
+.rf3-pilot__message--warning { background: #fff3d8; color: #724b00; }
+.rf3-pilot__message--error { background: #fdeaea; color: #8b1f1f; }
+.rf3-pilot__result { margin: 20px 0; padding: 16px; border-radius: 12px; background: #e7f7ee; }
+
+.rf3-pilot button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: #172b4d;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.rf3-pilot button:disabled { cursor: not-allowed; opacity: .55; }
+.rf3-pilot button:focus-visible { outline: 3px solid #2f80ed; outline-offset: 3px; }
+.rf3-pilot .rf3-pilot__secondary { background: #eef2f7; color: #172b4d; }
+
+.rf3-pilot__dialog-backdrop { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 20px; background: rgb(15 23 42 / 60%); }
+.rf3-pilot__dialog { width: min(100%, 520px); padding: 24px; border-radius: 16px; background: #fff; box-shadow: 0 24px 70px rgb(15 23 42 / 30%); }
+.rf3-pilot__dialog ul { margin: 16px 0 24px; }
+
+@media (max-width: 900px) {
+  .rf3-pilot__summary, .rf3-pilot__result dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 520px) {
+  .rf3-pilot__heading, .rf3-pilot__actions, .rf3-pilot__dialog-actions { align-items: stretch; flex-direction: column; }
+  .rf3-pilot__summary, .rf3-pilot__result dl { grid-template-columns: 1fr; }
+  .rf3-pilot button { width: 100%; }
+}
