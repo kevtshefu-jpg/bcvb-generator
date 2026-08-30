@@ -31,7 +31,7 @@ function countsFor(records: AttendanceRecord[]) {
     absentUnexcusedCount,
     lateCount,
     injuredCount,
-    attendanceRate: total ? Math.round((presentCount / total) * 100) : 0,
+    attendanceRate: total ? Math.round((presentCount / total) * 1000) / 10 : null,
     punctualityRate: total ? Math.round((onTimeCount / total) * 100) : 0,
     reliabilityScore,
   };
@@ -71,11 +71,11 @@ export function computePlayerAttendanceStats(
       injuredCount,
       attendanceRate,
       unexcusedAbsenceRate,
-      reliabilityLabel: attendanceRate >= 90 && unexcusedAbsenceRate === 0
+      reliabilityLabel: attendanceRate !== null && attendanceRate >= 90 && unexcusedAbsenceRate === 0
         ? "excellent"
-        : attendanceRate >= 80
+        : attendanceRate !== null && attendanceRate >= 80
           ? "bon"
-          : attendanceRate >= 65
+          : attendanceRate !== null && attendanceRate >= 65
             ? "à surveiller"
             : "alerte",
       ...coverage,
@@ -186,7 +186,7 @@ export function buildAttendanceAlerts(stats: AttendanceStats): AttendanceAlert[]
 
   if (stats.recordedCount === 0) return alerts;
 
-  if (stats.attendanceRate < 60) {
+  if (stats.attendanceRate !== null && stats.attendanceRate < 60) {
     alerts.push({
       id: `${stats.playerId || stats.teamId}-critical-rate`,
       level: "critical",
@@ -194,7 +194,7 @@ export function buildAttendanceAlerts(stats: AttendanceStats): AttendanceAlert[]
       message: `Taux de présence critique : ${stats.attendanceRate} %.`,
       recommendedAction: "Contacter la famille ou faire un point individuel.",
     });
-  } else if (stats.attendanceRate < 75) {
+  } else if (stats.attendanceRate !== null && stats.attendanceRate < 75) {
     alerts.push({
       id: `${stats.playerId || stats.teamId}-warning-rate`,
       level: "warning",
@@ -234,7 +234,7 @@ export function buildAttendanceAlerts(stats: AttendanceStats): AttendanceAlert[]
     });
   }
 
-  if (stats.attendanceRate > 90 && stats.totalSessions >= 3) {
+  if (stats.attendanceRate !== null && stats.attendanceRate > 90 && stats.totalSessions >= 3) {
     alerts.push({
       id: `${stats.playerId || stats.teamId}-positive`,
       level: "info",
@@ -260,7 +260,11 @@ export function buildAttendanceDashboardData(
       teamName: team.name,
       attendanceRate: computeTeamAttendanceStats(records, sessions, team.id).attendanceRate,
     }))
-    .sort((a, b) => b.attendanceRate - a.attendanceRate);
+    .sort((a, b) => {
+      if (a.attendanceRate === null) return 1;
+      if (b.attendanceRate === null) return -1;
+      return b.attendanceRate - a.attendanceRate;
+    });
   const playerAlerts = players.flatMap((player) =>
     buildAttendanceAlerts(computePlayerAttendanceStats(records, sessions, player.id))
       .filter((alert) => alert.level === "critical")

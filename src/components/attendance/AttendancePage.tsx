@@ -192,7 +192,7 @@ export function AttendancePage() {
           absentUnexcusedCount: 0,
           lateCount: 0,
           injuredCount: 0,
-          attendanceRate: 0,
+          attendanceRate: null,
           unexcusedAbsenceRate: 0,
           alertCount: 0,
           recordedCount: 0,

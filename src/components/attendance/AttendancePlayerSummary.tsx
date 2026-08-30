@@ -12,6 +12,8 @@ export function AttendancePlayerSummary({
     .sort((a, b) => {
       if (a.recordedCount === 0) return 1;
       if (b.recordedCount === 0) return -1;
+      if (a.attendanceRate === null) return 1;
+      if (b.attendanceRate === null) return -1;
       return a.attendanceRate - b.attendanceRate;
     })
     .slice(0, 5);
@@ -29,7 +31,7 @@ export function AttendancePlayerSummary({
             <article key={item.playerId}>
               <strong>{player ? `${player.firstName} ${player.lastName}` : item.playerId}</strong>
               <span>
-                {item.recordedCount === 0
+                {item.recordedCount === 0 || item.attendanceRate === null
                   ? "Non renseigné"
                   : `${item.attendanceRate}% · ${item.reliabilityLabel}`}
               </span>

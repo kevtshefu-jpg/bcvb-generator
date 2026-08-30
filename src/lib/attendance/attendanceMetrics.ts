@@ -9,7 +9,7 @@ export function computeAttendanceCoverage(
     recordedCount,
     missingRecords,
     completionRate: normalizedExpected
-      ? Math.round((Math.min(recordedCount, normalizedExpected) / normalizedExpected) * 100)
+      ? Math.round((Math.min(recordedCount, normalizedExpected) / normalizedExpected) * 1000) / 10
       : 0,
   };
 }

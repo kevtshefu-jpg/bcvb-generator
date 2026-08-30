@@ -5,7 +5,14 @@ export function AttendanceTeamSummary({ stats }: { stats: AttendanceTeamStats })
     <section className="attendance-card attendance-team-summary">
       <div className="attendance-section-title">
         <span>Bilan équipe</span>
-        <h2>{stats.attendanceRate}% présence</h2>
+        <h2>
+          Présence : {stats.attendanceRate === null ? (
+            <span
+              aria-label="Taux de présence non calculable : aucun relevé renseigné"
+              title="Taux de présence non calculable : aucun relevé renseigné"
+            >—</span>
+          ) : `${stats.attendanceRate}%`}
+        </h2>
       </div>
       <div className="attendance-stat-grid">
         <span>Séances <strong>{stats.totalSessions}</strong></span>

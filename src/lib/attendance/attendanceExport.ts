@@ -20,8 +20,8 @@ function recordForPlayer(
   );
 }
 
-function percentageOrUnrecorded(value: number, recordedCount: number) {
-  return recordedCount > 0 ? `${value}%` : "Non renseigné";
+function percentageOrUnrecorded(value: number | null, recordedCount: number) {
+  return recordedCount > 0 && value !== null ? `${value}%` : "Non renseigné";
 }
 
 export function exportAttendanceCsv(
