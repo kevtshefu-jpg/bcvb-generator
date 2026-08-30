@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { AttendanceRecord, AttendanceSession, AttendanceStatus } from '../../types/attendance'
 import { computeAttendanceQualityScore } from './attendanceScoring'
-import { buildAttendanceAlerts, computeSessionStats } from './attendanceStats'
+import { buildAttendanceAlerts, buildAttendanceDashboardData, computeSessionStats } from './attendanceStats'
 
 const session = (locked = false): AttendanceSession => ({
   id: 'session-1', teamId: 'team-1', title: 'Séance', date: '2026-08-27',
@@ -29,7 +29,7 @@ function metrics(records: AttendanceRecord[], expected = 2, locked = false) {
 
 describe('matrice métriques GO-02E.9', () => {
   it.each([
-    ['0 relevé / 2', [], 2, 0, 0, 2, 0, 0],
+    ['0 relevé / 2', [], 2, null, 0, 2, 0, 0],
     ['tous absents', [record('alice', 'absent_excused'), record('arthur', 'absent_unexcused')], 2, 0, 100, 0, 100, 1],
     ['retard seul', [record('alice', 'late')], 1, 0, 100, 0, 100, 1],
     ['blessé seul', [record('alice', 'injured')], 1, 0, 100, 0, 100, 1],
@@ -44,7 +44,9 @@ describe('matrice métriques GO-02E.9', () => {
     expect(result.alerts).toHaveLength(alertCount as number)
     expect(result.quality.score).toBeGreaterThanOrEqual(0)
     expect(result.quality.score).toBeLessThanOrEqual(100)
-    expect(Number.isFinite(result.stats.attendanceRate)).toBe(true)
+    if (result.stats.attendanceRate !== null) {
+      expect(Number.isFinite(result.stats.attendanceRate)).toBe(true)
+    }
   })
 
   it('une séance verrouillée conserve exactement les mêmes métriques', () => {
@@ -54,5 +56,58 @@ describe('matrice métriques GO-02E.9', () => {
 
   it('un joueur non renseigné ne produit aucune alerte', () => {
     expect(metrics([], 2).alerts).toEqual([])
+  })
+
+  it('préserve le taux indisponible dans les synthèses dashboard', () => {
+    const dashboard = buildAttendanceDashboardData(
+      [],
+      [session()],
+      [{ id: 'team-1', name: 'Équipe', category: 'Senior' }],
+      [{ id: 'alice', firstName: 'Alice', lastName: 'A', teamId: 'team-1' }],
+    )
+
+    expect(dashboard.globalAttendanceRate).toBeNull()
+    expect(dashboard.teamsAttendanceRanking[0]?.attendanceRate).toBeNull()
+  })
+
+  it('distingue une absence d’observation de sept absences observées', () => {
+    const unobserved = metrics([], 7)
+    const observedAbsences = metrics(
+      Array.from({ length: 7 }, (_, index) => record(`player-${index}`, 'absent_excused')),
+      7,
+    )
+
+    expect(unobserved.stats).toMatchObject({
+      attendanceRate: null,
+      recordedCount: 0,
+      missingRecords: 7,
+      completionRate: 0,
+    })
+    expect(unobserved.alerts).toEqual([])
+    expect(observedAbsences.stats).toMatchObject({
+      attendanceRate: 0,
+      recordedCount: 7,
+      missingRecords: 0,
+      completionRate: 100,
+    })
+  })
+
+  it.each([
+    ['1 présent sur 1 relevé / 7 attendus', [record('alice', 'present')], 100, 14.3],
+    [
+      '5 présents et 2 absents observés',
+      [
+        ...Array.from({ length: 5 }, (_, index) => record(`present-${index}`, 'present')),
+        record('absent-1', 'absent_excused'),
+        record('absent-2', 'absent_unexcused'),
+      ],
+      71.4,
+      100,
+    ],
+  ])('%s', (_label, records, attendanceRate, completionRate) => {
+    expect(computeSessionStats(records as AttendanceRecord[], 7)).toMatchObject({
+      attendanceRate,
+      completionRate,
+    })
   })
 })

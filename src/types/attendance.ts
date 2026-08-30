@@ -94,7 +94,7 @@ export interface AttendanceStats {
   absentUnexcusedCount: number;
   lateCount: number;
   injuredCount: number;
-  attendanceRate: number;
+  attendanceRate: number | null;
   punctualityRate: number;
   reliabilityScore: number;
   recordedCount: number;
@@ -112,7 +112,7 @@ export interface AttendanceTeamStats {
   absentUnexcusedCount: number;
   lateCount: number;
   injuredCount: number;
-  attendanceRate: number;
+  attendanceRate: number | null;
   unexcusedAbsenceRate: number;
   alertCount: number;
   recordedCount: number;
@@ -128,7 +128,7 @@ export interface AttendancePlayerStats {
   absentUnexcusedCount: number;
   lateCount: number;
   injuredCount: number;
-  attendanceRate: number;
+  attendanceRate: number | null;
   unexcusedAbsenceRate: number;
   reliabilityLabel: "excellent" | "bon" | "à surveiller" | "alerte";
   recordedCount: number;
@@ -177,8 +177,8 @@ export type AttendanceDraft = {
 };
 
 export type AttendanceDashboardData = {
-  globalAttendanceRate: number;
-  teamsAttendanceRanking: Array<{ teamId: string; teamName: string; attendanceRate: number }>;
+  globalAttendanceRate: number | null;
+  teamsAttendanceRanking: Array<{ teamId: string; teamName: string; attendanceRate: number | null }>;
   criticalPlayers: AttendanceAlert[];
   missingCalls: AttendanceSession[];
   positiveRegularPlayers: AttendanceAlert[];

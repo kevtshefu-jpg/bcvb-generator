@@ -9,10 +9,14 @@ export function AttendanceHeader({ stats }: { stats: AttendanceStats }) {
         <p className="bcvb-subtitle">Suivre l’assiduité réelle des joueurs et sécuriser la logistique d’équipe.</p>
       </div>
       <div className="attendance-hero-meter">
-        <strong>{stats.attendanceRate}%</strong>
+        <strong
+          aria-label={stats.attendanceRate === null ? "Taux de présence non calculable : aucun relevé renseigné" : undefined}
+          title={stats.attendanceRate === null ? "Taux de présence non calculable : aucun relevé renseigné" : undefined}
+        >
+          {stats.attendanceRate === null ? "—" : `${stats.attendanceRate}%`}
+        </strong>
         <span>séance</span>
       </div>
     </section>
   );
 }
-

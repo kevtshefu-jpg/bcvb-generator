@@ -35,7 +35,7 @@ describe('exports attendance', () => {
     const stat: AttendanceStats = {
       playerId: 'arthur', periodLabel: 'Août', totalSessions: 0, presentCount: 0,
       absentExcusedCount: 0, absentUnexcusedCount: 0, lateCount: 0, injuredCount: 0,
-      attendanceRate: 0, punctualityRate: 0, reliabilityScore: 0,
+      attendanceRate: null, punctualityRate: 0, reliabilityScore: 0,
       recordedCount: 0, missingRecords: 1, completionRate: 0,
     }
     const output = exportAttendanceTeamCsv([stat], players)

@@ -5,7 +5,14 @@ export function AttendanceStatsPanel({ stats, totalPlayers }: { stats: Attendanc
     <aside className="attendance-card attendance-stats-panel">
       <div className="attendance-section-title">
         <span>Statistiques séance</span>
-        <h2>{stats.attendanceRate}% présence</h2>
+        <h2>
+          Présence : {stats.attendanceRate === null ? (
+            <span
+              aria-label="Taux de présence non calculable : aucun relevé renseigné"
+              title="Taux de présence non calculable : aucun relevé renseigné"
+            >—</span>
+          ) : `${stats.attendanceRate}%`}
+        </h2>
       </div>
       <div className="attendance-stat-grid">
         <span>Total joueurs <strong>{totalPlayers}</strong></span>
