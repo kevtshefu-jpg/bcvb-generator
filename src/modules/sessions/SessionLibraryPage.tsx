@@ -1,30 +1,34 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../features/auth/context/AuthContext'
 import {
   sessionCategories,
   sessionThemes,
   sessionVisibilityOptions,
-  type SessionVisibility,
   type TrainingSessionV2,
 } from './sessionModels'
 import { analyzeSessionQuality } from './sessionQuality'
 import {
   canAccessSession,
   canDeleteSession,
-  canEditSession,
   deleteSession,
   duplicateSession,
   hardDeleteSession,
   listSessions,
-  publishSession,
   saveSession,
   saveSessionDraft,
-  updateSessionVisibility,
   type SessionUser,
 } from './sessionStorage'
 import { exportSessionToJson, exportSessionToMarkdown, printSessionPdf } from './sessionExport'
 import { transformRawTextToSession } from './sessionTransformer'
+import { getSessionById, listServerSessions } from './sessionService'
+import {
+  archiveSession,
+  publishSession,
+  returnSessionToDraft,
+  SessionTransitionError,
+  SessionWriteConflictError,
+} from './sessionWriteService'
 import '../../styles/sessions.css'
 import '../../styles/courts.css'
 
@@ -80,10 +84,20 @@ function getSessionSearchText(session: TrainingSessionV2) {
 
 function visibilityLabel(visibility: string) {
   if (visibility === 'private') return 'Privée'
+  if (visibility === 'team') return 'Équipe'
+  if (visibility === 'club') return 'Référence club'
   if (visibility === 'public_technicians') return 'Techniciens'
   if (visibility === 'club_reference') return 'Référence BCVB'
   if (visibility === 'archived') return 'Archivée'
   return visibility
+}
+
+function statusLabel(status: string) {
+  if (status === 'draft') return 'Brouillon'
+  if (status === 'to_review') return 'À valider'
+  if (status === 'published') return 'Publiée'
+  if (status === 'archived') return 'Archivée'
+  return status
 }
 
 export default function SessionLibraryPage() {
@@ -91,9 +105,118 @@ export default function SessionLibraryPage() {
   const { profile } = useAuth()
   const currentUser = buildCurrentUser(profile)
   const isAdmin = currentUser.role === 'admin'
+  const canReview = isAdmin || currentUser.role === 'responsable_technique'
   const [sessions, setSessions] = useState(() => listSessions())
   const [filters, setFilters] = useState(initialFilters)
   const [message, setMessage] = useState('')
+  const [serverSessions, setServerSessions] = useState<TrainingSessionV2[]>([])
+  const [serverLoading, setServerLoading] = useState(true)
+  const [serverError, setServerError] = useState('')
+  const [mutationSessionId, setMutationSessionId] = useState<string | null>(null)
+  const [publicationChoices, setPublicationChoices] = useState<Record<string, 'team' | 'club' | undefined>>({})
+  const mutationLock = useRef(false)
+
+  const loadServerSessions = useCallback(async () => {
+    setServerLoading(true)
+    setServerError('')
+    try {
+      setServerSessions(await listServerSessions())
+    } catch {
+      setServerError('Impossible de charger les séances sauvegardées sur BCVB.')
+    } finally {
+      setServerLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { void loadServerSessions() }, [loadServerSessions])
+
+  const reviewSessions = useMemo(
+    () => canReview ? serverSessions.filter(({ status }) => status === 'to_review') : [],
+    [canReview, serverSessions],
+  )
+
+  async function verifyTransition(sessionId: string, expectedStatus: string, expectedVisibility?: 'team' | 'club') {
+    const verified = await getSessionById(sessionId)
+    if (verified.status !== expectedStatus || (expectedVisibility && verified.visibility !== expectedVisibility)) {
+      throw new Error("L'état serveur relu ne confirme pas la transition demandée.")
+    }
+    await loadServerSessions()
+    return verified
+  }
+
+  function transitionFailure(error: unknown) {
+    if (error instanceof SessionWriteConflictError) {
+      setServerError('La séance a été modifiée depuis votre dernier chargement.')
+      return
+    }
+    setServerError(error instanceof SessionTransitionError || error instanceof Error ? error.message : 'La transition serveur a échoué.')
+  }
+
+  async function publish(serverSession: TrainingSessionV2) {
+    const visibility = publicationChoices[serverSession.id]
+    if (!visibility || mutationLock.current) return
+    if (serverSession.version === undefined) {
+      setServerError('La version serveur de cette séance est absente. Publication impossible.')
+      return
+    }
+    const targetLabel = visibility === 'team' ? "pour l'équipe" : 'comme référence club'
+    if (!window.confirm(`Publier cette séance ${targetLabel} ?`)) return
+    mutationLock.current = true
+    setMutationSessionId(serverSession.id)
+    setServerError('')
+    try {
+      await publishSession({ sessionId: serverSession.id, expectedVersion: serverSession.version, visibility })
+      await verifyTransition(serverSession.id, 'published', visibility)
+      setMessage(`Séance publiée ${targetLabel}.`)
+    } catch (error: unknown) {
+      transitionFailure(error)
+    } finally {
+      mutationLock.current = false
+      setMutationSessionId(null)
+    }
+  }
+
+  async function returnToDraft(serverSession: TrainingSessionV2) {
+    if (mutationLock.current || !window.confirm('Renvoyer cette séance en correction ?')) return
+    if (serverSession.version === undefined) {
+      setServerError('La version serveur de cette séance est absente. Retour en correction impossible.')
+      return
+    }
+    mutationLock.current = true
+    setMutationSessionId(serverSession.id)
+    setServerError('')
+    try {
+      await returnSessionToDraft({ sessionId: serverSession.id, expectedVersion: serverSession.version })
+      await verifyTransition(serverSession.id, 'draft')
+      setMessage('Séance renvoyée en correction.')
+    } catch (error: unknown) {
+      transitionFailure(error)
+    } finally {
+      mutationLock.current = false
+      setMutationSessionId(null)
+    }
+  }
+
+  async function archiveServerSession(serverSession: TrainingSessionV2) {
+    if (mutationLock.current || !window.confirm('Archiver cette séance publiée ?')) return
+    if (serverSession.version === undefined) {
+      setServerError('La version serveur de cette séance est absente. Archivage impossible.')
+      return
+    }
+    mutationLock.current = true
+    setMutationSessionId(serverSession.id)
+    setServerError('')
+    try {
+      await archiveSession({ sessionId: serverSession.id, expectedVersion: serverSession.version })
+      await verifyTransition(serverSession.id, 'archived')
+      setMessage('Séance archivée.')
+    } catch (error: unknown) {
+      transitionFailure(error)
+    } finally {
+      mutationLock.current = false
+      setMutationSessionId(null)
+    }
+  }
 
   const visibleSessions = useMemo(() => sessions
     .filter((session) => canAccessSession(session, currentUser))
@@ -166,18 +289,6 @@ export default function SessionLibraryPage() {
     navigate('/coach/seances')
   }
 
-  function publish(session: TrainingSessionV2) {
-    const updated = publishSession(session.id, currentUser)
-    setMessage(updated?.status === 'to_review' ? 'Séance proposée en publication.' : 'Séance publiée comme référence BCVB.')
-    reload()
-  }
-
-  function updateVisibility(session: TrainingSessionV2, visibility: SessionVisibility) {
-    const updated = updateSessionVisibility(session.id, visibility, currentUser)
-    setMessage(updated ? 'Visibilité mise à jour.' : 'Visibilité non modifiée.')
-    reload()
-  }
-
   function archive(session: TrainingSessionV2) {
     if (!window.confirm('Cette action est définitive. Archiver cette séance ?')) return
     const result = deleteSession(session.id, currentUser)
@@ -198,7 +309,7 @@ export default function SessionLibraryPage() {
         <div>
           <p className="bcvb-eyebrow">Studio séance BCVB</p>
           <h1>Bibliothèque de séances</h1>
-          <p>Classer, rechercher, modifier, dupliquer, publier et exporter les séances terrain BCVB.</p>
+          <p>Consulter les séances officielles et récupérer les brouillons historiques de ce navigateur.</p>
         </div>
         <div className="session-actions">
           <button type="button" onClick={() => navigate('/coach/seances')}>Créer une séance</button>
@@ -235,11 +346,63 @@ export default function SessionLibraryPage() {
       </section>
 
       {message && <p className="session-warning">{message}</p>}
+      {serverError && <div className="session-warning" role="alert"><p>{serverError}</p>{serverError.includes('modifiée') && <button type="button" onClick={() => void loadServerSessions()}>Recharger la version serveur</button>}</div>}
 
+      {canReview && (
+        <section className="session-card" aria-labelledby="review-session-library-title">
+          <header className="session-section-header"><div><p className="bcvb-eyebrow">Décision institutionnelle</p><h2 id="review-session-library-title">À valider ({reviewSessions.length})</h2></div></header>
+          {!serverLoading && reviewSessions.length === 0 && <p>Aucune séance en attente de validation.</p>}
+          <div className="session-library-grid">
+            {reviewSessions.map((serverSession) => {
+              const pending = mutationSessionId === serverSession.id
+              return <article className="session-library-card" key={serverSession.id}>
+                <div className="session-library-card__top"><span>{statusLabel(serverSession.status)}</span><strong>Version {serverSession.version}</strong></div>
+                <h3>{serverSession.title || 'Non renseigné'}</h3>
+                <p>{serverSession.teamLabel || 'Équipe non renseignée'} · {serverSession.category || 'Catégorie non renseignée'} · {serverSession.coachName || 'Coach non renseigné'}</p>
+                <p>Modifiée le {serverSession.updatedAt ? new Date(serverSession.updatedAt).toLocaleString('fr-FR') : 'Non renseigné'}</p>
+                <button type="button" onClick={() => navigate(`/coach/seances?sessionId=${encodeURIComponent(serverSession.id)}`)}>Consulter</button>
+                <fieldset className="session-publication-choice" disabled={pending}>
+                  <legend>Diffusion après publication</legend>
+                  <label><input type="radio" name={`visibility-${serverSession.id}`} checked={publicationChoices[serverSession.id] === 'team'} onChange={() => setPublicationChoices((choices) => ({ ...choices, [serverSession.id]: 'team' }))} /> Équipe</label>
+                  <label><input type="radio" name={`visibility-${serverSession.id}`} checked={publicationChoices[serverSession.id] === 'club'} onChange={() => setPublicationChoices((choices) => ({ ...choices, [serverSession.id]: 'club' }))} /> Référence club</label>
+                </fieldset>
+                <div className="session-actions">
+                  <button type="button" disabled={pending || !publicationChoices[serverSession.id]} onClick={() => void publish(serverSession)}>{pending ? 'Traitement…' : 'Publier'}</button>
+                  <button type="button" disabled={pending} onClick={() => void returnToDraft(serverSession)}>Renvoyer en correction</button>
+                </div>
+              </article>
+            })}
+          </div>
+        </section>
+      )}
+
+      <section className="session-card" aria-labelledby="server-session-library-title">
+        <header className="session-section-header">
+          <div>
+            <p className="bcvb-eyebrow">Source officielle</p>
+            <h2 id="server-session-library-title">Séances sauvegardées sur BCVB</h2>
+          </div>
+        </header>
+        {serverLoading ? <p>Chargement depuis BCVB…</p> : serverError ? null : serverSessions.length === 0 ? <p>Aucune séance serveur accessible.</p> : (
+          <div className="session-library-grid">
+            {serverSessions.map((serverSession) => (
+              <article className="session-library-card" key={serverSession.id}>
+                <div><span>{serverSession.category}</span><h3>{serverSession.title}</h3></div>
+                <p>{serverSession.theme || 'Thème non renseigné'} · {statusLabel(serverSession.status)} · {visibilityLabel(serverSession.visibility)} · version {serverSession.version}</p>
+                <button type="button" onClick={() => navigate(`/coach/seances?sessionId=${encodeURIComponent(serverSession.id)}`)}>Ouvrir depuis BCVB</button>
+                {canReview && serverSession.status === 'published' && <button type="button" disabled={mutationSessionId === serverSession.id} onClick={() => void archiveServerSession(serverSession)}>{mutationSessionId === serverSession.id ? 'Traitement…' : 'Archiver'}</button>}
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <header className="session-section-header">
+        <div><p className="bcvb-eyebrow">Récupération navigateur</p><h2>Brouillons locaux historiques</h2></div>
+      </header>
       <section className="session-library-grid">
         {visibleSessions.map((session) => {
           const report = analyzeSessionQuality(session)
-          const editable = canEditSession(session, currentUser)
           const deletable = canDeleteSession(session, currentUser)
           return (
             <article className="session-library-card" key={session.id}>
@@ -267,15 +430,8 @@ export default function SessionLibraryPage() {
                 <button type="button" onClick={() => exportSessionToJson(session)}>JSON</button>
                 <button type="button" onClick={() => exportSessionToMarkdown(session)}>Markdown</button>
                 <button type="button" onClick={printSessionPdf}>PDF</button>
-                {editable && <button type="button" onClick={() => publish(session)}>Publier</button>}
-                {editable && <button type="button" onClick={() => updateVisibility(session, 'private')}>Rendre privée</button>}
-                {isAdmin && (
-                  <select value={session.visibility} onChange={(event) => updateVisibility(session, event.target.value as SessionVisibility)}>
-                    {sessionVisibilityOptions.map((visibility) => <option key={visibility} value={visibility}>{visibilityLabel(visibility)}</option>)}
-                  </select>
-                )}
-                {deletable && <button type="button" onClick={() => archive(session)}>Supprimer</button>}
-                {isAdmin && <button type="button" onClick={() => hardDelete(session)}>Supprimer définitivement</button>}
+                {deletable && <button type="button" onClick={() => archive(session)}>Retirer du stockage local</button>}
+                {isAdmin && <button type="button" onClick={() => hardDelete(session)}>Effacer définitivement du navigateur</button>}
               </div>
             </article>
           )

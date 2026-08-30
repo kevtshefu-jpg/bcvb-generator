@@ -1,5 +1,8 @@
 export const sessionVisibilityOptions = [
   'private',
+  'team',
+  'club',
+  'public',
   'public_technicians',
   'club_reference',
   'archived',
@@ -182,7 +185,7 @@ export type BcvbIdentityLinks = {
 
 export type SessionSituation = {
   id: string
-  order: number
+  order?: number
   title: string
   category: string
   subTheme: string
@@ -228,12 +231,12 @@ export type SessionSituation = {
   commonMistakes: string[]
   coachCorrections: string[]
   matchTransfer: string
-  visibility: SessionVisibility
-  status: SessionStatus
+  visibility?: SessionVisibility
+  status?: SessionStatus
   createdBy: string
   ownerId: string
   level: string
-  qualityScore: number
+  qualityScore?: number
   qualityWarnings: string[]
   publishedAt: string
   archivedAt: string
@@ -241,6 +244,9 @@ export type SessionSituation = {
   metrics: SessionMetric[]
   courtFrames: SessionCourtFrame[]
   notes: string
+  version?: number
+  createdAt?: string
+  updatedAt?: string
 }
 
 export type TrainingSessionV2 = {
@@ -261,7 +267,7 @@ export type TrainingSessionV2 = {
   sourceFileName: string
   sourceRawText: string
   sourceExtractedText: string
-  transformedFromSource: boolean
+  transformedFromSource?: boolean
   bcvbAdaptationLevel: BcvbAdaptationLevel
   date: string
   location: string
@@ -299,6 +305,7 @@ export type TrainingSessionV2 = {
     nextSessionLink: string
     groupNotes: string
   }
+  version?: number
 }
 
 export function createId(prefix = 'bcvb') {
@@ -470,15 +477,15 @@ export function createCourtFrame(input: Partial<SessionCourtFrame> = {}): Sessio
     id: frameId,
     title: input.title || 'Terrain principal',
     intent: input.intent || 'Mise en place',
-    objects: input.objects || [
+    objects: input.objects ?? [
       { id: createId('obj'), type: 'offense_player', x: 4.5, y: 8.4, label: '1', color: '#b5122b', frameId },
       { id: createId('obj'), type: 'defense_player', x: 5.6, y: 8.4, label: 'D', color: '#2f3438', frameId },
       { id: createId('obj'), type: 'ball', x: 4.2, y: 8.6, label: 'Ballon', color: '#f97316', frameId },
     ],
-    arrows: input.arrows || [
+    arrows: input.arrows ?? [
       { id: createId('arr'), type: 'arrow_dribble', fromX: 4.5, fromY: 8.4, toX: 7.2, toY: 6.2 },
     ],
-    zones: input.zones || [],
+    zones: input.zones ?? [],
   }
 }
 
@@ -557,7 +564,7 @@ export function normalizeSituation(value: Partial<SessionSituation>): SessionSit
     coachCorrections: normalizeStringList(source.coachCorrections),
     evolution,
     regression,
-    courtFrames: (source.courtFrames?.length ? source.courtFrames : [createCourtFrame()]).map((frame) => ({
+    courtFrames: (value.courtFrames === undefined ? [createCourtFrame()] : source.courtFrames).map((frame) => ({
       ...emptyCourtFrame,
       ...frame,
       id: frame.id || createId('court'),

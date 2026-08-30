@@ -24,7 +24,8 @@ function currentUserFromProfile(profile: ReturnType<typeof useAuth>['profile']):
   return { id: profile?.id || '', role: profile?.role || 'member' }
 }
 
-function visibilityLabel(visibility: string) {
+function visibilityLabel(visibility?: string) {
+  if (!visibility) return 'Non renseignée'
   if (visibility === 'private') return 'Privée'
   if (visibility === 'public_technicians') return 'Techniciens'
   if (visibility === 'club_reference') return 'Référence BCVB'
@@ -137,8 +138,8 @@ export default function SituationLibraryPage() {
       <section className="session-hero">
         <div>
           <p className="bcvb-eyebrow">Studio séance BCVB</p>
-          <h1>Bibliothèque situations</h1>
-          <p>Retrouver, filtrer, dupliquer, publier et exporter les situations pédagogiques individuelles.</p>
+          <h1>Récupération locale de situations</h1>
+          <p>Contenus historiques de ce navigateur uniquement. Cette page ne publie aucune donnée officielle sur BCVB.</p>
         </div>
         <div className="session-actions">
           <button type="button" onClick={() => navigate('/coach/seances')}>Ajouter à une séance</button>
@@ -190,9 +191,9 @@ export default function SituationLibraryPage() {
                 <button type="button" onClick={() => openSituation(situation)}>Ajouter à une séance</button>
                 <button type="button" onClick={() => exportSituationToMarkdown(situation)}>Exporter</button>
                 <button type="button" onClick={printSessionPdf}>Exporter la situation PDF</button>
-                {editable && <button type="button" onClick={() => updateVisibility(situation, 'public_technicians')}>Rendre public techniciens</button>}
-                {editable && <button type="button" onClick={() => updateVisibility(situation, 'private')}>Rendre privé</button>}
-                {editable && <button type="button" onClick={() => updateVisibility(situation, 'club_reference')}>Publier référence BCVB</button>}
+                {editable && <button type="button" onClick={() => updateVisibility(situation, 'public_technicians')}>Classer localement : techniciens</button>}
+                {editable && <button type="button" onClick={() => updateVisibility(situation, 'private')}>Classer localement : privé</button>}
+                {editable && <button type="button" onClick={() => updateVisibility(situation, 'club_reference')}>Classer localement : référence</button>}
                 {editable && <button type="button" onClick={() => archive(situation)}>Supprimer</button>}
                 {isAdmin && <button type="button" onClick={() => hardDelete(situation)}>Supprimer définitivement</button>}
               </div>

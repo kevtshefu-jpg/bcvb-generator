@@ -4,11 +4,10 @@ import { useAuth } from '../../auth/context/AuthContext'
 import { useStableSession } from '../../../hooks/useStableSession'
 import { useSafeLoading } from '../../../hooks/useSafeLoading'
 import { PRESENTATION_MODE } from '../../../config/presentationMode'
-import { buildDirectorSpaceModel } from '../../../lib/directors/directorDashboard'
 import StudioExperiencePanel from '../../ux/components/StudioExperiencePanel'
 import ActionHeroCard from '../../../components/dashboard/ActionHeroCard'
 import { PageHeader } from '../../../components/ui/PageHeader'
-import { CollapsibleSection, PageShell, RoleBasedQuickActions, StatCard } from '../../../components/ui/PageShell'
+import { PageShell, RoleBasedQuickActions } from '../../../components/ui/PageShell'
 import { MEMBER_MANAGEMENT_PATH, canAccessMemberManagement } from '../../admin/memberManagementRoute'
 import {
   formatRole,
@@ -20,62 +19,6 @@ import {
 } from '../../auth/utils/roles'
 import TechnicalDashboard from '../../technical-dashboard/TechnicalDashboard'
 import { getTechnicalDashboardRole } from '../../technical-dashboard/technicalDashboardAccess'
-
-type DashboardAction = {
-  label: string
-  path: string
-  detail: string
-  roles: string[]
-}
-
-type DashboardItem = {
-  title: string
-  value?: string
-  text: string
-  tone?: 'red' | 'green' | 'blue' | 'dark'
-}
-
-const clubMetrics: DashboardItem[] = [
-  { title: 'Documents publiés', value: '42', text: 'Ressources validées dans la bibliothèque.', tone: 'dark' },
-  { title: 'Séances créées', value: '128', text: 'Fiches terrain prêtes ou archivées.', tone: 'red' },
-  { title: 'Taux de présence', value: '86%', text: 'Moyenne des feuilles d’appel récentes.', tone: 'green' },
-  { title: 'Évaluations à jour', value: '74%', text: 'Joueurs avec suivi récent.', tone: 'blue' },
-  { title: 'Équipes actives', value: '12', text: 'Groupes suivis sur la saison.', tone: 'dark' },
-  { title: 'Exports récents', value: '9', text: 'PDF générés pour diffusion ou commission.', tone: 'red' },
-]
-
-const qualityAlerts: DashboardItem[] = [
-  { title: 'Documents non publiables', value: '3', text: 'Score inférieur au seuil ou blocs obligatoires absents.', tone: 'red' },
-  { title: 'Documents à corriger', value: '8', text: 'Corrections éditoriales ou terrain à finaliser.', tone: 'blue' },
-  { title: 'Documents prêts à publier', value: '6', text: 'Contrôle qualité validé, publication possible.', tone: 'green' },
-  { title: 'Priorités de correction', value: '2', text: 'Projet sportif et charte coach à traiter en premier.', tone: 'dark' },
-]
-
-const workResume: DashboardAction[] = [
-  { label: 'Dernier document ouvert', path: '/bibliotheque', detail: 'Référentiel U13 - Défendre fort', roles: ['admin', 'coach', 'dirigeant', 'parent_referent', 'team_staff', 'member', 'membre', 'parent', 'joueur'] },
-  { label: 'Dernière séance créée', path: '/coach/seances', detail: 'U15 - Transition offensive', roles: ['admin', 'coach'] },
-  { label: 'Dernière planification modifiée', path: '/planifications', detail: 'Cycle U11 - Juin 2026', roles: ['admin', 'coach'] },
-  { label: 'Dernier effectif importé', path: '/effectifs', detail: 'U13 Région - 18 joueurs validés', roles: ['admin', 'coach'] },
-]
-
-function normalizeDashboardRole(role?: string | null) {
-  if (role === 'membre') return 'member'
-  return role || 'member'
-}
-
-function canShowForRole(item: DashboardAction, role?: string | null) {
-  return item.roles.includes(normalizeDashboardRole(role))
-}
-
-function DashboardMetricCard({ item }: { item: DashboardItem }) {
-  return (
-    <article className={`bcvb-dashboard-metric bcvb-dashboard-metric--${item.tone || 'dark'}`}>
-      <span>{item.title}</span>
-      {item.value && <strong>{item.value}</strong>}
-      <p>{item.text}</p>
-    </article>
-  )
-}
 
 function DashboardPanel({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -91,115 +34,14 @@ function DashboardPanel({ title, children }: { title: string; children: ReactNod
   )
 }
 
-function DashboardList({ items }: { items: DashboardItem[] }) {
-  return (
-    <div className="bcvb-dashboard-list">
-      {items.map((item) => (
-        <article className="bcvb-dashboard-list__item" key={item.title}>
-          <div>
-            <h3>{item.title}</h3>
-            <p>{item.text}</p>
-          </div>
-          {item.value && <strong>{item.value}</strong>}
-        </article>
-      ))}
-    </div>
-  )
-}
-
-function DashboardActionGrid({ actions, role }: { actions: DashboardAction[]; role?: string | null }) {
-  const visibleActions = actions.filter((action) => canShowForRole(action, role)).slice(0, 5)
-
-  return (
-    <div className="bcvb-dashboard-actions">
-      {visibleActions.map((action) => (
-        <Link to={action.path} className="bcvb-dashboard-action" key={action.label}>
-          <h3>{action.label}</h3>
-          <p>{action.detail}</p>
-        </Link>
-      ))}
-    </div>
-  )
-}
-
 function BcvbDashboardOverview({ role }: { role?: string | null }) {
-  const isAdminRole = isAdmin(role)
-  const isCoachRole = isCoach(role)
-  const isDirigeantRole = isDirigeant(role)
-  const isDirectorRole = isAdminRole || isDirigeantRole || role === 'responsable_technique'
-  const isParentReferentRole = role === 'parent_referent' || role === 'team_staff'
-  const directorModel = isDirectorRole ? buildDirectorSpaceModel({ role }) : null
-
-  const overviewItems: DashboardItem[] = [
-    { title: 'Documents récents', value: isAdminRole ? '12' : '5', text: isAdminRole ? 'Documents modifiés ou prêts à contrôler.' : 'Ressources accessibles pour ton rôle.', tone: 'dark' },
-    { title: 'Équipes suivies', value: isCoachRole ? '3' : isDirigeantRole ? '12' : isParentReferentRole ? '1' : '—', text: isCoachRole ? 'Groupes coachés cette saison.' : isDirigeantRole ? 'Vue club consolidée.' : isParentReferentRole ? 'Équipe référente.' : 'Accès limité selon profil.', tone: 'blue' },
-    { title: 'Prochaines séances', value: isCoachRole ? '4' : '—', text: isCoachRole ? 'Séances à préparer ou finaliser.' : 'Visible pour les profils coach.', tone: 'green' },
-    { title: 'Alertes importantes', value: isAdminRole ? '6' : isCoachRole ? '3' : '1', text: isAdminRole ? 'Qualité, exports et accès à surveiller.' : isCoachRole ? 'Présences et évaluations à reprendre.' : 'Informations club et documents utiles.', tone: 'red' },
-  ]
-
   return (
     <>
       <ActionHeroCard role={role} />
-
       <RoleBasedQuickActions role={role} />
-
-      <DashboardPanel title="Résumé utile">
-        <div className="bcvb-dashboard-metrics">
-          {overviewItems.slice(0, 4).map((item) => (
-            <StatCard key={item.title} label={item.title} value={item.value || '—'} hint={item.text} />
-          ))}
-        </div>
+      <DashboardPanel title="Indicateurs">
+        <p>Aucun indicateur consolidé n’est disponible pour ce profil. Utilisez les accès directs vers les données officielles.</p>
       </DashboardPanel>
-
-      {isAdminRole && (
-        <CollapsibleSection title="Alertes qualité" description="À ouvrir quand vous traitez les documents à contrôler.">
-          <DashboardList items={qualityAlerts} />
-        </CollapsibleSection>
-      )}
-
-      <CollapsibleSection title="Reprise et indicateurs" description="Derniers accès et indicateurs club secondaires.">
-        <DashboardPanel title="Reprise de travail">
-          <DashboardActionGrid actions={workResume} role={role} />
-        </DashboardPanel>
-
-        {(isAdminRole || isCoachRole || isDirigeantRole) && (
-          <DashboardPanel title="Indicateurs club">
-            <div className="bcvb-dashboard-metrics bcvb-dashboard-metrics--wide">
-              {clubMetrics.slice(0, 4).map((item) => (
-                <DashboardMetricCard item={item} key={item.title} />
-              ))}
-            </div>
-          </DashboardPanel>
-        )}
-      </CollapsibleSection>
-
-      {directorModel && (
-        <CollapsibleSection title="Pilotage dirigeants" description="Vue avancée réservée au pilotage club.">
-          <DashboardPanel title="Indicateurs dirigeants">
-            <div className="bcvb-dashboard-metrics bcvb-dashboard-metrics--wide">
-              {directorModel.indicators
-                .filter((item) => ['documents-to-validate', 'teams-without-planning', 'sport-alerts', 'average-quality'].includes(item.id))
-                .map((item) => (
-                  <DashboardMetricCard
-                    key={item.id}
-                    item={{
-                      title: item.label,
-                      value: String(item.value),
-                      text: item.description || 'Indicateur dirigeant.',
-                      tone: item.status === 'critical' ? 'red' : item.status === 'warning' ? 'blue' : 'dark',
-                    }}
-                  />
-                ))}
-            </div>
-            <div className="bcvb-dashboard-actions">
-              <Link to="/dirigeants" className="bcvb-dashboard-action">
-                <h3>Ouvrir l’espace dirigeants</h3>
-                <p>Pilotage sportif, documentaire et organisationnel du BCVB.</p>
-              </Link>
-            </div>
-          </DashboardPanel>
-        </CollapsibleSection>
-      )}
     </>
   )
 }
@@ -207,7 +49,7 @@ function BcvbDashboardOverview({ role }: { role?: string | null }) {
 function CoachDashboard() {
   return (
     <div className="role-dashboard-grid">
-      <Link to="/generateur" className="role-dashboard-card">
+      <Link to="/coach/seances" className="role-dashboard-card">
         <h3>Créer une séance</h3>
         <p>Préparer rapidement un contenu terrain clair et structuré.</p>
       </Link>
@@ -217,7 +59,7 @@ function CoachDashboard() {
         <p>Retrouver les situations utiles pour les catégories et les thèmes.</p>
       </Link>
 
-      <Link to="/seances" className="role-dashboard-card">
+      <Link to="/coach/seances/bibliotheque" className="role-dashboard-card">
         <h3>Mes séances</h3>
         <p>Consulter et enrichir les séances déjà créées.</p>
       </Link>

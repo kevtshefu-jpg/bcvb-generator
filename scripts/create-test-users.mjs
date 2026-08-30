@@ -13,6 +13,7 @@ const adminClient = createClient(config.url, config.serviceRoleKey, {
 const definitions = {
   admin: { email: 'rls.admin@bcvb.test', role: 'admin', active: true, name: 'RLS Admin' },
   coachA: { email: 'rls.coach-a@bcvb.test', role: 'coach', active: true, name: 'RLS Coach A' },
+  coachSameTeam: { email: 'rls.coach-a2@bcvb.test', role: 'coach', active: true, name: 'RLS Coach A2' },
   coachB: { email: 'rls.coach-b@bcvb.test', role: 'coach', active: true, name: 'RLS Coach B' },
   teamStaff: { email: 'rls.team-staff@bcvb.test', role: 'team_staff', active: true, name: 'RLS Staff équipe' },
   parentReferent: { email: 'rls.parent-referent@bcvb.test', role: 'parent_referent', active: true, name: 'RLS Parent référent' },
@@ -37,8 +38,19 @@ const ids = {
   contactB: '40000000-0000-4000-8000-000000000002',
   sessionA: '50000000-0000-4000-8000-000000000001',
   sessionB: '50000000-0000-4000-8000-000000000002',
+  sessionPublishedA: '50000000-0000-4000-8000-000000000003',
+  sessionArchivedA: '50000000-0000-4000-8000-000000000004',
+  sessionRichA: '50000000-0000-4000-8000-000000000005',
+  sessionDeletedA: '50000000-0000-4000-8000-000000000006',
   situationA: '60000000-0000-4000-8000-000000000001',
   situationB: '60000000-0000-4000-8000-000000000002',
+  situationPublishedA: '60000000-0000-4000-8000-000000000003',
+  situationArchivedA: '60000000-0000-4000-8000-000000000004',
+  sessionSituationA: '61000000-0000-4000-8000-000000000001',
+  sessionTagA: '62000000-0000-4000-8000-000000000001',
+  situationTagA: '63000000-0000-4000-8000-000000000001',
+  richBlockFirst: '61000000-0000-4000-8000-000000000011',
+  richBlockSecond: '61000000-0000-4000-8000-000000000012',
   registrationRequest: '70000000-0000-4000-8000-000000000002',
   adminNotification: '80000000-0000-4000-8000-000000000002',
   attendanceSessionA: '90000000-0000-4000-8000-000000000001',
@@ -149,6 +161,7 @@ await upsertRows('teams', [
 
 await upsertRows('team_staff_assignments', [
   { team_id: ids.teamA, profile_id: accounts.coachA.id, assignment_role: 'head_coach', is_active: true, created_by: accounts.admin.id },
+  { team_id: ids.teamA, profile_id: accounts.coachSameTeam.id, assignment_role: 'assistant_coach', is_active: true, created_by: accounts.admin.id },
   { team_id: ids.teamB, profile_id: accounts.coachB.id, assignment_role: 'head_coach', is_active: true, created_by: accounts.admin.id },
 ], 'team_id,profile_id,assignment_role')
 
@@ -174,11 +187,37 @@ await upsertRows('player_contacts', [
 await upsertRows('sessions', [
   { id: ids.sessionA, title: 'Séance privée RLS A', category: 'U13', team_id: ids.teamA, coach_id: accounts.coachA.id, owner_id: accounts.coachA.id, visibility: 'private', status: 'draft' },
   { id: ids.sessionB, title: 'Séance privée RLS B', category: 'U15', team_id: ids.teamB, coach_id: accounts.coachB.id, owner_id: accounts.coachB.id, visibility: 'private', status: 'draft' },
+  { id: ids.sessionPublishedA, title: 'Séance publiée RLS A', category: 'U13', team_id: ids.teamA, coach_id: accounts.coachA.id, owner_id: accounts.coachA.id, visibility: 'club', status: 'published' },
+  { id: ids.sessionArchivedA, title: 'Séance archivée RLS A', category: 'U13', team_id: ids.teamA, coach_id: accounts.coachA.id, owner_id: accounts.coachA.id, visibility: 'private', status: 'archived' },
+])
+await upsertRows('sessions', [
+  { id: ids.sessionRichA, title: 'Fixture riche lecture Supabase', category: 'U15', level: 'confirmé', theme: 'Passe', sub_theme: 'Fixation-passe', team_id: ids.teamA, coach_id: accounts.coachA.id, owner_id: accounts.coachA.id, visibility: 'club', status: 'published', duration_minutes: 30, expected_players: 8, quality_score: 84, version: 7, content_json: { objectives: ['Objectif de test explicitement défini'], equipment: ['Matériel de test'], intensityLevel: 'high', notes: 'Notes de fixture', metricsSummary: [{ id: 'metric-server-1', label: 'Mesure fixture', type: 'count', target: '5', observed: '', unit: '', notes: '' }] } },
+])
+await upsertRows('sessions', [
+  { id: ids.sessionDeletedA, title: 'Fixture soft deleted', category: 'U15', team_id: ids.teamA, coach_id: accounts.coachA.id, owner_id: accounts.coachA.id, visibility: 'club', status: 'archived', deleted_at: '2026-08-01T00:00:00Z' },
 ])
 
 await upsertRows('situations', [
   { id: ids.situationA, session_id: ids.sessionA, team_id: ids.teamA, title: 'Situation privée RLS A', category: 'U13', owner_id: accounts.coachA.id, created_by: accounts.coachA.id, visibility: 'private', status: 'draft' },
   { id: ids.situationB, session_id: ids.sessionB, team_id: ids.teamB, title: 'Situation privée RLS B', category: 'U15', owner_id: accounts.coachB.id, created_by: accounts.coachB.id, visibility: 'private', status: 'draft' },
+  { id: ids.situationPublishedA, team_id: ids.teamA, title: 'Situation publiée RLS A', category: 'U13', owner_id: accounts.coachA.id, created_by: accounts.coachA.id, visibility: 'club', status: 'published' },
+  { id: ids.situationArchivedA, team_id: ids.teamA, title: 'Situation archivée RLS A', category: 'U13', owner_id: accounts.coachA.id, created_by: accounts.coachA.id, visibility: 'private', status: 'archived' },
+])
+
+await upsertRows('session_situations', [
+  { id: ids.sessionSituationA, session_id: ids.sessionA, order_index: 1, title: 'Bloc privé RLS A' },
+])
+await upsertRows('session_situations', [
+  { id: ids.richBlockFirst, session_id: ids.sessionRichA, order_index: 1, title: 'Bloc riche premier', duration_minutes: 10, theme: 'Passe', sub_theme: 'Fixation-passe', content_json: { objective: 'Objectif premier bloc fixture', courtFrames: [{ id: 'court-server-1', title: 'Terrain fixture', courtType: 'half', intent: 'Test', objects: [{ id: 'attack-server-1', type: 'offense_player', x: 1, y: 2, label: 'A' }, { id: 'defense-server-1', type: 'defense_player', x: 3, y: 4, label: 'D' }, { id: 'ball-server-1', type: 'ball', x: 2, y: 2, label: 'B' }], arrows: [{ id: 'arrow-server-1', type: 'arrow_dribble', fromX: 1, fromY: 2, toX: 3, toY: 4 }], zones: [], notes: '' }], metrics: [{ id: 'metric-block-1', label: 'Fixture' }], commonMistakes: ['Erreur fixture'], coachCorrections: ['Correction fixture'], matchTransfer: 'Transfert fixture' } },
+  { id: ids.richBlockSecond, session_id: ids.sessionRichA, order_index: 2, title: 'Bloc riche second', duration_minutes: 20, theme: 'Passe', sub_theme: 'Fixation-passe', content_json: { objective: 'Objectif second bloc fixture' } },
+])
+await upsertRows('session_tags', [
+  { id: ids.sessionTagA, session_id: ids.sessionA, tag: 'rls-session-a' },
+  { id: '62000000-0000-4000-8000-000000000011', session_id: ids.sessionRichA, tag: 'fixture-rich' },
+  { id: '62000000-0000-4000-8000-000000000012', session_id: ids.sessionRichA, tag: 'fixture-read' },
+])
+await upsertRows('situation_tags', [
+  { id: ids.situationTagA, situation_id: ids.situationA, tag: 'rls-situation-a' },
 ])
 
 await upsertRows('attendance_sessions', [
@@ -275,8 +314,19 @@ const state = {
     contactB: ids.contactB,
     sessionA: ids.sessionA,
     sessionB: ids.sessionB,
+    sessionPublishedA: ids.sessionPublishedA,
+    sessionArchivedA: ids.sessionArchivedA,
+    sessionRichA: ids.sessionRichA,
+    sessionDeletedA: ids.sessionDeletedA,
     situationA: ids.situationA,
     situationB: ids.situationB,
+    situationPublishedA: ids.situationPublishedA,
+    situationArchivedA: ids.situationArchivedA,
+    sessionSituationA: ids.sessionSituationA,
+    sessionTagA: ids.sessionTagA,
+    situationTagA: ids.situationTagA,
+    richBlockFirst: ids.richBlockFirst,
+    richBlockSecond: ids.richBlockSecond,
     attendanceSessionA: ids.attendanceSessionA,
     attendanceSessionB: ids.attendanceSessionB,
     attendanceRecordA: ids.attendanceRecordA,
