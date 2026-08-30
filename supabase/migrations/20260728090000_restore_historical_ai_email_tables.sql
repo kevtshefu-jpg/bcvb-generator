@@ -28,6 +28,14 @@ create table if not exists public.document_ai_results (
   created_at timestamptz not null default now()
 );
 
+-- La table historique distante peut précéder le contrat d'ownership et ne pas
+-- exposer owner_id. Préserver ses lignes sans leur inventer de propriétaire ;
+-- elles restent alors visibles uniquement aux administrateurs via la policy
+-- ci-dessous.
+alter table public.document_ai_results
+  add column if not exists owner_id uuid null
+  references auth.users(id) on delete set null;
+
 create table if not exists public.email_events (
   id uuid primary key default gen_random_uuid(),
   event_type text not null,
