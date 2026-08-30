@@ -1,4 +1,5 @@
 import type { AttendanceSession, AttendanceSessionType, AttendanceTeam } from "../../types/attendance";
+import type { AttendanceOccurrence } from "../../features/attendance/attendanceOccurrences";
 
 const sessionTypes: Array<{ value: AttendanceSessionType; label: string }> = [
   { value: "entrainement", label: "Entraînement" },
@@ -18,7 +19,8 @@ export function AttendanceSessionSelector({
   disabled,
   onTeamChange,
   onSessionChange,
-  onCreateSession,
+  occurrences,
+  onOpenOccurrence,
 }: {
   session: AttendanceSession | null;
   sessions: AttendanceSession[];
@@ -27,7 +29,8 @@ export function AttendanceSessionSelector({
   disabled?: boolean;
   onTeamChange: (teamId: string) => void;
   onSessionChange: (sessionId: string) => void;
-  onCreateSession: () => void;
+  occurrences: AttendanceOccurrence[];
+  onOpenOccurrence: (occurrence: AttendanceOccurrence) => void;
 }) {
   return (
     <section className="attendance-card attendance-session-selector">
@@ -97,14 +100,29 @@ export function AttendanceSessionSelector({
         )}
       </div>
 
-      <button
-        className="attendance-create-call"
-        type="button"
-        disabled={disabled || !selectedTeamId}
-        onClick={onCreateSession}
-      >
-        Créer un appel
-      </button>
+      <div className="attendance-occurrences" aria-label="Occurrences du planning">
+        <h3>Planning des appels</h3>
+        {occurrences.length === 0 ? (
+          <p>Aucune occurrence dans la période opérationnelle.</p>
+        ) : occurrences.map((occurrence) => (
+          <article className="attendance-occurrence" key={occurrence.id}>
+            <div>
+              <strong>{new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${occurrence.date}T12:00:00Z`))}</strong>
+              <span>{occurrence.startTime}–{occurrence.endTime} · {occurrence.location || "Lieu non renseigné"}</span>
+            </div>
+            <span className="attendance-occurrence-state">
+              {{ upcoming: 'À venir', missing: 'Appel à compléter', draft: 'Appel en cours', validated: 'Validé' }[occurrence.state]}
+            </span>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => onOpenOccurrence(occurrence)}
+            >
+              {occurrence.session ? "Afficher l’appel" : "Ouvrir l’appel"}
+            </button>
+          </article>
+        ))}
+      </div>
     </section>
   );
 }

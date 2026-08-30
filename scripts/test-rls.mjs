@@ -803,6 +803,52 @@ await expectHidden(clients.member, 'attendance_records', attendanceRecordA, 'mem
     idempotentReadError?.message || `lignes=${idempotentRows?.length}`,
   )
 
+  // GO-LIVE 07E — une occurrence canonique est vérifiée et créée sans relevé implicite.
+  const planningLocation = `Salle occurrence ${crypto.randomUUID()}`
+  const occurrenceWeek = Number.parseInt(crypto.randomUUID().slice(0, 8), 16) % 520
+  const occurrenceInstant = new Date(Date.UTC(2030, 0, 2 + (occurrenceWeek * 7)))
+  const occurrenceDate = occurrenceInstant.toISOString().slice(0, 10)
+  const legacyInstant = new Date(occurrenceInstant)
+  legacyInstant.setUTCDate(legacyInstant.getUTCDate() + 7)
+  const legacyDate = legacyInstant.toISOString().slice(0, 10)
+  const { data: planningSlot, error: planningSlotError } = await clients.admin.rpc('save_training_slot', {
+    target_slot_id: null, target_team_id: teamA, target_season: 'RLS-TEST', target_weekday: 3,
+    target_start_time: '20:30', target_end_time: '22:00', target_location_name: planningLocation,
+    target_valid_from: occurrenceDate, target_valid_until: null, allow_conflict: false,
+  })
+  check(!planningSlotError && planningSlot?.ok === true, 'fixture occurrence: créneau canonique créé localement', formatPostgrestError(planningSlotError))
+  const occurrencePayload = {
+    team_id: teamA, training_slot_id: planningSlot?.slot_id, session_date: occurrenceDate,
+    title: `Entraînement · ${planningLocation}`, session_type: 'entrainement',
+    start_time: '20:30', end_time: '22:00', location_name: planningLocation,
+  }
+  const firstOpen = await clients.coachA.rpc('create_attendance_session_idempotent', { session_payload: occurrencePayload })
+  const secondOpen = await clients.coachA.rpc('create_attendance_session_idempotent', { session_payload: occurrencePayload })
+  check(!firstOpen.error && firstOpen.data?.created === true, 'occurrence: première ouverture crée une séance', formatPostgrestError(firstOpen.error))
+  check(!secondOpen.error && secondOpen.data?.created === false && secondOpen.data?.id === firstOpen.data?.id, 'occurrence: réouverture idempotente sans doublon', formatPostgrestError(secondOpen.error))
+  const { data: occurrenceRows } = await clients.coachA.from('attendance_sessions')
+    .select('id,team_id,training_slot_id,session_date,start_time,end_time,location_name')
+    .eq('id', firstOpen.data?.id)
+  check(occurrenceRows?.length === 1 && occurrenceRows[0].training_slot_id === planningSlot?.slot_id, 'occurrence: identité planning persistée intégralement')
+  const { data: implicitRecords } = await clients.coachA.from('attendance_records').select('id').eq('session_id', firstOpen.data?.id)
+  check(implicitRecords?.length === 0, 'occurrence: aucun relevé de présence créé automatiquement')
+
+  const wrongLocation = await clients.coachA.rpc('create_attendance_session_idempotent', {
+    session_payload: { ...occurrencePayload, location_name: 'Lieu falsifié' },
+  })
+  check(wrongLocation.error?.code === '22023', 'occurrence: lieu non canonique refusé', formatPostgrestError(wrongLocation.error))
+  const unauthorizedOpen = await clients.member.rpc('create_attendance_session_idempotent', { session_payload: occurrencePayload })
+  check(unauthorizedOpen.error?.code === '42501', 'occurrence: rôle non autorisé refusé', formatPostgrestError(unauthorizedOpen.error))
+
+  const legacyPayload = { ...occurrencePayload, training_slot_id: null, session_date: legacyDate }
+  const legacyOpen = await clients.coachA.rpc('create_attendance_session_idempotent', { session_payload: legacyPayload })
+  check(!legacyOpen.error, 'fixture historique compatible: appel manuel créé', formatPostgrestError(legacyOpen.error))
+  const incompatibleOpen = await clients.coachA.rpc('create_attendance_session_idempotent', {
+    session_payload: { ...occurrencePayload, session_date: legacyDate },
+  })
+  check(incompatibleOpen.error?.code === '22023', 'occurrence: appel historique sans training_slot_id refusé fail-closed', formatPostgrestError(incompatibleOpen.error))
+  await clients.admin.rpc('deactivate_training_slot', { target_slot_id: planningSlot?.slot_id })
+
   for (const [clientName, sessionId, playerId, label] of [
     ['coachA', attendanceSessionB, playerB2, 'coach A: RPC présence Team B refusée'],
     ['dirigeant', attendanceSessionA, playerA2, 'dirigeant: RPC écriture présence refusée'],

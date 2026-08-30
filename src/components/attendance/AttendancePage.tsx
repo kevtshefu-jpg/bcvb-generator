@@ -19,6 +19,10 @@ import {
 } from "../../features/attendance/attendanceService";
 import { getPlanningLocalDay } from "../../features/operational-planning/planningLocalDate";
 import {
+  listAttendanceOccurrences,
+  type AttendanceOccurrence,
+} from "../../features/attendance/attendanceOccurrences";
+import {
   canEditAttendance,
   canExportAttendance,
   canValidateAttendance,
@@ -63,6 +67,7 @@ export function AttendancePage() {
   const [teams, setTeams] = useState<AttendanceTeam[]>([]);
   const [teamPlayers, setTeamPlayers] = useState<AttendancePlayer[]>([]);
   const [sessions, setSessions] = useState<AttendanceSession[]>([]);
+  const [occurrences, setOccurrences] = useState<AttendanceOccurrence[]>([]);
   const [session, setSession] = useState<AttendanceSession | null>(null);
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,6 +123,11 @@ export function AttendancePage() {
         );
 
         setSessions(sessionsResult);
+        setOccurrences(await listAttendanceOccurrences({
+          teamId: firstTeam.id,
+          today: getPlanningLocalDay(new Date(), 'Europe/Paris').date,
+          sessions: sessionsResult,
+        }));
 
         const firstSession = sessionsResult[0] || null;
         setSession(firstSession);
@@ -338,6 +348,11 @@ export function AttendancePage() {
         })),
       );
       setSessions(sessionsResult);
+      setOccurrences(await listAttendanceOccurrences({
+        teamId,
+        today: getPlanningLocalDay(new Date(), 'Europe/Paris').date,
+        sessions: sessionsResult,
+      }));
 
       const selectedSession = sessionsResult[0] || null;
       setSession(selectedSession);
@@ -610,18 +625,27 @@ export function AttendancePage() {
     }
   }
 
-  async function createCall() {
+  async function openOccurrenceCall(occurrence: AttendanceOccurrence) {
     await runSingleAttendanceMutation(mutationInFlightRef, async () => {
       if (!selectedTeamId || !canEdit) return;
+
+      if (occurrence.session) {
+        await changeAttendanceSession(occurrence.session.id);
+        return;
+      }
 
       try {
         setMutationLoading(true);
         setLoadError(null);
         const created = await createAttendanceSession({
           teamId: selectedTeamId,
-          date: getPlanningLocalDay().date,
-          title: "Appel séance",
+          trainingSlotId: occurrence.trainingSlotId,
+          date: occurrence.date,
+          title: occurrence.title,
           type: "entrainement",
+          startTime: occurrence.startTime,
+          endTime: occurrence.endTime,
+          location: occurrence.location,
         });
         const serverSessions = await listAttendanceSessions(selectedTeamId);
         const serverSession = serverSessions.find((item) => item.id === created.id);
@@ -632,6 +656,11 @@ export function AttendancePage() {
 
         const serverRecords = await loadAttendanceRecords(created.id);
         setSessions(serverSessions);
+        setOccurrences(await listAttendanceOccurrences({
+          teamId: selectedTeamId,
+          today: getPlanningLocalDay(new Date(), 'Europe/Paris').date,
+          sessions: serverSessions,
+        }));
         setSession(serverSession);
         setRecords(serverRecords);
         setDraftDirty(false);
@@ -684,7 +713,8 @@ export function AttendancePage() {
             onSessionChange={(sessionId) =>
               void changeAttendanceSession(sessionId)
             }
-            onCreateSession={() => void createCall()}
+            occurrences={occurrences}
+            onOpenOccurrence={(occurrence) => void openOccurrenceCall(occurrence)}
           />
           {session ? (
             <>

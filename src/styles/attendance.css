@@ -247,6 +247,32 @@
   min-height: 44px;
 }
 
+.attendance-occurrences {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.attendance-occurrence {
+  align-items: center;
+  border: 1px solid var(--border-color, #d8dee8);
+  border-radius: 0.75rem;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  padding: 0.85rem;
+}
+
+.attendance-occurrence > div { display: grid; gap: 0.25rem; }
+.attendance-occurrence button { min-height: 44px; }
+.attendance-occurrence button:focus-visible { outline: 3px solid #2457d6; outline-offset: 2px; }
+.attendance-occurrence-state { font-weight: 700; }
+
+@media (max-width: 767px) {
+  .attendance-occurrence { grid-template-columns: 1fr; }
+  .attendance-occurrence button { width: 100%; }
+}
+
 .attendance-toolbar .attendance-action-primary,
 .attendance-toolbar .attendance-action-validate {
   color: #ffffff;
