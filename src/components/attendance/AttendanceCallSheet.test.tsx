@@ -31,6 +31,8 @@ function renderCallSheet({
   players = [player],
   records = [record],
   onCreateRecord = vi.fn(),
+  onBulkStatus = vi.fn(),
+  onLock = vi.fn(),
 }: {
   locked?: boolean;
   canEdit?: boolean;
@@ -39,6 +41,8 @@ function renderCallSheet({
   players?: AttendancePlayer[];
   records?: AttendanceRecord[];
   onCreateRecord?: (playerId: string, status: AttendanceRecord['status']) => void;
+  onBulkStatus?: (status: AttendanceRecord['status']) => void;
+  onLock?: () => void;
 } = {}) {
   render(
     <MemoryRouter>
@@ -50,10 +54,11 @@ function renderCallSheet({
         canViewNotes={canViewNotes}
         onRecordsChange={onRecordsChange}
         onCreateRecord={onCreateRecord}
+        onBulkStatus={onBulkStatus}
         onSave={vi.fn()}
         onReset={vi.fn()}
         onCopyPrevious={vi.fn()}
-        onLock={vi.fn()}
+        onLock={onLock}
       />
     </MemoryRouter>,
   )
@@ -125,5 +130,20 @@ describe('AttendanceCallSheet terrain', () => {
     expect(onCreateRecord).toHaveBeenCalledTimes(1)
     expect(onCreateRecord).toHaveBeenCalledWith(arthur.id, 'absent_excused')
     expect(onCreateRecord).not.toHaveBeenCalledWith(arthur.id, 'present')
+  })
+
+  it('ne remplit tout le monde présent qu’après le clic et ne valide pas', async () => {
+    const onBulkStatus = vi.fn()
+    const onLock = vi.fn()
+    renderCallSheet({ records: [], onBulkStatus, onLock })
+
+    expect(onBulkStatus).not.toHaveBeenCalled()
+    expect(onLock).not.toHaveBeenCalled()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Tout le monde présent' }))
+
+    expect(onBulkStatus).toHaveBeenCalledWith('present')
+    expect(onLock).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Valider appel coach' })).toBeEnabled()
   })
 })

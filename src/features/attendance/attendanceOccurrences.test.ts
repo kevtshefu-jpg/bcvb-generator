@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { AttendanceSession } from '../../types/attendance'
 import {
   deriveAttendanceOccurrences,
+  preferredOperationalSession,
   type TrainingSlotExceptionRow,
   type TrainingSlotRow,
 } from './attendanceOccurrences'
@@ -76,6 +77,17 @@ describe('occurrences Attendance issues du planning', () => {
     const occurrences = derive({ sessions: [historical], pastDays: 2 })
     expect(occurrences.every((occurrence) => occurrence.session === undefined)).toBe(true)
     expect(historical.trainingSlotId).toBeUndefined()
+  })
+
+  it('ne sélectionne pas le brouillon historique à la place du planning opérationnel', () => {
+    const historical: AttendanceSession = {
+      id: 'unknown', teamId: 'rf3', date: '2026-08-30', title: 'Appel séance', type: 'entrainement',
+      createdBy: 'actor', createdAt: '2026-08-30T10:00:00Z', updatedAt: '2026-08-30T10:00:00Z',
+    }
+    const occurrences = derive({ sessions: [historical], pastDays: 2 })
+
+    expect(preferredOperationalSession([historical], occurrences)).toBeNull()
+    expect([historical]).toContain(historical)
   })
 
   it('distingue occurrence future, brouillon et séance validée', () => {

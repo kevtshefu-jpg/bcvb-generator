@@ -20,8 +20,13 @@ import {
 import { getPlanningLocalDay } from "../../features/operational-planning/planningLocalDate";
 import {
   listAttendanceOccurrences,
+  preferredOperationalSession,
   type AttendanceOccurrence,
 } from "../../features/attendance/attendanceOccurrences";
+import {
+  isAttendanceDraftForSession,
+  setAttendanceDraftStatusForPlayers,
+} from "../../features/attendance/attendanceDraft";
 import {
   canEditAttendance,
   canExportAttendance,
@@ -124,14 +129,15 @@ export function AttendancePage() {
         );
 
         setSessions(sessionsResult);
-        setOccurrences(await listAttendanceOccurrences({
+        const occurrencesResult = await listAttendanceOccurrences({
           teamId: firstTeam.id,
           teamSeason: firstTeam.season,
           today: getPlanningLocalDay(new Date(), 'Europe/Paris').date,
           sessions: sessionsResult,
-        }));
+        });
+        setOccurrences(occurrencesResult);
 
-        const firstSession = sessionsResult[0] || null;
+        const firstSession = preferredOperationalSession(sessionsResult, occurrencesResult);
         setSession(firstSession);
 
         if (firstSession) {
@@ -257,13 +263,12 @@ export function AttendancePage() {
 
     try {
       const stored = window.localStorage.getItem(currentDraftKey);
-      setStoredDraft(
-        stored ? JSON.parse(stored) as AttendanceDraft : null,
-      );
+      const parsed: unknown = stored ? JSON.parse(stored) : null;
+      setStoredDraft(session && isAttendanceDraftForSession(parsed, session) ? parsed : null);
     } catch {
       setStoredDraft(null);
     }
-  }, [currentDraftKey]);
+  }, [currentDraftKey, session]);
 
   function persistDraft(
     nextSession: AttendanceSession | null = session,
@@ -326,6 +331,18 @@ export function AttendancePage() {
     ]);
   }
 
+  function setAllDraftStatuses(status: AttendanceRecord["status"]) {
+    if (!session || session.locked || !canEdit) return;
+    updateDraftRecords(setAttendanceDraftStatusForPlayers({
+      session,
+      players: teamPlayers,
+      records,
+      status,
+      source: role === "admin" ? "admin" : "coach",
+      updatedAt: nowIso(),
+    }));
+  }
+
   async function changeTeam(teamId: string) {
     if (teamId === selectedTeamId) return;
     if (draftDirty) persistDraft();
@@ -350,14 +367,15 @@ export function AttendancePage() {
         })),
       );
       setSessions(sessionsResult);
-      setOccurrences(await listAttendanceOccurrences({
+      const occurrencesResult = await listAttendanceOccurrences({
         teamId,
         teamSeason: selectedTeam?.season || '',
         today: getPlanningLocalDay(new Date(), 'Europe/Paris').date,
         sessions: sessionsResult,
-      }));
+      });
+      setOccurrences(occurrencesResult);
 
-      const selectedSession = sessionsResult[0] || null;
+      const selectedSession = preferredOperationalSession(sessionsResult, occurrencesResult);
       setSession(selectedSession);
 
       if (!selectedSession) return;
@@ -403,8 +421,7 @@ export function AttendancePage() {
   }
 
   function resumeDraft() {
-    if (!storedDraft) return;
-    setSession(storedDraft.session);
+    if (!storedDraft || !session || !isAttendanceDraftForSession(storedDraft, session)) return;
     setRecords(storedDraft.records);
     setLastSavedAt("");
     setDraftDirty(true);
@@ -696,6 +713,12 @@ export function AttendancePage() {
         <section className="attendance-card attendance-draft-banner">
           <div>
             <strong>Appel en cours détecté</strong>
+            <p>
+              {teams.find((team) => team.id === storedDraft.session.teamId)?.name || "Équipe non renseignée"}
+              {" · "}{storedDraft.session.date}
+              {" · "}{storedDraft.session.startTime || "Horaire non renseigné"}
+              {" · "}{storedDraft.session.location || "Lieu non renseigné"}
+            </p>
             <p>Dernière sauvegarde : {formatTime(storedDraft.updatedAt)}.</p>
           </div>
           <div>
@@ -732,6 +755,7 @@ export function AttendancePage() {
                 mutationLoading={mutationLoading}
                 onRecordsChange={updateDraftRecords}
                 onCreateRecord={createDraftRecord}
+                onBulkStatus={setAllDraftStatuses}
                 onSave={() => void saveCall()}
                 onReset={() => void resetCall()}
                 onCopyPrevious={() => void copyPreviousCall()}
@@ -754,7 +778,9 @@ export function AttendancePage() {
               </div>
 
               <p>
-                Cette équipe ne possède encore aucune séance d’appel.
+                {occurrences.length > 0
+                  ? "Sélectionnez une occurrence du planning pour ouvrir l’appel correspondant. Les appels historiques restent accessibles dans le sélecteur Appel."
+                  : "Cette équipe ne possède encore aucune séance d’appel."}
               </p>
             </section>
           )}

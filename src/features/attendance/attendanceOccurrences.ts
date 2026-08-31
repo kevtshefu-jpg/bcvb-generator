@@ -39,6 +39,16 @@ export type AttendanceOccurrence = {
 export const ATTENDANCE_OCCURRENCE_PAST_DAYS = 14
 export const ATTENDANCE_OCCURRENCE_FUTURE_DAYS = 21
 
+export function preferredOperationalSession(
+  sessions: AttendanceSession[],
+  occurrences: AttendanceOccurrence[],
+): AttendanceSession | null {
+  if (occurrences.length > 0) {
+    return occurrences.find((occurrence) => occurrence.session)?.session ?? null
+  }
+  return sessions[0] ?? null
+}
+
 function civilDate(date: string) {
   // UTC sert uniquement de compteur stable pour une date civile YYYY-MM-DD :
   // aucun horaire local de séance n'est converti en instant UTC.

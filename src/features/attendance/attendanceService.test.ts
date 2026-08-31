@@ -276,6 +276,12 @@ describe('contrats GO-02D du service présences', () => {
     expect(page).toContain('if (draftDirty) persistDraft();')
     expect(page).toContain('setDraftDirty(true);')
     expect(page).toContain('`bcvb.attendance.draft.${session.teamId}.${session.date}.${session.id}`')
+    expect(page).toContain('isAttendanceDraftForSession(parsed, session)')
+    const discard = page.slice(
+      page.indexOf('function discardStoredDraft()'),
+      page.indexOf('async function resetCall()'),
+    )
+    expect(discard).not.toMatch(/saveAttendanceRecord|validateAttendanceSession|\.rpc\(/)
   })
 
   it('retire les fausses mutations parent référent', async () => {
