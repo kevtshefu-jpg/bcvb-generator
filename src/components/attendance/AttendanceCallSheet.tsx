@@ -13,6 +13,7 @@ export function AttendanceCallSheet({
   lastSavedAt,
   onRecordsChange,
   onCreateRecord,
+  onBulkStatus,
   onSave,
   onReset,
   onCopyPrevious,
@@ -27,6 +28,7 @@ export function AttendanceCallSheet({
   lastSavedAt?: string;
   onRecordsChange: (records: AttendanceRecord[]) => void;
   onCreateRecord: (playerId: string, status: AttendanceStatus) => void;
+  onBulkStatus: (status: AttendanceStatus) => void;
   onSave: () => void;
   onReset: () => void;
   onCopyPrevious: () => void;
@@ -53,16 +55,7 @@ export function AttendanceCallSheet({
 
   function setAll(status: AttendanceStatus) {
     if (!effectiveCanEdit) return;
-    onRecordsChange(records.map((record) => ({
-      ...record,
-      status,
-      reason: status === "present" ? "" : record.reason,
-      delayMinutes: status === "late" ? record.delayMinutes : 0,
-      arrivalDelayMinutes: status === "late" ? record.arrivalDelayMinutes : 0,
-      injuryNote: status === "injured" ? record.injuryNote : "",
-      injuryDetails: status === "injured" ? record.injuryDetails : "",
-      updatedAt: new Date().toISOString(),
-    })));
+    onBulkStatus(status);
   }
 
   return (

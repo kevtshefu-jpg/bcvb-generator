@@ -65,10 +65,13 @@ export function AttendanceSessionSelector({
             {sessions.length === 0 && (
               <option value="">Aucune séance</option>
             )}
+            {sessions.length > 0 && !session && (
+              <option value="">Sélectionner un appel historique</option>
+            )}
 
             {sessions.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.date} · {item.title}
+                {item.date} · {item.trainingSlotId ? item.title : `Appel hors planning · ${item.title}`}
               </option>
             ))}
           </select>
@@ -76,6 +79,10 @@ export function AttendanceSessionSelector({
 
         {session && (
           <dl>
+            <div>
+              <dt>Contexte</dt>
+              <dd>{session.trainingSlotId ? "Planning équipe" : "Appel hors planning"}</dd>
+            </div>
             <div>
               <dt>Date</dt>
               <dd>{session.date}</dd>
