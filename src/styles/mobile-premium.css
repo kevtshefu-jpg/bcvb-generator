@@ -41,7 +41,7 @@
   display: none;
 }
 
-@media (min-width: 769px) {
+@media (min-width: 1101px) {
   .mobile-nav,
   .mobile-nav-panel {
     display: none !important;
@@ -51,6 +51,24 @@
 /* =========================================================
    BASE MOBILE
 ========================================================= */
+
+@media (max-width: 1100px) {
+  .app-shell,
+  .public-shell {
+    flex-direction: column;
+  }
+
+  .app-shell > .sidebar,
+  .public-shell > .sidebar {
+    display: none;
+  }
+
+  .app-shell > .main-content,
+  .public-shell > .public-main {
+    width: 100%;
+    min-width: 0;
+  }
+}
 
 @media (max-width: 768px) {
   html,
@@ -164,7 +182,7 @@
    MOBILE NAV — HEADER COMPACT
 ========================================================= */
 
-@media (max-width: 768px) {
+@media (max-width: 1100px) {
   .mobile-nav {
     position: sticky;
     top: 0;
@@ -250,7 +268,7 @@
   }
 
   .mobile-nav__button {
-    min-height: 36px;
+    min-height: 44px;
     padding: 0 11px;
     flex: 0 0 auto;
 
@@ -288,7 +306,7 @@
    MOBILE NAV — QUICK LINKS
 ========================================================= */
 
-@media (max-width: 768px) {
+@media (max-width: 1100px) {
   .mobile-nav__quickLinks {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -309,7 +327,7 @@
     gap: 7px;
     min-width: 0;
 
-    min-height: 32px;
+    min-height: 44px;
     padding: 0 8px;
 
     border-radius: 999px;
@@ -342,7 +360,7 @@
    MOBILE NAV PANEL
 ========================================================= */
 
-@media (max-width: 768px) {
+@media (max-width: 1100px) {
   .mobile-nav-panel {
     position: fixed;
     inset: 0;
@@ -428,7 +446,7 @@
   }
 
   .mobile-nav-panel__close {
-    min-height: 38px;
+    min-height: 44px;
     padding: 0 13px;
 
     border: 1px solid rgba(255, 255, 255, 0.16);

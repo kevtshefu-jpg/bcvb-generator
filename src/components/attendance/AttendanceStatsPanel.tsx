@@ -1,6 +1,31 @@
 import type { AttendanceStats } from "../../types/attendance";
 
-export function AttendanceStatsPanel({ stats, totalPlayers }: { stats: AttendanceStats; totalPlayers: number }) {
+export function AttendanceStatsPanel({
+  sessionSelected,
+  stats,
+  totalPlayers,
+}: {
+  sessionSelected: boolean;
+  stats: AttendanceStats;
+  totalPlayers: number;
+}) {
+  if (!sessionSelected) {
+    return (
+      <aside className="attendance-card attendance-stats-panel attendance-neutral-panel">
+        <div className="attendance-section-title">
+          <span>Statistiques séance</span>
+          <h2>
+            Présence : <span
+              aria-label="Taux de présence non calculable : aucune séance sélectionnée"
+              title="Taux de présence non calculable : aucune séance sélectionnée"
+            >—</span>
+          </h2>
+        </div>
+        <p>Aucune séance sélectionnée</p>
+      </aside>
+    );
+  }
+
   return (
     <aside className="attendance-card attendance-stats-panel">
       <div className="attendance-section-title">

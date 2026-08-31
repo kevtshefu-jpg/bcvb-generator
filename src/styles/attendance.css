@@ -563,6 +563,12 @@
   font-size: 1.3rem;
 }
 
+.attendance-neutral-panel > p {
+  margin: 0;
+  color: #5c6472;
+  font-weight: 800;
+}
+
 .attendance-alert-list {
   display: grid;
   gap: 10px;
@@ -817,7 +823,6 @@
 
   .attendance-selector-grid,
   .attendance-selector-grid dl,
-  .attendance-stat-grid,
   .attendance-sidebar {
     grid-template-columns: 1fr;
   }
@@ -842,6 +847,12 @@
   .attendance-status-quick button {
     min-height: 44px;
     flex: 1 1 42%;
+  }
+}
+
+@media (max-width: 340px) {
+  .attendance-stat-grid {
+    grid-template-columns: 1fr;
   }
 }
 

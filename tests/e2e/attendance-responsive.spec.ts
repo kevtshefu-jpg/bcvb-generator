@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-const attendanceWidths = [320, 375, 390, 430, 768, 1024, 1440]
+const attendanceWidths = [320, 360, 390, 430, 768, 834, 1024, 1100, 1101, 1280, 1440]
 
 test('l’appel réel reste contenu et utilise les cartes aux largeurs terrain', async ({ page }) => {
   await page.setViewportSize({ width: attendanceWidths[0], height: 900 })
@@ -24,6 +24,9 @@ test('l’appel réel reste contenu et utilise les cartes aux largeurs terrain',
       const sidebar = document.querySelector<HTMLElement>('.attendance-sidebar')
       const save = document.querySelector<HTMLButtonElement>('.attendance-action-primary')
       const validate = document.querySelector<HTMLButtonElement>('.attendance-action-validate')
+      const desktopNavigation = document.querySelector<HTMLElement>('.app-shell > .sidebar')
+      const compactNavigation = document.querySelector<HTMLElement>('.mobile-nav')
+      const metricGrid = document.querySelector<HTMLElement>('.attendance-stat-grid')
       const playerName = Array.from(document.querySelectorAll<HTMLElement>('.attendance-player-card header strong, .attendance-player-row td:first-child strong'))
         .find((element) => element.textContent?.trim() === 'Alice RLS A')
       const insideViewport = (element?: HTMLElement) => {
@@ -46,6 +49,9 @@ test('l’appel réel reste contenu et utilise les cartes aux largeurs terrain',
         validateInsideViewport: insideViewport(validate),
         validateBounds: horizontalBounds(validate),
         playerWordBreak: playerName ? getComputedStyle(playerName).wordBreak : '',
+        desktopNavigationDisplay: desktopNavigation ? getComputedStyle(desktopNavigation).display : 'none',
+        compactNavigationDisplay: compactNavigation ? getComputedStyle(compactNavigation).display : 'none',
+        metricColumns: metricGrid ? getComputedStyle(metricGrid).gridTemplateColumns.split(' ').length : 0,
       }
     })
     expect(dimensions.scrollWidth, `débordement global à ${width}px`).toBeLessThanOrEqual(
@@ -57,6 +63,16 @@ test('l’appel réel reste contenu et utilise les cartes aux largeurs terrain',
       `validation hors viewport à ${width}px (${JSON.stringify(dimensions.validateBounds)})`,
     ).toBe(true)
     expect(dimensions.playerWordBreak, `nom joueur comprimé à ${width}px`).not.toBe('break-all')
+
+    if (width <= 1100) {
+      expect(dimensions.desktopNavigationDisplay, `sidebar visible à ${width}px`).toBe('none')
+      expect(dimensions.compactNavigationDisplay, `navigation compacte absente à ${width}px`).not.toBe('none')
+    } else {
+      expect(dimensions.desktopNavigationDisplay, `sidebar absente à ${width}px`).not.toBe('none')
+      expect(dimensions.compactNavigationDisplay, `navigation compacte visible à ${width}px`).toBe('none')
+    }
+
+    expect(dimensions.metricColumns, `grille métriques incorrecte à ${width}px`).toBe(width <= 340 ? 1 : 2)
 
     if (width <= 1400) {
       expect(dimensions.sidebarTop, `sidebar latérale à ${width}px`).toBeGreaterThanOrEqual(
