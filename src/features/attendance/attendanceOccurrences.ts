@@ -4,6 +4,7 @@ import type { AttendanceSession } from '../../types/attendance'
 export type TrainingSlotRow = {
   id: string
   team_id: string
+  season: string
   weekday: number
   start_time: string
   end_time: string
@@ -39,6 +40,8 @@ export const ATTENDANCE_OCCURRENCE_PAST_DAYS = 14
 export const ATTENDANCE_OCCURRENCE_FUTURE_DAYS = 21
 
 function civilDate(date: string) {
+  // UTC sert uniquement de compteur stable pour une date civile YYYY-MM-DD :
+  // aucun horaire local de séance n'est converti en instant UTC.
   const [year, month, day] = date.split('-').map(Number)
   return new Date(Date.UTC(year, month - 1, day))
 }
@@ -59,6 +62,7 @@ function time(value: string) {
 
 export function deriveAttendanceOccurrences(input: {
   teamId: string
+  teamSeason: string
   today: string
   slots: TrainingSlotRow[]
   exceptions: TrainingSlotExceptionRow[]
@@ -74,7 +78,7 @@ export function deriveAttendanceOccurrences(input: {
   const occurrences: AttendanceOccurrence[] = []
 
   for (const slot of input.slots) {
-    if (!slot.is_active || slot.team_id !== input.teamId) continue
+    if (!slot.is_active || slot.team_id !== input.teamId || slot.season !== input.teamSeason) continue
     for (let date = start; date <= end; date = addCivilDays(date, 1)) {
       if (date < slot.valid_from || (slot.valid_until && date > slot.valid_until)) continue
       if (isoWeekday(date) !== slot.weekday) continue
@@ -109,6 +113,7 @@ export function deriveAttendanceOccurrences(input: {
 
 export async function listAttendanceOccurrences(input: {
   teamId: string
+  teamSeason: string
   today: string
   sessions: AttendanceSession[]
 }) {
@@ -116,8 +121,9 @@ export async function listAttendanceOccurrences(input: {
   const rangeEnd = addCivilDays(input.today, ATTENDANCE_OCCURRENCE_FUTURE_DAYS)
   const { data: slots, error: slotError } = await supabase
     .from('training_slots')
-    .select('id, team_id, weekday, start_time, end_time, location_name, valid_from, valid_until, is_active')
+    .select('id, team_id, season, weekday, start_time, end_time, location_name, valid_from, valid_until, is_active')
     .eq('team_id', input.teamId)
+    .eq('season', input.teamSeason)
     .eq('is_active', true)
     .lte('valid_from', rangeEnd)
     .or(`valid_until.is.null,valid_until.gte.${rangeStart}`)

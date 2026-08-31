@@ -160,6 +160,7 @@ export type AttendanceTeam = {
   id: string;
   name: string;
   category: string;
+  season: string;
 };
 
 export type AttendancePlayer = {

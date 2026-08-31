@@ -240,6 +240,13 @@ const {
   attendanceSessionB,
   attendanceRecordA,
   attendanceRecordB,
+  attendanceSlotSeasonMismatch,
+  attendanceSlotCancelled,
+  attendanceSlotStart,
+  attendanceSlotEnd,
+  attendanceSlotLocation,
+  attendanceSlotCombined,
+  attendanceSlotMoved,
 } = fixtures
 
 for (const [name, expectedA, expectedB] of [
@@ -848,6 +855,56 @@ await expectHidden(clients.member, 'attendance_records', attendanceRecordA, 'mem
   })
   check(incompatibleOpen.error?.code === '22023', 'occurrence: appel historique sans training_slot_id refusé fail-closed', formatPostgrestError(incompatibleOpen.error))
   await clients.admin.rpc('deactivate_training_slot', { target_slot_id: planningSlot?.slot_id })
+
+  const contractPayload = (trainingSlotId, sessionDate, overrides = {}) => ({
+    team_id: teamA, training_slot_id: trainingSlotId, session_date: sessionDate,
+    title: 'Occurrence contractuelle RLS', session_type: 'entrainement',
+    start_time: '20:30', end_time: '22:00', location_name: 'Contrat RLS', ...overrides,
+  })
+  const countSessionsForSlot = async (slotId) => {
+    const { count, error } = await clients.coachA.from('attendance_sessions')
+      .select('id', { count: 'exact', head: true }).eq('training_slot_id', slotId)
+    return { count, error }
+  }
+
+  const seasonBefore = await countSessionsForSlot(attendanceSlotSeasonMismatch)
+  const seasonMismatch = await clients.coachA.rpc('create_attendance_session_idempotent', {
+    session_payload: contractPayload(attendanceSlotSeasonMismatch, '2035-01-10', { location_name: 'Saison RLS' }),
+  })
+  const seasonAfter = await countSessionsForSlot(attendanceSlotSeasonMismatch)
+  check(seasonMismatch.error?.code === '22023' && seasonBefore.count === 0 && seasonAfter.count === 0,
+    'occurrence: saison du créneau différente de teams.season refusée sans séance', formatPostgrestError(seasonMismatch.error))
+
+  const cancelled = await clients.coachA.rpc('create_attendance_session_idempotent', {
+    session_payload: contractPayload(attendanceSlotCancelled, '2035-01-10', { start_time: '18:00', end_time: '19:00', location_name: 'Ne doit pas ressusciter' }),
+  })
+  const cancelledCount = await countSessionsForSlot(attendanceSlotCancelled)
+  check(cancelled.error?.code === '22023' && cancelledCount.count === 0,
+    'occurrence: cancelled reste refusée malgré ses overrides et ne crée aucune séance', formatPostgrestError(cancelled.error))
+
+  const exceptionCases = [
+    ['modified début seul', attendanceSlotStart, '2035-01-17', { start_time: '19:30', end_time: '22:00', location_name: 'Début RLS' }],
+    ['modified fin seule', attendanceSlotEnd, '2035-01-24', { start_time: '20:30', end_time: '22:30', location_name: 'Fin RLS' }],
+    ['modified lieu seul normalisé', attendanceSlotLocation, '2035-01-31', { start_time: '20:30', end_time: '22:00', location_name: ' Annexe RLS ' }],
+    ['modified combinée', attendanceSlotCombined, '2035-02-07', { start_time: '19:00', end_time: '21:00', location_name: 'Combiné effectif' }],
+    ['moved même date', attendanceSlotMoved, '2035-02-14', { start_time: '18:30', end_time: '20:00', location_name: 'Moved effectif' }],
+  ]
+  for (const [label, slotId, sessionDate, effective] of exceptionCases) {
+    const obsolete = await clients.coachA.rpc('create_attendance_session_idempotent', {
+      session_payload: contractPayload(slotId, sessionDate, { location_name: label.includes('lieu') ? 'Lieu RLS' : label.includes('début') ? 'Début RLS' : label.includes('fin') ? 'Fin RLS' : label.includes('combinée') ? 'Combiné RLS' : 'Moved RLS' }),
+    })
+    check(obsolete.error?.code === '22023', `${label}: valeurs canoniques devenues obsolètes refusées`, formatPostgrestError(obsolete.error))
+    const firstEffective = await clients.coachA.rpc('create_attendance_session_idempotent', {
+      session_payload: contractPayload(slotId, sessionDate, effective),
+    })
+    const secondEffective = await clients.coachA.rpc('create_attendance_session_idempotent', {
+      session_payload: contractPayload(slotId, sessionDate, effective),
+    })
+    check(!firstEffective.error && firstEffective.data?.created === true
+      && !secondEffective.error && secondEffective.data?.created === false
+      && firstEffective.data?.id === secondEffective.data?.id,
+    `${label}: valeurs effectives acceptées et réouverture idempotente`, formatPostgrestError(firstEffective.error || secondEffective.error))
+  }
 
   for (const [clientName, sessionId, playerId, label] of [
     ['coachA', attendanceSessionB, playerB2, 'coach A: RPC présence Team B refusée'],

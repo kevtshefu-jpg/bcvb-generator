@@ -93,6 +93,7 @@ export function AttendancePage() {
           id: team.id,
           name: team.name,
           category: team.category,
+          season: team.season,
         }));
 
         setTeams(mappedTeams);
@@ -125,6 +126,7 @@ export function AttendancePage() {
         setSessions(sessionsResult);
         setOccurrences(await listAttendanceOccurrences({
           teamId: firstTeam.id,
+          teamSeason: firstTeam.season,
           today: getPlanningLocalDay(new Date(), 'Europe/Paris').date,
           sessions: sessionsResult,
         }));
@@ -350,6 +352,7 @@ export function AttendancePage() {
       setSessions(sessionsResult);
       setOccurrences(await listAttendanceOccurrences({
         teamId,
+        teamSeason: selectedTeam?.season || '',
         today: getPlanningLocalDay(new Date(), 'Europe/Paris').date,
         sessions: sessionsResult,
       }));
@@ -658,6 +661,7 @@ export function AttendancePage() {
         setSessions(serverSessions);
         setOccurrences(await listAttendanceOccurrences({
           teamId: selectedTeamId,
+          teamSeason: teams.find((team) => team.id === selectedTeamId)?.season || '',
           today: getPlanningLocalDay(new Date(), 'Europe/Paris').date,
           sessions: serverSessions,
         }));

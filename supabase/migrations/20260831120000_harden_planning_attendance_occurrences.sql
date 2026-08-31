@@ -11,6 +11,7 @@ as $$
 declare
   actor_role text;
   target_team_id uuid;
+  target_team_season text;
   target_slot_id uuid;
   target_date date;
   target_type text;
@@ -53,6 +54,12 @@ begin
     raise exception 'Création de séance interdite.' using errcode = '42501';
   end if;
 
+  select season into target_team_season from public.teams
+  where id = target_team_id and archived_at is null;
+  if target_team_season is null then
+    raise exception 'Équipe canonique introuvable.' using errcode = '22023';
+  end if;
+
   if target_slot_id is not null then
     if target_type <> 'entrainement' then
       raise exception 'Une occurrence de planning doit être un entraînement.' using errcode = '22023';
@@ -61,7 +68,8 @@ begin
     select * into slot from public.training_slots
     where id = target_slot_id
     for share;
-    if slot.id is null or not slot.is_active or slot.team_id <> target_team_id then
+    if slot.id is null or not slot.is_active or slot.team_id <> target_team_id
+      or slot.season <> target_team_season then
       raise exception 'Créneau actif incompatible avec cette équipe.' using errcode = '22023';
     end if;
     if target_date < slot.valid_from
