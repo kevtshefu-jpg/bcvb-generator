@@ -5,10 +5,22 @@ export function AttendanceQualityPanel({
   stats,
   totalPlayers,
 }: {
-  quality: AttendanceQualityScore;
+  quality: AttendanceQualityScore | null;
   stats: AttendanceStats;
   totalPlayers: number;
 }) {
+  if (!quality) {
+    return (
+      <aside className="attendance-card attendance-quality-panel attendance-neutral-panel">
+        <div className="attendance-section-title">
+          <span>Qualité appel</span>
+          <h2 aria-label="Qualité de l’appel non calculable : aucune séance sélectionnée">—</h2>
+        </div>
+        <p>Aucune séance sélectionnée</p>
+      </aside>
+    );
+  }
+
   return (
     <aside className="attendance-card attendance-quality-panel">
       <div className="attendance-section-title">

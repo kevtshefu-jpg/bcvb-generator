@@ -42,7 +42,7 @@ const unavailableTeamStats: AttendanceTeamStats = {
 describe('présentation du taux de présence non observé', () => {
   it.each([
     ['bandeau', <AttendanceHeader stats={unavailableStats} />],
-    ['statistiques séance', <AttendanceStatsPanel stats={unavailableStats} totalPlayers={7} />],
+    ['statistiques séance', <AttendanceStatsPanel sessionSelected stats={unavailableStats} totalPlayers={7} />],
     ['bilan équipe', <AttendanceTeamSummary stats={unavailableTeamStats} />],
   ])('affiche un tiret accessible dans %s', (_label, component) => {
     const { container } = render(component)
@@ -54,7 +54,7 @@ describe('présentation du taux de présence non observé', () => {
   })
 
   it('conserve zéro pour un taux réellement observé', () => {
-    render(<AttendanceStatsPanel stats={{ ...unavailableStats, attendanceRate: 0, recordedCount: 7, missingRecords: 0, completionRate: 100 }} totalPlayers={7} />)
+    render(<AttendanceStatsPanel sessionSelected stats={{ ...unavailableStats, attendanceRate: 0, recordedCount: 7, missingRecords: 0, completionRate: 100 }} totalPlayers={7} />)
 
     expect(screen.getByRole('heading', { name: 'Présence : 0%' })).toBeInTheDocument()
   })

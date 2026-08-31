@@ -237,17 +237,7 @@ export function AttendancePage() {
             records,
             teamPlayers.length,
           )
-        : {
-            score: 0,
-            label: "à compléter" as const,
-            missingRecords: 0,
-            completionRate: 0,
-            missingReasons: 0,
-            unvalidatedRecords: 0,
-            recommendedActions: [
-              "Sélectionner ou créer une séance d’appel.",
-            ],
-          },
+        : null,
     [records, session, teamPlayers.length],
   );
   const alerts = useMemo(() => [
@@ -788,9 +778,9 @@ export function AttendancePage() {
 
         <aside className="attendance-sidebar">
           <AttendanceQualityPanel quality={qualityScore} stats={sessionStats} totalPlayers={teamPlayers.length} />
-          <AttendanceStatsPanel stats={sessionStats} totalPlayers={teamPlayers.length} />
-          <AttendancePlayerSummary players={teamPlayers} stats={promptPlayerStats} />
-          <AttendanceAlertsPanel alerts={alerts} />
+          <AttendanceStatsPanel sessionSelected={Boolean(session)} stats={sessionStats} totalPlayers={teamPlayers.length} />
+          {session && <AttendancePlayerSummary players={teamPlayers} stats={promptPlayerStats} />}
+          {session && <AttendanceAlertsPanel alerts={alerts} />}
           {session && (
             <AttendanceExportPanel
               session={session}
