@@ -39,6 +39,7 @@ type MembershipRow = {
 type SessionRow = {
   id: string
   team_id: string
+  training_slot_id: string | null
   session_date: string
   title: string
   session_type: AttendanceSessionType
@@ -127,7 +128,7 @@ export async function listAttendanceSessions(
   const { data, error } = await supabase
     .from('attendance_sessions')
     .select(
-      'id, team_id, session_date, title, session_type, start_time, end_time, location_name, notes, status, created_by, created_at, updated_at',
+      'id, team_id, training_slot_id, session_date, title, session_type, start_time, end_time, location_name, notes, status, created_by, created_at, updated_at',
     )
     .eq('team_id', teamId)
     .neq('status', 'cancelled')
@@ -284,6 +285,7 @@ function mapSession(row: SessionRow): AttendanceSession {
   return {
     id: row.id,
     teamId: row.team_id,
+    trainingSlotId: row.training_slot_id || undefined,
     title: row.title,
     date: row.session_date,
     startTime: row.start_time?.slice(0, 5) || undefined,

@@ -30,6 +30,7 @@ export type AttendanceSessionType =
 export interface AttendanceSession {
   id: string;
   teamId: string;
+  trainingSlotId?: string;
   title: string;
   date: string;
   startTime?: string;
@@ -159,6 +160,7 @@ export type AttendanceTeam = {
   id: string;
   name: string;
   category: string;
+  season: string;
 };
 
 export type AttendancePlayer = {

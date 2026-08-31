@@ -62,7 +62,7 @@ describe('matrice métriques GO-02E.9', () => {
     const dashboard = buildAttendanceDashboardData(
       [],
       [session()],
-      [{ id: 'team-1', name: 'Équipe', category: 'Senior' }],
+      [{ id: 'team-1', name: 'Équipe', category: 'Senior', season: '2026-2027' }],
       [{ id: 'alice', firstName: 'Alice', lastName: 'A', teamId: 'team-1' }],
     )
 

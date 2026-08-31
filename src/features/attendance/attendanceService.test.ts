@@ -116,6 +116,24 @@ describe('contrats GO-02D du service présences', () => {
     expect(selector).toContain('session.location || "Non renseigné"')
   })
 
+  it('ouvre intentionnellement un appel depuis une occurrence complète du planning', async () => {
+    const [page, selector, service] = await Promise.all([
+      readFile(resolve(process.cwd(), 'src/components/attendance/AttendancePage.tsx'), 'utf8'),
+      readFile(resolve(process.cwd(), 'src/components/attendance/AttendanceSessionSelector.tsx'), 'utf8'),
+      readFile(resolve(process.cwd(), 'src/features/attendance/attendanceService.ts'), 'utf8'),
+    ])
+
+    expect(page).not.toContain('async function createCall()')
+    expect(page).not.toContain('title: "Appel séance"')
+    expect(page).toContain('async function openOccurrenceCall')
+    for (const field of ['trainingSlotId', 'date', 'startTime', 'endTime', 'location']) {
+      expect(page).toContain(`${field}: occurrence.${field}`)
+    }
+    expect(selector).toContain('Ouvrir l’appel')
+    expect(selector).not.toContain('Créer un appel')
+    expect(service).toContain('training_slot_id: input.trainingSlotId || null')
+  })
+
   it('préserve le brouillon avant un changement réel d’équipe ou de séance', async () => {
     const page = await readFile(
       resolve(process.cwd(), 'src/components/attendance/AttendancePage.tsx'),

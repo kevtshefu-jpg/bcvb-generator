@@ -57,6 +57,13 @@ const ids = {
   attendanceSessionB: '90000000-0000-4000-8000-000000000002',
   attendanceRecordA: '91000000-0000-4000-8000-000000000001',
   attendanceRecordB: '91000000-0000-4000-8000-000000000002',
+  attendanceSlotSeasonMismatch: '92000000-0000-4000-8000-000000000001',
+  attendanceSlotCancelled: '92000000-0000-4000-8000-000000000002',
+  attendanceSlotStart: '92000000-0000-4000-8000-000000000003',
+  attendanceSlotEnd: '92000000-0000-4000-8000-000000000004',
+  attendanceSlotLocation: '92000000-0000-4000-8000-000000000005',
+  attendanceSlotCombined: '92000000-0000-4000-8000-000000000006',
+  attendanceSlotMoved: '92000000-0000-4000-8000-000000000007',
 }
 
 const previousState = await loadFixtureState()
@@ -241,6 +248,39 @@ await upsertRows('attendance_sessions', [
   },
 ])
 
+const attendanceContractSlotIds = [
+  ids.attendanceSlotSeasonMismatch, ids.attendanceSlotCancelled, ids.attendanceSlotStart,
+  ids.attendanceSlotEnd, ids.attendanceSlotLocation, ids.attendanceSlotCombined, ids.attendanceSlotMoved,
+]
+const { data: staleContractSessions, error: staleContractReadError } = await adminClient
+  .from('attendance_sessions').select('id').in('training_slot_id', attendanceContractSlotIds)
+if (staleContractReadError) throw new Error(`attendance contract cleanup read: ${staleContractReadError.message}`)
+if (staleContractSessions?.length) {
+  const staleIds = staleContractSessions.map((row) => row.id)
+  const { error: staleRecordsError } = await adminClient.from('attendance_records').delete().in('session_id', staleIds)
+  if (staleRecordsError) throw new Error(`attendance contract records cleanup: ${staleRecordsError.message}`)
+  const { error: staleSessionsError } = await adminClient.from('attendance_sessions').delete().in('id', staleIds)
+  if (staleSessionsError) throw new Error(`attendance contract sessions cleanup: ${staleSessionsError.message}`)
+}
+
+await upsertRows('training_slots', [
+  { id: ids.attendanceSlotSeasonMismatch, team_id: ids.teamA, season: 'OTHER-SEASON', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Saison RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
+  { id: ids.attendanceSlotCancelled, team_id: ids.teamA, season: 'RLS-TEST', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Annulation RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
+  { id: ids.attendanceSlotStart, team_id: ids.teamA, season: 'RLS-TEST', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Début RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
+  { id: ids.attendanceSlotEnd, team_id: ids.teamA, season: 'RLS-TEST', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Fin RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
+  { id: ids.attendanceSlotLocation, team_id: ids.teamA, season: 'RLS-TEST', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Lieu RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
+  { id: ids.attendanceSlotCombined, team_id: ids.teamA, season: 'RLS-TEST', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Combiné RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
+  { id: ids.attendanceSlotMoved, team_id: ids.teamA, season: 'RLS-TEST', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Moved RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
+])
+await upsertRows('training_slot_exceptions', [
+  { id: '93000000-0000-4000-8000-000000000002', training_slot_id: ids.attendanceSlotCancelled, exception_date: '2035-01-10', exception_type: 'cancelled', start_time: '18:00', end_time: '19:00', location_name: 'Ne doit pas ressusciter', created_by: accounts.admin.id },
+  { id: '93000000-0000-4000-8000-000000000003', training_slot_id: ids.attendanceSlotStart, exception_date: '2035-01-17', exception_type: 'modified', start_time: '19:30', created_by: accounts.admin.id },
+  { id: '93000000-0000-4000-8000-000000000004', training_slot_id: ids.attendanceSlotEnd, exception_date: '2035-01-24', exception_type: 'modified', end_time: '22:30', created_by: accounts.admin.id },
+  { id: '93000000-0000-4000-8000-000000000005', training_slot_id: ids.attendanceSlotLocation, exception_date: '2035-01-31', exception_type: 'modified', location_name: '  Annexe RLS  ', created_by: accounts.admin.id },
+  { id: '93000000-0000-4000-8000-000000000006', training_slot_id: ids.attendanceSlotCombined, exception_date: '2035-02-07', exception_type: 'modified', start_time: '19:00', end_time: '21:00', location_name: 'Combiné effectif', created_by: accounts.admin.id },
+  { id: '93000000-0000-4000-8000-000000000007', training_slot_id: ids.attendanceSlotMoved, exception_date: '2035-02-14', exception_type: 'moved', start_time: '18:30', end_time: '20:00', location_name: 'Moved effectif', created_by: accounts.admin.id },
+])
+
 const { error: attendanceCleanupError } = await adminClient
   .from('attendance_records')
   .delete()
@@ -331,6 +371,13 @@ const state = {
     attendanceSessionB: ids.attendanceSessionB,
     attendanceRecordA: ids.attendanceRecordA,
     attendanceRecordB: ids.attendanceRecordB,
+    attendanceSlotSeasonMismatch: ids.attendanceSlotSeasonMismatch,
+    attendanceSlotCancelled: ids.attendanceSlotCancelled,
+    attendanceSlotStart: ids.attendanceSlotStart,
+    attendanceSlotEnd: ids.attendanceSlotEnd,
+    attendanceSlotLocation: ids.attendanceSlotLocation,
+    attendanceSlotCombined: ids.attendanceSlotCombined,
+    attendanceSlotMoved: ids.attendanceSlotMoved,
     registrationRequest: ids.registrationRequest,
     adminNotification: ids.adminNotification,
   },
