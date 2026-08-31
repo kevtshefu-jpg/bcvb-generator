@@ -15,6 +15,8 @@ const definitions = {
   coachA: { email: 'rls.coach-a@bcvb.test', role: 'coach', active: true, name: 'RLS Coach A' },
   coachSameTeam: { email: 'rls.coach-a2@bcvb.test', role: 'coach', active: true, name: 'RLS Coach A2' },
   coachB: { email: 'rls.coach-b@bcvb.test', role: 'coach', active: true, name: 'RLS Coach B' },
+  coachParentOnly: { email: 'rls.coach-parent-only@bcvb.test', role: 'coach', active: true, name: 'RLS Coach parent only' },
+  coachTeamStaffOnly: { email: 'rls.coach-team-staff-only@bcvb.test', role: 'coach', active: true, name: 'RLS Coach staff only' },
   teamStaff: { email: 'rls.team-staff@bcvb.test', role: 'team_staff', active: true, name: 'RLS Staff équipe' },
   parentReferent: { email: 'rls.parent-referent@bcvb.test', role: 'parent_referent', active: true, name: 'RLS Parent référent' },
   dirigeant: { email: 'rls.dirigeant@bcvb.test', role: 'dirigeant', active: true, name: 'RLS Dirigeant' },
@@ -170,6 +172,10 @@ await upsertRows('team_staff_assignments', [
   { team_id: ids.teamA, profile_id: accounts.coachA.id, assignment_role: 'head_coach', is_active: true, created_by: accounts.admin.id },
   { team_id: ids.teamA, profile_id: accounts.coachSameTeam.id, assignment_role: 'assistant_coach', is_active: true, created_by: accounts.admin.id },
   { team_id: ids.teamB, profile_id: accounts.coachB.id, assignment_role: 'head_coach', is_active: true, created_by: accounts.admin.id },
+  { team_id: ids.teamA, profile_id: accounts.coachParentOnly.id, assignment_role: 'parent_referent', is_active: true, created_by: accounts.admin.id },
+  { team_id: ids.teamA, profile_id: accounts.coachTeamStaffOnly.id, assignment_role: 'team_staff', is_active: true, created_by: accounts.admin.id },
+  { team_id: ids.teamA, profile_id: accounts.teamStaff.id, assignment_role: 'team_staff', is_active: true, created_by: accounts.admin.id },
+  { team_id: ids.teamA, profile_id: accounts.parentReferent.id, assignment_role: 'parent_referent', is_active: true, created_by: accounts.admin.id },
 ], 'team_id,profile_id,assignment_role')
 
 await upsertRows('players', [

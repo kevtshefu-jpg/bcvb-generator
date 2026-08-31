@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { assertAssignableProfile, canManageTeamStaff, hasActiveDuplicate, type StaffAssignment } from './teamManagementService'
 
@@ -33,5 +35,15 @@ describe('règles métier des affectations équipe', () => {
     const onlyHeadCoach = [assignment]
     expect(onlyHeadCoach.some((item) => item.assignment_role === 'assistant_coach')).toBe(false)
     expect(onlyHeadCoach.some((item) => item.assignment_role === 'parent_referent')).toBe(false)
+  })
+
+  it('isole les joueurs du détail équipe par saison et statut actif', () => {
+    const source = readFileSync(resolve(process.cwd(), 'src/features/teams/teamManagementService.ts'), 'utf8')
+    const loadTeamDetailSource = source.slice(source.indexOf('export async function loadTeamDetail'), source.indexOf('export async function loadAssignableProfiles'))
+
+    expect(loadTeamDetailSource).toContain(".eq('team_id', teamId)")
+    expect(loadTeamDetailSource).toContain(".eq('season', teamResult.data.season)")
+    expect(loadTeamDetailSource).toContain(".eq('status', 'active')")
+    expect(loadTeamDetailSource).not.toContain(".neq('status', 'inactive')")
   })
 })

@@ -9,6 +9,7 @@ import {
   computeTeamAttendanceStats,
 } from '../../lib/attendance/attendanceStats'
 import { computeAttendanceQualityScore } from '../../lib/attendance/attendanceScoring'
+import { mapAttendanceMemberships } from './attendanceService'
 
 describe('contrats GO-02D du service présences', () => {
   it('utilise Supabase comme source de vérité', async () => {
@@ -42,6 +43,25 @@ describe('contrats GO-02D du service présences', () => {
 
     expect(source).toContain("from('team_memberships')")
     expect(source).toContain(".eq('team_id', teamId)")
+    expect(source).toContain(".eq('season', season)")
+    expect(source).toContain(".eq('status', 'active')")
+    expect(source).not.toContain(".neq('status', 'inactive')")
+  })
+
+  it('isole le roster par équipe, saison et statut actif en mode fail-closed', () => {
+    const player = (id: string) => ({ id, first_name: id, last_name: 'Test', category: null, archived_at: null, deleted_at: null })
+    const rows = [
+      { team_id: 'team-a', season: '2026-2027', status: 'active', player: player('current') },
+      { team_id: 'team-a', season: '2025-2026', status: 'active', player: player('old') },
+      { team_id: 'team-a', season: '2026-2027', status: 'inactive', player: player('inactive') },
+      { team_id: 'team-a', season: '2026-2027', status: 'unknown', player: player('unknown') },
+      { team_id: 'team-b', season: '2026-2027', status: 'active', player: player('other-team') },
+    ]
+
+    expect(mapAttendanceMemberships(rows, { teamId: 'team-a', season: '2026-2027' }))
+      .toEqual([{ id: 'current', firstName: 'current', lastName: 'Test', category: undefined, teamId: 'team-a' }])
+    expect(mapAttendanceMemberships(rows, { teamId: 'team-b', season: '2026-2027' }))
+      .toEqual([{ id: 'other-team', firstName: 'other-team', lastName: 'Test', category: undefined, teamId: 'team-b' }])
   })
 
   it('confirme les mutations côté serveur', async () => {
@@ -132,6 +152,20 @@ describe('contrats GO-02D du service présences', () => {
     expect(selector).toContain('Ouvrir l’appel')
     expect(selector).not.toContain('Créer un appel')
     expect(service).toContain('training_slot_id: input.trainingSlotId || null')
+  })
+
+  it('applique les capacités serveur par équipe et reste fail-closed pendant un changement', async () => {
+    const page = await readFile(resolve(process.cwd(), 'src/components/attendance/AttendancePage.tsx'), 'utf8')
+    const changeTeam = page.slice(page.indexOf('async function changeTeam'), page.indexOf('async function changeAttendanceSession'))
+    const openOccurrence = page.slice(page.indexOf('async function openOccurrenceCall'), page.indexOf('return (', page.indexOf('async function openOccurrenceCall')))
+
+    expect(page).toContain('getAttendanceCapabilities(firstTeam.id)')
+    expect(changeTeam).toContain('setCapabilities(noAttendanceCapabilities)')
+    expect(changeTeam).toContain('getAttendanceCapabilities(teamId)')
+    expect(changeTeam).toContain('requestId !== teamLoadRequestRef.current')
+    expect(page).toContain('navigationDisabled={!capabilities.canNavigate || loading || mutationLoading}')
+    expect(page).toContain('canCreateOccurrence={canEdit}')
+    expect(openOccurrence.indexOf('if (occurrence.session)')).toBeLessThan(openOccurrence.indexOf('if (!selectedTeamId || !canEdit) return'))
   })
 
   it('préserve le brouillon avant un changement réel d’équipe ou de séance', async () => {

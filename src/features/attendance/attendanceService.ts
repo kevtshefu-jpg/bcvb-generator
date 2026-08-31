@@ -14,8 +14,30 @@ export type AttendanceTeamRow = {
   season: string
 }
 
-type MembershipRow = {
+export type AttendanceCapabilities = {
+  canView: boolean
+  canNavigate: boolean
+  canEditDraft: boolean
+  canValidate: boolean
+  canExport: boolean
+  canViewSensitiveNotes: boolean
+  canManagePlanning: boolean
+}
+
+type AttendanceCapabilitiesRow = {
+  can_view: boolean
+  can_navigate: boolean
+  can_edit_draft: boolean
+  can_validate: boolean
+  can_export: boolean
+  can_view_sensitive_notes: boolean
+  can_manage_planning: boolean
+}
+
+export type AttendanceMembershipRow = {
+  team_id: string
   status: string
+  season: string
   player:
     | {
         id: string
@@ -93,19 +115,32 @@ export async function listAttendanceTeams(): Promise<AttendanceTeamRow[]> {
 }
 
 export async function loadAttendancePlayers(
-  teamId: string,
+  input: { teamId: string; season: string },
 ): Promise<AttendancePlayer[]> {
+  const { teamId, season } = input
   const { data, error } = await supabase
     .from('team_memberships')
     .select(
-      'status, player:players(id, first_name, last_name, category, archived_at, deleted_at)',
+      'team_id, status, season, player:players(id, first_name, last_name, category, archived_at, deleted_at)',
     )
     .eq('team_id', teamId)
-    .neq('status', 'inactive')
+    .eq('season', season)
+    .eq('status', 'active')
 
   if (error) throw new Error(error.message)
 
-  return ((data || []) as unknown as MembershipRow[]).flatMap((membership) => {
+  return mapAttendanceMemberships(
+    (data || []) as unknown as AttendanceMembershipRow[],
+    input,
+  )
+}
+
+export function mapAttendanceMemberships(
+  memberships: AttendanceMembershipRow[],
+  input: { teamId: string; season: string },
+): AttendancePlayer[] {
+  return memberships.flatMap((membership) => {
+    if (membership.team_id !== input.teamId || membership.status !== 'active' || membership.season !== input.season) return []
     const player = Array.isArray(membership.player)
       ? membership.player[0]
       : membership.player
@@ -117,9 +152,31 @@ export async function loadAttendancePlayers(
       firstName: player.first_name,
       lastName: player.last_name,
       category: player.category || undefined,
-      teamId,
+      teamId: input.teamId,
     }]
   })
+}
+
+export async function getAttendanceCapabilities(
+  teamId: string,
+): Promise<AttendanceCapabilities> {
+  const { data, error } = await supabase.rpc('get_attendance_capabilities', {
+    p_team_id: teamId,
+  })
+  if (error) throw new Error(error.message)
+
+  const row = (data as AttendanceCapabilitiesRow[] | null)?.[0]
+  if (!row) throw new Error('Les capacités Attendance n’ont pas été confirmées par le serveur.')
+
+  return {
+    canView: row.can_view === true,
+    canNavigate: row.can_navigate === true,
+    canEditDraft: row.can_edit_draft === true,
+    canValidate: row.can_validate === true,
+    canExport: row.can_export === true,
+    canViewSensitiveNotes: row.can_view_sensitive_notes === true,
+    canManagePlanning: row.can_manage_planning === true,
+  }
 }
 
 export async function listAttendanceSessions(

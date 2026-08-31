@@ -16,7 +16,8 @@ export function AttendanceSessionSelector({
   sessions,
   teams,
   selectedTeamId,
-  disabled,
+  navigationDisabled,
+  canCreateOccurrence,
   onTeamChange,
   onSessionChange,
   occurrences,
@@ -26,7 +27,8 @@ export function AttendanceSessionSelector({
   sessions: AttendanceSession[];
   teams: AttendanceTeam[];
   selectedTeamId: string;
-  disabled?: boolean;
+  navigationDisabled?: boolean;
+  canCreateOccurrence: boolean;
   onTeamChange: (teamId: string) => void;
   onSessionChange: (sessionId: string) => void;
   occurrences: AttendanceOccurrence[];
@@ -43,7 +45,7 @@ export function AttendanceSessionSelector({
         <label>
           Équipe
           <select
-            disabled={disabled}
+            disabled={navigationDisabled}
             value={selectedTeamId}
             onChange={(event) => onTeamChange(event.target.value)}
           >
@@ -58,7 +60,7 @@ export function AttendanceSessionSelector({
         <label>
           Appel
           <select
-            disabled={disabled || sessions.length === 0}
+            disabled={navigationDisabled || sessions.length === 0}
             value={session?.id || ""}
             onChange={(event) => onSessionChange(event.target.value)}
           >
@@ -122,10 +124,14 @@ export function AttendanceSessionSelector({
             </span>
             <button
               type="button"
-              disabled={disabled}
+              disabled={navigationDisabled || (!occurrence.session && !canCreateOccurrence)}
               onClick={() => onOpenOccurrence(occurrence)}
             >
-              {occurrence.session ? "Afficher l’appel" : "Ouvrir l’appel"}
+              {occurrence.session
+                ? "Afficher l’appel"
+                : canCreateOccurrence
+                  ? "Ouvrir l’appel"
+                  : "Appel non ouvert"}
             </button>
           </article>
         ))}

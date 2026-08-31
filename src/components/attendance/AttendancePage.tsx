@@ -16,6 +16,8 @@ import {
   saveAttendanceRecord,
   validateAttendanceSession,
   AttendanceConflictError,
+  getAttendanceCapabilities,
+  type AttendanceCapabilities,
 } from "../../features/attendance/attendanceService";
 import { getPlanningLocalDay } from "../../features/operational-planning/planningLocalDate";
 import {
@@ -27,12 +29,6 @@ import {
   isAttendanceDraftForSession,
   setAttendanceDraftStatusForPlayers,
 } from "../../features/attendance/attendanceDraft";
-import {
-  canEditAttendance,
-  canExportAttendance,
-  canValidateAttendance,
-  canViewSensitiveAttendanceNotes,
-} from "../../lib/attendance/attendancePermissions";
 import { runSingleAttendanceMutation } from "../../lib/attendance/attendanceMutationGuard";
 import {
   buildAttendanceAlerts,
@@ -65,6 +61,16 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
+const noAttendanceCapabilities: AttendanceCapabilities = {
+  canView: false,
+  canNavigate: false,
+  canEditDraft: false,
+  canValidate: false,
+  canExport: false,
+  canViewSensitiveNotes: false,
+  canManagePlanning: false,
+};
+
 export function AttendancePage() {
   const { profile } = useAuth();
   const role = profile?.role;
@@ -80,7 +86,9 @@ export function AttendancePage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [draftDirty, setDraftDirty] = useState(false);
   const [conflictServerRecords, setConflictServerRecords] = useState<AttendanceRecord[] | null>(null);
+  const [capabilities, setCapabilities] = useState<AttendanceCapabilities>(noAttendanceCapabilities);
   const mutationInFlightRef = useRef(false);
+  const teamLoadRequestRef = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -114,9 +122,10 @@ export function AttendancePage() {
         const firstTeam = mappedTeams[0];
         setSelectedTeamId(firstTeam.id);
 
-        const [playersResult, sessionsResult] = await Promise.all([
-          loadAttendancePlayers(firstTeam.id),
+        const [playersResult, sessionsResult, capabilitiesResult] = await Promise.all([
+          loadAttendancePlayers({ teamId: firstTeam.id, season: firstTeam.season }),
           listAttendanceSessions(firstTeam.id),
+          getAttendanceCapabilities(firstTeam.id),
         ]);
 
         if (cancelled) return;
@@ -129,6 +138,7 @@ export function AttendancePage() {
         );
 
         setSessions(sessionsResult);
+        setCapabilities(capabilitiesResult);
         const occurrencesResult = await listAttendanceOccurrences({
           teamId: firstTeam.id,
           teamSeason: firstTeam.season,
@@ -173,10 +183,10 @@ export function AttendancePage() {
   }, []);
   const [lastSavedAt, setLastSavedAt] = useState("");
   const [storedDraft, setStoredDraft] = useState<AttendanceDraft | null>(null);
-  const canEdit = canEditAttendance(role, selectedTeamId);
-  const canValidate = canValidateAttendance(role);
-  const canExport = canExportAttendance(role);
-  const canViewNotes = canViewSensitiveAttendanceNotes(role);
+  const canEdit = capabilities.canEditDraft;
+  const canValidate = capabilities.canValidate;
+  const canExport = capabilities.canExport;
+  const canViewNotes = capabilities.canViewSensitiveNotes;
   const currentDraftKey = session
     ? draftKey(session)
     : null;
@@ -336,6 +346,9 @@ export function AttendancePage() {
   async function changeTeam(teamId: string) {
     if (teamId === selectedTeamId) return;
     if (draftDirty) persistDraft();
+    const requestId = teamLoadRequestRef.current + 1;
+    teamLoadRequestRef.current = requestId;
+    setCapabilities(noAttendanceCapabilities);
     setSelectedTeamId(teamId);
 
     try {
@@ -345,10 +358,14 @@ export function AttendancePage() {
       setDraftDirty(false);
 
       const selectedTeam = teams.find((team) => team.id === teamId);
-      const [playersResult, sessionsResult] = await Promise.all([
-        loadAttendancePlayers(teamId),
+      if (!selectedTeam) throw new Error("Équipe inaccessible.");
+      const [playersResult, sessionsResult, capabilitiesResult] = await Promise.all([
+        loadAttendancePlayers({ teamId, season: selectedTeam.season }),
         listAttendanceSessions(teamId),
+        getAttendanceCapabilities(teamId),
       ]);
+
+      if (requestId !== teamLoadRequestRef.current) return;
 
       setTeamPlayers(
         playersResult.map((player) => ({
@@ -357,6 +374,7 @@ export function AttendancePage() {
         })),
       );
       setSessions(sessionsResult);
+      setCapabilities(capabilitiesResult);
       const occurrencesResult = await listAttendanceOccurrences({
         teamId,
         teamSeason: selectedTeam?.season || '',
@@ -374,13 +392,14 @@ export function AttendancePage() {
       setRecords(attendanceRecords);
       setDraftDirty(false);
     } catch (error) {
+      if (requestId !== teamLoadRequestRef.current) return;
       setLoadError(
         error instanceof Error
           ? error.message
           : "Chargement des présences impossible.",
       );
     } finally {
-      setLoading(false);
+      if (requestId === teamLoadRequestRef.current) setLoading(false);
     }
   }
 
@@ -636,14 +655,13 @@ export function AttendancePage() {
   }
 
   async function openOccurrenceCall(occurrence: AttendanceOccurrence) {
+    if (occurrence.session) {
+      await changeAttendanceSession(occurrence.session.id);
+      return;
+    }
+    if (!selectedTeamId || !canEdit) return;
+
     await runSingleAttendanceMutation(mutationInFlightRef, async () => {
-      if (!selectedTeamId || !canEdit) return;
-
-      if (occurrence.session) {
-        await changeAttendanceSession(occurrence.session.id);
-        return;
-      }
-
       try {
         setMutationLoading(true);
         setLoadError(null);
@@ -725,7 +743,8 @@ export function AttendancePage() {
             sessions={sessions}
             teams={teams}
             selectedTeamId={selectedTeamId}
-            disabled={!canEdit || loading || mutationLoading}
+            navigationDisabled={!capabilities.canNavigate || loading || mutationLoading}
+            canCreateOccurrence={canEdit}
             onTeamChange={(teamId) => void changeTeam(teamId)}
             onSessionChange={(sessionId) =>
               void changeAttendanceSession(sessionId)
