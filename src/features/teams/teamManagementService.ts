@@ -68,13 +68,14 @@ export async function loadTeams(): Promise<TeamRow[]> {
 }
 
 export async function loadTeamDetail(teamId: string): Promise<TeamDetail> {
-  const [teamResult, staffResult, membershipsResult] = await Promise.all([
-    supabase.from('teams').select('id, name, category, level, season, archived_at').eq('id', teamId).maybeSingle(),
-    supabase.from('team_staff_assignments').select('id, team_id, profile_id, assignment_role, is_active, profile:profiles(id, full_name, email, role, is_active, profile_status)').eq('team_id', teamId).eq('is_active', true).order('created_at'),
-    supabase.from('team_memberships').select('status, player:players(id, first_name, last_name, category, deleted_at, archived_at)').eq('team_id', teamId).neq('status', 'inactive'),
-  ])
+  const teamResult = await supabase.from('teams').select('id, name, category, level, season, archived_at').eq('id', teamId).maybeSingle()
   if (teamResult.error) throw new Error(teamResult.error.message)
   if (!teamResult.data) throw new Error('Équipe introuvable ou non autorisée.')
+
+  const [staffResult, membershipsResult] = await Promise.all([
+    supabase.from('team_staff_assignments').select('id, team_id, profile_id, assignment_role, is_active, profile:profiles(id, full_name, email, role, is_active, profile_status)').eq('team_id', teamId).eq('is_active', true).order('created_at'),
+    supabase.from('team_memberships').select('status, player:players(id, first_name, last_name, category, deleted_at, archived_at)').eq('team_id', teamId).eq('season', teamResult.data.season).eq('status', 'active'),
+  ])
   if (staffResult.error) throw new Error(staffResult.error.message)
   if (membershipsResult.error) throw new Error(membershipsResult.error.message)
 

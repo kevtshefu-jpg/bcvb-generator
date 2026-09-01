@@ -15,7 +15,7 @@ if (fixtureState.target?.projectRef !== projectRef) {
   throw new Error(`Fixtures créées pour ${fixtureState.target?.projectRef || 'une cible inconnue'}, cible actuelle ${projectRef}. Relancer seed:rls.`)
 }
 
-const accountNames = ['admin', 'technicalManager', 'coachA', 'coachSameTeam', 'coachB', 'teamStaff', 'parentReferent', 'dirigeant', 'member', 'inactive']
+const accountNames = ['admin', 'technicalManager', 'coachA', 'coachSameTeam', 'coachB', 'coachParentOnly', 'coachTeamStaffOnly', 'teamStaff', 'parentReferent', 'dirigeant', 'member', 'inactive', 'authenticatedWithoutProfile']
 const missingAccounts = accountNames.filter((name) => !fixtureState.accounts?.[name]?.email || !fixtureState.accounts?.[name]?.password)
 if (missingAccounts.length) throw new Error(`Comptes absents du seed : ${missingAccounts.join(', ')}`)
 
@@ -72,11 +72,14 @@ for (const [name, expectedRole] of [
   ['coachA', 'coach'],
   ['coachSameTeam', 'coach'],
   ['coachB', 'coach'],
+  ['coachParentOnly', 'coach'],
+  ['coachTeamStaffOnly', 'coach'],
   ['teamStaff', 'team_staff'],
   ['parentReferent', 'parent_referent'],
   ['dirigeant', 'dirigeant'],
   ['member', 'member'],
   ['inactive', 'inactive'],
+  ['authenticatedWithoutProfile', null],
 ]) {
   const { data, error } = await clients[name].rpc('current_user_role')
   if (error || data !== expectedRole) {
@@ -256,6 +259,10 @@ for (const [name, expectedA, expectedB] of [
   ['coachA', true, false],
   ['coachSameTeam', true, false],
   ['coachB', false, true],
+  ['coachParentOnly', true, false],
+  ['coachTeamStaffOnly', true, false],
+  ['teamStaff', true, false],
+  ['parentReferent', true, false],
   ['member', false, false],
   ['inactive', false, false],
 ]) {
@@ -263,6 +270,50 @@ for (const [name, expectedA, expectedB] of [
   const { data: accessB, error: errorB } = await clients[name].rpc('can_access_team', { target_team_id: teamB })
   check(!errorA && accessA === expectedA, `${name}: can_access_team équipe A`, errorA?.message || String(accessA))
   check(!errorB && accessB === expectedB, `${name}: can_access_team équipe B`, errorB?.message || String(accessB))
+}
+
+{
+  const expected = {
+    full: { can_view: true, can_navigate: true, can_edit_draft: true, can_validate: true, can_export: true, can_view_sensitive_notes: true },
+    read: { can_view: true, can_navigate: true, can_edit_draft: false, can_validate: false, can_export: false, can_view_sensitive_notes: false, can_manage_planning: false },
+    none: { can_view: false, can_navigate: false, can_edit_draft: false, can_validate: false, can_export: false, can_view_sensitive_notes: false, can_manage_planning: false },
+  }
+  async function capability(clientName, teamId) {
+    const { data, error } = await clients[clientName].rpc('get_attendance_capabilities', { p_team_id: teamId })
+    return { value: data?.[0], error }
+  }
+  for (const name of ['admin', 'technicalManager']) {
+    const { value, error } = await capability(name, teamA)
+    check(!error && Object.entries(expected.full).every(([key, valueExpected]) => value?.[key] === valueExpected) && value?.can_manage_planning === true, `${name}: capacités Attendance globales`, formatPostgrestError(error))
+  }
+  for (const name of ['coachA', 'coachSameTeam']) {
+    const { value, error } = await capability(name, teamA)
+    check(!error && Object.entries(expected.full).every(([key, valueExpected]) => value?.[key] === valueExpected) && value?.can_manage_planning === false, `${name}: capacités coach Attendance équipe A`, formatPostgrestError(error))
+  }
+  for (const name of ['coachParentOnly', 'coachTeamStaffOnly', 'teamStaff', 'parentReferent']) {
+    const { value, error } = await capability(name, teamA)
+    check(!error && Object.entries(expected.read).every(([key, valueExpected]) => value?.[key] === valueExpected), `${name}: capacités limitées à la lecture`, formatPostgrestError(error))
+  }
+  for (const name of ['coachA', 'coachParentOnly', 'coachTeamStaffOnly', 'teamStaff', 'parentReferent', 'member', 'inactive']) {
+    const { value, error } = await capability(name, teamB)
+    check(!error && Object.entries(expected.none).every(([key, valueExpected]) => value?.[key] === valueExpected), `${name}: aucune capacité injustifiée sur équipe B`, formatPostgrestError(error))
+  }
+  const dirigeantA = await capability('dirigeant', teamA)
+  const dirigeantB = await capability('dirigeant', teamB)
+  check(!dirigeantA.error && Object.entries(expected.read).every(([key, valueExpected]) => dirigeantA.value?.[key] === valueExpected), 'dirigeant: lecture globale équipe A', formatPostgrestError(dirigeantA.error))
+  check(!dirigeantB.error && Object.entries(expected.read).every(([key, valueExpected]) => dirigeantB.value?.[key] === valueExpected), 'dirigeant: lecture globale équipe B', formatPostgrestError(dirigeantB.error))
+  const invalid = await capability('admin', crypto.randomUUID())
+  check(!invalid.error && Object.entries(expected.none).every(([key, valueExpected]) => invalid.value?.[key] === valueExpected), 'capabilities: équipe invalide fail-closed', formatPostgrestError(invalid.error))
+  const withoutProfile = await capability('authenticatedWithoutProfile', teamA)
+  const withoutProfileValues = Object.values(withoutProfile.value || {})
+  check(!withoutProfile.error && JSON.stringify(withoutProfile.value) === JSON.stringify(expected.none)
+    && withoutProfileValues.length === 7 && withoutProfileValues.every((value) => value === false),
+  'capabilities: utilisateur Auth sans profil reçoit exactement sept false', formatPostgrestError(withoutProfile.error))
+  const profilelessHelper = await clients.authenticatedWithoutProfile.rpc('can_manage_attendance_team', { p_team_id: teamA })
+  check(!profilelessHelper.error && profilelessHelper.data === false,
+    'helper Attendance: utilisateur Auth sans profil reçoit exactement false', formatPostgrestError(profilelessHelper.error))
+  const anonCapabilities = await anonClient.rpc('get_attendance_capabilities', { p_team_id: teamA })
+  check(anonCapabilities.error?.code === '42501', 'capabilities: utilisateur anonyme refusé', formatPostgrestError(anonCapabilities.error))
 }
 
 for (const table of ['players', 'sessions', 'situations']) {
@@ -846,6 +897,10 @@ await expectHidden(clients.member, 'attendance_records', attendanceRecordA, 'mem
   check(wrongLocation.error?.code === '22023', 'occurrence: lieu non canonique refusé', formatPostgrestError(wrongLocation.error))
   const unauthorizedOpen = await clients.member.rpc('create_attendance_session_idempotent', { session_payload: occurrencePayload })
   check(unauthorizedOpen.error?.code === '42501', 'occurrence: rôle non autorisé refusé', formatPostgrestError(unauthorizedOpen.error))
+  for (const clientName of ['coachParentOnly', 'coachTeamStaffOnly']) {
+    const deniedOpen = await clients[clientName].rpc('create_attendance_session_idempotent', { session_payload: occurrencePayload })
+    check(deniedOpen.error?.code === '42501', `occurrence: ${clientName} ne peut pas créer un appel`, formatPostgrestError(deniedOpen.error))
+  }
 
   const legacyPayload = { ...occurrencePayload, training_slot_id: null, session_date: legacyDate }
   const legacyOpen = await clients.coachA.rpc('create_attendance_session_idempotent', { session_payload: legacyPayload })
@@ -908,6 +963,8 @@ await expectHidden(clients.member, 'attendance_records', attendanceRecordA, 'mem
 
   for (const [clientName, sessionId, playerId, label] of [
     ['coachA', attendanceSessionB, playerB2, 'coach A: RPC présence Team B refusée'],
+    ['coachParentOnly', attendanceSessionA, playerA2, 'coach + parent_referent seulement: RPC présence refusée'],
+    ['coachTeamStaffOnly', attendanceSessionA, playerA2, 'coach + team_staff seulement: RPC présence refusée'],
     ['dirigeant', attendanceSessionA, playerA2, 'dirigeant: RPC écriture présence refusée'],
   ]) {
     const { error } = await clients[clientName].rpc('save_attendance_record', {
@@ -941,6 +998,8 @@ await expectHidden(clients.member, 'attendance_records', attendanceRecordA, 'mem
     ['technicalManager', attendanceSessionA, true, 'responsable technique: validation autorisée'],
     ['coachA', attendanceSessionA, true, 'coach A: validation Team A autorisée'],
     ['coachA', attendanceSessionB, false, 'coach A: validation Team B refusée'],
+    ['coachParentOnly', attendanceSessionA, false, 'coach + parent_referent seulement: validation refusée'],
+    ['coachTeamStaffOnly', attendanceSessionA, false, 'coach + team_staff seulement: validation refusée'],
     ['dirigeant', attendanceSessionA, false, 'dirigeant: validation refusée'],
     ['parentReferent', attendanceSessionA, false, 'parent référent: validation refusée'],
     ['member', attendanceSessionA, false, 'membre: validation refusée'],
@@ -1032,6 +1091,16 @@ await expectHidden(clients.member, 'attendance_records', attendanceRecordA, 'mem
     'dirigeant: autres notes attendance sensibles non transmises',
   )
 
+  for (const clientName of ['coachParentOnly', 'coachTeamStaffOnly', 'teamStaff', 'parentReferent']) {
+    const { data, error } = await clients[clientName].rpc('read_attendance_records_versioned', {
+      target_session_id: attendanceSessionA,
+      target_player_id: playerA,
+    })
+    check(!error && data?.[0]?.coach_comment === null && data?.[0]?.injury_note === null
+      && data?.[0]?.logistic_note === null && data?.[0]?.reason === null,
+    `${clientName}: notes Attendance sensibles masquées`, formatPostgrestError(error))
+  }
+
   const { error: directSensitiveReadError } = await clients.dirigeant
     .from('attendance_records')
     .select('coach_comment')
@@ -1050,6 +1119,27 @@ await expectHidden(clients.member, 'attendance_records', attendanceRecordA, 'mem
       target_player_id: null,
     })
     check(!error && data?.length === 0, `${clientName}: read model attendance vide`, formatPostgrestError(error))
+  }
+}
+
+{
+  const fixtureProfiles = [
+    fixtureState.accounts.coachParentOnly.id,
+    fixtureState.accounts.coachTeamStaffOnly.id,
+    fixtureState.accounts.teamStaff.id,
+    fixtureState.accounts.parentReferent.id,
+  ]
+  const { data: temporaryAssignments, error: temporaryAssignmentsError } = await clients.admin
+    .from('team_staff_assignments')
+    .select('id')
+    .eq('team_id', teamA)
+    .in('profile_id', fixtureProfiles)
+    .eq('is_active', true)
+  check(!temporaryAssignmentsError && temporaryAssignments?.length === 4,
+    'fixtures capacités Attendance retrouvées avant nettoyage local', formatPostgrestError(temporaryAssignmentsError))
+  for (const assignment of temporaryAssignments || []) {
+    const { error } = await clients.admin.rpc('remove_team_staff', { target_assignment_id: assignment.id })
+    check(!error, 'fixture capacité Attendance retirée avant scénarios staff historiques', formatPostgrestError(error))
   }
 }
 

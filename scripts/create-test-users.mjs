@@ -15,12 +15,15 @@ const definitions = {
   coachA: { email: 'rls.coach-a@bcvb.test', role: 'coach', active: true, name: 'RLS Coach A' },
   coachSameTeam: { email: 'rls.coach-a2@bcvb.test', role: 'coach', active: true, name: 'RLS Coach A2' },
   coachB: { email: 'rls.coach-b@bcvb.test', role: 'coach', active: true, name: 'RLS Coach B' },
+  coachParentOnly: { email: 'rls.coach-parent-only@bcvb.test', role: 'coach', active: true, name: 'RLS Coach parent only' },
+  coachTeamStaffOnly: { email: 'rls.coach-team-staff-only@bcvb.test', role: 'coach', active: true, name: 'RLS Coach staff only' },
   teamStaff: { email: 'rls.team-staff@bcvb.test', role: 'team_staff', active: true, name: 'RLS Staff équipe' },
   parentReferent: { email: 'rls.parent-referent@bcvb.test', role: 'parent_referent', active: true, name: 'RLS Parent référent' },
   dirigeant: { email: 'rls.dirigeant@bcvb.test', role: 'dirigeant', active: true, name: 'RLS Dirigeant' },
   technicalManager: { email: 'rls.responsable-technique@bcvb.test', role: 'responsable_technique', active: true, name: 'RLS Responsable technique' },
   member: { email: 'rls.member@bcvb.test', role: 'member', active: true, name: 'RLS Membre' },
   inactive: { email: 'rls.inactive@bcvb.test', role: 'coach', active: false, name: 'RLS Inactif' },
+  authenticatedWithoutProfile: { email: 'rls.no-profile@bcvb.test', role: 'member', active: true, name: 'RLS Sans profil', hasProfile: false },
 }
 
 const ids = {
@@ -120,14 +123,22 @@ for (const [name, definition] of Object.entries(definitions)) {
   accounts[name] = { id: user.id, email: definition.email, password, role: definition.active ? definition.role : 'inactive' }
 }
 
-await upsertRows('profiles', Object.entries(definitions).map(([name, definition]) => ({
-  id: accounts[name].id,
-  email: definition.email,
-  full_name: definition.name,
-  role: definition.role,
-  is_active: definition.active,
-  profile_status: definition.active ? 'active' : 'inactive',
-})))
+await upsertRows('profiles', Object.entries(definitions)
+  .filter(([, definition]) => definition.hasProfile !== false)
+  .map(([name, definition]) => ({
+    id: accounts[name].id,
+    email: definition.email,
+    full_name: definition.name,
+    role: definition.role,
+    is_active: definition.active,
+    profile_status: definition.active ? 'active' : 'inactive',
+  })))
+
+const { error: profilelessCleanupError } = await adminClient
+  .from('profiles')
+  .delete()
+  .eq('id', accounts.authenticatedWithoutProfile.id)
+if (profilelessCleanupError) throw new Error(`authenticatedWithoutProfile: suppression du profil local impossible : ${profilelessCleanupError.message}`)
 
 // Les tests transactionnels remplacent volontairement les coachs de ces deux
 // équipes réservées. Remet le staff actif à zéro pour rendre le seed idempotent,
@@ -170,6 +181,10 @@ await upsertRows('team_staff_assignments', [
   { team_id: ids.teamA, profile_id: accounts.coachA.id, assignment_role: 'head_coach', is_active: true, created_by: accounts.admin.id },
   { team_id: ids.teamA, profile_id: accounts.coachSameTeam.id, assignment_role: 'assistant_coach', is_active: true, created_by: accounts.admin.id },
   { team_id: ids.teamB, profile_id: accounts.coachB.id, assignment_role: 'head_coach', is_active: true, created_by: accounts.admin.id },
+  { team_id: ids.teamA, profile_id: accounts.coachParentOnly.id, assignment_role: 'parent_referent', is_active: true, created_by: accounts.admin.id },
+  { team_id: ids.teamA, profile_id: accounts.coachTeamStaffOnly.id, assignment_role: 'team_staff', is_active: true, created_by: accounts.admin.id },
+  { team_id: ids.teamA, profile_id: accounts.teamStaff.id, assignment_role: 'team_staff', is_active: true, created_by: accounts.admin.id },
+  { team_id: ids.teamA, profile_id: accounts.parentReferent.id, assignment_role: 'parent_referent', is_active: true, created_by: accounts.admin.id },
 ], 'team_id,profile_id,assignment_role')
 
 await upsertRows('players', [
