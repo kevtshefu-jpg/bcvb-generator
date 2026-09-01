@@ -90,15 +90,16 @@ assert(ambiguousKevinError?.code === '22023', 'Kevin ambigu: import refusé', am
 await expectEmpty('Kevin ambigu: rollback complet')
 await must(service.from('profiles').update({ full_name: 'RLS Coach A' }).eq('id', coachId), 'restauration second profil')
 
-const duplicateTeams = await must(service.from('teams').insert([
+const firstDuplicateTeam = await must(service.from('teams').insert(
   { name: 'RF3 - SF', category: 'Seniors', level: 'RF3', season: '2026-2027', created_by: adminId },
-  { name: 'RF3 - SF', category: 'Seniors', level: 'RF3', season: '2026-2027', created_by: adminId },
-]).select('id'), 'simulation équipes dupliquées')
-const { error: duplicateTeamError } = await admin.rpc('import_rf3_pilot_2026_2027')
-assert(duplicateTeamError?.code === '22023', 'équipes dupliquées: import refusé', duplicateTeamError?.code)
-const duplicateRollbackCounts = await scopedCounts()
-assert(duplicateRollbackCounts.teams === 2 && duplicateRollbackCounts.players === 0 && duplicateRollbackCounts.memberships === 0 && duplicateRollbackCounts.staff === 0, 'équipes dupliquées: aucune création partielle', JSON.stringify(duplicateRollbackCounts))
-await must(service.from('teams').delete().in('id', duplicateTeams.map((row) => row.id)), 'nettoyage équipes dupliquées')
+).select('id').single(), 'préparation protection doublon équipe')
+const { error: duplicateInsertError } = await service.from('teams').insert(
+  { name: ' rf3  -  sf ', category: ' seniors ', level: 'rf3', season: '2026-2027', created_by: adminId },
+)
+assert(duplicateInsertError?.code === '23505', 'équipes dupliquées normalisées: filet DB refuse la seconde ligne', duplicateInsertError?.code)
+const duplicateProtectionCounts = await scopedCounts()
+assert(duplicateProtectionCounts.teams === 1 && duplicateProtectionCounts.players === 0 && duplicateProtectionCounts.memberships === 0 && duplicateProtectionCounts.staff === 0, 'protection doublon: une seule équipe et aucune création partielle', JSON.stringify(duplicateProtectionCounts))
+await must(service.from('teams').delete().eq('id', firstDuplicateTeam.id), 'nettoyage équipe du test de doublon')
 
 await must(service.from('players').insert({ first_name: 'Conflit', last_name: 'Licence', birth_date: '2000-01-01', category: 'Seniors', license_number: 'VT052472', created_by: adminId }), 'simulation conflit licence')
 const { error: licenseConflictError } = await admin.rpc('import_rf3_pilot_2026_2027')

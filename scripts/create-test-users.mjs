@@ -158,7 +158,7 @@ await upsertRows('teams', [
     name: 'RLS Team A',
     category: 'U13',
     level: 'Test',
-    season: 'RLS-TEST',
+    season: '2026-2027',
     head_coach_id: accounts.coachA.id,
     assistant_coach_ids: [],
     created_by: accounts.admin.id,
@@ -169,7 +169,7 @@ await upsertRows('teams', [
     name: 'RLS Team B',
     category: 'U15',
     level: 'Test',
-    season: 'RLS-TEST',
+    season: '2026-2027',
     head_coach_id: accounts.coachB.id,
     assistant_coach_ids: [],
     created_by: accounts.admin.id,
@@ -195,10 +195,10 @@ await upsertRows('players', [
 ])
 
 await upsertRows('team_memberships', [
-  { id: ids.membershipA, player_id: ids.playerA, team_id: ids.teamA, season: 'RLS-TEST', status: 'active', created_by: accounts.admin.id },
-  { id: ids.membershipA2, player_id: ids.playerA2, team_id: ids.teamA, season: 'RLS-TEST', status: 'active', created_by: accounts.admin.id },
-  { id: ids.membershipB, player_id: ids.playerB, team_id: ids.teamB, season: 'RLS-TEST', status: 'active', created_by: accounts.admin.id },
-  { id: ids.membershipB2, player_id: ids.playerB2, team_id: ids.teamB, season: 'RLS-TEST', status: 'active', created_by: accounts.admin.id },
+  { id: ids.membershipA, player_id: ids.playerA, team_id: ids.teamA, season: '2026-2027', status: 'active', created_by: accounts.admin.id },
+  { id: ids.membershipA2, player_id: ids.playerA2, team_id: ids.teamA, season: '2026-2027', status: 'active', created_by: accounts.admin.id },
+  { id: ids.membershipB, player_id: ids.playerB, team_id: ids.teamB, season: '2026-2027', status: 'active', created_by: accounts.admin.id },
+  { id: ids.membershipB2, player_id: ids.playerB2, team_id: ids.teamB, season: '2026-2027', status: 'active', created_by: accounts.admin.id },
 ])
 
 await upsertRows('player_contacts', [
@@ -280,12 +280,12 @@ if (staleContractSessions?.length) {
 
 await upsertRows('training_slots', [
   { id: ids.attendanceSlotSeasonMismatch, team_id: ids.teamA, season: 'OTHER-SEASON', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Saison RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
-  { id: ids.attendanceSlotCancelled, team_id: ids.teamA, season: 'RLS-TEST', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Annulation RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
-  { id: ids.attendanceSlotStart, team_id: ids.teamA, season: 'RLS-TEST', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Début RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
-  { id: ids.attendanceSlotEnd, team_id: ids.teamA, season: 'RLS-TEST', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Fin RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
-  { id: ids.attendanceSlotLocation, team_id: ids.teamA, season: 'RLS-TEST', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Lieu RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
-  { id: ids.attendanceSlotCombined, team_id: ids.teamA, season: 'RLS-TEST', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Combiné RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
-  { id: ids.attendanceSlotMoved, team_id: ids.teamA, season: 'RLS-TEST', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Moved RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
+  { id: ids.attendanceSlotCancelled, team_id: ids.teamA, season: '2026-2027', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Annulation RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
+  { id: ids.attendanceSlotStart, team_id: ids.teamA, season: '2026-2027', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Début RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
+  { id: ids.attendanceSlotEnd, team_id: ids.teamA, season: '2026-2027', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Fin RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
+  { id: ids.attendanceSlotLocation, team_id: ids.teamA, season: '2026-2027', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Lieu RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
+  { id: ids.attendanceSlotCombined, team_id: ids.teamA, season: '2026-2027', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Combiné RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
+  { id: ids.attendanceSlotMoved, team_id: ids.teamA, season: '2026-2027', weekday: 3, start_time: '20:30', end_time: '22:00', location_name: 'Moved RLS', valid_from: '2035-01-01', is_active: true, created_by: accounts.admin.id },
 ])
 await upsertRows('training_slot_exceptions', [
   { id: '93000000-0000-4000-8000-000000000002', training_slot_id: ids.attendanceSlotCancelled, exception_date: '2035-01-10', exception_type: 'cancelled', start_time: '18:00', end_time: '19:00', location_name: 'Ne doit pas ressusciter', created_by: accounts.admin.id },
