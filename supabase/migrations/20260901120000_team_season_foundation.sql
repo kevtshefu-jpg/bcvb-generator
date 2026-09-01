@@ -162,7 +162,7 @@ begin
 end;
 $$;
 alter function public.create_team_season(text, text, text, text) owner to postgres;
-revoke all on function public.create_team_season(text, text, text, text) from public, anon;
+revoke all on function public.create_team_season(text, text, text, text) from public, anon, service_role;
 grant execute on function public.create_team_season(text, text, text, text) to authenticated;
 
 comment on function public.create_team_season(text, text, text, text) is

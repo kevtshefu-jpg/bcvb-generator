@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { execFileSync } from 'node:child_process'
 import { assertSafeTestEnvironment, loadFixtureState, loadLocalEnv } from './rls-test-config.mjs'
 
 const config = await loadLocalEnv()
@@ -37,6 +38,32 @@ const payload = (name, overrides = {}) => ({
   ...overrides,
 })
 
+function readInstalledRpcAcl() {
+  const containers = execFileSync('docker', ['ps', '--format', '{{.Names}}'], { encoding: 'utf8' })
+  const databaseContainer = containers.split('\n').find((name) => name.startsWith('supabase_db_'))
+  if (!databaseContainer) throw new Error('Conteneur PostgreSQL Supabase local introuvable pour le contrôle ACL.')
+  const query = `
+    select concat_ws('|',
+      has_function_privilege(p.proowner, p.oid, 'EXECUTE'),
+      has_function_privilege('authenticated', p.oid, 'EXECUTE'),
+      has_function_privilege('anon', p.oid, 'EXECUTE'),
+      exists (
+        select 1 from aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) acl
+        where acl.grantee = 0 and acl.privilege_type = 'EXECUTE'
+      ),
+      has_function_privilege('service_role', p.oid, 'EXECUTE')
+    )
+    from pg_proc p
+    where p.oid = 'public.create_team_season(text,text,text,text)'::regprocedure;
+  `
+  const output = execFileSync('docker', [
+    'exec', databaseContainer, 'psql', '-U', 'postgres', '-d', 'postgres',
+    '-X', '-A', '-t', '-v', 'ON_ERROR_STOP=1', '-c', query,
+  ], { encoding: 'utf8' }).trim()
+  const [owner, authenticated, anonRole, publicRole, serviceRole] = output.split('|').map((value) => value === 't')
+  return { owner, authenticated, anon: anonRole, public: publicRole, serviceRole }
+}
+
 async function cleanup() {
   const teams = await must(service.from('teams').select('id').ilike('name', 'M1 Test%'), 'lecture nettoyage teams M1')
   const ids = teams.map((team) => team.id)
@@ -48,6 +75,15 @@ async function cleanup() {
 }
 
 await cleanup()
+
+const installedAcl = readInstalledRpcAcl()
+check(installedAcl.owner, 'ACL réelle: owner/postgres peut exécuter create_team_season')
+check(installedAcl.authenticated, 'ACL réelle: authenticated peut exécuter create_team_season')
+check(!installedAcl.anon, 'ACL réelle: anon ne peut pas exécuter create_team_season')
+check(!installedAcl.public, 'ACL réelle: PUBLIC ne peut pas exécuter create_team_season')
+check(!installedAcl.serviceRole, 'ACL réelle: service_role ne peut pas exécuter create_team_season')
+const { error: serviceRoleError } = await service.rpc('create_team_season', payload('M1 Test rôle service_role'))
+check(serviceRoleError?.code === '42501', 'service_role réel: exécution RPC refusée', errorText(serviceRoleError))
 
 // Validation des champs et saisons.
 for (const season of ['2026-2027', '2027-2028']) {
