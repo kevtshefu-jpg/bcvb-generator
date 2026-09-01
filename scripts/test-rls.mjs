@@ -870,7 +870,7 @@ await expectHidden(clients.member, 'attendance_records', attendanceRecordA, 'mem
   legacyInstant.setUTCDate(legacyInstant.getUTCDate() + 7)
   const legacyDate = legacyInstant.toISOString().slice(0, 10)
   const { data: planningSlot, error: planningSlotError } = await clients.admin.rpc('save_training_slot', {
-    target_slot_id: null, target_team_id: teamA, target_season: 'RLS-TEST', target_weekday: 3,
+    target_slot_id: null, target_team_id: teamA, target_season: '2026-2027', target_weekday: 3,
     target_start_time: '20:30', target_end_time: '22:00', target_location_name: planningLocation,
     target_valid_from: occurrenceDate, target_valid_until: null, allow_conflict: false,
   })
@@ -1262,7 +1262,7 @@ await expectHidden(clients.member, 'attendance_records', attendanceRecordA, 'mem
 {
   const locationA = `Salle RLS ${crypto.randomUUID()}`
   const save = (client, overrides = {}) => client.rpc('save_training_slot', {
-    target_slot_id: null, target_team_id: teamA, target_season: 'RLS-TEST', target_weekday: 2,
+    target_slot_id: null, target_team_id: teamA, target_season: '2026-2027', target_weekday: 2,
     target_start_time: '18:00', target_end_time: '19:30', target_location_name: locationA,
     target_valid_from: '2026-09-01', target_valid_until: '2027-06-30', allow_conflict: false, ...overrides,
   })
