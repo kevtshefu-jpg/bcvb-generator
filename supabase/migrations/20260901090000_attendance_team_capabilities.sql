@@ -54,22 +54,26 @@ begin
   end if;
 
   actor_role := public.current_user_role();
-  if actor_role = 'inactive' or not exists (select 1 from public.teams where id = p_team_id) then
+  if actor_role is null or actor_role = 'inactive'
+    or not exists (select 1 from public.teams where id = p_team_id) then
     return query select false, false, false, false, false, false, false;
     return;
   end if;
 
-  may_view := public.is_current_user_club_leader() or public.can_access_team(p_team_id);
-  may_manage := public.can_manage_attendance_team(p_team_id);
+  may_view := coalesce(
+    public.is_current_user_club_leader() or public.can_access_team(p_team_id),
+    false
+  );
+  may_manage := coalesce(public.can_manage_attendance_team(p_team_id), false);
 
   return query select
-    may_view,
-    may_view,
-    may_manage,
-    may_manage,
-    may_manage,
-    may_manage,
-    actor_role in ('admin', 'responsable_technique');
+    coalesce(may_view, false),
+    coalesce(may_view, false),
+    coalesce(may_manage, false),
+    coalesce(may_manage, false),
+    coalesce(may_manage, false),
+    coalesce(may_manage, false),
+    coalesce(actor_role in ('admin', 'responsable_technique'), false);
 end;
 $$;
 

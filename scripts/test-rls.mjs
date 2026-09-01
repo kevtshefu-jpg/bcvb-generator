@@ -15,7 +15,7 @@ if (fixtureState.target?.projectRef !== projectRef) {
   throw new Error(`Fixtures créées pour ${fixtureState.target?.projectRef || 'une cible inconnue'}, cible actuelle ${projectRef}. Relancer seed:rls.`)
 }
 
-const accountNames = ['admin', 'technicalManager', 'coachA', 'coachSameTeam', 'coachB', 'coachParentOnly', 'coachTeamStaffOnly', 'teamStaff', 'parentReferent', 'dirigeant', 'member', 'inactive']
+const accountNames = ['admin', 'technicalManager', 'coachA', 'coachSameTeam', 'coachB', 'coachParentOnly', 'coachTeamStaffOnly', 'teamStaff', 'parentReferent', 'dirigeant', 'member', 'inactive', 'authenticatedWithoutProfile']
 const missingAccounts = accountNames.filter((name) => !fixtureState.accounts?.[name]?.email || !fixtureState.accounts?.[name]?.password)
 if (missingAccounts.length) throw new Error(`Comptes absents du seed : ${missingAccounts.join(', ')}`)
 
@@ -79,6 +79,7 @@ for (const [name, expectedRole] of [
   ['dirigeant', 'dirigeant'],
   ['member', 'member'],
   ['inactive', 'inactive'],
+  ['authenticatedWithoutProfile', null],
 ]) {
   const { data, error } = await clients[name].rpc('current_user_role')
   if (error || data !== expectedRole) {
@@ -303,6 +304,14 @@ for (const [name, expectedA, expectedB] of [
   check(!dirigeantB.error && Object.entries(expected.read).every(([key, valueExpected]) => dirigeantB.value?.[key] === valueExpected), 'dirigeant: lecture globale équipe B', formatPostgrestError(dirigeantB.error))
   const invalid = await capability('admin', crypto.randomUUID())
   check(!invalid.error && Object.entries(expected.none).every(([key, valueExpected]) => invalid.value?.[key] === valueExpected), 'capabilities: équipe invalide fail-closed', formatPostgrestError(invalid.error))
+  const withoutProfile = await capability('authenticatedWithoutProfile', teamA)
+  const withoutProfileValues = Object.values(withoutProfile.value || {})
+  check(!withoutProfile.error && JSON.stringify(withoutProfile.value) === JSON.stringify(expected.none)
+    && withoutProfileValues.length === 7 && withoutProfileValues.every((value) => value === false),
+  'capabilities: utilisateur Auth sans profil reçoit exactement sept false', formatPostgrestError(withoutProfile.error))
+  const profilelessHelper = await clients.authenticatedWithoutProfile.rpc('can_manage_attendance_team', { p_team_id: teamA })
+  check(!profilelessHelper.error && profilelessHelper.data === false,
+    'helper Attendance: utilisateur Auth sans profil reçoit exactement false', formatPostgrestError(profilelessHelper.error))
   const anonCapabilities = await anonClient.rpc('get_attendance_capabilities', { p_team_id: teamA })
   check(anonCapabilities.error?.code === '42501', 'capabilities: utilisateur anonyme refusé', formatPostgrestError(anonCapabilities.error))
 }

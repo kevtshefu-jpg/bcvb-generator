@@ -23,6 +23,7 @@ const definitions = {
   technicalManager: { email: 'rls.responsable-technique@bcvb.test', role: 'responsable_technique', active: true, name: 'RLS Responsable technique' },
   member: { email: 'rls.member@bcvb.test', role: 'member', active: true, name: 'RLS Membre' },
   inactive: { email: 'rls.inactive@bcvb.test', role: 'coach', active: false, name: 'RLS Inactif' },
+  authenticatedWithoutProfile: { email: 'rls.no-profile@bcvb.test', role: 'member', active: true, name: 'RLS Sans profil', hasProfile: false },
 }
 
 const ids = {
@@ -122,14 +123,22 @@ for (const [name, definition] of Object.entries(definitions)) {
   accounts[name] = { id: user.id, email: definition.email, password, role: definition.active ? definition.role : 'inactive' }
 }
 
-await upsertRows('profiles', Object.entries(definitions).map(([name, definition]) => ({
-  id: accounts[name].id,
-  email: definition.email,
-  full_name: definition.name,
-  role: definition.role,
-  is_active: definition.active,
-  profile_status: definition.active ? 'active' : 'inactive',
-})))
+await upsertRows('profiles', Object.entries(definitions)
+  .filter(([, definition]) => definition.hasProfile !== false)
+  .map(([name, definition]) => ({
+    id: accounts[name].id,
+    email: definition.email,
+    full_name: definition.name,
+    role: definition.role,
+    is_active: definition.active,
+    profile_status: definition.active ? 'active' : 'inactive',
+  })))
+
+const { error: profilelessCleanupError } = await adminClient
+  .from('profiles')
+  .delete()
+  .eq('id', accounts.authenticatedWithoutProfile.id)
+if (profilelessCleanupError) throw new Error(`authenticatedWithoutProfile: suppression du profil local impossible : ${profilelessCleanupError.message}`)
 
 // Les tests transactionnels remplacent volontairement les coachs de ces deux
 // équipes réservées. Remet le staff actif à zéro pour rendre le seed idempotent,
