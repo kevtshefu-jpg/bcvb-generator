@@ -95,11 +95,17 @@ for (const name of ['admin', 'technicalManager', 'dirigeant', 'coachA', 'teamSta
 for (const name of ['admin', 'technicalManager']) {
   const { data, error } = await clients[name].rpc('read_player_contacts_admin', { target_player_id: playerA })
   check(!error && data?.length === 1, `${name}: RPC contacts administrative`, errorText(error))
+  const nullTarget = await clients[name].rpc('read_player_contacts_admin', { target_player_id: null })
+  check(nullTarget.error?.code === '22023', `${name}: RPC contacts refuse un player_id NULL`, errorText(nullTarget.error))
 }
 for (const name of ['dirigeant', 'coachA', 'teamStaff', 'parentReferent', 'member', 'inactive']) {
   const { error } = await clients[name].rpc('read_player_contacts_admin', { target_player_id: playerA })
   check(error?.code === '42501', `${name}: RPC contacts refusée`, errorText(error))
 }
+const noArgument = await clients.admin.rpc('read_player_contacts_admin')
+check(noArgument.error?.code === 'PGRST202', 'RPC contacts sans argument: signature inexistante', errorText(noArgument.error))
+const anonContacts = await anon.rpc('read_player_contacts_admin', { target_player_id: playerA })
+check(anonContacts.error?.code === '42501', 'anon: RPC contacts non exécutable', errorText(anonContacts.error))
 
 for (const name of ['admin', 'technicalManager', 'coachA']) {
   const { error } = await clients[name].from('players').update({ updated_at: new Date().toISOString() }).eq('id', playerA)

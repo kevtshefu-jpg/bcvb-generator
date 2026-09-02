@@ -57,7 +57,7 @@ create policy player_contacts_admin_select_scope on public.player_contacts
 for select to authenticated
 using (public.is_current_user_admin());
 
-create or replace function public.read_player_contacts_admin(target_player_id uuid default null)
+create or replace function public.read_player_contacts_admin(target_player_id uuid)
 returns table (
   id uuid,
   player_id uuid,
@@ -84,6 +84,10 @@ begin
     raise exception 'Accès administratif requis.' using errcode = '42501';
   end if;
 
+  if target_player_id is null then
+    raise exception 'Identifiant joueur requis.' using errcode = '22023';
+  end if;
+
   return query
   select
     pc.id,
@@ -101,7 +105,7 @@ begin
     pc.created_at,
     pc.updated_at
   from public.player_contacts pc
-  where target_player_id is null or pc.player_id = target_player_id
+  where pc.player_id = target_player_id
   order by pc.created_at, pc.id;
 end
 $$;
