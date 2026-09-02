@@ -194,12 +194,33 @@ await upsertRows('players', [
   { id: ids.playerB2, first_name: 'Basile', last_name: 'RLS B', category: 'U15', owner_id: accounts.coachB.id, created_by: accounts.coachB.id, archived_at: null, deleted_at: null },
 ])
 
-await upsertRows('team_memberships', [
-  { id: ids.membershipA, player_id: ids.playerA, team_id: ids.teamA, season: '2026-2027', status: 'active', created_by: accounts.admin.id },
-  { id: ids.membershipA2, player_id: ids.playerA2, team_id: ids.teamA, season: '2026-2027', status: 'active', created_by: accounts.admin.id },
-  { id: ids.membershipB, player_id: ids.playerB, team_id: ids.teamB, season: '2026-2027', status: 'active', created_by: accounts.admin.id },
-  { id: ids.membershipB2, player_id: ids.playerB2, team_id: ids.teamB, season: '2026-2027', status: 'active', created_by: accounts.admin.id },
-])
+// M2 ferme les écritures table, y compris à service_role. Les fixtures suivent
+// donc le même contrat RPC que l'application et conservent les IDs retournés.
+const membershipAdmin = createClient(config.url, config.anonKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+})
+const { error: membershipAdminAuthError } = await membershipAdmin.auth.signInWithPassword({
+  email: accounts.admin.email,
+  password: accounts.admin.password,
+})
+if (membershipAdminAuthError) throw new Error(`Authentification Admin des fixtures memberships impossible : ${membershipAdminAuthError.message}`)
+
+for (const [idKey, playerId, teamId] of [
+  ['membershipA', ids.playerA, ids.teamA],
+  ['membershipA2', ids.playerA2, ids.teamA],
+  ['membershipB', ids.playerB, ids.teamB],
+  ['membershipB2', ids.playerB2, ids.teamB],
+]) {
+  const { data, error } = await membershipAdmin.rpc('add_or_reactivate_team_membership', {
+    target_player_id: playerId,
+    target_team_id: teamId,
+    target_season: '2026-2027',
+  })
+  const saved = data?.[0]
+  if (error || !saved?.membership_id) throw new Error(`Fixture ${idKey}: ${error?.message || 'membership non confirmé'}`)
+  ids[idKey] = saved.membership_id
+}
+await membershipAdmin.auth.signOut()
 
 await upsertRows('player_contacts', [
   { id: ids.contactA, player_id: ids.playerA, parent_1_name: 'Contact RLS A', parent_1_email: 'contact-a@bcvb.test', visibility: 'team_staff', created_by: accounts.admin.id },

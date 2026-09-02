@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { execFileSync } from 'node:child_process'
 import { assertSafeTestEnvironment, loadFixtureState, loadLocalEnv } from './rls-test-config.mjs'
 
 const config = await loadLocalEnv()
@@ -36,12 +37,24 @@ async function must(resultPromise, label) {
   return result.data
 }
 
+const databaseContainer = execFileSync('docker', ['ps', '--filter', 'name=supabase_db_', '--format', '{{.Names}}'], { encoding: 'utf8' })
+  .split('\n').find((name) => name.includes('bcvb-generator'))
+if (!databaseContainer) throw new Error('Conteneur PostgreSQL Supabase local introuvable pour le nettoyage RF3.')
+function deleteLocalMemberships(teamIds) {
+  if (!teamIds.length) return
+  const quotedIds = teamIds.map((id) => `'${id}'`).join(',')
+  execFileSync('docker', [
+    'exec', databaseContainer, 'psql', '-U', 'postgres', '-d', 'postgres',
+    '-X', '-v', 'ON_ERROR_STOP=1', '-c', `delete from public.team_memberships where team_id in (${quotedIds});`,
+  ], { encoding: 'utf8' })
+}
+
 async function cleanupRf3() {
   const teams = await must(service.from('teams').select('id').eq('name', 'RF3 - SF').eq('season', '2026-2027'), 'lecture équipes RF3')
   const teamIds = teams.map((row) => row.id)
   if (teamIds.length) {
     await must(service.from('team_staff_assignments').delete().in('team_id', teamIds), 'nettoyage staff RF3')
-    await must(service.from('team_memberships').delete().in('team_id', teamIds), 'nettoyage memberships RF3')
+    deleteLocalMemberships(teamIds)
     await must(service.from('teams').delete().in('id', teamIds), 'nettoyage équipes RF3')
   }
   await must(service.from('players').delete().in('license_number', licenses), 'nettoyage joueuses RF3')
@@ -110,7 +123,12 @@ await must(service.from('players').delete().eq('license_number', 'VT052472'), 'n
 
 const setupTeam = await must(service.from('teams').insert({ name: 'RF3 - SF', category: 'Seniors', level: 'RF3', season: '2026-2027', created_by: adminId }).select('id').single(), 'préparation conflit membership équipe')
 const setupPlayer = await must(service.from('players').insert({ first_name: 'Chiara', last_name: 'DELGADO', birth_date: '2005-01-21', category: 'Seniors', license_number: 'VT052472', created_by: adminId }).select('id').single(), 'préparation conflit membership joueuse')
-await must(service.from('team_memberships').insert({ player_id: setupPlayer.id, team_id: setupTeam.id, season: '2026-2027', status: 'inactive', created_by: adminId }), 'préparation membership incompatible')
+const setupMembership = await must(admin.rpc('add_or_reactivate_team_membership', {
+  target_player_id: setupPlayer.id,
+  target_team_id: setupTeam.id,
+  target_season: '2026-2027',
+}), 'préparation membership incompatible')
+await must(admin.rpc('deactivate_team_membership', { target_membership_id: setupMembership?.[0]?.membership_id }), 'désactivation membership incompatible')
 const { error: membershipError } = await admin.rpc('import_rf3_pilot_2026_2027')
 assert(membershipError?.code === '22023', 'membership incompatible: import refusé', membershipError?.code)
 const membershipRollbackCounts = await scopedCounts()
@@ -122,6 +140,7 @@ assert(!firstRunError, 'Admin: premier import réussi', firstRunError?.message)
 assert(firstRun?.status === 'IMPORTED' && firstRun.team_created === 1 && firstRun.players_created === 7 && firstRun.memberships_created === 7 && firstRun.staff_created === 1, 'premier import: contrat de retour exact', JSON.stringify(firstRun))
 const firstCounts = await scopedCounts()
 assert(firstCounts.teams === 1 && firstCounts.players === 7 && firstCounts.memberships === 7 && firstCounts.staff === 1, 'premier import: compteurs 1/7/7/1', JSON.stringify(firstCounts))
+const firstMembershipAudit = await must(service.from('team_memberships').select('id,created_by,created_at').eq('team_id', firstRun.team_id).order('id'), 'audit memberships RF3 premier run')
 
 const [lorisPlayers, lorisAssignments] = await Promise.all([
   service.from('players').select('id', { count: 'exact', head: true }).ilike('first_name', 'Loris').ilike('last_name', 'DEPAY'),
@@ -139,6 +158,8 @@ assert(!secondRunError, 'Admin: deuxième invocation réussie', secondRunError?.
 assert(secondRun?.status === 'ALREADY_IMPORTED' && secondRun.team_created === 0 && secondRun.players_created === 0 && secondRun.memberships_created === 0 && secondRun.staff_created === 0 && secondRun.team_reused === 1 && secondRun.players_reused === 7 && secondRun.memberships_reused === 7 && secondRun.staff_reused === 1, 'deuxième invocation: idempotence exacte', JSON.stringify(secondRun))
 const secondCounts = await scopedCounts()
 assert(JSON.stringify(secondCounts) === JSON.stringify(firstCounts), 'deuxième invocation: aucune duplication', JSON.stringify(secondCounts))
+const secondMembershipAudit = await must(service.from('team_memberships').select('id,created_by,created_at').eq('team_id', firstRun.team_id).order('id'), 'audit memberships RF3 second run')
+assert(JSON.stringify(secondMembershipAudit) === JSON.stringify(firstMembershipAudit), 'deuxième invocation: IDs et audit memberships RF3 inchangés')
 
 await Promise.all([admin.auth.signOut(), coach.auth.signOut()])
 process.stdout.write('Tous les contrôles transactionnels RF3 sont passés.\n')
