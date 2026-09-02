@@ -16,6 +16,8 @@
     "test:rf3-import": "node --env-file=.env.rls.local scripts/test-rf3-import.mjs",
     "test:team-season": "node --env-file=.env.rls.local scripts/test-team-season-foundation.mjs",
     "test:team-membership": "node --env-file=.env.rls.local scripts/test-team-membership-foundation.mjs",
+    "pretest:player-access-security": "node --env-file=.env.rls.local scripts/create-test-users.mjs",
+    "test:player-access-security": "node --env-file=.env.rls.local scripts/test-player-access-security.mjs",
     "test:react": "vitest run src",
     "pretest:e2e": "node --env-file=.env.rls.local scripts/create-test-users.mjs",
     "test:e2e": "playwright test",
