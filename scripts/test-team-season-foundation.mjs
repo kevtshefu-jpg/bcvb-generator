@@ -64,6 +64,18 @@ function readInstalledRpcAcl() {
   return { owner, authenticated, anon: anonRole, public: publicRole, serviceRole }
 }
 
+function deleteLocalMemberships(teamIds) {
+  if (!teamIds.length) return
+  const containers = execFileSync('docker', ['ps', '--format', '{{.Names}}'], { encoding: 'utf8' })
+  const databaseContainer = containers.split('\n').find((name) => name.startsWith('supabase_db_'))
+  if (!databaseContainer) throw new Error('Conteneur PostgreSQL Supabase local introuvable pour le nettoyage M1.')
+  const quotedIds = teamIds.map((id) => `'${id}'`).join(',')
+  execFileSync('docker', [
+    'exec', databaseContainer, 'psql', '-U', 'postgres', '-d', 'postgres',
+    '-X', '-v', 'ON_ERROR_STOP=1', '-c', `delete from public.team_memberships where team_id in (${quotedIds});`,
+  ], { encoding: 'utf8' })
+}
+
 async function cleanup() {
   const teams = await must(service.from('teams').select('id').ilike('name', 'M1 Test%'), 'lecture nettoyage teams M1')
   const ids = teams.map((team) => team.id)
@@ -71,6 +83,7 @@ async function cleanup() {
   for (const table of ['sessions', 'situations']) await must(service.from(table).delete().in('team_id', ids), `nettoyage ${table} M1`)
   await must(service.from('player_passports').delete().in('current_team_id', ids), 'nettoyage passports M1')
   await must(service.from('roster_import_batches').delete().in('target_team_id', ids), 'nettoyage imports M1')
+  deleteLocalMemberships(ids)
   await must(service.from('teams').delete().in('id', ids), 'nettoyage teams M1')
 }
 
@@ -175,7 +188,14 @@ const playerId = state.fixtures.playerA
 const profileId = state.accounts.member.id
 const adminId = state.accounts.admin.id
 const dependencies = [
-  ['membership inactive', async (teamId) => must(service.from('team_memberships').insert({ player_id: playerId, team_id: teamId, season: '2026-2027', status: 'inactive' }), 'fixture membership M1')],
+  ['membership inactive', async (teamId) => {
+    const added = await must(clients.admin.rpc('add_or_reactivate_team_membership', {
+      target_player_id: playerId,
+      target_team_id: teamId,
+      target_season: '2026-2027',
+    }), 'fixture membership M1')
+    await must(clients.admin.rpc('deactivate_team_membership', { target_membership_id: added?.[0]?.membership_id }), 'désactivation fixture membership M1')
+  }],
   ['staff inactive', async (teamId) => must(service.from('team_staff_assignments').insert({ team_id: teamId, profile_id: profileId, assignment_role: 'team_staff', is_active: false }), 'fixture staff M1')],
   ['slot inactive', async (teamId) => must(service.from('training_slots').insert({ team_id: teamId, season: '2026-2027', weekday: 1, start_time: '18:00', end_time: '19:00', valid_from: '2026-09-01', is_active: false }), 'fixture slot M1')],
   ['Attendance draft', async (teamId) => must(service.from('attendance_sessions').insert({ team_id: teamId, session_date: '2031-01-01', status: 'draft', created_by: adminId }), 'fixture Attendance M1')],
