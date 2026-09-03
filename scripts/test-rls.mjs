@@ -336,20 +336,27 @@ await expectVisible(clients.dirigeant, 'teams', teamB, 'dirigeant: équipe B vis
 await expectHidden(clients.member, 'teams', teamA, 'membre: équipe privée invisible')
 await expectHidden(clients.inactive, 'teams', teamA, 'profil inactif: équipe invisible')
 
-for (const [table, ownId, otherId] of [
-  ['players', playerA, playerB],
-  ['player_contacts', contactA, contactB],
-]) {
-  await expectVisible(clients.coachA, table, ownId, `coach A: ${table} de son équipe visible`)
-  await expectHidden(clients.coachA, table, otherId, `coach A: ${table} de l’équipe B invisible`)
-  await expectHidden(clients.coachB, table, ownId, `coach B: ${table} de l’équipe A invisible`)
-  await expectVisible(clients.coachB, table, otherId, `coach B: ${table} de son équipe visible`)
-  await expectVisible(clients.dirigeant, table, ownId, `dirigeant: ${table} de l’équipe A visible`)
-  await expectVisible(clients.dirigeant, table, otherId, `dirigeant: ${table} de l’équipe B visible`)
-  await expectVisible(clients.admin, table, ownId, `admin: ${table} de l’équipe A visible`)
-  await expectVisible(clients.admin, table, otherId, `admin: ${table} de l’équipe B visible`)
-  await expectHidden(clients.member, table, ownId, `membre: ${table} sensible invisible`)
-  await expectHidden(clients.inactive, table, ownId, `profil inactif: ${table} sensible invisible`)
+await expectVisible(clients.coachA, 'players', playerA, 'coach A: joueur actif de son équipe visible')
+await expectHidden(clients.coachA, 'players', playerB, 'coach A: joueur de l’équipe B invisible')
+await expectHidden(clients.coachB, 'players', playerA, 'coach B: joueur de l’équipe A invisible')
+await expectVisible(clients.coachB, 'players', playerB, 'coach B: joueur actif de son équipe visible')
+await expectHidden(clients.dirigeant, 'players', playerA, 'dirigeant: aucun accès brut aux joueurs')
+await expectVisible(clients.admin, 'players', playerA, 'admin: joueur de l’équipe A visible')
+await expectVisible(clients.technicalManager, 'players', playerB, 'responsable technique: joueur de l’équipe B visible')
+await expectHidden(clients.member, 'players', playerA, 'membre: joueur sensible invisible')
+await expectHidden(clients.inactive, 'players', playerA, 'profil inactif: joueur sensible invisible')
+
+for (const [name, client] of Object.entries(clients)) {
+  const { error } = await client.from('player_contacts').select('id').eq('id', contactA)
+  check(error?.code === '42501', `${name}: table player_contacts inaccessible directement`, formatPostgrestError(error))
+}
+{
+  const { data: adminContacts, error: adminContactsError } = await clients.admin.rpc('read_player_contacts_admin', { target_player_id: playerA })
+  check(!adminContactsError && adminContacts?.length === 1, 'admin: contacts accessibles par RPC dédiée', formatPostgrestError(adminContactsError))
+  const { data: rtContacts, error: rtContactsError } = await clients.technicalManager.rpc('read_player_contacts_admin', { target_player_id: playerB })
+  check(!rtContactsError && rtContacts?.length === 1, 'responsable technique: contacts accessibles par RPC dédiée', formatPostgrestError(rtContactsError))
+  const { error: dirigeantContactsError } = await clients.dirigeant.rpc('read_player_contacts_admin', { target_player_id: playerA })
+  check(dirigeantContactsError?.code === '42501', 'dirigeant: RPC contacts refusée', formatPostgrestError(dirigeantContactsError))
 }
 
 for (const [table, ownId, otherId] of [
@@ -1150,7 +1157,7 @@ await expectHidden(clients.member, 'attendance_records', attendanceRecordA, 'mem
 
 {
   const { data, error } = await clients.member.from('players').update({ updated_at: new Date().toISOString() }).eq('id', playerA).select('id')
-  check(!error && data?.length === 0, 'membre: modification d’un joueur refusée', error?.message || `lignes=${data?.length}`)
+  check(error?.code === '42501' && !data, 'membre: modification directe d’un joueur refusée', formatPostgrestError(error))
 }
 
 {
