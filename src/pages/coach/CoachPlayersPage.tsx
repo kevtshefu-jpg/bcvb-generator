@@ -12,8 +12,8 @@ export default function CoachPlayersPage() {
       <article className="bcvb-tool-card">
         <span className="bcvb-status-pill">Suivi joueur</span>
         <h3>Liste joueurs</h3>
-        <p>Aucun joueur rattaché pour le moment. Ajoute tes joueurs ou importe une liste depuis l’administration.</p>
-        <Link className="bcvb-button-primary" to="/effectifs/import">Importer ou ajouter un joueur</Link>
+        <p>Consulte les joueurs rattachés aux équipes auxquelles tu as accès.</p>
+        <Link className="bcvb-button-primary" to="/effectifs">Consulter les effectifs</Link>
       </article>
     </main>
   )
