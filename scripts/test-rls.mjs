@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { createClient } from '@supabase/supabase-js'
 import { assertSafeTestEnvironment, fixtureFile, loadFixtureState, loadLocalEnv } from './rls-test-config.mjs'
 
@@ -45,6 +46,17 @@ function formatPostgrestError(error) {
     `details=${error?.details ?? 'absent'}`,
     `hint=${error?.hint ?? 'absent'}`,
   ].join(', ')
+}
+
+const databaseContainer = execFileSync('docker', ['ps', '--filter', 'name=supabase_db_', '--format', '{{.Names}}'], { encoding: 'utf8' })
+  .split('\n').find((name) => name.includes('bcvb-generator'))
+if (!databaseContainer) throw new Error('Conteneur PostgreSQL Supabase local introuvable.')
+
+function psql(sql) {
+  return execFileSync('docker', [
+    'exec', databaseContainer, 'psql', '-U', 'postgres', '-d', 'postgres',
+    '-X', '-v', 'ON_ERROR_STOP=1', '-c', sql,
+  ], { encoding: 'utf8' })
 }
 
 async function authenticatedClient(email, password) {
@@ -1308,6 +1320,51 @@ await expectHidden(clients.member, 'attendance_records', attendanceRecordA, 'mem
   check(disabledRow?.is_active===false,'créneau désactivé sans suppression physique')
   for(const id of [rtSlot.slot_id,successive.slot_id]) await clients.admin.rpc('deactivate_training_slot',{target_slot_id:id})
 }
+
+// Restaure les affectations synthétiques optionnelles attendues par les tests
+// de roster suivants, après les scénarios de remplacement et de retrait.
+for (const [profileKey, assignmentRole] of [
+  ['coachSameTeam', 'assistant_coach'],
+  ['coachParentOnly', 'parent_referent'],
+  ['coachTeamStaffOnly', 'team_staff'],
+  ['teamStaff', 'team_staff'],
+  ['parentReferent', 'parent_referent'],
+]) {
+  const { error } = await clients.admin.rpc('assign_team_staff', {
+    target_team_id: teamA,
+    target_profile_id: fixtureState.accounts[profileKey].id,
+    target_assignment_role: assignmentRole,
+  })
+  check(!error, `restauration fixture ${assignmentRole}`, formatPostgrestError(error))
+}
+
+// Les scénarios Attendance modifient volontairement les fixtures partagées.
+// Les remettre à leur état synthétique évite de contaminer les suites suivantes.
+psql(`update public.attendance_sessions
+  set status='draft', validated_by=null, validated_at=null, updated_by=null
+  where id in ('${attendanceSessionA}','${attendanceSessionB}');
+  delete from public.attendance_records
+  where session_id in (
+    select id from public.attendance_sessions
+    where training_slot_id in (
+      '${attendanceSlotSeasonMismatch}', '${attendanceSlotCancelled}',
+      '${attendanceSlotStart}', '${attendanceSlotEnd}',
+      '${attendanceSlotLocation}', '${attendanceSlotCombined}', '${attendanceSlotMoved}'
+    )
+  );
+  delete from public.attendance_sessions
+  where training_slot_id in (
+    '${attendanceSlotSeasonMismatch}', '${attendanceSlotCancelled}',
+    '${attendanceSlotStart}', '${attendanceSlotEnd}',
+    '${attendanceSlotLocation}', '${attendanceSlotCombined}', '${attendanceSlotMoved}'
+  );
+  delete from public.attendance_records
+  where session_id in ('${attendanceSessionA}','${attendanceSessionB}');
+  insert into public.attendance_records
+    (id, session_id, player_id, status, source, parent_confirmed, validated_by_coach, created_by, version)
+  values
+    ('${attendanceRecordA}', '${attendanceSessionA}', '${playerA}', 'present', 'admin', false, false, '${fixtureState.accounts.admin.id}', 1),
+    ('${attendanceRecordB}', '${attendanceSessionB}', '${playerB}', 'present', 'admin', false, false, '${fixtureState.accounts.admin.id}', 1);`)
 
 await Promise.all(Object.values(clients).map((client) => client.auth.signOut()))
 
