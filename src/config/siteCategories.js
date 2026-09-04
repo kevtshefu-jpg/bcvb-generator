@@ -162,7 +162,7 @@ export const SITE_CATEGORIES = [
     description: 'Équipes, staffs, catégories, alertes et organisation sportive.',
     purpose: 'Garder une vision opérationnelle des groupes coachés.',
     mainActions: ['Voir les équipes', 'Suivre les alertes', 'Accéder aux outils équipe'],
-    subModules: ['coach/equipes', 'club/equipes'],
+    subModules: ['coach/equipes', 'club/equipes', 'effectifs'],
   },
   {
     id: 'attendance',
