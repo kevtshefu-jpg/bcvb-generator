@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { RosterManagementService } from '../rosterManagementService'
 import type { RosterCapabilities, RosterMember, RosterTeam } from '../rosterModels'
 import { RosterReadError, type RosterReadService } from '../rosterReadService'
 import RosterPage from './RosterPage'
@@ -14,6 +15,14 @@ const teams: RosterTeam[] = [
 const allowed: RosterCapabilities = {
   canViewRoster: true, canManageRoster: false, canSearchPlayers: false, canCreatePlayer: false,
   canAddMembership: false, canDeactivateMembership: false, canArchivePlayer: false,
+}
+const managerCapabilities: RosterCapabilities = {
+  ...allowed,
+  canManageRoster: true,
+  canSearchPlayers: true,
+  canCreatePlayer: true,
+  canAddMembership: true,
+  canDeactivateMembership: true,
 }
 const member = (teamId: string, firstName: string): RosterMember => ({
   membershipId: `membership-${teamId}`, membershipStatus: 'active', playerId: `player-${teamId}`,
@@ -46,6 +55,7 @@ describe('page Effectifs canonique', () => {
     expect(await screen.findByText('Alice Test')).toBeInTheDocument()
     expect(screen.getAllByText(/2026-2027/).length).toBeGreaterThan(0)
     expect(screen.queryByText(/licence|téléphone|présence/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '+ Ajouter un joueur' })).not.toBeInTheDocument()
   })
 
   it('affiche EMPTY et FORBIDDEN, sans appeler le roster en cas de refus', async () => {
@@ -121,6 +131,61 @@ describe('page Effectifs canonique', () => {
     expect(await screen.findByText('Effectif indisponible')).toBeInTheDocument()
     expect(screen.queryByText('raw database message')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Réessayer' })).toBeInTheDocument()
+  })
+
+  it('ouvre la recherche uniquement avec la capability serveur et affiche un résultat minimisé', async () => {
+    const service = {
+      getCapabilities: vi.fn(async () => managerCapabilities),
+      readTeamRoster: vi.fn(async () => [member('team-a', 'Alice')]),
+    } as unknown as RosterReadService
+    const managementService = {
+      searchPlayers: vi.fn(async () => ({
+        matchState: 'EXACT' as const,
+        candidates: [{
+          playerId: 'player-existing', firstName: 'Emma', lastName: 'Exemple', birthYear: 2001,
+          licenseHint: '••••0954', exactLicenseMatch: true, archived: false,
+          activeMemberships: [{ teamId: 'team-a', teamName: 'Équipe A', season: '2026-2027' }],
+          classification: 'EXACT' as const, reasons: ['LICENSE_AND_PROVIDED_IDENTITY_COHERENT'],
+        }],
+      })),
+    } as unknown as RosterManagementService
+
+    render(<RosterPage loadTeamOptions={async () => teams.slice(0, 1)} service={service} managementService={managementService} />)
+    await screen.findByText('Alice Test')
+    fireEvent.click(screen.getByRole('button', { name: '+ Ajouter un joueur' }))
+    expect(screen.getByRole('heading', { name: 'Rechercher un joueur' })).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'Emma' } })
+    fireEvent.change(screen.getByLabelText('Nom'), { target: { value: 'Exemple' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Rechercher' }))
+
+    expect(await screen.findByText('Emma Exemple')).toBeInTheDocument()
+    expect(screen.getByText('••••0954')).toBeInTheDocument()
+    expect(screen.getByText('Correspondance exacte')).toBeInTheDocument()
+    expect(managementService.searchPlayers).toHaveBeenCalledWith({ firstName: 'Emma', lastName: 'Exemple', licenseNumber: '', birthDate: '' })
+    expect(screen.queryByText(/téléphone|email|adresse|médical/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /créer|sélectionner/i })).not.toBeInTheDocument()
+  })
+
+  it('ferme et invalide la recherche quand l’équipe change', async () => {
+    const slowSearch = deferred<{ matchState: 'EXACT'; candidates: [] }>()
+    const service = {
+      getCapabilities: vi.fn(async () => managerCapabilities),
+      readTeamRoster: vi.fn(async (teamId: string) => [member(teamId, teamId === 'team-a' ? 'Alice' : 'Brune')]),
+    } as unknown as RosterReadService
+    const managementService = { searchPlayers: vi.fn(() => slowSearch.promise) } as unknown as RosterManagementService
+
+    render(<RosterPage loadTeamOptions={async () => teams} service={service} managementService={managementService} />)
+    await screen.findByText('Alice Test')
+    fireEvent.click(screen.getByRole('button', { name: '+ Ajouter un joueur' }))
+    fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'Emma' } })
+    fireEvent.change(screen.getByLabelText('Nom'), { target: { value: 'Exemple' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Rechercher' }))
+    fireEvent.change(screen.getByLabelText('Équipe'), { target: { value: 'team-b' } })
+
+    expect(screen.queryByRole('heading', { name: 'Rechercher un joueur' })).not.toBeInTheDocument()
+    expect(await screen.findByText('Brune Test')).toBeInTheDocument()
+    await act(async () => slowSearch.resolve({ matchState: 'EXACT', candidates: [] }))
+    expect(screen.queryByRole('heading', { name: 'Résultats' })).not.toBeInTheDocument()
   })
 
   it('ne présente aucun droit RT local au team_staff', () => {
