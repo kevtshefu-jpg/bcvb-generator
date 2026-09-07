@@ -22,55 +22,60 @@ export default function RosterPage({ loadTeamOptions = loadTeams, service = rost
   const [status, setStatus] = useState<RosterPageStatus>('LOADING')
   const [teamLoadVersion, setTeamLoadVersion] = useState(0)
   const [refreshVersion, setRefreshVersion] = useState(0)
-  const requestId = useRef(0)
+  const teamRequestId = useRef(0)
+  const rosterRequestId = useRef(0)
 
   useEffect(() => {
-    const currentRequest = ++requestId.current
+    const currentRequest = ++teamRequestId.current
+    rosterRequestId.current += 1
     setTeams([])
     setSelectedTeamId('')
     setMembers([])
     setCapabilities(null)
     setStatus('LOADING')
     void loadTeamOptions().then((nextTeams) => {
-      if (currentRequest !== requestId.current) return
+      if (currentRequest !== teamRequestId.current) return
       setTeams(nextTeams)
       setSelectedTeamId((current) => nextTeams.some((team) => team.id === current) ? current : nextTeams[0]?.id ?? '')
       if (nextTeams.length === 0) setStatus('NO_TEAM_AVAILABLE')
     }).catch(() => {
-      if (currentRequest === requestId.current) setStatus('ERROR')
+      if (currentRequest === teamRequestId.current) setStatus('ERROR')
     })
-    return () => { requestId.current += 1 }
+    return () => {
+      teamRequestId.current += 1
+      rosterRequestId.current += 1
+    }
   }, [loadTeamOptions, profile?.id, teamLoadVersion])
 
   useEffect(() => {
     if (!selectedTeamId) return
-    const currentRequest = ++requestId.current
+    const currentRequest = ++rosterRequestId.current
     setMembers([])
     setCapabilities(null)
     setStatus('LOADING')
     void service.getCapabilities(selectedTeamId).then(async (nextCapabilities) => {
-      if (currentRequest !== requestId.current) return
+      if (currentRequest !== rosterRequestId.current) return
       setCapabilities(nextCapabilities)
       if (!nextCapabilities.canViewRoster) {
         setStatus('FORBIDDEN')
         return
       }
       const nextMembers = await service.readTeamRoster(selectedTeamId)
-      if (currentRequest !== requestId.current) return
+      if (currentRequest !== rosterRequestId.current) return
       if (nextMembers.some((member) => member.teamId !== selectedTeamId)) throw new Error('MALFORMED_ROSTER_RESPONSE')
       setMembers(nextMembers)
       setStatus(nextMembers.length === 0 ? 'EMPTY' : 'READY')
     }).catch((error: unknown) => {
-      if (currentRequest !== requestId.current) return
+      if (currentRequest !== rosterRequestId.current) return
       setMembers([])
       setStatus(error instanceof RosterReadError && error.kind === 'FORBIDDEN' ? 'FORBIDDEN' : 'ERROR')
     })
-    return () => { requestId.current += 1 }
-  }, [refreshVersion, selectedTeamId, service, profile?.id])
+    return () => { rosterRequestId.current += 1 }
+  }, [refreshVersion, selectedTeamId, service])
 
   const selectTeam = useCallback((teamId: string) => {
     if (teamId === selectedTeamId) return
-    requestId.current += 1
+    rosterRequestId.current += 1
     setMembers([])
     setCapabilities(null)
     setStatus('LOADING')

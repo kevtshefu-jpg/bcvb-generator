@@ -88,6 +88,26 @@ describe('page Effectifs canonique', () => {
     await waitFor(() => expect(service.readTeamRoster).toHaveBeenCalledTimes(2))
   })
 
+  it('reconstruit l’état canonique sans rester bloqué quand le profil change', async () => {
+    const loadTeamOptions = vi.fn(async () => teams.slice(0, 1))
+    const service = {
+      getCapabilities: vi.fn(async () => allowed),
+      readTeamRoster: vi.fn(async () => [member('team-a', authState.profile.id === 'profile-1' ? 'Alice' : 'Brune')]),
+    } as unknown as RosterReadService
+    const view = render(<RosterPage loadTeamOptions={loadTeamOptions} service={service} />)
+
+    expect(await screen.findByText('Alice Test')).toBeInTheDocument()
+    authState.profile.id = 'profile-2'
+    view.rerender(<RosterPage loadTeamOptions={loadTeamOptions} service={service} />)
+
+    expect(screen.queryByText('Alice Test')).not.toBeInTheDocument()
+    await waitFor(() => expect(loadTeamOptions).toHaveBeenCalledTimes(2))
+    expect(await screen.findByText('Brune Test')).toBeInTheDocument()
+    expect(service.getCapabilities).toHaveBeenCalledTimes(2)
+    expect(service.readTeamRoster).toHaveBeenCalledTimes(2)
+    expect(screen.queryByText('Chargement de l’effectif')).not.toBeInTheDocument()
+  })
+
   it('présente les refus et erreurs techniques avec des messages contrôlés', async () => {
     const service = {
       getCapabilities: vi.fn(async () => { throw new RosterReadError('FORBIDDEN') }), readTeamRoster: vi.fn(),
