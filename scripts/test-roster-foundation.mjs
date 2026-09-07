@@ -254,6 +254,20 @@ try {
   check(staleOverride.error?.code === 'PT409', 'candidate set modifié exige une nouvelle revue', errorText(staleOverride.error))
 
   const { teamA, teamB, playerA, attendanceSessionA } = state.fixtures
+  const auditFixturePlayer = await must(service.from('players').insert({
+    first_name: `${prefix} Audit`,
+    last_name: 'Untouched',
+    category: 'Test',
+  }).select('id').single(), 'joueur fixture audit')
+  createdPlayerIds.add(auditFixturePlayer.id)
+  const auditFixtureMembership = await clients.admin.rpc('add_or_reactivate_team_membership', {
+    target_player_id: auditFixturePlayer.id,
+    target_team_id: teamB,
+    target_season: '2026-2027',
+  })
+  check(!auditFixtureMembership.error && Boolean(auditFixtureMembership.data?.[0]?.membership_id), 'fixture audit membership créée', errorText(auditFixtureMembership.error))
+  const auditFixtureMembershipId = auditFixtureMembership.data?.[0]?.membership_id
+  if (auditFixtureMembershipId) createdMembershipIds.add(auditFixtureMembershipId)
   const capabilities = {
     admin: [true, true, true, true, true, true, false],
     technicalManager: [true, true, true, true, true, true, false],
@@ -291,25 +305,26 @@ try {
   const dirigeantInactive = await clients.dirigeant.rpc('read_team_roster', { target_team_id: teamA, include_inactive: true })
   check(dirigeantInactive.error?.code === '42501', 'dirigeant: historique inactif refusé', errorText(dirigeantInactive.error))
 
-  const membershipRow = await must(clients.admin.from('team_memberships').select('id,status_changed_at,status_changed_by').eq('player_id', playerA).eq('team_id', teamA).single(), 'membership fixture')
+  const membershipRow = await must(clients.admin.from('team_memberships').select('id,status_changed_at,status_changed_by').eq('player_id', auditFixturePlayer.id).eq('team_id', teamB).single(), 'membership fixture audit')
   check(membershipRow.status_changed_at === null && membershipRow.status_changed_by === null, 'membership existant sans faux backfill audit')
+  const transitionMembershipRow = await must(clients.admin.from('team_memberships').select('id').eq('player_id', playerA).eq('team_id', teamA).single(), 'membership fixture transition')
   const attendanceBefore = await must(service.from('attendance_sessions').select('id').eq('id', attendanceSessionA), 'Attendance avant mutation locale')
-  const deactivate = await clients.admin.rpc('deactivate_team_membership', { target_membership_id: membershipRow.id })
+  const deactivate = await clients.admin.rpc('deactivate_team_membership', { target_membership_id: transitionMembershipRow.id })
   check(!deactivate.error && deactivate.data?.[0]?.changed === true, 'désactivation membership auditée', errorText(deactivate.error))
-  const deactivatedAudit = await must(clients.admin.from('team_memberships').select('status,status_changed_at,status_changed_by').eq('id', membershipRow.id).single(), 'audit désactivation')
+  const deactivatedAudit = await must(clients.admin.from('team_memberships').select('status,status_changed_at,status_changed_by').eq('id', transitionMembershipRow.id).single(), 'audit désactivation')
   check(deactivatedAudit.status === 'inactive' && Boolean(deactivatedAudit.status_changed_at) && deactivatedAudit.status_changed_by === state.accounts.admin.id, 'acteur/date désactivation exacts')
   const inactiveRoster = await clients.admin.rpc('read_team_roster', { target_team_id: teamA })
   check(!inactiveRoster.error && !inactiveRoster.data.some((row) => row.player_id === playerA), 'membership inactif exclu du roster futur')
   const adminHistory = await clients.admin.rpc('read_team_roster', { target_team_id: teamA, include_inactive: true })
   check(!adminHistory.error && adminHistory.data.some((row) => row.player_id === playerA && row.membership_status === 'inactive'), 'Admin lit historique inactif')
-  const deactivateAgain = await clients.admin.rpc('deactivate_team_membership', { target_membership_id: membershipRow.id })
-  const unchangedAudit = await must(clients.admin.from('team_memberships').select('status_changed_at,status_changed_by').eq('id', membershipRow.id).single(), 'audit idempotent')
+  const deactivateAgain = await clients.admin.rpc('deactivate_team_membership', { target_membership_id: transitionMembershipRow.id })
+  const unchangedAudit = await must(clients.admin.from('team_memberships').select('status_changed_at,status_changed_by').eq('id', transitionMembershipRow.id).single(), 'audit idempotent')
   check(!deactivateAgain.error && deactivateAgain.data?.[0]?.changed === false && unchangedAudit.status_changed_at === deactivatedAudit.status_changed_at && unchangedAudit.status_changed_by === deactivatedAudit.status_changed_by, 'ALREADY inactive ne modifie pas audit')
   const reactivate = await clients.technicalManager.rpc('add_or_reactivate_team_membership', { target_player_id: playerA, target_team_id: teamA, target_season: '2026-2027' })
-  const reactivatedAudit = await must(clients.admin.from('team_memberships').select('status,status_changed_at,status_changed_by').eq('id', membershipRow.id).single(), 'audit réactivation')
+  const reactivatedAudit = await must(clients.admin.from('team_memberships').select('status,status_changed_at,status_changed_by').eq('id', transitionMembershipRow.id).single(), 'audit réactivation')
   check(!reactivate.error && reactivate.data?.[0]?.changed === true && reactivatedAudit.status === 'active' && reactivatedAudit.status_changed_by === state.accounts.technicalManager.id, 'réactivation remplace audit par acteur réel')
   const activeAgain = await clients.admin.rpc('add_or_reactivate_team_membership', { target_player_id: playerA, target_team_id: teamA, target_season: '2026-2027' })
-  const activeAuditUnchanged = await must(clients.admin.from('team_memberships').select('status_changed_at,status_changed_by').eq('id', membershipRow.id).single(), 'audit already active')
+  const activeAuditUnchanged = await must(clients.admin.from('team_memberships').select('status_changed_at,status_changed_by').eq('id', transitionMembershipRow.id).single(), 'audit already active')
   check(!activeAgain.error && activeAgain.data?.[0]?.changed === false && activeAuditUnchanged.status_changed_at === reactivatedAudit.status_changed_at && activeAuditUnchanged.status_changed_by === reactivatedAudit.status_changed_by, 'ALREADY ACTIVE ne modifie pas audit')
   const attendanceAfter = await must(service.from('attendance_sessions').select('id').eq('id', attendanceSessionA), 'Attendance après mutation locale')
   check(JSON.stringify(attendanceAfter) === JSON.stringify(attendanceBefore), 'Attendance historique préservée')
@@ -319,6 +334,21 @@ try {
   check(!multi.error && !multiB.error && multi.data?.[0]?.membership_id !== multiB.data?.[0]?.membership_id, 'multi-team même saison autorisé')
   createdMembershipIds.add(multi.data[0].membership_id)
   createdMembershipIds.add(multiB.data[0].membership_id)
+
+  for (let index = 1; index <= 4; index += 1) {
+    const extra = await create(clients.admin, prefix, `Pilot ${index}`)
+    const extraPlayerId = rememberPlayer(extra)
+    check(!extra.error && Boolean(extraPlayerId), `pilote local: joueur ${index} créé`, errorText(extra.error))
+    const extraMembership = await clients.admin.rpc('add_or_reactivate_team_membership', {
+      target_player_id: extraPlayerId,
+      target_team_id: teamA,
+      target_season: '2026-2027',
+    })
+    check(!extraMembership.error && Boolean(extraMembership.data?.[0]?.membership_id), `pilote local: membership ${index} créé`, errorText(extraMembership.error))
+    if (extraMembership.data?.[0]?.membership_id) createdMembershipIds.add(extraMembership.data[0].membership_id)
+  }
+  const sevenPlayerRoster = await clients.admin.rpc('read_team_roster', { target_team_id: teamA, include_inactive: false })
+  check(!sevenPlayerRoster.error && sevenPlayerRoster.data?.length === 7, 'pilote local: 7 membres actifs lus sans constante UI', errorText(sevenPlayerRoster.error))
 
   const nextTeam = await must(service.from('teams').insert({ name: `${prefix} Next Season`, category: 'Test', level: 'Test', season: '2027-2028' }).select('id').single(), 'team saison suivante')
   createdTeamIds.add(nextTeam.id)

@@ -1,4 +1,3 @@
-import RosterPage from "../components/roster/RosterPage";
+import RosterPage from '../features/roster/pages/RosterPage'
 
-export default RosterPage;
-
+export default RosterPage

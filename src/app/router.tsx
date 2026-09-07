@@ -253,6 +253,14 @@ export const router = createBrowserRouter([
             path: 'club',
             element: <ClubPage />,
           },
+          {
+            path: 'effectifs',
+            element: <RosterImportPage />,
+          },
+          {
+            path: 'effectifs/import',
+            element: <Navigate to="/effectifs" replace />,
+          },
 
           // =========================
           // JOUEUR
@@ -393,14 +401,6 @@ export const router = createBrowserRouter([
 
           // Alias historiques / raccourcis
           {
-            path: 'effectifs',
-            element: <RosterImportPage />,
-          },
-          {
-            path: 'effectifs/import',
-            element: <RosterImportPage />,
-          },
-          {
             path: 'presences',
             element: <AttendancePage />,
           },
@@ -483,7 +483,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'parents-referents/effectifs',
-            element: <RosterImportPage />,
+            element: <Navigate to="/effectifs" replace />,
           },
           {
             path: 'parents-referents/equipes',
@@ -553,7 +553,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'club/effectifs',
-            element: <RosterImportPage />,
+            element: <Navigate to="/effectifs" replace />,
           },
           {
             path: 'club/evaluations',
@@ -598,7 +598,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'admin/import-joueurs',
-            element: <RosterImportPage />,
+            element: <Navigate to="/effectifs" replace />,
           },
           {
             path: 'seances/nouveau',
