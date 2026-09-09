@@ -46,6 +46,12 @@ export function RosterPlayerSearchPanel({ searching, result, errorMessage, onSea
 
       {errorMessage ? <p role="alert" className="roster-search-error">{errorMessage}</p> : null}
       {result?.matchState === 'NO_MATCH' ? <div className="roster-search-empty" role="status"><strong>Aucune identité correspondante.</strong><p>La création d’un nouveau joueur n’est pas encore activée dans cette étape.</p></div> : null}
+      {result?.matchState === 'AMBIGUOUS' && result.candidates.length === 0 ? (
+        <div className="roster-search-error" role="alert">
+          <strong>Vérification d’identité obligatoire.</strong>
+          <p>Une identité conflictuelle existe mais ne peut pas être affichée. Ne créez pas de nouveau joueur avant vérification.</p>
+        </div>
+      ) : null}
       {result && result.candidates.length > 0 ? (
         <div className="roster-search-results" aria-live="polite">
           <h3>Résultats</h3>
@@ -59,6 +65,7 @@ export function RosterPlayerSearchPanel({ searching, result, errorMessage, onSea
                 <dl>
                   {candidate.birthYear ? <><dt>Année de naissance</dt><dd>{candidate.birthYear}</dd></> : null}
                   {candidate.licenseHint ? <><dt>Licence</dt><dd>{candidate.licenseHint}</dd></> : null}
+                  {candidate.archived ? <><dt>Statut</dt><dd>Identité archivée</dd></> : null}
                   <dt>Équipe(s) active(s)</dt>
                   <dd>{candidate.activeMemberships.length > 0 ? candidate.activeMemberships.map((membership) => `${membership.teamName} — ${membership.season}`).join(', ') : 'Aucune'}</dd>
                 </dl>
