@@ -166,6 +166,56 @@ describe('page Effectifs canonique', () => {
     expect(screen.queryByRole('button', { name: /créer|sélectionner/i })).not.toBeInTheDocument()
   })
 
+  it('bloque explicitement une ambiguïté sans candidat affichable', async () => {
+    const service = {
+      getCapabilities: vi.fn(async () => managerCapabilities),
+      readTeamRoster: vi.fn(async () => [member('team-a', 'Alice')]),
+    } as unknown as RosterReadService
+    const managementService = {
+      searchPlayers: vi.fn(async () => ({ matchState: 'AMBIGUOUS' as const, candidates: [] })),
+    } as unknown as RosterManagementService
+
+    render(<RosterPage loadTeamOptions={async () => teams.slice(0, 1)} service={service} managementService={managementService} />)
+    await screen.findByText('Alice Test')
+    fireEvent.click(screen.getByRole('button', { name: '+ Ajouter un joueur' }))
+    fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'Emma' } })
+    fireEvent.change(screen.getByLabelText('Nom'), { target: { value: 'Exemple' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Rechercher' }))
+
+    expect(await screen.findByText('Vérification d’identité obligatoire.')).toBeInTheDocument()
+    expect(screen.getByText(/Ne créez pas de nouveau joueur avant vérification/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /créer|sélectionner/i })).not.toBeInTheDocument()
+  })
+
+  it('signale une identité archivée sans proposer de mutation', async () => {
+    const service = {
+      getCapabilities: vi.fn(async () => managerCapabilities),
+      readTeamRoster: vi.fn(async () => [member('team-a', 'Alice')]),
+    } as unknown as RosterReadService
+    const managementService = {
+      searchPlayers: vi.fn(async () => ({
+        matchState: 'AMBIGUOUS' as const,
+        candidates: [{
+          playerId: 'player-archived', firstName: 'Emma', lastName: 'Archive', birthYear: 2001,
+          licenseHint: '••••0954', exactLicenseMatch: false, archived: true,
+          activeMemberships: [], classification: 'AMBIGUOUS' as const, reasons: ['ARCHIVED_IDENTITY'],
+        }],
+      })),
+    } as unknown as RosterManagementService
+
+    render(<RosterPage loadTeamOptions={async () => teams.slice(0, 1)} service={service} managementService={managementService} />)
+    await screen.findByText('Alice Test')
+    fireEvent.click(screen.getByRole('button', { name: '+ Ajouter un joueur' }))
+    fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'Emma' } })
+    fireEvent.change(screen.getByLabelText('Nom'), { target: { value: 'Archive' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Rechercher' }))
+
+    expect(await screen.findByText('Emma Archive')).toBeInTheDocument()
+    expect(screen.getByText('Identité archivée')).toBeInTheDocument()
+    expect(screen.getByText('Vérification nécessaire')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /créer|sélectionner/i })).not.toBeInTheDocument()
+  })
+
   it('ferme et invalide la recherche quand l’équipe change', async () => {
     const slowSearch = deferred<{ matchState: 'EXACT'; candidates: [] }>()
     const service = {
