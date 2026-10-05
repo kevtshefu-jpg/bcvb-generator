@@ -94,3 +94,23 @@ describe('rosterManagementService player creation', () => {
     expect(result.candidateIds).toEqual(['player-existing'])
   })
 })
+
+
+describe('rosterManagementService membership add', () => {
+  it('appelle uniquement add_or_reactivate_team_membership avec le contexte canonique', async () => {
+    const rpc = vi.fn(async () => ({ data: [{ membership_id: 'membership-1', status: 'active', changed: true }], error: null }))
+    const service = createRosterManagementService({ rpc } as never)
+    const result = await service.addOrReactivateMembership({ playerId: 'player-1', teamId: 'team-1', season: '2026-2027' })
+    expect(rpc).toHaveBeenCalledWith('add_or_reactivate_team_membership', {
+      target_player_id: 'player-1', target_team_id: 'team-1', target_season: '2026-2027',
+    })
+    expect(result).toEqual({ membershipId: 'membership-1', status: 'active', changed: true })
+  })
+
+  it('conserve le résultat idempotent already-active', async () => {
+    const rpc = vi.fn(async () => ({ data: [{ membership_id: 'membership-1', status: 'active', changed: false }], error: null }))
+    const service = createRosterManagementService({ rpc } as never)
+    await expect(service.addOrReactivateMembership({ playerId: 'player-1', teamId: 'team-1', season: '2026-2027' }))
+      .resolves.toEqual({ membershipId: 'membership-1', status: 'active', changed: false })
+  })
+})
