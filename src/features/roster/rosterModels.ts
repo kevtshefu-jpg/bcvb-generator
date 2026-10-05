@@ -58,6 +58,25 @@ export type RosterSearchInput = {
   birthDate: string
 }
 
+export type RosterCreateInput = {
+  operationId: string
+  firstName: string
+  lastName: string
+  birthDate: string
+  licenseNumber: string
+  confirmDistinctPerson: boolean
+  acknowledgedCandidateIds: string[]
+  distinctPersonReason: string
+}
+
+export type RosterCreateResult = {
+  status: 'CREATED' | 'CONFLICT' | 'AMBIGUOUS'
+  playerId: string | null
+  matchState: RosterSearchMatchState
+  candidateIds: string[]
+  idempotentReplay: boolean
+}
+
 export type RosterPageStatus =
   | 'LOADING'
   | 'READY'

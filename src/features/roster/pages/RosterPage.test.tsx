@@ -199,6 +199,53 @@ describe('page Effectifs canonique', () => {
     expect(screen.getByText(/pas poursuivre son ajout à un effectif/)).toBeInTheDocument()
   })
 
+  it('propose et confirme une création uniquement après NO_MATCH', async () => {
+    const service = {
+      getCapabilities: vi.fn(async () => managerCapabilities),
+      readTeamRoster: vi.fn(async () => [member('team-a', 'Alice')]),
+    } as unknown as RosterReadService
+    const managementService = {
+      searchPlayers: vi.fn(async () => ({ matchState: 'NO_MATCH' as const, candidates: [] })),
+      createPlayer: vi.fn(async () => ({ status: 'CREATED' as const, playerId: 'player-new', matchState: 'NO_MATCH' as const, candidateIds: [], idempotentReplay: false })),
+    } as unknown as RosterManagementService
+
+    render(<RosterPage loadTeamOptions={async () => teams.slice(0, 1)} service={service} managementService={managementService} />)
+    await screen.findByText('Alice Test')
+    fireEvent.click(screen.getByRole('button', { name: '+ Ajouter un joueur' }))
+    fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'Emma' } })
+    fireEvent.change(screen.getByLabelText('Nom'), { target: { value: 'Nouvelle' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Rechercher' }))
+    expect(await screen.findByText('Aucune identité correspondante.')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Créer cette identité' }))
+    expect(screen.getByRole('heading', { name: 'Créer une nouvelle identité' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Créer l’identité' }))
+
+    expect(await screen.findByText(/L’identité canonique est enregistrée/)).toBeInTheDocument()
+    expect(managementService.createPlayer).toHaveBeenCalledWith(expect.objectContaining({
+      firstName: 'Emma', lastName: 'Nouvelle', confirmDistinctPerson: false, acknowledgedCandidateIds: [],
+    }))
+  })
+
+  it('ne propose jamais de création si canCreatePlayer est faux', async () => {
+    const service = {
+      getCapabilities: vi.fn(async () => ({ ...managerCapabilities, canCreatePlayer: false })),
+      readTeamRoster: vi.fn(async () => [member('team-a', 'Alice')]),
+    } as unknown as RosterReadService
+    const managementService = {
+      searchPlayers: vi.fn(async () => ({ matchState: 'NO_MATCH' as const, candidates: [] })),
+      createPlayer: vi.fn(),
+    } as unknown as RosterManagementService
+    render(<RosterPage loadTeamOptions={async () => teams.slice(0, 1)} service={service} managementService={managementService} />)
+    await screen.findByText('Alice Test')
+    fireEvent.click(screen.getByRole('button', { name: '+ Ajouter un joueur' }))
+    fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'Emma' } })
+    fireEvent.change(screen.getByLabelText('Nom'), { target: { value: 'Nouvelle' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Rechercher' }))
+    await screen.findByText('Aucune identité correspondante.')
+    expect(screen.queryByRole('button', { name: 'Créer cette identité' })).not.toBeInTheDocument()
+    expect(managementService.createPlayer).not.toHaveBeenCalled()
+  })
+
   it('bloque explicitement une ambiguïté sans candidat affichable', async () => {
     const service = {
       getCapabilities: vi.fn(async () => managerCapabilities),

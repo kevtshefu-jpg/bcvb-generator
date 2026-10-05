@@ -10,6 +10,8 @@ type Props = {
   canSelectCandidate: boolean
   selectedPlayerId: string | null
   onSelectCandidate: (candidate: RosterSearchCandidate) => void
+  canCreatePlayer: boolean
+  onRequestCreate: (input: RosterSearchInput, candidates: RosterSearchCandidate[]) => void
   onClose: () => void
 }
 
@@ -29,6 +31,8 @@ export function RosterPlayerSearchPanel({
   canSelectCandidate,
   selectedPlayerId,
   onSelectCandidate,
+  canCreatePlayer,
+  onRequestCreate,
   onClose,
 }: Props) {
   const [input, setInput] = useState<RosterSearchInput>(initialInput)
@@ -57,11 +61,24 @@ export function RosterPlayerSearchPanel({
       </form>
 
       {errorMessage ? <p role="alert" className="roster-search-error">{errorMessage}</p> : null}
-      {result?.matchState === 'NO_MATCH' ? <div className="roster-search-empty" role="status"><strong>Aucune identité correspondante.</strong><p>La création d’un nouveau joueur n’est pas encore activée dans cette étape.</p></div> : null}
+      {result?.matchState === 'NO_MATCH' ? (
+        <div className="roster-search-empty" role="status">
+          <strong>Aucune identité correspondante.</strong>
+          <p>Vérifiez les informations avant de créer une nouvelle identité.</p>
+          {canCreatePlayer ? <button type="button" onClick={() => onRequestCreate(input, [])}>Créer cette identité</button> : null}
+        </div>
+      ) : null}
       {result?.matchState === 'AMBIGUOUS' && result.candidates.length === 0 ? (
         <div className="roster-search-error" role="alert">
           <strong>Vérification d’identité obligatoire.</strong>
           <p>Une identité conflictuelle existe mais ne peut pas être affichée. Ne créez pas de nouveau joueur avant vérification.</p>
+        </div>
+      ) : null}
+      {result?.matchState === 'AMBIGUOUS' && result.candidates.length > 0 && canCreatePlayer ? (
+        <div className="roster-search-warning">
+          <strong>Vous pensez qu’il s’agit d’une autre personne ?</strong>
+          <p>La création d’une personne distincte exige de reconnaître tous les candidats affichés et de justifier la décision.</p>
+          <button type="button" onClick={() => onRequestCreate(input, result.candidates)}>Examiner une création distincte</button>
         </div>
       ) : null}
       {result && result.candidates.length > 0 ? (

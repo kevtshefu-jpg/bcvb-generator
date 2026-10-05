@@ -53,3 +53,44 @@ describe('rosterManagementService player search', () => {
       .rejects.toEqual(expect.objectContaining({ kind: 'MALFORMED' }))
   })
 })
+
+
+describe('rosterManagementService player creation', () => {
+  it('appelle create_player_for_roster sans créer de membership', async () => {
+    const rpc = vi.fn(async () => ({ data: { status: 'CREATED', player_id: 'player-new', match_state: 'NO_MATCH', idempotent_replay: false }, error: null }))
+    const service = createRosterManagementService({ rpc } as never)
+    const result = await service.createPlayer({
+      operationId: '11111111-1111-4111-8111-111111111111', firstName: ' Emma ', lastName: ' Nouvelle ',
+      birthDate: '2001-01-02', licenseNumber: ' VT123 ', confirmDistinctPerson: false,
+      acknowledgedCandidateIds: [], distinctPersonReason: '',
+    })
+    expect(rpc).toHaveBeenCalledWith('create_player_for_roster', expect.objectContaining({
+      operation_id: '11111111-1111-4111-8111-111111111111', target_first_name: 'Emma', target_last_name: 'Nouvelle',
+      target_birth_date: '2001-01-02', target_license_number: 'VT123', confirm_distinct_person: false,
+      acknowledged_candidate_ids: [], distinct_person_reason: null,
+    }))
+    expect(rpc).not.toHaveBeenCalledWith('add_or_reactivate_team_membership', expect.anything())
+    expect(result).toEqual(expect.objectContaining({ status: 'CREATED', playerId: 'player-new', idempotentReplay: false }))
+  })
+
+  it('exige candidats reconnus et justification pour DISTINCT_PERSON', async () => {
+    const rpc = vi.fn()
+    const service = createRosterManagementService({ rpc } as never)
+    await expect(service.createPlayer({
+      operationId: '11111111-1111-4111-8111-111111111111', firstName: 'Emma', lastName: 'Nouvelle',
+      birthDate: '', licenseNumber: '', confirmDistinctPerson: true, acknowledgedCandidateIds: [], distinctPersonReason: '',
+    })).rejects.toEqual(expect.objectContaining({ kind: 'VALIDATION' }))
+    expect(rpc).not.toHaveBeenCalled()
+  })
+
+  it('mappe un conflit serveur sans le transformer en succès', async () => {
+    const rpc = vi.fn(async () => ({ data: { status: 'CONFLICT', player_id: null, match_state: 'EXACT', candidate_ids: ['player-existing'] }, error: null }))
+    const service = createRosterManagementService({ rpc } as never)
+    const result = await service.createPlayer({
+      operationId: '11111111-1111-4111-8111-111111111111', firstName: 'Emma', lastName: 'Nouvelle',
+      birthDate: '', licenseNumber: '', confirmDistinctPerson: false, acknowledgedCandidateIds: [], distinctPersonReason: '',
+    })
+    expect(result.status).toBe('CONFLICT')
+    expect(result.candidateIds).toEqual(['player-existing'])
+  })
+})

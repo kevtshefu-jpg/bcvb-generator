@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../auth/context/AuthContext'
 import { loadTeams } from '../../teams/teamManagementService'
 import { RosterList } from '../components/RosterList'
+import { RosterPlayerCreatePanel } from '../components/RosterPlayerCreatePanel'
 import { RosterPlayerSearchPanel } from '../components/RosterPlayerSearchPanel'
 import { RosterStatePanel } from '../components/RosterStatePanel'
 import { RosterTeamSelector } from '../components/RosterTeamSelector'
@@ -13,6 +14,7 @@ import {
 import { RosterReadError, rosterReadService, type RosterReadService } from '../rosterReadService'
 import type {
   RosterCapabilities,
+  RosterCreateResult,
   RosterMember,
   RosterPageStatus,
   RosterSearchCandidate,
@@ -46,23 +48,39 @@ export default function RosterPage({
   const [searchResult, setSearchResult] = useState<RosterSearchResult | null>(null)
   const [searchError, setSearchError] = useState<string | null>(null)
   const [selectedCandidate, setSelectedCandidate] = useState<RosterSearchCandidate | null>(null)
+  const [createDraft, setCreateDraft] = useState<{ input: RosterSearchInput; candidates: RosterSearchCandidate[] } | null>(null)
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
+  const [createdIdentity, setCreatedIdentity] = useState<{ playerId: string; firstName: string; lastName: string; replay: boolean } | null>(null)
   const teamRequestId = useRef(0)
   const rosterRequestId = useRef(0)
   const searchRequestId = useRef(0)
+  const createRequestId = useRef(0)
+  const createOperationId = useRef<string | null>(null)
 
   const resetSearch = useCallback(() => {
     searchRequestId.current += 1
+    createRequestId.current += 1
+    createOperationId.current = null
     setSearchOpen(false)
     setSearching(false)
     setSearchResult(null)
     setSearchError(null)
     setSelectedCandidate(null)
+    createRequestId.current += 1
+    createOperationId.current = null
+    setCreateDraft(null)
+    setCreating(false)
+    setCreateError(null)
+    setCreatedIdentity(null)
   }, [])
 
   useEffect(() => {
     const currentRequest = ++teamRequestId.current
     rosterRequestId.current += 1
     searchRequestId.current += 1
+    createRequestId.current += 1
+    createOperationId.current = null
     setTeams([])
     setSelectedTeamId('')
     setMembers([])
@@ -72,6 +90,10 @@ export default function RosterPage({
     setSearchResult(null)
     setSearchError(null)
     setSelectedCandidate(null)
+    setCreateDraft(null)
+    setCreating(false)
+    setCreateError(null)
+    setCreatedIdentity(null)
     setStatus('LOADING')
     void loadTeamOptions().then((nextTeams) => {
       if (currentRequest !== teamRequestId.current) return
@@ -85,6 +107,8 @@ export default function RosterPage({
       teamRequestId.current += 1
       rosterRequestId.current += 1
       searchRequestId.current += 1
+      createRequestId.current += 1
+      createOperationId.current = null
     }
   }, [loadTeamOptions, profile?.id, teamLoadVersion])
 
@@ -142,6 +166,10 @@ export default function RosterPage({
     setSearchResult(null)
     setSearchError(null)
     setSelectedCandidate(null)
+    setCreateDraft(null)
+    setCreating(false)
+    setCreateError(null)
+    setCreatedIdentity(null)
     try {
       const result = await managementService.searchPlayers(input)
       if (currentRequest !== searchRequestId.current) return
@@ -165,6 +193,59 @@ export default function RosterPage({
     setSelectedCandidate(candidate)
   }, [capabilities?.canAddMembership])
 
+  const requestCreate = useCallback((input: RosterSearchInput, candidates: RosterSearchCandidate[]) => {
+    if (!capabilities?.canCreatePlayer) return
+    if (searchResult?.matchState !== 'NO_MATCH' && searchResult?.matchState !== 'AMBIGUOUS') return
+    if (searchResult.matchState === 'AMBIGUOUS' && candidates.length === 0) return
+    setSelectedCandidate(null)
+    setCreateError(null)
+    setCreatedIdentity(null)
+    createRequestId.current += 1
+    createOperationId.current = crypto.randomUUID()
+    setCreateDraft({ input, candidates })
+  }, [capabilities?.canCreatePlayer, searchResult])
+
+  const createPlayer = useCallback(async (reason: string) => {
+    if (!capabilities?.canCreatePlayer || !createDraft || creating) return
+    const operationId = createOperationId.current
+    if (!operationId) return
+    const currentRequest = ++createRequestId.current
+    setCreating(true)
+    setCreateError(null)
+    try {
+      const result: RosterCreateResult = await managementService.createPlayer({
+        operationId,
+        firstName: createDraft.input.firstName,
+        lastName: createDraft.input.lastName,
+        birthDate: createDraft.input.birthDate,
+        licenseNumber: createDraft.input.licenseNumber,
+        confirmDistinctPerson: createDraft.candidates.length > 0,
+        acknowledgedCandidateIds: createDraft.candidates.map((candidate) => candidate.playerId),
+        distinctPersonReason: reason,
+      })
+      if (currentRequest !== createRequestId.current) return
+      if (result.status !== 'CREATED' || !result.playerId) {
+        setCreateError('La création a été interrompue car l’identité doit être vérifiée à nouveau.')
+        return
+      }
+      setCreatedIdentity({
+        playerId: result.playerId,
+        firstName: createDraft.input.firstName.trim(),
+        lastName: createDraft.input.lastName.trim(),
+        replay: result.idempotentReplay,
+      })
+      setCreateDraft(null)
+      setSearchResult(null)
+    } catch (error: unknown) {
+      if (currentRequest !== createRequestId.current) return
+      if (error instanceof RosterManagementError && error.kind === 'FORBIDDEN') setCreateError('Votre profil ne permet pas cette création.')
+      else if (error instanceof RosterManagementError && (error.kind === 'VALIDATION' || error.kind === 'NOT_FOUND')) setCreateError('Les informations de création doivent être vérifiées.')
+      else setCreateError('La création est momentanément indisponible. Relancez d’abord la recherche avant de réessayer.')
+    } finally {
+      if (currentRequest === createRequestId.current) setCreating(false)
+    }
+  }, [capabilities?.canCreatePlayer, createDraft, creating, managementService])
+
   const rosterVisible = status === 'READY' || status === 'EMPTY'
 
   return (
@@ -187,8 +268,27 @@ export default function RosterPage({
           canSelectCandidate={capabilities.canAddMembership}
           selectedPlayerId={selectedCandidate?.playerId ?? null}
           onSelectCandidate={selectCandidate}
+          canCreatePlayer={capabilities.canCreatePlayer}
+          onRequestCreate={requestCreate}
           onClose={resetSearch}
         />
+      ) : null}
+      {searchOpen && createDraft ? (
+        <RosterPlayerCreatePanel
+          input={createDraft.input}
+          candidates={createDraft.candidates}
+          creating={creating}
+          errorMessage={createError}
+          onCreate={createPlayer}
+          onCancel={() => { createRequestId.current += 1; createOperationId.current = null; setCreateDraft(null); setCreating(false); setCreateError(null) }}
+        />
+      ) : null}
+      {searchOpen && createdIdentity ? (
+        <section className="roster-read-card roster-created-identity" role="status">
+          <p className="bcvb-eyebrow">Identité créée</p>
+          <h2>{createdIdentity.firstName} {createdIdentity.lastName}</h2>
+          <p>L’identité canonique est enregistrée. Elle n’a pas été ajoutée automatiquement à l’effectif.</p>
+        </section>
       ) : null}
       {searchOpen && selectedCandidate ? (
         <section className="roster-read-card roster-selected-identity" aria-live="polite">
