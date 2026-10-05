@@ -9,7 +9,6 @@ import {
   normalizeSituation,
   type CourtArrow,
   type CourtObject,
-  type SessionCourtFrame,
   type SessionSituation,
   type TrainingSessionV2,
 } from './sessionModels'
@@ -17,14 +16,6 @@ import { transformRawTextToSession } from './sessionTransformer'
 import { transformRawTextToSituation } from './importedSituationParser'
 import { SESSION_TEMPLATES } from './sessionTemplates'
 import { getTotalSituationDuration, validateSessionDuration } from './sessionUtils'
-
-function expectPointWithinCourt(x: number, y: number, courtType: SessionCourtFrame['courtType']) {
-  const maxX = courtType === 'full' ? 28 : 14
-  expect(x).toBeGreaterThanOrEqual(0)
-  expect(x).toBeLessThanOrEqual(maxX)
-  expect(y).toBeGreaterThanOrEqual(0)
-  expect(y).toBeLessThanOrEqual(15)
-}
 
 describe('createCourtFrame', () => {
   it('crée un terrain BCVB vierge par défaut', () => {
