@@ -271,8 +271,8 @@ describe('page Effectifs canonique', () => {
     fireEvent.change(screen.getByLabelText('Nom'), { target: { value: 'Test' } })
     fireEvent.click(screen.getByRole('button', { name: 'Rechercher' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Sélectionner cette identité' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Ajouter à Team A' }))
-    expect(screen.getByText(/Équipe cible/)).toHaveTextContent('Team A')
+    fireEvent.click(screen.getByRole('button', { name: 'Ajouter à Équipe A' }))
+    expect(screen.getByText(/Équipe cible/)).toHaveTextContent('Équipe A')
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer l’ajout à l’effectif' }))
 
     expect(await screen.findByText('Appartenance enregistrée dans l’effectif.')).toBeInTheDocument()
