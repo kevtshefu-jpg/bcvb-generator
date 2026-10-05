@@ -32,6 +32,9 @@
 .roster-search-result-card dt { font-weight: 700; }
 .roster-search-result-card dd { margin: 0; overflow-wrap: anywhere; }
 .roster-search-selection-note { font-size: .9rem; opacity: .78; }
+.roster-search-select-button { margin-top: .9rem; }
+.roster-selected-identity { border-width: 2px; }
+.roster-selected-identity h2 { margin: .2rem 0 .6rem; }
 @media (max-width: 767px) {
   .roster-read-hero, .roster-read-section-heading { align-items: stretch; flex-direction: column; }
   .roster-hero-actions { align-items: stretch; justify-content: stretch; }
