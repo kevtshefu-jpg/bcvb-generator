@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import type { RosterSearchInput, RosterSearchResult } from '../rosterModels'
+import type { RosterSearchCandidate, RosterSearchInput, RosterSearchResult } from '../rosterModels'
 
 type Props = {
   searching: boolean
   result: RosterSearchResult | null
   errorMessage: string | null
   onSearch: (input: RosterSearchInput) => Promise<void>
+  canSelectCandidate: boolean
+  selectedPlayerId: string | null
+  onSelectCandidate: (candidate: RosterSearchCandidate) => void
   onClose: () => void
 }
 
@@ -18,7 +21,16 @@ const labels = {
   AMBIGUOUS: 'Vérification nécessaire',
 } as const
 
-export function RosterPlayerSearchPanel({ searching, result, errorMessage, onSearch, onClose }: Props) {
+export function RosterPlayerSearchPanel({
+  searching,
+  result,
+  errorMessage,
+  onSearch,
+  canSelectCandidate,
+  selectedPlayerId,
+  onSelectCandidate,
+  onClose,
+}: Props) {
   const [input, setInput] = useState<RosterSearchInput>(initialInput)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -69,7 +81,20 @@ export function RosterPlayerSearchPanel({ searching, result, errorMessage, onSea
                   <dt>Équipe(s) active(s)</dt>
                   <dd>{candidate.activeMemberships.length > 0 ? candidate.activeMemberships.map((membership) => `${membership.teamName} — ${membership.season}`).join(', ') : 'Aucune'}</dd>
                 </dl>
-                <p className="roster-search-selection-note">Sélection et ajout à l’effectif seront activés dans l’étape suivante.</p>
+                {candidate.archived ? (
+                  <p className="roster-search-selection-note">Cette identité archivée ne peut pas être sélectionnée.</p>
+                ) : canSelectCandidate ? (
+                  <button
+                    type="button"
+                    className="roster-search-select-button"
+                    aria-pressed={selectedPlayerId === candidate.playerId}
+                    onClick={() => onSelectCandidate(candidate)}
+                  >
+                    {selectedPlayerId === candidate.playerId ? 'Identité sélectionnée' : 'Sélectionner cette identité'}
+                  </button>
+                ) : (
+                  <p className="roster-search-selection-note">Votre profil peut rechercher cette identité, mais pas poursuivre son ajout à un effectif.</p>
+                )}
               </li>
             ))}
           </ul>
