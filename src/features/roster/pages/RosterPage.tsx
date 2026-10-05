@@ -55,14 +55,20 @@ export default function RosterPage({
   const teamRequestId = useRef(0)
   const rosterRequestId = useRef(0)
   const searchRequestId = useRef(0)
+  const createRequestId = useRef(0)
+  const createOperationId = useRef<string | null>(null)
 
   const resetSearch = useCallback(() => {
     searchRequestId.current += 1
+    createRequestId.current += 1
+    createOperationId.current = null
     setSearchOpen(false)
     setSearching(false)
     setSearchResult(null)
     setSearchError(null)
     setSelectedCandidate(null)
+    createRequestId.current += 1
+    createOperationId.current = null
     setCreateDraft(null)
     setCreating(false)
     setCreateError(null)
@@ -73,6 +79,8 @@ export default function RosterPage({
     const currentRequest = ++teamRequestId.current
     rosterRequestId.current += 1
     searchRequestId.current += 1
+    createRequestId.current += 1
+    createOperationId.current = null
     setTeams([])
     setSelectedTeamId('')
     setMembers([])
@@ -99,6 +107,8 @@ export default function RosterPage({
       teamRequestId.current += 1
       rosterRequestId.current += 1
       searchRequestId.current += 1
+    createRequestId.current += 1
+    createOperationId.current = null
     }
   }, [loadTeamOptions, profile?.id, teamLoadVersion])
 
@@ -190,12 +200,16 @@ export default function RosterPage({
     setSelectedCandidate(null)
     setCreateError(null)
     setCreatedIdentity(null)
+    createRequestId.current += 1
+    createOperationId.current = crypto.randomUUID()
     setCreateDraft({ input, candidates })
   }, [capabilities?.canCreatePlayer, searchResult])
 
   const createPlayer = useCallback(async (reason: string) => {
     if (!capabilities?.canCreatePlayer || !createDraft || creating) return
-    const operationId = crypto.randomUUID()
+    const operationId = createOperationId.current
+    if (!operationId) return
+    const currentRequest = ++createRequestId.current
     setCreating(true)
     setCreateError(null)
     try {
@@ -209,6 +223,7 @@ export default function RosterPage({
         acknowledgedCandidateIds: createDraft.candidates.map((candidate) => candidate.playerId),
         distinctPersonReason: reason,
       })
+      if (currentRequest !== createRequestId.current) return
       if (result.status !== 'CREATED' || !result.playerId) {
         setCreateError('La création a été interrompue car l’identité doit être vérifiée à nouveau.')
         return
@@ -222,11 +237,12 @@ export default function RosterPage({
       setCreateDraft(null)
       setSearchResult(null)
     } catch (error: unknown) {
+      if (currentRequest !== createRequestId.current) return
       if (error instanceof RosterManagementError && error.kind === 'FORBIDDEN') setCreateError('Votre profil ne permet pas cette création.')
       else if (error instanceof RosterManagementError && (error.kind === 'VALIDATION' || error.kind === 'NOT_FOUND')) setCreateError('Les informations de création doivent être vérifiées.')
       else setCreateError('La création est momentanément indisponible. Relancez d’abord la recherche avant de réessayer.')
     } finally {
-      setCreating(false)
+      if (currentRequest === createRequestId.current) setCreating(false)
     }
   }, [capabilities?.canCreatePlayer, createDraft, creating, managementService])
 
@@ -264,7 +280,7 @@ export default function RosterPage({
           creating={creating}
           errorMessage={createError}
           onCreate={createPlayer}
-          onCancel={() => { setCreateDraft(null); setCreateError(null) }}
+          onCancel={() => { createRequestId.current += 1; createOperationId.current = null; setCreateDraft(null); setCreating(false); setCreateError(null) }}
         />
       ) : null}
       {searchOpen && createdIdentity ? (
