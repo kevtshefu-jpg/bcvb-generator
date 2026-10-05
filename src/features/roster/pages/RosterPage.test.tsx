@@ -163,7 +163,40 @@ describe('page Effectifs canonique', () => {
     expect(screen.getByText('Correspondance exacte')).toBeInTheDocument()
     expect(managementService.searchPlayers).toHaveBeenCalledWith({ firstName: 'Emma', lastName: 'Exemple', licenseNumber: '', birthDate: '' })
     expect(screen.queryByText(/téléphone|email|adresse|médical/i)).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /créer|sélectionner/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /créer/i })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Sélectionner cette identité' }))
+    expect(screen.getByRole('heading', { name: 'Emma Exemple' })).toBeInTheDocument()
+    expect(screen.getByText(/La sélection ne modifie pas l’effectif/)).toBeInTheDocument()
+    expect(managementService.searchPlayers).toHaveBeenCalledTimes(1)
+  })
+
+  it('autorise la recherche mais pas la sélection sans canAddMembership', async () => {
+    const searchOnlyCapabilities = { ...managerCapabilities, canAddMembership: false }
+    const service = {
+      getCapabilities: vi.fn(async () => searchOnlyCapabilities),
+      readTeamRoster: vi.fn(async () => [member('team-a', 'Alice')]),
+    } as unknown as RosterReadService
+    const managementService = {
+      searchPlayers: vi.fn(async () => ({
+        matchState: 'PROBABLE' as const,
+        candidates: [{
+          playerId: 'player-existing', firstName: 'Emma', lastName: 'Exemple', birthYear: 2001,
+          licenseHint: null, exactLicenseMatch: false, archived: false, activeMemberships: [],
+          classification: 'PROBABLE' as const, reasons: ['NAME_MATCH'],
+        }],
+      })),
+    } as unknown as RosterManagementService
+
+    render(<RosterPage loadTeamOptions={async () => teams.slice(0, 1)} service={service} managementService={managementService} />)
+    await screen.findByText('Alice Test')
+    fireEvent.click(screen.getByRole('button', { name: '+ Ajouter un joueur' }))
+    fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'Emma' } })
+    fireEvent.change(screen.getByLabelText('Nom'), { target: { value: 'Exemple' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Rechercher' }))
+
+    expect(await screen.findByText('Emma Exemple')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Sélectionner cette identité' })).not.toBeInTheDocument()
+    expect(screen.getByText(/pas poursuivre son ajout à un effectif/)).toBeInTheDocument()
   })
 
   it('bloque explicitement une ambiguïté sans candidat affichable', async () => {
@@ -214,6 +247,7 @@ describe('page Effectifs canonique', () => {
     expect(screen.getByText('Identité archivée')).toBeInTheDocument()
     expect(screen.getByText('Vérification nécessaire')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /créer|sélectionner/i })).not.toBeInTheDocument()
+    expect(screen.getByText(/identité archivée ne peut pas être sélectionnée/)).toBeInTheDocument()
   })
 
   it('ferme et invalide la recherche quand l’équipe change', async () => {
