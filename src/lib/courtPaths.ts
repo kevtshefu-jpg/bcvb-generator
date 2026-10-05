@@ -52,9 +52,10 @@ export function getNoChargeArcPath(mode: CourtMode, side: "left" | "right") {
 
 export function getBackboardLine(mode: CourtMode, side: "left" | "right") {
   const rim = getRimPosition(mode, side);
+  // The backboard is behind the rim, toward the baseline.
   const boardX = side === "left"
-    ? rim.x + FIBA_COURT.backboardOffset
-    : rim.x - FIBA_COURT.backboardOffset;
+    ? rim.x - FIBA_COURT.backboardOffset
+    : rim.x + FIBA_COURT.backboardOffset;
   return {
     x1: boardX * COURT_SCALE,
     y1: (rim.y - FIBA_COURT.backboardHalfHeight) * COURT_SCALE,
