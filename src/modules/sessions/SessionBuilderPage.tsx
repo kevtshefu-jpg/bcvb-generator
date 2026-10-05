@@ -527,7 +527,7 @@ export default function SessionBuilderPage() {
                     }
                   : situation.bcvbLinks,
               courtFrames:
-                situation.courtFrames.length && mode !== 'courts'
+                situation.courtFrames.length
                   ? situation.courtFrames
                   : [
                       createCorrectedSessionCourtFrame({
@@ -562,7 +562,7 @@ export default function SessionBuilderPage() {
 
     setMessage(
       mode === 'courts'
-        ? 'Terrains corrigés : attaquant, défenseur, ballon et flèche de drive ajoutés.'
+        ? 'Terrains vérifiés : les schémas existants sont conservés et les terrains manquants sont créés vierges.'
         : `Séance améliorée automatiquement (${mode}).`
     )
   }
