@@ -91,6 +91,10 @@ export default function RosterPage({
     setMembershipSubmitting(false)
     setMembershipError(null)
     setMembershipSuccess(null)
+    setDeactivateCandidate(null)
+    setDeactivateSubmitting(false)
+    setDeactivateError(null)
+    setDeactivateSuccess(null)
   }, [])
 
   useEffect(() => {
@@ -337,7 +341,7 @@ export default function RosterPage({
       setDeactivateSuccess(result.changed ? 'Le joueur a été retiré de cet effectif.' : 'Cette appartenance était déjà inactive.')
       setDeactivateCandidate(null)
       const nextMembers = await service.readTeamRoster(targetTeamId)
-      if (currentRequest !== membershipRequestId.current) return
+      if (currentRequest !== deactivateRequestId.current) return
       if (nextMembers.some((member) => member.teamId !== targetTeamId)) throw new Error('MALFORMED_ROSTER_RESPONSE')
       setMembers(nextMembers)
       setStatus(nextMembers.length === 0 ? 'EMPTY' : 'READY')
