@@ -34,7 +34,12 @@
 .roster-search-selection-note { font-size: .9rem; opacity: .78; }
 .roster-search-select-button { margin-top: .9rem; }
 .roster-selected-identity { border-width: 2px; }
-.roster-selected-identity h2 { margin: .2rem 0 .6rem; }
+.roster-selected-identity h2, .roster-created-identity h2 { margin: .2rem 0 .6rem; }
+.roster-search-warning { padding: 1rem; border: 1px solid var(--bcvb-border, #cbd5df); border-radius: 12px; }
+.roster-create-panel { display: grid; gap: 1rem; }
+.roster-create-panel form, .roster-create-panel label { display: grid; gap: .6rem; }
+.roster-create-panel textarea { width: 100%; min-height: 96px; padding: .65rem .75rem; border: 1px solid var(--bcvb-border, #cbd5df); border-radius: 10px; font: inherit; }
+.roster-create-actions { display: flex; justify-content: flex-end; gap: .65rem; flex-wrap: wrap; }
 @media (max-width: 767px) {
   .roster-read-hero, .roster-read-section-heading { align-items: stretch; flex-direction: column; }
   .roster-hero-actions { align-items: stretch; justify-content: stretch; }
