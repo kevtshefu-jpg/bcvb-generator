@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../auth/context/AuthContext'
 import { loadTeams } from '../../teams/teamManagementService'
 import { RosterList } from '../components/RosterList'
+import { RosterMembershipConfirmPanel } from '../components/RosterMembershipConfirmPanel'
 import { RosterPlayerCreatePanel } from '../components/RosterPlayerCreatePanel'
 import { RosterPlayerSearchPanel } from '../components/RosterPlayerSearchPanel'
 import { RosterStatePanel } from '../components/RosterStatePanel'
@@ -52,6 +53,10 @@ export default function RosterPage({
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
   const [createdIdentity, setCreatedIdentity] = useState<{ playerId: string; firstName: string; lastName: string; replay: boolean } | null>(null)
+  const [membershipCandidate, setMembershipCandidate] = useState<{ playerId: string; firstName: string; lastName: string } | null>(null)
+  const [membershipSubmitting, setMembershipSubmitting] = useState(false)
+  const [membershipError, setMembershipError] = useState<string | null>(null)
+  const [membershipSuccess, setMembershipSuccess] = useState<string | null>(null)
   const teamRequestId = useRef(0)
   const rosterRequestId = useRef(0)
   const searchRequestId = useRef(0)
@@ -73,6 +78,10 @@ export default function RosterPage({
     setCreating(false)
     setCreateError(null)
     setCreatedIdentity(null)
+    setMembershipCandidate(null)
+    setMembershipSubmitting(false)
+    setMembershipError(null)
+    setMembershipSuccess(null)
   }, [])
 
   useEffect(() => {
@@ -94,6 +103,10 @@ export default function RosterPage({
     setCreating(false)
     setCreateError(null)
     setCreatedIdentity(null)
+    setMembershipCandidate(null)
+    setMembershipSubmitting(false)
+    setMembershipError(null)
+    setMembershipSuccess(null)
     setStatus('LOADING')
     void loadTeamOptions().then((nextTeams) => {
       if (currentRequest !== teamRequestId.current) return
@@ -170,6 +183,10 @@ export default function RosterPage({
     setCreating(false)
     setCreateError(null)
     setCreatedIdentity(null)
+    setMembershipCandidate(null)
+    setMembershipSubmitting(false)
+    setMembershipError(null)
+    setMembershipSuccess(null)
     try {
       const result = await managementService.searchPlayers(input)
       if (currentRequest !== searchRequestId.current) return
@@ -200,6 +217,10 @@ export default function RosterPage({
     setSelectedCandidate(null)
     setCreateError(null)
     setCreatedIdentity(null)
+    setMembershipCandidate(null)
+    setMembershipSubmitting(false)
+    setMembershipError(null)
+    setMembershipSuccess(null)
     createRequestId.current += 1
     createOperationId.current = crypto.randomUUID()
     setCreateDraft({ input, candidates })
@@ -246,6 +267,44 @@ export default function RosterPage({
     }
   }, [capabilities?.canCreatePlayer, createDraft, creating, managementService])
 
+  const requestMembership = useCallback((candidate: { playerId: string; firstName: string; lastName: string }) => {
+    if (!capabilities?.canAddMembership || !selectedTeam) return
+    setMembershipError(null)
+    setMembershipSuccess(null)
+    setMembershipCandidate(candidate)
+  }, [capabilities?.canAddMembership, selectedTeam])
+
+  const confirmMembership = useCallback(async () => {
+    if (!capabilities?.canAddMembership || !selectedTeam || !membershipCandidate || membershipSubmitting) return
+    const targetTeamId = selectedTeam.id
+    const targetSeason = selectedTeam.season
+    setMembershipSubmitting(true)
+    setMembershipError(null)
+    try {
+      const result = await managementService.addOrReactivateMembership({
+        playerId: membershipCandidate.playerId,
+        teamId: targetTeamId,
+        season: targetSeason,
+      })
+      if (selectedTeamId !== targetTeamId) return
+      setMembershipSuccess(result.changed ? 'Appartenance enregistrée dans l’effectif.' : 'Ce joueur était déjà actif dans cet effectif.')
+      setMembershipCandidate(null)
+      setSelectedCandidate(null)
+      setCreatedIdentity(null)
+      const nextMembers = await service.readTeamRoster(targetTeamId)
+      if (selectedTeamId !== targetTeamId) return
+      if (nextMembers.some((member) => member.teamId !== targetTeamId)) throw new Error('MALFORMED_ROSTER_RESPONSE')
+      setMembers(nextMembers)
+      setStatus(nextMembers.length === 0 ? 'EMPTY' : 'READY')
+    } catch (error: unknown) {
+      if (error instanceof RosterManagementError && error.kind === 'FORBIDDEN') setMembershipError('Votre profil ne permet pas de modifier cet effectif.')
+      else if (error instanceof RosterManagementError && error.kind === 'VALIDATION') setMembershipError('L’équipe, la saison ou le joueur doit être vérifié.')
+      else setMembershipError('L’ajout à l’effectif est momentanément indisponible. Réessayez.')
+    } finally {
+      setMembershipSubmitting(false)
+    }
+  }, [capabilities?.canAddMembership, managementService, membershipCandidate, membershipSubmitting, selectedTeam, selectedTeamId, service])
+
   const rosterVisible = status === 'READY' || status === 'EMPTY'
 
   return (
@@ -288,6 +347,7 @@ export default function RosterPage({
           <p className="bcvb-eyebrow">Identité créée</p>
           <h2>{createdIdentity.firstName} {createdIdentity.lastName}</h2>
           <p>L’identité canonique est enregistrée. Elle n’a pas été ajoutée automatiquement à l’effectif.</p>
+          {capabilities?.canAddMembership && selectedTeam ? <button type="button" onClick={() => requestMembership(createdIdentity)}>Ajouter à {selectedTeam.name}</button> : null}
         </section>
       ) : null}
       {searchOpen && selectedCandidate ? (
@@ -299,9 +359,23 @@ export default function RosterPage({
               ? `Équipe(s) active(s) : ${selectedCandidate.activeMemberships.map((membership) => `${membership.teamName} — ${membership.season}`).join(', ')}.`
               : 'Aucune appartenance active enregistrée.'}
           </p>
-          <p>La sélection ne modifie pas l’effectif. L’ajout ou la réactivation sera proposé dans l’étape suivante.</p>
+          <p>La sélection ne modifie pas l’effectif.</p>
+          {capabilities?.canAddMembership && selectedTeam ? <button type="button" onClick={() => requestMembership(selectedCandidate)}>Ajouter à {selectedTeam.name}</button> : null}
         </section>
       ) : null}
+      {searchOpen && membershipCandidate && selectedTeam ? (
+        <RosterMembershipConfirmPanel
+          firstName={membershipCandidate.firstName}
+          lastName={membershipCandidate.lastName}
+          teamName={selectedTeam.name}
+          season={selectedTeam.season}
+          submitting={membershipSubmitting}
+          errorMessage={membershipError}
+          onConfirm={confirmMembership}
+          onCancel={() => { setMembershipCandidate(null); setMembershipError(null) }}
+        />
+      ) : null}
+      {searchOpen && membershipSuccess ? <p className="roster-read-card" role="status">{membershipSuccess}</p> : null}
       {status === 'READY' && selectedTeam ? <RosterList team={selectedTeam} members={members} /> : null}
       {status !== 'READY' ? <RosterStatePanel status={status} team={selectedTeam} onRetry={status === 'ERROR' ? refresh : undefined} /> : null}
       {capabilities?.canManageRoster ? <p className="sr-only">Votre profil dispose de capacités de gestion serveur.</p> : null}
