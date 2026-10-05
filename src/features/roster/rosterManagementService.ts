@@ -1,6 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { supabase } from '../../lib/supabase'
 import type {
+  RosterCreateInput,
+  RosterCreateResult,
   RosterFailureKind,
   RosterSearchCandidate,
   RosterSearchInput,
@@ -85,6 +87,32 @@ export function mapRosterSearchResult(value: unknown): RosterSearchResult {
   }
 }
 
+export function mapRosterCreateResult(value: unknown): RosterCreateResult {
+  if (!isRecord(value)) throw new Error('MALFORMED_ROSTER_RESPONSE')
+  const status = value.status
+  const matchState = value.match_state
+  const playerId = value.player_id
+  const candidateIds = value.candidate_ids ?? []
+  const idempotentReplay = value.idempotent_replay ?? false
+  if (
+    (status !== 'CREATED' && status !== 'CONFLICT' && status !== 'AMBIGUOUS')
+    || typeof matchState !== 'string'
+    || !MATCH_STATES.includes(matchState as RosterSearchMatchState)
+    || (playerId !== null && playerId !== undefined && typeof playerId !== 'string')
+    || !Array.isArray(candidateIds)
+    || candidateIds.some((candidateId) => typeof candidateId !== 'string')
+    || typeof idempotentReplay !== 'boolean'
+  ) throw new Error('MALFORMED_ROSTER_RESPONSE')
+  if (status === 'CREATED' && !playerId) throw new Error('MALFORMED_ROSTER_RESPONSE')
+  return {
+    status,
+    playerId: playerId ?? null,
+    matchState: matchState as RosterSearchMatchState,
+    candidateIds,
+    idempotentReplay,
+  }
+}
+
 export class RosterManagementError extends Error {
   constructor(public readonly kind: RosterFailureKind) {
     super(kind)
@@ -104,6 +132,40 @@ export function mapRosterManagementError(error: unknown): RosterManagementError 
 
 export function createRosterManagementService(client: SupabaseClient) {
   return {
+    async createPlayer(input: RosterCreateInput): Promise<RosterCreateResult> {
+      const firstName = input.firstName.trim()
+      const lastName = input.lastName.trim()
+      const birthDate = input.birthDate.trim()
+      const licenseNumber = input.licenseNumber.trim()
+      const distinctPersonReason = input.distinctPersonReason.trim()
+      if (!input.operationId || !firstName || !lastName) throw new RosterManagementError('VALIDATION')
+      if (input.confirmDistinctPerson && (input.acknowledgedCandidateIds.length === 0 || !distinctPersonReason)) {
+        throw new RosterManagementError('VALIDATION')
+      }
+
+      const { data, error } = await client.rpc('create_player_for_roster', {
+        operation_id: input.operationId,
+        target_first_name: firstName,
+        target_last_name: lastName,
+        target_birth_date: birthDate || null,
+        target_gender: null,
+        target_category: null,
+        target_height_cm: null,
+        target_position: null,
+        target_license_number: licenseNumber || null,
+        target_license_status: null,
+        confirm_distinct_person: input.confirmDistinctPerson,
+        acknowledged_candidate_ids: input.acknowledgedCandidateIds,
+        distinct_person_reason: distinctPersonReason || null,
+      })
+      if (error) throw mapRosterManagementError(error)
+      try {
+        return mapRosterCreateResult(data)
+      } catch (mappingError) {
+        throw mapRosterManagementError(mappingError)
+      }
+    },
+
     async searchPlayers(input: RosterSearchInput): Promise<RosterSearchResult> {
       const firstName = input.firstName.trim()
       const lastName = input.lastName.trim()
