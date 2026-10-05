@@ -77,6 +77,18 @@ export type RosterCreateResult = {
   idempotentReplay: boolean
 }
 
+export type RosterMembershipInput = {
+  playerId: string
+  teamId: string
+  season: string
+}
+
+export type RosterMembershipResult = {
+  membershipId: string
+  status: string
+  changed: boolean
+}
+
 export type RosterPageStatus =
   | 'LOADING'
   | 'READY'
