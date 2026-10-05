@@ -15,6 +15,7 @@ import type {
   RosterCapabilities,
   RosterMember,
   RosterPageStatus,
+  RosterSearchCandidate,
   RosterSearchInput,
   RosterSearchResult,
   RosterTeam,
@@ -44,6 +45,7 @@ export default function RosterPage({
   const [searching, setSearching] = useState(false)
   const [searchResult, setSearchResult] = useState<RosterSearchResult | null>(null)
   const [searchError, setSearchError] = useState<string | null>(null)
+  const [selectedCandidate, setSelectedCandidate] = useState<RosterSearchCandidate | null>(null)
   const teamRequestId = useRef(0)
   const rosterRequestId = useRef(0)
   const searchRequestId = useRef(0)
@@ -54,6 +56,7 @@ export default function RosterPage({
     setSearching(false)
     setSearchResult(null)
     setSearchError(null)
+    setSelectedCandidate(null)
   }, [])
 
   useEffect(() => {
@@ -68,6 +71,7 @@ export default function RosterPage({
     setSearching(false)
     setSearchResult(null)
     setSearchError(null)
+    setSelectedCandidate(null)
     setStatus('LOADING')
     void loadTeamOptions().then((nextTeams) => {
       if (currentRequest !== teamRequestId.current) return
@@ -137,6 +141,7 @@ export default function RosterPage({
     setSearching(true)
     setSearchResult(null)
     setSearchError(null)
+    setSelectedCandidate(null)
     try {
       const result = await managementService.searchPlayers(input)
       if (currentRequest !== searchRequestId.current) return
@@ -155,6 +160,11 @@ export default function RosterPage({
     }
   }, [capabilities?.canSearchPlayers, managementService])
 
+  const selectCandidate = useCallback((candidate: RosterSearchCandidate) => {
+    if (!capabilities?.canAddMembership || candidate.archived) return
+    setSelectedCandidate(candidate)
+  }, [capabilities?.canAddMembership])
+
   const rosterVisible = status === 'READY' || status === 'EMPTY'
 
   return (
@@ -168,7 +178,30 @@ export default function RosterPage({
       </header>
 
       {teams.length > 0 ? <RosterTeamSelector teams={teams} selectedTeamId={selectedTeamId} disabled={status === 'LOADING'} onChange={selectTeam} /> : null}
-      {searchOpen && capabilities?.canSearchPlayers ? <RosterPlayerSearchPanel searching={searching} result={searchResult} errorMessage={searchError} onSearch={searchPlayers} onClose={resetSearch} /> : null}
+      {searchOpen && capabilities?.canSearchPlayers ? (
+        <RosterPlayerSearchPanel
+          searching={searching}
+          result={searchResult}
+          errorMessage={searchError}
+          onSearch={searchPlayers}
+          canSelectCandidate={capabilities.canAddMembership}
+          selectedPlayerId={selectedCandidate?.playerId ?? null}
+          onSelectCandidate={selectCandidate}
+          onClose={resetSearch}
+        />
+      ) : null}
+      {searchOpen && selectedCandidate ? (
+        <section className="roster-read-card roster-selected-identity" aria-live="polite">
+          <p className="bcvb-eyebrow">Identité sélectionnée</p>
+          <h2>{selectedCandidate.firstName} {selectedCandidate.lastName}</h2>
+          <p>
+            {selectedCandidate.activeMemberships.length > 0
+              ? `Équipe(s) active(s) : ${selectedCandidate.activeMemberships.map((membership) => `${membership.teamName} — ${membership.season}`).join(', ')}.`
+              : 'Aucune appartenance active enregistrée.'}
+          </p>
+          <p>La sélection ne modifie pas l’effectif. L’ajout ou la réactivation sera proposé dans l’étape suivante.</p>
+        </section>
+      ) : null}
       {status === 'READY' && selectedTeam ? <RosterList team={selectedTeam} members={members} /> : null}
       {status !== 'READY' ? <RosterStatePanel status={status} team={selectedTeam} onRetry={status === 'ERROR' ? refresh : undefined} /> : null}
       {capabilities?.canManageRoster ? <p className="sr-only">Votre profil dispose de capacités de gestion serveur.</p> : null}
