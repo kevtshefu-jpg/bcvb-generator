@@ -3,6 +3,7 @@ import { useAuth } from '../../auth/context/AuthContext'
 import { loadTeams } from '../../teams/teamManagementService'
 import { RosterList } from '../components/RosterList'
 import { RosterMembershipConfirmPanel } from '../components/RosterMembershipConfirmPanel'
+import { RosterMembershipDeactivatePanel } from '../components/RosterMembershipDeactivatePanel'
 import { RosterPlayerCreatePanel } from '../components/RosterPlayerCreatePanel'
 import { RosterPlayerSearchPanel } from '../components/RosterPlayerSearchPanel'
 import { RosterStatePanel } from '../components/RosterStatePanel'
@@ -57,14 +58,22 @@ export default function RosterPage({
   const [membershipSubmitting, setMembershipSubmitting] = useState(false)
   const [membershipError, setMembershipError] = useState<string | null>(null)
   const [membershipSuccess, setMembershipSuccess] = useState<string | null>(null)
+  const [deactivateCandidate, setDeactivateCandidate] = useState<RosterMember | null>(null)
+  const [deactivateSubmitting, setDeactivateSubmitting] = useState(false)
+  const [deactivateError, setDeactivateError] = useState<string | null>(null)
+  const [deactivateSuccess, setDeactivateSuccess] = useState<string | null>(null)
   const teamRequestId = useRef(0)
   const rosterRequestId = useRef(0)
   const searchRequestId = useRef(0)
   const createRequestId = useRef(0)
+  const membershipRequestId = useRef(0)
+  const deactivateRequestId = useRef(0)
   const createOperationId = useRef<string | null>(null)
 
   const resetSearch = useCallback(() => {
     searchRequestId.current += 1
+    membershipRequestId.current += 1
+    deactivateRequestId.current += 1
     createRequestId.current += 1
     createOperationId.current = null
     setSearchOpen(false)
@@ -89,6 +98,8 @@ export default function RosterPage({
     rosterRequestId.current += 1
     searchRequestId.current += 1
     createRequestId.current += 1
+    membershipRequestId.current += 1
+    deactivateRequestId.current += 1
     createOperationId.current = null
     setTeams([])
     setSelectedTeamId('')
@@ -107,6 +118,10 @@ export default function RosterPage({
     setMembershipSubmitting(false)
     setMembershipError(null)
     setMembershipSuccess(null)
+    setDeactivateCandidate(null)
+    setDeactivateSubmitting(false)
+    setDeactivateError(null)
+    setDeactivateSuccess(null)
     setStatus('LOADING')
     void loadTeamOptions().then((nextTeams) => {
       if (currentRequest !== teamRequestId.current) return
@@ -121,6 +136,8 @@ export default function RosterPage({
       rosterRequestId.current += 1
       searchRequestId.current += 1
       createRequestId.current += 1
+      membershipRequestId.current += 1
+      deactivateRequestId.current += 1
       createOperationId.current = null
     }
   }, [loadTeamOptions, profile?.id, teamLoadVersion])
@@ -276,6 +293,7 @@ export default function RosterPage({
 
   const confirmMembership = useCallback(async () => {
     if (!capabilities?.canAddMembership || !selectedTeam || !membershipCandidate || membershipSubmitting) return
+    const currentRequest = ++membershipRequestId.current
     const targetTeamId = selectedTeam.id
     const targetSeason = selectedTeam.season
     setMembershipSubmitting(true)
@@ -286,24 +304,50 @@ export default function RosterPage({
         teamId: targetTeamId,
         season: targetSeason,
       })
-      if (selectedTeamId !== targetTeamId) return
+      if (currentRequest !== membershipRequestId.current) return
       setMembershipSuccess(result.changed ? 'Appartenance enregistrée dans l’effectif.' : 'Ce joueur était déjà actif dans cet effectif.')
       setMembershipCandidate(null)
       setSelectedCandidate(null)
       setCreatedIdentity(null)
       const nextMembers = await service.readTeamRoster(targetTeamId)
-      if (selectedTeamId !== targetTeamId) return
+      if (currentRequest !== membershipRequestId.current) return
       if (nextMembers.some((member) => member.teamId !== targetTeamId)) throw new Error('MALFORMED_ROSTER_RESPONSE')
       setMembers(nextMembers)
       setStatus(nextMembers.length === 0 ? 'EMPTY' : 'READY')
     } catch (error: unknown) {
+      if (currentRequest !== membershipRequestId.current) return
       if (error instanceof RosterManagementError && error.kind === 'FORBIDDEN') setMembershipError('Votre profil ne permet pas de modifier cet effectif.')
       else if (error instanceof RosterManagementError && error.kind === 'VALIDATION') setMembershipError('L’équipe, la saison ou le joueur doit être vérifié.')
       else setMembershipError('L’ajout à l’effectif est momentanément indisponible. Réessayez.')
     } finally {
-      setMembershipSubmitting(false)
+      if (currentRequest === membershipRequestId.current) setMembershipSubmitting(false)
     }
   }, [capabilities?.canAddMembership, managementService, membershipCandidate, membershipSubmitting, selectedTeam, selectedTeamId, service])
+
+  const confirmDeactivate = useCallback(async () => {
+    if (!capabilities?.canDeactivateMembership || !selectedTeam || !deactivateCandidate || deactivateSubmitting) return
+    const currentRequest = ++deactivateRequestId.current
+    const targetTeamId = selectedTeam.id
+    const targetMembershipId = deactivateCandidate.membershipId
+    setDeactivateSubmitting(true)
+    setDeactivateError(null)
+    try {
+      const result = await managementService.deactivateMembership(targetMembershipId)
+      if (currentRequest !== deactivateRequestId.current) return
+      setDeactivateSuccess(result.changed ? 'Le joueur a été retiré de cet effectif.' : 'Cette appartenance était déjà inactive.')
+      setDeactivateCandidate(null)
+      const nextMembers = await service.readTeamRoster(targetTeamId)
+      if (currentRequest !== membershipRequestId.current) return
+      if (nextMembers.some((member) => member.teamId !== targetTeamId)) throw new Error('MALFORMED_ROSTER_RESPONSE')
+      setMembers(nextMembers)
+      setStatus(nextMembers.length === 0 ? 'EMPTY' : 'READY')
+    } catch (error: unknown) {
+      if (currentRequest !== deactivateRequestId.current) return
+      if (error instanceof RosterManagementError && error.kind === 'FORBIDDEN') setDeactivateError('Votre profil ne permet pas de modifier cet effectif.')
+      else if (error instanceof RosterManagementError && (error.kind === 'VALIDATION' || error.kind === 'NOT_FOUND')) setDeactivateError('Cette appartenance doit être vérifiée ou n’existe plus.')
+      else setDeactivateError('Le retrait de l’effectif est momentanément indisponible. Réessayez.')
+    } finally { if (currentRequest === deactivateRequestId.current) setDeactivateSubmitting(false) }
+  }, [capabilities?.canDeactivateMembership, deactivateCandidate, deactivateSubmitting, managementService, selectedTeam, selectedTeamId, service])
 
   const rosterVisible = status === 'READY' || status === 'EMPTY'
 
@@ -372,11 +416,13 @@ export default function RosterPage({
           submitting={membershipSubmitting}
           errorMessage={membershipError}
           onConfirm={confirmMembership}
-          onCancel={() => { setMembershipCandidate(null); setMembershipError(null) }}
+          onCancel={() => { membershipRequestId.current += 1; setMembershipCandidate(null); setMembershipSubmitting(false); setMembershipError(null) }}
         />
       ) : null}
       {searchOpen && membershipSuccess ? <p className="roster-read-card" role="status">{membershipSuccess}</p> : null}
-      {status === 'READY' && selectedTeam ? <RosterList team={selectedTeam} members={members} /> : null}
+      {deactivateCandidate && selectedTeam ? <RosterMembershipDeactivatePanel member={deactivateCandidate} team={selectedTeam} submitting={deactivateSubmitting} errorMessage={deactivateError} onConfirm={confirmDeactivate} onCancel={() => { deactivateRequestId.current += 1; setDeactivateCandidate(null); setDeactivateSubmitting(false); setDeactivateError(null) }} /> : null}
+      {deactivateSuccess ? <p className="roster-read-card" role="status">{deactivateSuccess}</p> : null}
+      {status === 'READY' && selectedTeam ? <RosterList team={selectedTeam} members={members} canDeactivate={Boolean(capabilities?.canDeactivateMembership)} onRequestDeactivate={(member) => { setDeactivateSuccess(null); setDeactivateError(null); setDeactivateCandidate(member) }} /> : null}
       {status !== 'READY' ? <RosterStatePanel status={status} team={selectedTeam} onRetry={status === 'ERROR' ? refresh : undefined} /> : null}
       {capabilities?.canManageRoster ? <p className="sr-only">Votre profil dispose de capacités de gestion serveur.</p> : null}
     </main>

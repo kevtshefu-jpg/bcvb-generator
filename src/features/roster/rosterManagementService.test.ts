@@ -114,3 +114,33 @@ describe('rosterManagementService membership add', () => {
       .resolves.toEqual({ membershipId: 'membership-1', status: 'active', changed: false })
   })
 })
+
+
+describe('rosterManagementService membership deactivate', () => {
+  it('appelle uniquement deactivate_team_membership avec le membership canonique', async () => {
+    const rpc = vi.fn(async () => ({ data: [{ membership_id: 'membership-1', status: 'inactive', changed: true }], error: null }))
+    const service = createRosterManagementService({ rpc } as never)
+    await expect(service.deactivateMembership(' membership-1 ')).resolves.toEqual({
+      membershipId: 'membership-1', status: 'inactive', changed: true,
+    })
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(rpc).toHaveBeenCalledWith('deactivate_team_membership', { target_membership_id: 'membership-1' })
+  })
+
+  it('conserve le résultat idempotent already-inactive et refuse un identifiant vide', async () => {
+    const rpc = vi.fn(async () => ({ data: [{ membership_id: 'membership-1', status: 'inactive', changed: false }], error: null }))
+    const service = createRosterManagementService({ rpc } as never)
+    await expect(service.deactivateMembership('membership-1')).resolves.toEqual({
+      membershipId: 'membership-1', status: 'inactive', changed: false,
+    })
+    await expect(service.deactivateMembership('   ')).rejects.toEqual(expect.objectContaining({ kind: 'VALIDATION' }))
+    expect(rpc).toHaveBeenCalledTimes(1)
+  })
+
+  it('mappe FORBIDDEN et NOT_FOUND sans exposer le message serveur', async () => {
+    const forbidden = createRosterManagementService({ rpc: vi.fn(async () => ({ data: null, error: { code: '42501', message: 'secret' } })) } as never)
+    const missing = createRosterManagementService({ rpc: vi.fn(async () => ({ data: null, error: { code: 'P0002', message: 'secret' } })) } as never)
+    await expect(forbidden.deactivateMembership('membership-1')).rejects.toEqual(expect.objectContaining({ kind: 'FORBIDDEN' }))
+    await expect(missing.deactivateMembership('membership-1')).rejects.toEqual(expect.objectContaining({ kind: 'NOT_FOUND' }))
+  })
+})

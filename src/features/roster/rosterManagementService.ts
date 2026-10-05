@@ -143,6 +143,14 @@ export function mapRosterManagementError(error: unknown): RosterManagementError 
 
 export function createRosterManagementService(client: SupabaseClient) {
   return {
+    async deactivateMembership(membershipId: string): Promise<RosterMembershipResult> {
+      const targetMembershipId = membershipId.trim()
+      if (!targetMembershipId) throw new RosterManagementError('VALIDATION')
+      const { data, error } = await client.rpc('deactivate_team_membership', { target_membership_id: targetMembershipId })
+      if (error) throw mapRosterManagementError(error)
+      try { return mapRosterMembershipResult(data) } catch (mappingError) { throw mapRosterManagementError(mappingError) }
+    },
+
     async addOrReactivateMembership(input: RosterMembershipInput): Promise<RosterMembershipResult> {
       const playerId = input.playerId.trim()
       const teamId = input.teamId.trim()
