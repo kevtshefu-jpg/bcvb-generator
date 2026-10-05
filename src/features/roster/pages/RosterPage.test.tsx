@@ -249,7 +249,10 @@ describe('page Effectifs canonique', () => {
   it('ajoute explicitement une identité sélectionnée puis relit l’effectif canonique', async () => {
     const readTeamRoster = vi.fn()
       .mockResolvedValueOnce([member('team-a', 'Alice')])
-      .mockResolvedValueOnce([member('team-a', 'Alice'), member('team-a', 'Brune')])
+      .mockResolvedValueOnce([
+        member('team-a', 'Alice'),
+        { ...member('team-a', 'Brune'), membershipId: 'membership-team-a-brune', playerId: 'player-2' },
+      ])
     const service = {
       getCapabilities: vi.fn(async () => managerCapabilities),
       readTeamRoster,
