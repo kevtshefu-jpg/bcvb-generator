@@ -17,7 +17,43 @@ describe('rosterManagementService player search', () => {
     }))
     const service = createRosterManagementService({ rpc } as never)
 
-    const result = await service.searchPlayers({ firstName: ' Alice ', lastName: ' Test ', licenseNumber: ' VT052472 ', birthDate: '' 
+    const result = await service.searchPlayers({ firstName: ' Alice ', lastName: ' Test ', licenseNumber: ' VT052472 ', birthDate: '' })
+
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(rpc).toHaveBeenCalledWith('search_players_for_roster', {
+      target_first_name: 'Alice', target_last_name: 'Test', target_license_number: 'VT052472', target_birth_date: null, result_limit: 20,
+    })
+    expect(result.matchState).toBe('EXACT')
+    expect(result.candidates[0]).toEqual(expect.objectContaining({
+      playerId: 'player-1', firstName: 'Alice', lastName: 'Test', birthYear: 2004, licenseHint: '••••4726', exactLicenseMatch: true,
+    }))
+  })
+
+  it('refuse localement une recherche sans licence ni prénom+nom', async () => {
+    const rpc = vi.fn()
+    const service = createRosterManagementService({ rpc } as never)
+    await expect(service.searchPlayers({ firstName: 'Alice', lastName: '', licenseNumber: '', birthDate: '' }))
+      .rejects.toEqual(expect.objectContaining({ kind: 'VALIDATION' }))
+    expect(rpc).not.toHaveBeenCalled()
+  })
+
+  it('mappe les refus serveur sans exposer le message brut', async () => {
+    const rpc = vi.fn(async () => ({ data: null, error: { code: '42501', message: 'secret database detail' } }))
+    const service = createRosterManagementService({ rpc } as never)
+    await expect(service.searchPlayers({ firstName: 'Alice', lastName: 'Test', licenseNumber: '', birthDate: '' }))
+      .rejects.toBeInstanceOf(RosterManagementError)
+    await expect(service.searchPlayers({ firstName: 'Alice', lastName: 'Test', licenseNumber: '', birthDate: '' }))
+      .rejects.toEqual(expect.objectContaining({ kind: 'FORBIDDEN' }))
+  })
+
+  it('rejette une réponse RPC malformée', async () => {
+    const rpc = vi.fn(async () => ({ data: { match_state: 'EXACT', candidates: [{ player_id: 'player-1' }] }, error: null }))
+    const service = createRosterManagementService({ rpc } as never)
+    await expect(service.searchPlayers({ firstName: 'Alice', lastName: 'Test', licenseNumber: '', birthDate: '' }))
+      .rejects.toEqual(expect.objectContaining({ kind: 'MALFORMED' }))
+  })
+})
+
 
 describe('rosterManagementService player creation', () => {
   it('appelle create_player_for_roster sans créer de membership', async () => {
@@ -56,40 +92,5 @@ describe('rosterManagementService player creation', () => {
     })
     expect(result.status).toBe('CONFLICT')
     expect(result.candidateIds).toEqual(['player-existing'])
-  })
-})
-
-    expect(rpc).toHaveBeenCalledTimes(1)
-    expect(rpc).toHaveBeenCalledWith('search_players_for_roster', {
-      target_first_name: 'Alice', target_last_name: 'Test', target_license_number: 'VT052472', target_birth_date: null, result_limit: 20,
-    })
-    expect(result.matchState).toBe('EXACT')
-    expect(result.candidates[0]).toEqual(expect.objectContaining({
-      playerId: 'player-1', firstName: 'Alice', lastName: 'Test', birthYear: 2004, licenseHint: '••••4726', exactLicenseMatch: true,
-    }))
-  })
-
-  it('refuse localement une recherche sans licence ni prénom+nom', async () => {
-    const rpc = vi.fn()
-    const service = createRosterManagementService({ rpc } as never)
-    await expect(service.searchPlayers({ firstName: 'Alice', lastName: '', licenseNumber: '', birthDate: '' }))
-      .rejects.toEqual(expect.objectContaining({ kind: 'VALIDATION' }))
-    expect(rpc).not.toHaveBeenCalled()
-  })
-
-  it('mappe les refus serveur sans exposer le message brut', async () => {
-    const rpc = vi.fn(async () => ({ data: null, error: { code: '42501', message: 'secret database detail' } }))
-    const service = createRosterManagementService({ rpc } as never)
-    await expect(service.searchPlayers({ firstName: 'Alice', lastName: 'Test', licenseNumber: '', birthDate: '' }))
-      .rejects.toBeInstanceOf(RosterManagementError)
-    await expect(service.searchPlayers({ firstName: 'Alice', lastName: 'Test', licenseNumber: '', birthDate: '' }))
-      .rejects.toEqual(expect.objectContaining({ kind: 'FORBIDDEN' }))
-  })
-
-  it('rejette une réponse RPC malformée', async () => {
-    const rpc = vi.fn(async () => ({ data: { match_state: 'EXACT', candidates: [{ player_id: 'player-1' }] }, error: null }))
-    const service = createRosterManagementService({ rpc } as never)
-    await expect(service.searchPlayers({ firstName: 'Alice', lastName: 'Test', licenseNumber: '', birthDate: '' }))
-      .rejects.toEqual(expect.objectContaining({ kind: 'MALFORMED' }))
   })
 })
