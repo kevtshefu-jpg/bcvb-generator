@@ -246,6 +246,38 @@ describe('page Effectifs canonique', () => {
     expect(managementService.createPlayer).not.toHaveBeenCalled()
   })
 
+  it('ajoute explicitement une identité sélectionnée puis relit l’effectif canonique', async () => {
+    const readTeamRoster = vi.fn()
+      .mockResolvedValueOnce([member('team-a', 'Alice')])
+      .mockResolvedValueOnce([member('team-a', 'Alice'), member('team-a', 'Brune')])
+    const service = {
+      getCapabilities: vi.fn(async () => managerCapabilities),
+      readTeamRoster,
+    } as unknown as RosterReadService
+    const managementService = {
+      searchPlayers: vi.fn(async () => ({ matchState: 'EXACT' as const, candidates: [candidate({ playerId: 'player-2', firstName: 'Brune' })] })),
+      createPlayer: vi.fn(),
+      addOrReactivateMembership: vi.fn(async () => ({ membershipId: 'membership-2', status: 'active', changed: true })),
+    } as unknown as RosterManagementService
+
+    render(<RosterPage loadTeamOptions={async () => teams.slice(0, 1)} service={service} managementService={managementService} />)
+    await screen.findByText('Alice Test')
+    fireEvent.click(screen.getByRole('button', { name: '+ Ajouter un joueur' }))
+    fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'Brune' } })
+    fireEvent.change(screen.getByLabelText('Nom'), { target: { value: 'Test' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Rechercher' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Sélectionner cette identité' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Ajouter à Team A' }))
+    expect(screen.getByText(/Équipe cible/)).toHaveTextContent('Team A')
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer l’ajout à l’effectif' }))
+
+    expect(await screen.findByText('Appartenance enregistrée dans l’effectif.')).toBeInTheDocument()
+    expect(managementService.addOrReactivateMembership).toHaveBeenCalledWith({
+      playerId: 'player-2', teamId: 'team-a', season: '2026-2027',
+    })
+    expect(readTeamRoster).toHaveBeenCalledTimes(2)
+  })
+
   it('bloque explicitement une ambiguïté sans candidat affichable', async () => {
     const service = {
       getCapabilities: vi.fn(async () => managerCapabilities),
