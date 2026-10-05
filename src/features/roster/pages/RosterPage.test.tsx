@@ -255,7 +255,11 @@ describe('page Effectifs canonique', () => {
       readTeamRoster,
     } as unknown as RosterReadService
     const managementService = {
-      searchPlayers: vi.fn(async () => ({ matchState: 'EXACT' as const, candidates: [candidate({ playerId: 'player-2', firstName: 'Brune' })] })),
+      searchPlayers: vi.fn(async () => ({ matchState: 'EXACT' as const, candidates: [{
+        playerId: 'player-2', firstName: 'Brune', lastName: 'Test', birthYear: 2001,
+        licenseHint: null, exactLicenseMatch: false, archived: false, activeMemberships: [],
+        classification: 'EXACT' as const, reasons: ['IDENTITY_MATCH'],
+      }] })),
       createPlayer: vi.fn(),
       addOrReactivateMembership: vi.fn(async () => ({ membershipId: 'membership-2', status: 'active', changed: true })),
     } as unknown as RosterManagementService
