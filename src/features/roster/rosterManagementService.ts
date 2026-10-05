@@ -4,6 +4,8 @@ import type {
   RosterCreateInput,
   RosterCreateResult,
   RosterFailureKind,
+  RosterMembershipInput,
+  RosterMembershipResult,
   RosterSearchCandidate,
   RosterSearchInput,
   RosterSearchMatchState,
@@ -113,6 +115,15 @@ export function mapRosterCreateResult(value: unknown): RosterCreateResult {
   }
 }
 
+export function mapRosterMembershipResult(value: unknown): RosterMembershipResult {
+  const row = Array.isArray(value) ? value[0] : value
+  if (!isRecord(row)) throw new Error('MALFORMED_ROSTER_RESPONSE')
+  if (typeof row.membership_id !== 'string' || !row.membership_id || typeof row.status !== 'string' || typeof row.changed !== 'boolean') {
+    throw new Error('MALFORMED_ROSTER_RESPONSE')
+  }
+  return { membershipId: row.membership_id, status: row.status, changed: row.changed }
+}
+
 export class RosterManagementError extends Error {
   constructor(public readonly kind: RosterFailureKind) {
     super(kind)
@@ -132,6 +143,24 @@ export function mapRosterManagementError(error: unknown): RosterManagementError 
 
 export function createRosterManagementService(client: SupabaseClient) {
   return {
+    async addOrReactivateMembership(input: RosterMembershipInput): Promise<RosterMembershipResult> {
+      const playerId = input.playerId.trim()
+      const teamId = input.teamId.trim()
+      const season = input.season.trim()
+      if (!playerId || !teamId || !season) throw new RosterManagementError('VALIDATION')
+      const { data, error } = await client.rpc('add_or_reactivate_team_membership', {
+        target_player_id: playerId,
+        target_team_id: teamId,
+        target_season: season,
+      })
+      if (error) throw mapRosterManagementError(error)
+      try {
+        return mapRosterMembershipResult(data)
+      } catch (mappingError) {
+        throw mapRosterManagementError(mappingError)
+      }
+    },
+
     async createPlayer(input: RosterCreateInput): Promise<RosterCreateResult> {
       const firstName = input.firstName.trim()
       const lastName = input.lastName.trim()
