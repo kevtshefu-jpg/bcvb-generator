@@ -27,27 +27,13 @@ function expectPointWithinCourt(x: number, y: number, courtType: SessionCourtFra
 }
 
 describe('createCourtFrame', () => {
-  it('crée le socle terrain BCVB attendu avec des identifiants cohérents', () => {
+  it('crée un terrain BCVB vierge par défaut', () => {
     const frame = createCourtFrame()
 
-    expect(frame.objects.map(({ type }) => type)).toEqual([
-      'offense_player',
-      'defense_player',
-      'ball',
-    ])
-    expect(frame.arrows.map(({ type }) => type)).toEqual(['arrow_dribble'])
+    expect(frame.id).toBeTruthy()
+    expect(frame.objects).toEqual([])
+    expect(frame.arrows).toEqual([])
     expect(frame.zones).toEqual([])
-
-    const ids = [frame.id, ...frame.objects.map(({ id }) => id), ...frame.arrows.map(({ id }) => id)]
-    expect(ids.every(Boolean)).toBe(true)
-    expect(new Set(ids).size).toBe(ids.length)
-    expect(frame.objects.every(({ frameId }) => frameId === frame.id)).toBe(true)
-
-    frame.objects.forEach(({ x, y }) => expectPointWithinCourt(x, y, frame.courtType))
-    frame.arrows.forEach(({ fromX, fromY, toX, toY }) => {
-      expectPointWithinCourt(fromX, fromY, frame.courtType)
-      expectPointWithinCourt(toX, toY, frame.courtType)
-    })
   })
 
   it('respecte les tableaux objects, arrows et zones explicitement fournis, même vides', () => {
