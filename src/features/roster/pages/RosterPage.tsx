@@ -107,8 +107,8 @@ export default function RosterPage({
       teamRequestId.current += 1
       rosterRequestId.current += 1
       searchRequestId.current += 1
-    createRequestId.current += 1
-    createOperationId.current = null
+      createRequestId.current += 1
+      createOperationId.current = null
     }
   }, [loadTeamOptions, profile?.id, teamLoadVersion])
 
