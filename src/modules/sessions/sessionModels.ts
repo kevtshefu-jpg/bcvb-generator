@@ -477,14 +477,10 @@ export function createCourtFrame(input: Partial<SessionCourtFrame> = {}): Sessio
     id: frameId,
     title: input.title || 'Terrain principal',
     intent: input.intent || 'Mise en place',
-    objects: input.objects ?? [
-      { id: createId('obj'), type: 'offense_player', x: 4.5, y: 8.4, label: '1', color: '#b5122b', frameId },
-      { id: createId('obj'), type: 'defense_player', x: 5.6, y: 8.4, label: 'D', color: '#2f3438', frameId },
-      { id: createId('obj'), type: 'ball', x: 4.2, y: 8.6, label: 'Ballon', color: '#f97316', frameId },
-    ],
-    arrows: input.arrows ?? [
-      { id: createId('arr'), type: 'arrow_dribble', fromX: 4.5, fromY: 8.4, toX: 7.2, toY: 6.2 },
-    ],
+    // New frames start blank. Explicit objects/arrows from saved sessions,
+    // templates or imports are preserved without destructive normalization.
+    objects: input.objects ?? [],
+    arrows: input.arrows ?? [],
     zones: input.zones ?? [],
   }
 }
