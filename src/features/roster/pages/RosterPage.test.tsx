@@ -285,6 +285,50 @@ describe('page Effectifs canonique', () => {
     expect(readTeamRoster).toHaveBeenCalledTimes(2)
   })
 
+  it('retire explicitement une appartenance puis relit l’effectif canonique', async () => {
+    const readTeamRoster = vi.fn().mockResolvedValueOnce([member('team-a', 'Alice')]).mockResolvedValueOnce([])
+    const service = { getCapabilities: vi.fn(async () => managerCapabilities), readTeamRoster } as unknown as RosterReadService
+    const managementService = {
+      deactivateMembership: vi.fn(async () => ({ membershipId: 'membership-team-a', status: 'inactive', changed: true })),
+    } as unknown as RosterManagementService
+    render(<RosterPage loadTeamOptions={async () => teams.slice(0, 1)} service={service} managementService={managementService} />)
+    await screen.findByText('Alice Test')
+    fireEvent.click(screen.getByRole('button', { name: 'Retirer de l’effectif' }))
+    expect(screen.getByText(/L’identité canonique du joueur n’est pas supprimée/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer le retrait de l’effectif' }))
+    expect(await screen.findByText('Le joueur a été retiré de cet effectif.')).toBeInTheDocument()
+    expect(managementService.deactivateMembership).toHaveBeenCalledWith('membership-team-a')
+    expect(readTeamRoster).toHaveBeenCalledTimes(2)
+  })
+
+  it('ne propose aucun retrait sans canDeactivateMembership', async () => {
+    const service = {
+      getCapabilities: vi.fn(async () => ({ ...managerCapabilities, canDeactivateMembership: false })),
+      readTeamRoster: vi.fn(async () => [member('team-a', 'Alice')]),
+    } as unknown as RosterReadService
+    render(<RosterPage loadTeamOptions={async () => teams.slice(0, 1)} service={service} />)
+    await screen.findByText('Alice Test')
+    expect(screen.queryByRole('button', { name: 'Retirer de l’effectif' })).not.toBeInTheDocument()
+  })
+
+  it('ignore une réponse de retrait devenue obsolète après changement d’équipe', async () => {
+    const slowDeactivate = deferred<{ membershipId: string; status: string; changed: boolean }>()
+    const service = {
+      getCapabilities: vi.fn(async () => managerCapabilities),
+      readTeamRoster: vi.fn(async (teamId: string) => [member(teamId, teamId === 'team-a' ? 'Alice' : 'Brune')]),
+    } as unknown as RosterReadService
+    const managementService = { deactivateMembership: vi.fn(() => slowDeactivate.promise) } as unknown as RosterManagementService
+    render(<RosterPage loadTeamOptions={async () => teams} service={service} managementService={managementService} />)
+    await screen.findByText('Alice Test')
+    fireEvent.click(screen.getByRole('button', { name: 'Retirer de l’effectif' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer le retrait de l’effectif' }))
+    fireEvent.change(screen.getByLabelText('Équipe'), { target: { value: 'team-b' } })
+    expect(await screen.findByText('Brune Test')).toBeInTheDocument()
+    await act(async () => slowDeactivate.resolve({ membershipId: 'membership-team-a', status: 'inactive', changed: true }))
+    expect(screen.queryByText('Le joueur a été retiré de cet effectif.')).not.toBeInTheDocument()
+    expect(screen.getByText('Brune Test')).toBeInTheDocument()
+  })
+
   it('bloque explicitement une ambiguïté sans candidat affichable', async () => {
     const service = {
       getCapabilities: vi.fn(async () => managerCapabilities),
