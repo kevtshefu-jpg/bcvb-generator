@@ -3,6 +3,7 @@ import { useAuth } from '../../auth/context/AuthContext'
 import { loadTeams } from '../../teams/teamManagementService'
 import { RosterList } from '../components/RosterList'
 import { RosterMembershipConfirmPanel } from '../components/RosterMembershipConfirmPanel'
+import { RosterMembershipDeactivatePanel } from '../components/RosterMembershipDeactivatePanel'
 import { RosterPlayerCreatePanel } from '../components/RosterPlayerCreatePanel'
 import { RosterPlayerSearchPanel } from '../components/RosterPlayerSearchPanel'
 import { RosterStatePanel } from '../components/RosterStatePanel'
@@ -57,6 +58,10 @@ export default function RosterPage({
   const [membershipSubmitting, setMembershipSubmitting] = useState(false)
   const [membershipError, setMembershipError] = useState<string | null>(null)
   const [membershipSuccess, setMembershipSuccess] = useState<string | null>(null)
+  const [deactivateCandidate, setDeactivateCandidate] = useState<RosterMember | null>(null)
+  const [deactivateSubmitting, setDeactivateSubmitting] = useState(false)
+  const [deactivateError, setDeactivateError] = useState<string | null>(null)
+  const [deactivateSuccess, setDeactivateSuccess] = useState<string | null>(null)
   const teamRequestId = useRef(0)
   const rosterRequestId = useRef(0)
   const searchRequestId = useRef(0)
@@ -305,6 +310,29 @@ export default function RosterPage({
     }
   }, [capabilities?.canAddMembership, managementService, membershipCandidate, membershipSubmitting, selectedTeam, selectedTeamId, service])
 
+  const confirmDeactivate = useCallback(async () => {
+    if (!capabilities?.canDeactivateMembership || !selectedTeam || !deactivateCandidate || deactivateSubmitting) return
+    const targetTeamId = selectedTeam.id
+    const targetMembershipId = deactivateCandidate.membershipId
+    setDeactivateSubmitting(true)
+    setDeactivateError(null)
+    try {
+      const result = await managementService.deactivateMembership(targetMembershipId)
+      if (selectedTeamId !== targetTeamId || deactivateCandidate.membershipId !== targetMembershipId) return
+      setDeactivateSuccess(result.changed ? 'Le joueur a été retiré de cet effectif.' : 'Cette appartenance était déjà inactive.')
+      setDeactivateCandidate(null)
+      const nextMembers = await service.readTeamRoster(targetTeamId)
+      if (selectedTeamId !== targetTeamId) return
+      if (nextMembers.some((member) => member.teamId !== targetTeamId)) throw new Error('MALFORMED_ROSTER_RESPONSE')
+      setMembers(nextMembers)
+      setStatus(nextMembers.length === 0 ? 'EMPTY' : 'READY')
+    } catch (error: unknown) {
+      if (error instanceof RosterManagementError && error.kind === 'FORBIDDEN') setDeactivateError('Votre profil ne permet pas de modifier cet effectif.')
+      else if (error instanceof RosterManagementError && (error.kind === 'VALIDATION' || error.kind === 'NOT_FOUND')) setDeactivateError('Cette appartenance doit être vérifiée ou n’existe plus.')
+      else setDeactivateError('Le retrait de l’effectif est momentanément indisponible. Réessayez.')
+    } finally { setDeactivateSubmitting(false) }
+  }, [capabilities?.canDeactivateMembership, deactivateCandidate, deactivateSubmitting, managementService, selectedTeam, selectedTeamId, service])
+
   const rosterVisible = status === 'READY' || status === 'EMPTY'
 
   return (
@@ -376,7 +404,9 @@ export default function RosterPage({
         />
       ) : null}
       {searchOpen && membershipSuccess ? <p className="roster-read-card" role="status">{membershipSuccess}</p> : null}
-      {status === 'READY' && selectedTeam ? <RosterList team={selectedTeam} members={members} /> : null}
+      {deactivateCandidate && selectedTeam ? <RosterMembershipDeactivatePanel member={deactivateCandidate} team={selectedTeam} submitting={deactivateSubmitting} errorMessage={deactivateError} onConfirm={confirmDeactivate} onCancel={() => { setDeactivateCandidate(null); setDeactivateError(null) }} /> : null}
+      {deactivateSuccess ? <p className="roster-read-card" role="status">{deactivateSuccess}</p> : null}
+      {status === 'READY' && selectedTeam ? <RosterList team={selectedTeam} members={members} canDeactivate={Boolean(capabilities?.canDeactivateMembership)} onRequestDeactivate={(member) => { setDeactivateSuccess(null); setDeactivateError(null); setDeactivateCandidate(member) }} /> : null}
       {status !== 'READY' ? <RosterStatePanel status={status} team={selectedTeam} onRetry={status === 'ERROR' ? refresh : undefined} /> : null}
       {capabilities?.canManageRoster ? <p className="sr-only">Votre profil dispose de capacités de gestion serveur.</p> : null}
     </main>
