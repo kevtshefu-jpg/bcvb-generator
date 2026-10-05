@@ -285,6 +285,36 @@ describe('page Effectifs canonique', () => {
     expect(readTeamRoster).toHaveBeenCalledTimes(2)
   })
 
+  it('ignore une réponse d’ajout devenue obsolète après changement d’équipe', async () => {
+    const slowAdd = deferred<{ membershipId: string; status: string; changed: boolean }>()
+    const service = {
+      getCapabilities: vi.fn(async () => managerCapabilities),
+      readTeamRoster: vi.fn(async (teamId: string) => [member(teamId, teamId === 'team-a' ? 'Alice' : 'Brune')]),
+    } as unknown as RosterReadService
+    const managementService = {
+      searchPlayers: vi.fn(async () => ({ matchState: 'EXACT' as const, candidates: [{
+        playerId: 'player-2', firstName: 'Emma', lastName: 'Exemple', birthYear: 2001,
+        licenseHint: null, exactLicenseMatch: false, archived: false, activeMemberships: [],
+        classification: 'EXACT' as const, reasons: ['IDENTITY_MATCH'],
+      }] })),
+      addOrReactivateMembership: vi.fn(() => slowAdd.promise),
+    } as unknown as RosterManagementService
+    render(<RosterPage loadTeamOptions={async () => teams} service={service} managementService={managementService} />)
+    await screen.findByText('Alice Test')
+    fireEvent.click(screen.getByRole('button', { name: '+ Ajouter un joueur' }))
+    fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'Emma' } })
+    fireEvent.change(screen.getByLabelText('Nom'), { target: { value: 'Exemple' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Rechercher' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Sélectionner cette identité' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Ajouter à Équipe A' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer l’ajout à l’effectif' }))
+    fireEvent.change(screen.getByLabelText('Équipe'), { target: { value: 'team-b' } })
+    expect(await screen.findByText('Brune Test')).toBeInTheDocument()
+    await act(async () => slowAdd.resolve({ membershipId: 'membership-new', status: 'active', changed: true }))
+    expect(screen.queryByText('Appartenance enregistrée dans l’effectif.')).not.toBeInTheDocument()
+    expect(screen.getByText('Brune Test')).toBeInTheDocument()
+  })
+
   it('retire explicitement une appartenance puis relit l’effectif canonique', async () => {
     const readTeamRoster = vi.fn().mockResolvedValueOnce([member('team-a', 'Alice')]).mockResolvedValueOnce([])
     const service = { getCapabilities: vi.fn(async () => managerCapabilities), readTeamRoster } as unknown as RosterReadService
