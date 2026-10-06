@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { createSituation, type SessionSituation, type TrainingSessionV2 } from './sessionModels'
 import { duplicateSituation, reorderSituations } from './sessionUtils'
 import { saveSituationTemplate } from './sessionStorage'
@@ -9,6 +10,14 @@ type SessionTimelineProps = {
 }
 
 export function SessionTimeline({ session, onChange }: SessionTimelineProps) {
+  const [activeSituationId, setActiveSituationId] = useState(session.situations[0]?.id ?? '')
+
+  useEffect(() => {
+    if (!session.situations.some((situation) => situation.id === activeSituationId)) {
+      setActiveSituationId(session.situations[0]?.id ?? '')
+    }
+  }, [activeSituationId, session.situations])
+
   function updateSituations(situations: SessionSituation[]) {
     onChange({ ...session, situations: reorderSituations(situations) })
   }
@@ -27,26 +36,72 @@ export function SessionTimeline({ session, onChange }: SessionTimelineProps) {
     updateSituations(next)
   }
 
+  function addSituation() {
+    const nextSituation = createSituation({ order: session.situations.length + 1 })
+    updateSituations([...session.situations, nextSituation])
+    setActiveSituationId(nextSituation.id)
+  }
+
+  const activeSituation =
+    session.situations.find((situation) => situation.id === activeSituationId) ??
+    session.situations[0]
+
   return (
-    <section className="session-card">
+    <section className="session-card session-timeline-workspace">
       <header className="session-section-header">
-        <p className="bcvb-eyebrow">Déroulé de séance</p>
-        <h2>Situations pédagogiques</h2>
-        <button type="button" onClick={() => updateSituations([...session.situations, createSituation({ order: session.situations.length + 1 })])}>Ajouter une situation</button>
+        <div>
+          <p className="bcvb-eyebrow">Déroulé de séance</p>
+          <h2>Situations pédagogiques</h2>
+        </div>
+        <button type="button" onClick={addSituation}>Ajouter une situation</button>
       </header>
-      <div className="session-timeline">
-        {session.situations.map((situation) => (
+
+      {session.situations.length > 0 && (
+        <div className="session-timeline-selector" role="tablist" aria-label="Situations de la séance">
+          {session.situations.map((situation) => (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={situation.id === activeSituation?.id}
+              className={situation.id === activeSituation?.id ? 'is-active' : ''}
+              key={situation.id}
+              onClick={() => setActiveSituationId(situation.id)}
+            >
+              <span>#{situation.order}</span>
+              <strong>{situation.title || `Situation ${situation.order}`}</strong>
+              <small>{situation.durationMinutes} min · {situation.intensityLevel}</small>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="session-timeline session-timeline--single">
+        {activeSituation ? (
           <SessionSituationBlock
-            situation={situation}
-            key={situation.id}
-            onChange={(nextSituation) => updateSituation(situation.id, nextSituation)}
-            onDuplicate={() => updateSituations([...session.situations, duplicateSituation(situation)])}
-            onMoveUp={() => move(situation.id, -1)}
-            onMoveDown={() => move(situation.id, 1)}
-            onDelete={() => updateSituations(session.situations.filter((item) => item.id !== situation.id))}
-            onSaveAsTemplate={() => saveSituationTemplate(situation)}
+            situation={activeSituation}
+            onChange={(nextSituation) => updateSituation(activeSituation.id, nextSituation)}
+            onDuplicate={() => {
+              const duplicate = duplicateSituation(activeSituation)
+              updateSituations([...session.situations, duplicate])
+              setActiveSituationId(duplicate.id)
+            }}
+            onMoveUp={() => move(activeSituation.id, -1)}
+            onMoveDown={() => move(activeSituation.id, 1)}
+            onDelete={() => {
+              const currentIndex = session.situations.findIndex((item) => item.id === activeSituation.id)
+              const remaining = session.situations.filter((item) => item.id !== activeSituation.id)
+              updateSituations(remaining)
+              setActiveSituationId(remaining[Math.min(currentIndex, remaining.length - 1)]?.id ?? '')
+            }}
+            onSaveAsTemplate={() => saveSituationTemplate(activeSituation)}
           />
-        ))}
+        ) : (
+          <div className="session-timeline-empty">
+            <strong>Aucune situation</strong>
+            <p>Ajoutez une situation pour construire le déroulé de la séance.</p>
+            <button type="button" onClick={addSituation}>Ajouter la première situation</button>
+          </div>
+        )}
       </div>
     </section>
   )
