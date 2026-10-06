@@ -371,7 +371,12 @@ export default function SessionBuilderPage() {
     setServerVersion(null)
     setSearchParams({}, { replace: true })
     setSyncState('local_only')
+    setShowPreview(false)
+    setActiveSection('session-infos')
     setMessage('Nouvelle séance créée avec terrains vierges.')
+    window.requestAnimationFrame(() => {
+      document.getElementById('session-infos')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
   }
 
   async function saveCurrentSession() {
