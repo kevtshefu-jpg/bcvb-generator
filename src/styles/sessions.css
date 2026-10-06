@@ -2246,3 +2246,18 @@
     display: none;
   }
 }
+
+
+/* M4.5D — situation menu belongs to the compact situation header */
+.session-builder-page .session-situation-header .session-situation-menu {
+  margin: 0 0 0 auto;
+  align-self: center;
+}
+@media (max-width: 720px) {
+  .session-builder-page .session-situation-header {
+    align-items: center;
+  }
+  .session-builder-page .session-situation-header .session-situation-menu {
+    flex: 0 0 auto;
+  }
+}
