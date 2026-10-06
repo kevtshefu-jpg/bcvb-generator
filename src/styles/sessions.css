@@ -2061,3 +2061,81 @@
     border-radius: 14px;
   }
 }
+
+
+/* M4.5D — mobile workspace navigation and safe areas */
+@media (max-width: 720px) {
+  .session-builder-page {
+    overflow-x: clip;
+  }
+  .session-builder-page .session-workspace-nav {
+    position: fixed;
+    z-index: 115;
+    top: auto;
+    right: 8px;
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+    left: 8px;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 5px;
+    border-radius: 14px;
+    box-shadow: 0 10px 28px rgba(20,20,24,.16);
+  }
+  .session-builder-page .session-workspace-nav button {
+    min-height: 44px;
+  }
+  .session-builder-page .session-workspace-dock {
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    left: 8px;
+    width: auto;
+    max-width: none;
+    margin: 0;
+  }
+  .session-builder-page.session-page--with-fixed-dock {
+    padding-bottom: calc(132px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .session-builder-page .session-card,
+  .session-builder-page .session-situation,
+  .session-builder-page .session-situation-editor,
+  .session-builder-page .session-terrain-workspace,
+  .session-builder-page .advanced-court,
+  .session-builder-page .advanced-court__frame {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+@media (max-width: 390px) {
+  .session-builder-page .session-workspace-nav {
+    right: 5px;
+    left: 5px;
+  }
+  .session-builder-page .session-workspace-nav button {
+    gap: 2px;
+    padding-inline: 2px;
+    font-size: .67rem;
+  }
+  .session-builder-page .session-workspace-nav button span {
+    width: 20px;
+    height: 20px;
+    font-size: .68rem;
+  }
+  .session-builder-page .session-workspace-dock__summary {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+  .session-builder-page .session-workspace-dock__summary strong {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
+@media (max-width: 340px) {
+  .session-builder-page .session-workspace-nav button span {
+    display: none;
+  }
+  .session-builder-page .session-workspace-nav button {
+    font-size: .65rem;
+  }
+}
