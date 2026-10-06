@@ -91,7 +91,16 @@ export function SessionSituationEditor({ situation, onChange }: SessionSituation
         </summary>
         <SituationMetricsEditor metrics={situation.metrics} onChange={(metrics) => patch({ metrics })} />
       </details>
-      <AdvancedFibaCourt frames={situation.courtFrames} onChange={(courtFrames) => patch({ courtFrames })} />
+      <section id="session-terrain" className="session-terrain-workspace" aria-label="Terrain de la situation active">
+        <header className="session-terrain-workspace__header">
+          <div>
+            <span>Situation active</span>
+            <strong>{situation.title || `Situation ${situation.order}`}</strong>
+          </div>
+          <small>{situation.durationMinutes} min</small>
+        </header>
+        <AdvancedFibaCourt frames={situation.courtFrames} onChange={(courtFrames) => patch({ courtFrames })} />
+      </section>
     </div>
   )
 }
