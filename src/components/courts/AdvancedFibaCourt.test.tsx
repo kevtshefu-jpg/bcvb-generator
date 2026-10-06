@@ -60,7 +60,9 @@ describe('AdvancedFibaCourt workspace', () => {
     const onChange = vi.fn()
 
     render(<AdvancedFibaCourt frames={[first, second]} onChange={onChange} />)
-    fireEvent.click(screen.getByText('Terrain entier'))
+    const actionMenu = document.querySelector('.advanced-court__action-menu')
+    expect(actionMenu).not.toBeNull()
+    fireEvent.click(within(actionMenu as HTMLElement).getByText('Terrain entier'))
 
     const nextFrames = onChange.mock.calls.at(-1)?.[0]
     expect(nextFrames[0].courtType).toBe('full')
@@ -76,7 +78,9 @@ describe('AdvancedFibaCourt workspace', () => {
     const onChange = vi.fn()
 
     render(<AdvancedFibaCourt frames={[first]} onChange={onChange} />)
-    fireEvent.click(screen.getByText('Réinitialiser terrain'))
+    const actionMenu = document.querySelector('.advanced-court__action-menu')
+    expect(actionMenu).not.toBeNull()
+    fireEvent.click(within(actionMenu as HTMLElement).getByText('Réinitialiser terrain'))
 
     const nextFrames = onChange.mock.calls.at(-1)?.[0]
     expect(nextFrames[0].title).toBe('Frame test')
