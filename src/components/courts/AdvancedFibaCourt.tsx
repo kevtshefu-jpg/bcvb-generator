@@ -31,13 +31,12 @@ export function AdvancedFibaCourt({ frames, onChange }: AdvancedFibaCourtProps) 
   }
 
   function duplicateFrame(frame: SessionCourtFrame) {
-    onChange([
-      ...safeFrames,
-      createCourtFrame({
-        ...frame,
-        title: `${frame.title} - copie`,
-      }),
-    ])
+    const nextFrame = createCourtFrame({
+      ...frame,
+      title: `${frame.title} - copie`,
+    })
+    onChange([...safeFrames, nextFrame])
+    setActiveFrameId(nextFrame.id)
   }
 
   function deleteFrame(frameId: string) {

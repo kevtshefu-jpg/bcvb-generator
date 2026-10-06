@@ -152,13 +152,8 @@ function getQualityLabel(score: number) {
 }
 
 /**
- * IMPORTANT :
- * Cette fonction ne vide plus les objets.
- * Elle laisse createCourtFrame() produire le terrain corrigé :
- * - attaquant
- * - défenseur
- * - ballon
- * - flèche de drive
+ * Crée une frame de structure sans injecter d'objets.
+ * Les schémas existants restent préservés par les chemins de chargement/normalisation.
  */
 function createCorrectedSessionCourtFrame(
   params: Parameters<typeof createCourtFrame>[0]
@@ -171,7 +166,7 @@ function createCorrectedSessionCourtFrame(
 
 /**
  * Nettoyage volontaire uniquement quand Kevin clique sur “Nettoyer terrains”.
- * À ne pas utiliser pour créer les terrains par défaut.
+ * Les terrains nouvellement créés sont déjà vierges.
  */
 function clearCourtFrameObjects(
   frame: ReturnType<typeof createCourtFrame>
@@ -367,7 +362,7 @@ export default function SessionBuilderPage() {
     setServerVersion(null)
     setSearchParams({}, { replace: true })
     setSyncState('local_only')
-    setMessage('Nouvelle séance créée avec terrains corrigés.')
+    setMessage('Nouvelle séance créée avec terrains vierges.')
   }
 
   async function saveCurrentSession() {
@@ -532,7 +527,7 @@ export default function SessionBuilderPage() {
                     }
                   : situation.bcvbLinks,
               courtFrames:
-                situation.courtFrames.length && mode !== 'courts'
+                situation.courtFrames.length
                   ? situation.courtFrames
                   : [
                       createCorrectedSessionCourtFrame({
@@ -567,7 +562,7 @@ export default function SessionBuilderPage() {
 
     setMessage(
       mode === 'courts'
-        ? 'Terrains corrigés : attaquant, défenseur, ballon et flèche de drive ajoutés.'
+        ? 'Terrains vérifiés : les schémas existants sont conservés et les terrains manquants sont créés vierges.'
         : `Séance améliorée automatiquement (${mode}).`
     )
   }

@@ -19,10 +19,10 @@ describe('sessionBuilderServerAdapter', () => {
     expect(mapBuilderSessionToWritePayload(twice).situations[0].id).toBe(once.situations[0].id)
   })
 
-  it('conserve le terrain BCVB par défaut intact', () => {
+  it('conserve le terrain BCVB vierge par défaut intact', () => {
     const frame = createCourtFrame()
-    expect(frame.objects.map(({ type }) => type)).toEqual(['offense_player', 'defense_player', 'ball'])
-    expect(frame.arrows.map(({ type }) => type)).toEqual(['arrow_dribble'])
+    expect(frame.objects).toEqual([])
+    expect(frame.arrows).toEqual([])
   })
 
   it('distingue brouillon local et modifications serveur non sauvegardées', () => {
