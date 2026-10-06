@@ -65,7 +65,7 @@ export function CourtToolbar({
         </label>
       </details>
 
-      <details className="fastdraw-toolbar__group fastdraw-toolbar__group--tools" open>
+      <details className="fastdraw-toolbar__group fastdraw-toolbar__group--tools">
         <summary>Objets</summary>
         <button type="button" className={isObjectActive("player") ? "is-active" : ""} onClick={() => onSelectObjectTool("player")}>Joueur</button>
         <button type="button" className={isObjectActive("defender") ? "is-active" : ""} onClick={() => onSelectObjectTool("defender")}>Defense</button>
