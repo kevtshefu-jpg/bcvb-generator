@@ -335,15 +335,25 @@ export default function SessionBuilderPage() {
       }
     )
 
-    SESSION_SECTION_IDS.forEach((sectionId) => {
-      const section = document.getElementById(sectionId)
+    const observeAvailableSections = () => {
+      SESSION_SECTION_IDS.forEach((sectionId) => {
+        const section = document.getElementById(sectionId)
 
-      if (section) {
-        observer.observe(section)
-      }
-    })
+        if (section) {
+          observer.observe(section)
+        }
+      })
+    }
 
-    return () => observer.disconnect()
+    observeAvailableSections()
+
+    const mutationObserver = new MutationObserver(observeAvailableSections)
+    mutationObserver.observe(document.body, { childList: true, subtree: true })
+
+    return () => {
+      mutationObserver.disconnect()
+      observer.disconnect()
+    }
   }, [])
 
   function updateSession(nextSession: TrainingSessionV2) {
