@@ -2020,3 +2020,44 @@
     flex-basis: min(190px, 68vw);
   }
 }
+
+
+/* M4.5C — active terrain workspace */
+.session-builder-page .session-terrain-workspace {
+  margin-top: 18px;
+  padding: 14px;
+  scroll-margin-top: 118px;
+  border: 1px solid rgba(20,20,24,.12);
+  border-radius: 16px;
+  background: rgba(247,247,248,.92);
+}
+.session-builder-page .session-terrain-workspace__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.session-builder-page .session-terrain-workspace__header > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.session-builder-page .session-terrain-workspace__header span,
+.session-builder-page .session-terrain-workspace__header small {
+  font-size: .75rem;
+  color: rgba(20,20,24,.62);
+}
+.session-builder-page .session-terrain-workspace__header strong {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+@media (max-width: 720px) {
+  .session-builder-page .session-terrain-workspace {
+    margin-inline: -10px;
+    padding: 8px;
+    scroll-margin-top: 96px;
+    border-radius: 14px;
+  }
+}
