@@ -6,7 +6,7 @@ describe('playerProgressionService', () => {
     player_id: 'player-1', first_name: 'Ada', last_name: 'Lovelace', player_category: 'Seniors',
     team_id: 'team-1', team_name: 'SF1', team_category: 'Seniors', season: '2026-2027',
     attendance_status: 'ready', evaluation_status: 'ready', objectives_status: 'to_link',
-    documents_status: 'to_link', summary_json: { source: 'canonical' },
+    documents_status: 'to_link', evaluation_count: 2, active_objective_count: 1, last_evaluation_date: '2026-10-07', summary_json: { source: 'canonical' },
   }
 
   it('mappe strictement le profil canonique', () => {
