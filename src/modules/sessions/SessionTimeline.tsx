@@ -63,6 +63,9 @@ export function SessionTimeline({ session, onChange }: SessionTimelineProps) {
               type="button"
               role="tab"
               aria-selected={situation.id === activeSituation?.id}
+              aria-controls={`session-situation-panel-${situation.id}`}
+              id={`session-situation-tab-${situation.id}`}
+              tabIndex={situation.id === activeSituation?.id ? 0 : -1}
               className={situation.id === activeSituation?.id ? 'is-active' : ''}
               key={situation.id}
               onClick={() => setActiveSituationId(situation.id)}
@@ -75,7 +78,12 @@ export function SessionTimeline({ session, onChange }: SessionTimelineProps) {
         </div>
       )}
 
-      <div className="session-timeline session-timeline--single">
+      <div
+        className="session-timeline session-timeline--single"
+        role={activeSituation ? 'tabpanel' : undefined}
+        id={activeSituation ? `session-situation-panel-${activeSituation.id}` : undefined}
+        aria-labelledby={activeSituation ? `session-situation-tab-${activeSituation.id}` : undefined}
+      >
         {activeSituation ? (
           <SessionSituationBlock
             situation={activeSituation}
