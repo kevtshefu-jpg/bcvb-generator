@@ -1883,3 +1883,69 @@
     padding-bottom: 76px;
   }
 }
+
+
+/* M4.5B — progressive disclosure for a situation */
+.session-builder-page .session-situation-grid--essential {
+  margin-top: 14px;
+}
+.session-builder-page .session-editor-disclosure {
+  margin-top: 14px;
+  border: 1px solid rgba(20, 20, 24, .12);
+  border-radius: 14px;
+  background: rgba(255,255,255,.72);
+  overflow: clip;
+}
+.session-builder-page .session-editor-disclosure > summary {
+  display: grid;
+  gap: 3px;
+  padding: 13px 15px;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 800;
+}
+.session-builder-page .session-editor-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.session-builder-page .session-editor-disclosure > summary::after {
+  content: '+';
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+.session-builder-page .session-editor-disclosure[open] > summary::after {
+  content: '−';
+}
+.session-builder-page .session-editor-disclosure > summary {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.session-builder-page .session-editor-disclosure > summary small {
+  font-weight: 500;
+  color: rgba(20,20,24,.62);
+}
+.session-builder-page .session-editor-disclosure > .session-situation-grid,
+.session-builder-page .session-editor-disclosure > .session-card,
+.session-builder-page .session-editor-disclosure > .situation-metrics-editor {
+  margin: 0;
+  padding: 0 15px 15px;
+}
+.session-builder-page .session-editor-disclosure .session-identity-card {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+@media (max-width: 720px) {
+  .session-builder-page .session-editor-disclosure > summary {
+    padding: 12px;
+  }
+  .session-builder-page .session-editor-disclosure > summary small {
+    font-size: .72rem;
+  }
+  .session-builder-page .session-editor-disclosure > .session-situation-grid,
+  .session-builder-page .session-editor-disclosure > .session-card,
+  .session-builder-page .session-editor-disclosure > .situation-metrics-editor {
+    padding: 0 12px 12px;
+  }
+}
