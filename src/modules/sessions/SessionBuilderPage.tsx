@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../features/auth/context/AuthContext'
 import CoachToolModeToggle from '../../features/coach-tools/mode/CoachToolModeToggle'
+import CoachToolModeGuide from '../../features/coach-tools/mode/CoachToolModeGuide'
 import { useCoachToolMode } from '../../features/coach/hooks/useCoachToolMode'
 import { SessionClassificationPanel } from './SessionClassificationPanel'
 import { SessionHeaderForm } from './SessionHeaderForm'
@@ -856,6 +857,10 @@ export default function SessionBuilderPage() {
         ].filter(Boolean).join(' ')}
       >
         <CoachToolModeToggle mode={mode} onChange={setMode} />
+        <details className="session-mode-help">
+          <summary>Aide du mode</summary>
+          <CoachToolModeGuide mode={mode} context="session" />
+        </details>
       </section>
 
       {showTemplates && (
