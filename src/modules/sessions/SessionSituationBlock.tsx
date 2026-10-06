@@ -23,13 +23,16 @@ export function SessionSituationBlock({ situation, onChange, onDuplicate, onMove
         </div>
         <strong>{situation.durationMinutes} min</strong>
       </header>
-      <div className="session-situation-actions">
-        <button type="button" onClick={onDuplicate}>Dupliquer</button>
-        <button type="button" onClick={onMoveUp}>Monter</button>
-        <button type="button" onClick={onMoveDown}>Descendre</button>
-        <button type="button" onClick={onSaveAsTemplate}>Enregistrer modèle</button>
-        <button type="button" onClick={onDelete}>Supprimer</button>
-      </div>
+      <details className="session-situation-menu">
+        <summary aria-label="Actions pour la situation active">••• <span>Actions situation</span></summary>
+        <div className="session-situation-menu__panel">
+          <button type="button" onClick={onDuplicate}>Dupliquer</button>
+          <button type="button" onClick={onMoveUp}>Monter</button>
+          <button type="button" onClick={onMoveDown}>Descendre</button>
+          <button type="button" onClick={onSaveAsTemplate}>Enregistrer comme modèle</button>
+          <button type="button" className="session-situation-menu__danger" onClick={onDelete}>Supprimer</button>
+        </div>
+      </details>
       <SessionSituationEditor situation={situation} onChange={onChange} />
     </article>
   )
