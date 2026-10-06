@@ -574,7 +574,7 @@
     gap: 8px;
   }
 
-  .fastdraw-properties:has(.fastdraw-properties__empty) {
+  .fastdraw-properties--empty {
     display: none;
   }
 }
