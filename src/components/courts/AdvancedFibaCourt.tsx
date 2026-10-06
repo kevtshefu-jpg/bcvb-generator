@@ -33,7 +33,11 @@ export function AdvancedFibaCourt({ frames, onChange }: AdvancedFibaCourtProps) 
   function duplicateFrame(frame: SessionCourtFrame) {
     const nextFrame = createCourtFrame({
       ...frame,
+      id: '',
       title: `${frame.title} - copie`,
+      objects: frame.objects.map((object) => ({ ...object })),
+      arrows: frame.arrows.map((arrow) => ({ ...arrow })),
+      zones: frame.zones.map((zone) => ({ ...zone })),
     })
     onChange([...safeFrames, nextFrame])
     setActiveFrameId(nextFrame.id)
@@ -41,10 +45,15 @@ export function AdvancedFibaCourt({ frames, onChange }: AdvancedFibaCourtProps) 
 
   function deleteFrame(frameId: string) {
     if (safeFrames.length <= 1) {
-      onChange([createCourtFrame({ title: framePresets[0], intent: 'Mise en place' })])
+      const blankFrame = createCourtFrame({ title: framePresets[0], intent: 'Mise en place' })
+      onChange([blankFrame])
+      setActiveFrameId(blankFrame.id)
       return
     }
-    onChange(safeFrames.filter((frame) => frame.id !== frameId))
+    const currentIndex = safeFrames.findIndex((frame) => frame.id === frameId)
+    const remainingFrames = safeFrames.filter((frame) => frame.id !== frameId)
+    onChange(remainingFrames)
+    setActiveFrameId(remainingFrames[Math.min(currentIndex, remainingFrames.length - 1)]?.id ?? remainingFrames[0]?.id ?? '')
   }
 
   function addFrame() {
@@ -55,7 +64,11 @@ export function AdvancedFibaCourt({ frames, onChange }: AdvancedFibaCourtProps) 
   }
 
   function resetFrame(frameId: string) {
-    onChange(safeFrames.map((frame) => frame.id === frameId ? createCourtFrame({ title: frame.title, courtType: frame.courtType, intent: frame.intent }) : frame))
+    const currentFrame = safeFrames.find((frame) => frame.id === frameId)
+    if (!currentFrame) return
+    const blankFrame = createCourtFrame({ title: currentFrame.title, courtType: currentFrame.courtType, intent: currentFrame.intent })
+    onChange(safeFrames.map((frame) => frame.id === frameId ? blankFrame : frame))
+    setActiveFrameId(blankFrame.id)
   }
 
   function transformCourtType(frameId: string, courtType: CourtType) {
@@ -76,16 +89,29 @@ export function AdvancedFibaCourt({ frames, onChange }: AdvancedFibaCourtProps) 
       </div>
       <CourtFrameTabs frames={safeFrames} activeFrameId={activeFrame.id} onSelect={setActiveFrameId} onAdd={addFrame} />
       {activeFrame && (
-        <article className="advanced-court__frame" key={activeFrame.id}>
-          <div className="advanced-court__actions">
-            <button type="button" onClick={addFrame}>Ajouter frame</button>
-            <button type="button" onClick={() => duplicateFrame(activeFrame)}>Dupliquer frame</button>
-            <button type="button" onClick={() => renameFrame(activeFrame)}>Renommer frame</button>
-            <button type="button" onClick={() => transformCourtType(activeFrame.id, 'half-right')}>Attaque droite</button>
-            <button type="button" onClick={() => transformCourtType(activeFrame.id, 'half-left')}>Attaque gauche</button>
-            <button type="button" onClick={() => transformCourtType(activeFrame.id, 'full')}>Transformer en terrain entier</button>
-            <button type="button" onClick={() => resetFrame(activeFrame.id)}>Réinitialiser terrain</button>
-            <button type="button" onClick={() => deleteFrame(activeFrame.id)}>Supprimer frame</button>
+        <article
+          className="advanced-court__frame"
+          key={activeFrame.id}
+          role="tabpanel"
+          id={`court-frame-panel-${activeFrame.id}`}
+          aria-labelledby={`court-frame-tab-${activeFrame.id}`}
+        >
+          <div className="advanced-court__toolbar">
+            <button type="button" className="advanced-court__primary-action" onClick={addFrame}>
+              Ajouter frame
+            </button>
+            <details className="advanced-court__more-actions">
+              <summary aria-label="Plus d’actions pour la frame active">••• <span>Actions</span></summary>
+              <div className="advanced-court__action-menu">
+                <button type="button" onClick={() => duplicateFrame(activeFrame)}>Dupliquer</button>
+                <button type="button" onClick={() => renameFrame(activeFrame)}>Renommer</button>
+                <button type="button" onClick={() => transformCourtType(activeFrame.id, 'half-right')}>Attaque droite</button>
+                <button type="button" onClick={() => transformCourtType(activeFrame.id, 'half-left')}>Attaque gauche</button>
+                <button type="button" onClick={() => transformCourtType(activeFrame.id, 'full')}>Terrain entier</button>
+                <button type="button" onClick={() => resetFrame(activeFrame.id)}>Réinitialiser terrain</button>
+                <button type="button" className="advanced-court__danger-action" onClick={() => deleteFrame(activeFrame.id)}>Supprimer frame</button>
+              </div>
+            </details>
           </div>
           <CourtFrameEditor
             frame={activeFrame}

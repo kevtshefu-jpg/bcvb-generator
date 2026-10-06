@@ -47,7 +47,7 @@ export function CourtPropertiesPanel({
   const hasSelection = selectedObject || selectedMotion;
 
   return (
-    <aside className="fastdraw-properties" aria-label="Proprietes terrain">
+    <aside className={`fastdraw-properties${hasSelection ? '' : ' fastdraw-properties--empty'}`} aria-label="Proprietes terrain">
       <div className="fastdraw-properties__header">
         <div>
           <span>Selection</span>

@@ -1441,39 +1441,6 @@
   box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.16);
 }
 /* =========================================================
-   BCVB — NAVIGATION RAPIDE ACTIVE
-   ========================================================= */
-
-.session-step-nav button.is-active {
-  background: linear-gradient(135deg, #c1121f, #8f0d17);
-  color: #ffffff;
-  border-color: rgba(193, 18, 31, 0.38);
-  box-shadow:
-    0 10px 22px rgba(193, 18, 31, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
-}
-
-.session-step-nav button.is-active span {
-  background: #ffffff;
-  color: #8f0d17;
-  box-shadow: 0 4px 12px rgba(17, 17, 17, 0.16);
-}
-
-.session-step-nav button.is-active:hover {
-  color: #ffffff;
-  transform: translateY(-1px);
-}
-
-.session-step-nav button.is-active::after {
-  content: "";
-  width: 7px;
-  height: 7px;
-  margin-left: 2px;
-  border-radius: 999px;
-  background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.16);
-}
-/* =========================================================
    BCVB — RÉSUMÉ COACH PREMIUM
    ========================================================= */
 
@@ -1711,4 +1678,662 @@
 
 .session-library-card button {
   min-height: 44px;
+}
+
+
+/* M4.5A — compact Session Builder workspace shell */
+.session-builder-page .session-workspace-header {
+  padding: 18px 22px;
+  gap: 18px;
+  align-items: center;
+}
+.session-builder-page .session-workspace-header .session-hero__content {
+  max-width: 720px;
+}
+.session-builder-page .session-workspace-header h1 {
+  font-size: clamp(1.45rem, 3vw, 2.15rem);
+  margin: 2px 0 4px;
+}
+.session-builder-page .session-workspace-header p {
+  margin: 0;
+}
+.session-builder-page .coach-tool-mode-shell {
+  padding-block: 8px;
+  min-height: 0;
+}
+.session-builder-page .session-workspace-nav {
+  position: sticky;
+  top: 8px;
+  z-index: 20;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 760px;
+  margin-inline: auto;
+  backdrop-filter: blur(14px);
+}
+.session-builder-page .session-workspace-dock {
+  position: fixed;
+  z-index: 45;
+  left: 50%;
+  bottom: 14px;
+  width: min(760px, calc(100% - 32px));
+  transform: translateX(-50%);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 16px;
+  background: rgba(18,18,20,.96);
+  box-shadow: 0 16px 48px rgba(0,0,0,.34);
+  color: #fff;
+  overflow: hidden;
+}
+.session-builder-page .session-workspace-dock__summary {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+.session-builder-page .session-workspace-dock__summary::-webkit-details-marker {
+  display: none;
+}
+.session-builder-page .session-workspace-dock__title {
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #d71920;
+}
+.session-builder-page .session-workspace-dock__summary strong {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.session-builder-page .session-workspace-dock__sync {
+  font-size: .78rem;
+  color: rgba(255,255,255,.72);
+}
+.session-builder-page .session-workspace-dock__chevron {
+  transition: transform .2s ease;
+}
+.session-builder-page .session-workspace-dock[open] .session-workspace-dock__chevron {
+  transform: rotate(180deg);
+}
+.session-builder-page .session-workspace-dock__panel {
+  display: grid;
+  grid-template-columns: minmax(150px,1fr) minmax(130px,.7fr) minmax(260px,1.4fr);
+  align-items: center;
+  gap: 16px;
+  padding: 12px 14px 14px;
+  border-top: 1px solid rgba(255,255,255,.1);
+}
+.session-builder-page .session-workspace-dock__panel > div:not(.session-dock-actions) {
+  display: grid;
+  gap: 3px;
+}
+.session-builder-page .session-workspace-dock .session-dock-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.session-builder-page .session-workspace-dock .session-dock-actions button {
+  min-height: 38px;
+  padding: 8px 11px;
+}
+.session-builder-page.session-page--with-fixed-dock {
+  padding-bottom: 96px;
+}
+
+@media (max-width: 720px) {
+  .session-builder-page .session-workspace-header {
+    padding: 14px;
+    align-items: flex-start;
+  }
+  .session-builder-page .session-workspace-header .session-hero-actions {
+    width: 100%;
+  }
+  .session-builder-page .session-workspace-header .session-hero-actions__primary {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    width: 100%;
+  }
+  .session-builder-page .session-workspace-header .session-hero-btn {
+    min-width: 0;
+    padding-inline: 10px;
+  }
+  .session-builder-page .session-workspace-nav {
+    top: 4px;
+    width: 100%;
+    gap: 4px;
+    padding: 5px;
+  }
+  .session-builder-page .session-workspace-nav button {
+    min-width: 0;
+    padding: 8px 4px;
+    font-size: .72rem;
+    gap: 4px;
+  }
+  .session-builder-page .session-workspace-nav button span {
+    width: 22px;
+    height: 22px;
+  }
+  .session-builder-page .session-workspace-dock {
+    bottom: 8px;
+    width: calc(100% - 16px);
+    border-radius: 14px;
+  }
+  .session-builder-page .session-workspace-dock__summary {
+    min-height: 52px;
+    grid-template-columns: 1fr auto auto;
+    gap: 8px;
+    padding: 8px 11px;
+  }
+  .session-builder-page .session-workspace-dock__title {
+    display: none;
+  }
+  .session-builder-page .session-workspace-dock__summary strong {
+    font-size: .86rem;
+  }
+  .session-builder-page .session-workspace-dock__sync {
+    font-size: .7rem;
+  }
+  .session-builder-page .session-workspace-dock__panel {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    max-height: min(44vh, 330px);
+    overflow-y: auto;
+  }
+  .session-builder-page .session-workspace-dock .session-dock-actions {
+    grid-column: 1 / -1;
+  }
+  .session-builder-page.session-page--with-fixed-dock {
+    padding-bottom: 76px;
+  }
+}
+
+
+/* M4.5B — progressive disclosure for a situation */
+.session-builder-page .session-situation-grid--essential {
+  margin-top: 14px;
+}
+.session-builder-page .session-editor-disclosure {
+  margin-top: 14px;
+  border: 1px solid rgba(20, 20, 24, .12);
+  border-radius: 14px;
+  background: rgba(255,255,255,.72);
+  overflow: clip;
+}
+.session-builder-page .session-editor-disclosure > summary {
+  display: grid;
+  gap: 3px;
+  padding: 13px 15px;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 800;
+}
+.session-builder-page .session-editor-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.session-builder-page .session-editor-disclosure > summary::after {
+  content: '+';
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+.session-builder-page .session-editor-disclosure[open] > summary::after {
+  content: '−';
+}
+.session-builder-page .session-editor-disclosure > summary {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.session-builder-page .session-editor-disclosure > summary small {
+  font-weight: 500;
+  color: rgba(20,20,24,.62);
+}
+.session-builder-page .session-editor-disclosure > .session-situation-grid,
+.session-builder-page .session-editor-disclosure > .session-card,
+.session-builder-page .session-editor-disclosure > .situation-metrics-editor {
+  margin: 0;
+  padding: 0 15px 15px;
+}
+.session-builder-page .session-editor-disclosure .session-identity-card {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+@media (max-width: 720px) {
+  .session-builder-page .session-editor-disclosure > summary {
+    padding: 12px;
+  }
+  .session-builder-page .session-editor-disclosure > summary small {
+    font-size: .72rem;
+  }
+  .session-builder-page .session-editor-disclosure > .session-situation-grid,
+  .session-builder-page .session-editor-disclosure > .session-card,
+  .session-builder-page .session-editor-disclosure > .situation-metrics-editor {
+    padding: 0 12px 12px;
+  }
+}
+
+
+/* M4.5B — one active situation workspace */
+.session-builder-page .session-timeline-selector {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 18px;
+  padding: 4px 2px 8px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+.session-builder-page .session-timeline-selector > button {
+  flex: 0 0 min(220px, 72vw);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px 8px;
+  align-items: center;
+  min-height: 58px;
+  padding: 9px 11px;
+  text-align: left;
+  border: 1px solid rgba(20,20,24,.12);
+  border-radius: 12px;
+  background: rgba(255,255,255,.72);
+}
+.session-builder-page .session-timeline-selector > button > span {
+  grid-row: 1 / span 2;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  font-weight: 900;
+  color: #d71920;
+}
+.session-builder-page .session-timeline-selector > button strong,
+.session-builder-page .session-timeline-selector > button small {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.session-builder-page .session-timeline-selector > button small {
+  color: rgba(20,20,24,.62);
+}
+.session-builder-page .session-timeline-selector > button.is-active {
+  border-color: #d71920;
+  box-shadow: 0 0 0 2px rgba(215,25,32,.12);
+  background: #fff;
+}
+.session-builder-page .session-timeline--single {
+  display: block;
+}
+.session-builder-page .session-timeline-empty {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding: 24px;
+  border: 1px dashed rgba(20,20,24,.2);
+  border-radius: 14px;
+}
+.session-builder-page .session-timeline-empty p {
+  margin: 0;
+}
+@media (max-width: 720px) {
+  .session-builder-page .session-timeline-selector {
+    margin-inline: -4px;
+    padding-inline: 4px;
+  }
+  .session-builder-page .session-timeline-selector > button {
+    flex-basis: min(190px, 68vw);
+  }
+}
+
+
+/* M4.5C — active terrain workspace */
+.session-builder-page .session-terrain-workspace {
+  margin-top: 18px;
+  padding: 14px;
+  scroll-margin-top: 118px;
+  border: 1px solid rgba(20,20,24,.12);
+  border-radius: 16px;
+  background: rgba(247,247,248,.92);
+}
+.session-builder-page .session-terrain-workspace__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.session-builder-page .session-terrain-workspace__header > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.session-builder-page .session-terrain-workspace__header span,
+.session-builder-page .session-terrain-workspace__header small {
+  font-size: .75rem;
+  color: rgba(20,20,24,.62);
+}
+.session-builder-page .session-terrain-workspace__header strong {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+@media (max-width: 720px) {
+  .session-builder-page .session-terrain-workspace {
+    margin-inline: -10px;
+    padding: 8px;
+    scroll-margin-top: 96px;
+    border-radius: 14px;
+  }
+}
+
+
+/* M4.5D — mobile workspace navigation and safe areas */
+@media (max-width: 720px) {
+  .session-builder-page {
+    overflow-x: clip;
+  }
+  .session-builder-page .session-workspace-nav {
+    position: fixed;
+    z-index: 115;
+    top: auto;
+    right: 8px;
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+    left: 8px;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 5px;
+    border-radius: 14px;
+    box-shadow: 0 10px 28px rgba(20,20,24,.16);
+  }
+  .session-builder-page .session-workspace-nav button {
+    min-height: 44px;
+  }
+  .session-builder-page .session-workspace-dock {
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    left: 8px;
+    width: auto;
+    max-width: none;
+    margin: 0;
+  }
+  .session-builder-page.session-page--with-fixed-dock {
+    padding-bottom: calc(132px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .session-builder-page .session-card,
+  .session-builder-page .session-situation,
+  .session-builder-page .session-situation-editor,
+  .session-builder-page .session-terrain-workspace,
+  .session-builder-page .advanced-court,
+  .session-builder-page .advanced-court__frame {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+@media (max-width: 390px) {
+  .session-builder-page .session-workspace-nav {
+    right: 5px;
+    left: 5px;
+  }
+  .session-builder-page .session-workspace-nav button {
+    gap: 2px;
+    padding-inline: 2px;
+    font-size: .67rem;
+  }
+  .session-builder-page .session-workspace-nav button span {
+    width: 20px;
+    height: 20px;
+    font-size: .68rem;
+  }
+  .session-builder-page .session-workspace-dock__summary {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+  .session-builder-page .session-workspace-dock__summary strong {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
+@media (max-width: 340px) {
+  .session-builder-page .session-workspace-nav button span {
+    display: none;
+  }
+  .session-builder-page .session-workspace-nav button {
+    font-size: .65rem;
+  }
+}
+
+
+/* M4.5D — lightweight verification before full preview */
+.session-builder-page .session-verify-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(100px, 1fr)) auto;
+  gap: 10px;
+  align-items: stretch;
+  margin: 12px 0;
+}
+.session-builder-page .session-verify-summary > div {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid rgba(20,20,24,.1);
+  border-radius: 12px;
+  background: rgba(247,247,248,.9);
+}
+.session-builder-page .session-verify-summary span {
+  font-size: .72rem;
+  color: rgba(20,20,24,.62);
+}
+.session-builder-page .session-verify-summary button {
+  min-height: 44px;
+  align-self: stretch;
+}
+@media (max-width: 720px) {
+  .session-builder-page .session-verify-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .session-builder-page .session-verify-summary > div {
+    min-width: 0;
+    padding: 8px;
+  }
+  .session-builder-page .session-verify-summary strong {
+    font-size: .8rem;
+    overflow-wrap: anywhere;
+  }
+  .session-builder-page .session-verify-summary button {
+    grid-column: 1 / -1;
+  }
+}
+
+
+/* M4.5D — coach mode stays available without dominating the workspace */
+.session-builder-page .session-mode-help {
+  border: 1px solid rgba(20,20,24,.1);
+  border-radius: 12px;
+  background: #fff;
+}
+.session-builder-page .session-mode-help > summary {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 800;
+}
+.session-builder-page .session-mode-help > .coach-mode-guide {
+  margin: 0 10px 10px;
+}
+@media (max-width: 720px) {
+  .session-builder-page .coach-tool-mode-shell {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .session-builder-page .coach-mode-toggle {
+    gap: 8px;
+    padding: 10px;
+  }
+  .session-builder-page .coach-mode-toggle__copy p:not(.coach-mode-toggle__eyebrow) {
+    display: none;
+  }
+  .session-builder-page .coach-mode-toggle h2 {
+    font-size: 1rem;
+  }
+  .session-builder-page .coach-mode-toggle__actions {
+    gap: 4px;
+    padding: 3px;
+  }
+  .session-builder-page .coach-mode-toggle__button {
+    min-height: 38px;
+    font-size: .78rem;
+  }
+}
+
+
+/* M4.5D — contextual actions for the active situation */
+.session-builder-page .session-situation {
+  position: relative;
+}
+.session-builder-page .session-situation-menu {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  margin: 8px 0 12px;
+}
+.session-builder-page .session-situation-menu > summary {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px;
+  border: 1px solid rgba(20,20,24,.12);
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 800;
+}
+.session-builder-page .session-situation-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.session-builder-page .session-situation-menu__panel {
+  position: absolute;
+  z-index: 35;
+  top: calc(100% + 6px);
+  right: 0;
+  width: min(250px, calc(100vw - 32px));
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid rgba(20,20,24,.12);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 14px 36px rgba(20,20,24,.18);
+}
+.session-builder-page .session-situation-menu__panel button {
+  min-height: 40px;
+  width: 100%;
+  text-align: left;
+}
+.session-builder-page .session-situation-menu__panel .session-situation-menu__danger {
+  color: #a32035;
+}
+@media (max-width: 720px) {
+  .session-builder-page .session-situation-menu > summary span {
+    display: none;
+  }
+}
+
+
+/* M4.5D — situation menu belongs to the compact situation header */
+.session-builder-page .session-situation-header .session-situation-menu {
+  margin: 0 0 0 auto;
+  align-self: center;
+}
+@media (max-width: 720px) {
+  .session-builder-page .session-situation-header {
+    align-items: center;
+  }
+  .session-builder-page .session-situation-header .session-situation-menu {
+    flex: 0 0 auto;
+  }
+}
+
+
+/* M4.5D — final small-screen overrides over legacy session rules */
+@media (max-width: 760px) {
+  .session-builder-page .session-situation-header {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .session-builder-page .session-situation-header > div {
+    flex: 1 1 180px;
+    min-width: 0;
+  }
+  .session-builder-page .session-situation-header > strong {
+    flex: 0 0 auto;
+  }
+  .session-builder-page .session-situation-header .session-situation-menu {
+    flex: 0 0 auto;
+    margin-left: 0;
+  }
+}
+@media (max-width: 520px) {
+  .session-builder-page.session-page--with-fixed-dock {
+    padding-bottom: calc(132px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .session-builder-page .session-workspace-header h1 {
+    font-size: clamp(1.5rem, 8vw, 2.15rem);
+  }
+}
+
+
+/* M4.5D — an expanded session dock must never cover the mobile workspace nav */
+@media (max-width: 720px) {
+  html.session-dock-open .session-builder-page .session-workspace-nav {
+    transform: translateY(calc(100% + 16px));
+    opacity: 0;
+    pointer-events: none;
+  }
+  .session-builder-page .session-workspace-nav {
+    transition: transform .18s ease, opacity .18s ease;
+  }
+}
+
+
+/* M4.5E — mobile physical QA: keep the session follow-up compact and off the court */
+@media (max-width: 720px) {
+  .session-builder-page .session-workspace-dock {
+    z-index: 110;
+  }
+
+  .session-builder-page .session-workspace-dock:not([open]) {
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .session-builder-page .session-workspace-dock[open] {
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    left: 8px;
+    max-height: min(46dvh, 360px);
+    overflow: auto;
+  }
+
+  .session-builder-page .session-workspace-dock__panel {
+    grid-template-columns: minmax(0, 1fr);
+    max-height: none;
+    overflow: visible;
+  }
+
+  .session-builder-page .session-workspace-dock .session-dock-actions {
+    grid-column: 1;
+  }
+
+  .session-builder-page .session-workspace-dock .session-dock-actions button {
+    min-height: 44px;
+  }
 }

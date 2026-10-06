@@ -415,3 +415,166 @@
     background: #ffffff !important;
   }
 }
+
+
+/* M4.5E — compact tactical toolbar */
+.fastdraw-toolbar details.fastdraw-toolbar__group {
+  display: block;
+}
+.fastdraw-toolbar details.fastdraw-toolbar__group > summary {
+  display: none;
+  cursor: pointer;
+  list-style: none;
+  font-size: 12px;
+  font-weight: 950;
+  color: #101827;
+}
+.fastdraw-toolbar details.fastdraw-toolbar__group > summary::-webkit-details-marker {
+  display: none;
+}
+.fastdraw-toolbar details.fastdraw-toolbar__group--exports > summary {
+  color: #fff;
+}
+
+@media (max-width: 760px) {
+  .fastdraw-toolbar {
+    gap: 8px;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group > summary {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group > summary::after {
+    content: '+';
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group[open] > summary::after {
+    content: '−';
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group > summary strong {
+    margin-left: auto;
+    color: rgba(16, 24, 39, .62);
+    font-size: 11px;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group > :not(summary) {
+    margin: 0 8px 8px;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group--tools[open] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group--tools[open] > summary {
+    flex: 1 0 100%;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group--settings[open],
+  .fastdraw-toolbar details.fastdraw-toolbar__group--exports[open] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group--settings[open] > summary,
+  .fastdraw-toolbar details.fastdraw-toolbar__group--exports[open] > summary {
+    flex: 1 0 100%;
+  }
+
+  .fastdraw-toolbar__status {
+    padding: 8px 10px;
+  }
+
+  .fastdraw-toolbar__status > span {
+    display: none;
+  }
+
+  .fastdraw-toolbar__status strong,
+  .fastdraw-toolbar__status button {
+    min-height: 44px;
+  }
+
+  .fastdraw-stage {
+    padding: 8px;
+    border-radius: 18px;
+  }
+
+  .fastdraw-properties {
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .fastdraw-properties__empty {
+    padding: 10px;
+  }
+
+  .fastdraw-legend {
+    display: none;
+  }
+}
+
+
+@media (min-width: 761px) {
+  .fastdraw-toolbar details.fastdraw-toolbar__group:not([open]) {
+    display: flex;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group:not([open]) > summary {
+    display: none;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group:not([open]) > button,
+  .fastdraw-toolbar details.fastdraw-toolbar__group:not([open]) > select,
+  .fastdraw-toolbar details.fastdraw-toolbar__group:not([open]) > label {
+    display: inline-flex;
+  }
+}
+
+
+/* M4.5E — mobile court-first order */
+@media (max-width: 760px) {
+  .fastdraw-editor {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .fastdraw-editor__header {
+    order: 1;
+  }
+
+  .fastdraw-editor__workspace {
+    order: 2;
+  }
+
+  .fastdraw-toolbar {
+    order: 3;
+  }
+
+  .fastdraw-legend {
+    order: 4;
+  }
+
+  .fastdraw-editor__workspace {
+    gap: 8px;
+  }
+
+  .fastdraw-properties--empty {
+    display: none;
+  }
+}

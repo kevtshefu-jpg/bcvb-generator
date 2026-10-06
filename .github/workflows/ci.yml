@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  session-builder:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Session workspace regression tests
+        run: npx vitest run src/modules/sessions/SessionTimeline.test.tsx src/components/courts/AdvancedFibaCourt.test.tsx
+      - name: Sessions portable suite
+        run: npx vitest run src/modules/sessions --exclude "**/*.local.test.*"
+      - name: Court component suite
+        run: npx vitest run src/components/court src/components/courts
+      - name: TypeScript check
+        run: npx tsc --noEmit
+      - name: Vite production build
+        run: npx vite build

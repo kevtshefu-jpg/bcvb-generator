@@ -24,21 +24,28 @@ export function SessionSituationEditor({ situation, onChange }: SessionSituation
         <label><span>Intensité</span><select value={situation.intensityLevel} onChange={(event) => patch({ intensityLevel: event.target.value as SessionSituation['intensityLevel'] })}><option value="low">Basse</option><option value="medium">Moyenne</option><option value="high">Haute</option><option value="game">Match</option></select></label>
         <label><span>Phase</span><select value={situation.pedagogicalPhase} onChange={(event) => patch({ pedagogicalPhase: event.target.value as SessionSituation['pedagogicalPhase'] })}><option value="je-decouvre">{getPhaseLabel('je-decouvre')}</option><option value="je-m-exerce">{getPhaseLabel('je-m-exerce')}</option><option value="je-retranscris">{getPhaseLabel('je-retranscris')}</option><option value="je-regule">{getPhaseLabel('je-regule')}</option></select></label>
       </div>
-      <div className="session-situation-grid">
+      <div className="session-situation-grid session-situation-grid--essential">
         <label><span>Objectif</span><textarea value={situation.objective} onChange={(event) => patch({ objective: event.target.value })} /></label>
+        <label><span>Organisation</span><textarea value={situation.organization} onChange={(event) => patch({ organization: event.target.value })} /></label>
+        <label><span>Consignes</span><textarea value={situation.instructions} onChange={(event) => patch({ instructions: event.target.value })} /></label>
+        <label><span>Sécurité</span><textarea value={situation.security} onChange={(event) => patch({ security: event.target.value })} /></label>
+      </div>
+      <details className="session-editor-disclosure">
+        <summary>
+          <span>Coaching, progression et évaluation</span>
+          <small>Objectifs détaillés · organisation · critères · corrections</small>
+        </summary>
+        <div className="session-situation-grid">
         <label><span>Objectif technique</span><textarea value={situation.technicalObjective} onChange={(event) => patch({ technicalObjective: event.target.value })} /></label>
         <label><span>Objectif tactique</span><textarea value={situation.tacticalObjective} onChange={(event) => patch({ tacticalObjective: event.target.value })} /></label>
         <label><span>Objectif mental</span><textarea value={situation.mentalObjective} onChange={(event) => patch({ mentalObjective: event.target.value })} /></label>
         <label><span>Objectif BCVB</span><textarea value={situation.bcvbObjective} onChange={(event) => patch({ bcvbObjective: event.target.value })} /></label>
         <label><span>Lien avec le match</span><textarea value={situation.expectedSuccessCriteria} onChange={(event) => patch({ expectedSuccessCriteria: event.target.value })} /></label>
-        <label><span>Organisation</span><textarea value={situation.organization} onChange={(event) => patch({ organization: event.target.value })} /></label>
         <label><span>Espace</span><textarea value={situation.space} onChange={(event) => patch({ space: event.target.value })} /></label>
         <label><span>Nombre de joueurs</span><textarea value={situation.playerCount} onChange={(event) => patch({ playerCount: event.target.value })} /></label>
         <label><span>Matériel</span><textarea value={listToText(situation.equipment)} onChange={(event) => patch({ equipment: textToList(event.target.value) })} /></label>
         <label><span>Rotations</span><textarea value={situation.rotation} onChange={(event) => patch({ rotation: event.target.value })} /></label>
-        <label><span>Sécurité</span><textarea value={situation.security} onChange={(event) => patch({ security: event.target.value })} /></label>
         <label><span>Description</span><textarea value={situation.description} onChange={(event) => patch({ description: event.target.value })} /></label>
-        <label><span>Consignes</span><textarea value={situation.instructions} onChange={(event) => patch({ instructions: event.target.value })} /></label>
         <label><span>Consignes coach</span><textarea value={listToText(situation.coachCues)} onChange={(event) => patch({ coachCues: textToList(event.target.value) })} /></label>
         <label><span>Timing</span><textarea value={situation.timing} onChange={(event) => patch({ timing: event.target.value })} /></label>
         <label><span>Temps de pratique / rythme</span><textarea value={situation.coachingPoints} onChange={(event) => patch({ coachingPoints: event.target.value })} /></label>
@@ -53,8 +60,15 @@ export function SessionSituationEditor({ situation, onChange }: SessionSituation
         <label><span>Méthode d’observation</span><textarea value={situation.evaluationMethod} onChange={(event) => patch({ evaluationMethod: event.target.value })} /></label>
         <label><span>Erreurs fréquentes</span><textarea value={listToText(situation.commonMistakes)} onChange={(event) => patch({ commonMistakes: textToList(event.target.value) })} /></label>
         <label><span>Corrections coach</span><textarea value={listToText(situation.coachCorrections)} onChange={(event) => patch({ coachCorrections: textToList(event.target.value) })} /></label>
-      </div>
-      <div className="session-card session-identity-card">
+        </div>
+      </details>
+
+      <details className="session-editor-disclosure">
+        <summary>
+          <span>Identité BCVB</span>
+          <small>Défendre Fort · Courir · Partager · Homme à Homme</small>
+        </summary>
+        <div className="session-card session-identity-card">
         <header className="session-subheader">
           <h4>Identité BCVB</h4>
         </header>
@@ -68,9 +82,25 @@ export function SessionSituationEditor({ situation, onChange }: SessionSituation
           <label><span>Maîtrise</span><textarea value={situation.bcvbLinks.maitrise} onChange={(event) => patch({ bcvbLinks: patchBcvbLink(situation.bcvbLinks, 'maitrise', event.target.value) })} /></label>
           <label><span>Jeu</span><textarea value={situation.bcvbLinks.jeu} onChange={(event) => patch({ bcvbLinks: patchBcvbLink(situation.bcvbLinks, 'jeu', event.target.value) })} /></label>
         </div>
-      </div>
-      <SituationMetricsEditor metrics={situation.metrics} onChange={(metrics) => patch({ metrics })} />
-      <AdvancedFibaCourt frames={situation.courtFrames} onChange={(courtFrames) => patch({ courtFrames })} />
+        </div>
+      </details>
+      <details className="session-editor-disclosure">
+        <summary>
+          <span>Mesures et charge</span>
+          <small>Indicateurs avancés de la situation</small>
+        </summary>
+        <SituationMetricsEditor metrics={situation.metrics} onChange={(metrics) => patch({ metrics })} />
+      </details>
+      <section id="session-terrain" className="session-terrain-workspace" aria-label="Terrain de la situation active">
+        <header className="session-terrain-workspace__header">
+          <div>
+            <span>Situation active</span>
+            <strong>{situation.title || `Situation ${situation.order}`}</strong>
+          </div>
+          <small>{situation.durationMinutes} min</small>
+        </header>
+        <AdvancedFibaCourt frames={situation.courtFrames} onChange={(courtFrames) => patch({ courtFrames })} />
+      </section>
     </div>
   )
 }
