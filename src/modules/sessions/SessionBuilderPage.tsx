@@ -62,6 +62,7 @@ type SessionSectionId =
   | 'session-infos'
   | 'session-resume'
   | 'session-situations'
+  | 'session-terrain'
   | 'session-bilan'
   | 'session-library'
   | 'session-preview'
@@ -71,6 +72,7 @@ const SESSION_SECTION_IDS: SessionSectionId[] = [
   'session-infos',
   'session-resume',
   'session-situations',
+  'session-terrain',
   'session-bilan',
   'session-library',
   'session-preview',
@@ -955,7 +957,7 @@ export default function SessionBuilderPage() {
         <button type="button" className={activeSection === 'session-situations' ? 'is-active' : ''} onClick={() => scrollToSessionSection('session-situations')}>
           <span>2</span>Séance
         </button>
-        <button type="button" className={activeSection === 'session-situations' ? 'is-active' : ''} onClick={() => scrollToSessionSection('session-situations')}>
+        <button type="button" className={activeSection === 'session-terrain' ? 'is-active' : ''} onClick={() => scrollToSessionSection('session-terrain')}>
           <span>3</span>Terrain
         </button>
         <button type="button" className={['session-bilan','session-library','session-preview','session-export'].includes(activeSection) ? 'is-active' : ''} onClick={() => scrollToSessionSection('session-preview')}>
