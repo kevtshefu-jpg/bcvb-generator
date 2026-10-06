@@ -28,7 +28,8 @@ export function SessionSituationEditor({ situation, onChange }: SessionSituation
         <label><span>Objectif</span><textarea value={situation.objective} onChange={(event) => patch({ objective: event.target.value })} /></label>
         <label><span>Organisation</span><textarea value={situation.organization} onChange={(event) => patch({ organization: event.target.value })} /></label>
         <label><span>Consignes</span><textarea value={situation.instructions} onChange={(event) => patch({ instructions: event.target.value })} /></label>
-        <label><span>Sécurité</span><textarea value={situation.security} onChange={(event) => patch({ security: event.target.value })} /></label>      </div>
+        <label><span>Sécurité</span><textarea value={situation.security} onChange={(event) => patch({ security: event.target.value })} /></label>
+      </div>
       <details className="session-editor-disclosure">
         <summary>
           <span>Coaching, progression et évaluation</span>
@@ -62,7 +63,6 @@ export function SessionSituationEditor({ situation, onChange }: SessionSituation
         </div>
       </details>
 
-      </div>
       <details className="session-editor-disclosure">
         <summary>
           <span>Identité BCVB</span>
@@ -82,7 +82,6 @@ export function SessionSituationEditor({ situation, onChange }: SessionSituation
           <label><span>Maîtrise</span><textarea value={situation.bcvbLinks.maitrise} onChange={(event) => patch({ bcvbLinks: patchBcvbLink(situation.bcvbLinks, 'maitrise', event.target.value) })} /></label>
           <label><span>Jeu</span><textarea value={situation.bcvbLinks.jeu} onChange={(event) => patch({ bcvbLinks: patchBcvbLink(situation.bcvbLinks, 'jeu', event.target.value) })} /></label>
         </div>
-      </div>
         </div>
       </details>
       <details className="session-editor-disclosure">
