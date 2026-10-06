@@ -53,4 +53,5 @@ export type TechnicalDashboardModel = {
   alerts: Array<{ id: string; label: string; count: number; path: string | null }>
   schedule: Array<TechnicalTrainingSlotRow & { teamName:string; category:string; isToday:boolean; hasConflict:boolean }>
   teamsWithoutActiveSlot: number
+  scheduleConflictCount: number
 }
