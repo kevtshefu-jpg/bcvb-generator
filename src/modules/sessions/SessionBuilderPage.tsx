@@ -820,6 +820,16 @@ export default function SessionBuilderPage() {
                   Nettoyer tous les terrains
                 </button>
 
+                <button
+                  type="button"
+                  onClick={() => {
+                    buildUpgradePrompt()
+                    setShowMoreActions(false)
+                  }}
+                >
+                  Générer consigne de correction
+                </button>
+
                 {isAdmin && (
                   <button
                     type="button"
