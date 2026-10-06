@@ -528,3 +528,14 @@
     display: none;
   }
 }
+
+
+@media (min-width: 761px) {
+  .fastdraw-toolbar details.fastdraw-toolbar__group:not([open]) > :not(summary) {
+    display: flex;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group:not([open]) {
+    display: flex;
+  }
+}
