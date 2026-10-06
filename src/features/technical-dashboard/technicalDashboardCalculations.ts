@@ -53,7 +53,18 @@ export function buildTechnicalDashboardModel(source: TechnicalDashboardSource, i
     return { ...slot, teamName: team?.name || 'Équipe', category: team?.category || '', isToday: slot.weekday === todayWeekday, hasConflict }
   }).sort((a,b)=>Number(b.isToday)-Number(a.isToday)||a.weekday-b.weekday||a.start_time.localeCompare(b.start_time))
   const teamsWithoutActiveSlot = source.teams.filter(team => !activeSlots.some(slot => slot.team_id === team.id)).length
-  const scheduleConflictCount = activeSlots.filter(slot => activeSlots.some(other => slotsConflict(slot, other))).length
+  const conflictingSlotIds = new Set<string>()
+  for (let index = 0; index < activeSlots.length; index += 1) {
+    for (let otherIndex = index + 1; otherIndex < activeSlots.length; otherIndex += 1) {
+      const slot = activeSlots[index]
+      const other = activeSlots[otherIndex]
+      if (slotsConflict(slot, other)) {
+        conflictingSlotIds.add(slot.id)
+        conflictingSlotIds.add(other.id)
+      }
+    }
+  }
+  const scheduleConflictCount = conflictingSlotIds.size
 
   return {
     teams,
