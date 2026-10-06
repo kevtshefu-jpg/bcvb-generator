@@ -30,7 +30,7 @@ test('le coach sauvegarde, rouvre, versionne puis soumet une séance BCVB', asyn
   await expect(page.getByText('Soumise pour publication', { exact: true })).toBeVisible({ timeout: 15_000 })
   await expect(page.getByLabel('Titre séance')).toBeDisabled()
 
-  for (const width of [390, 1440]) {
+  for (const width of [320, 375, 390, 1440]) {
     await page.setViewportSize({ width, height: 900 })
     const dimensions = await page.evaluate(() => ({
       clientWidth: document.documentElement.clientWidth,
@@ -38,5 +38,16 @@ test('le coach sauvegarde, rouvre, versionne puis soumet une séance BCVB', asyn
     }))
     expect(dimensions.scrollWidth, `débordement global à ${width}px`).toBeLessThanOrEqual(dimensions.clientWidth + 1)
     await expect(page.getByText('Soumise pour publication', { exact: true })).toBeVisible()
+
+    if (width <= 390) {
+      const nav = page.locator('.session-workspace-nav')
+      const dock = page.locator('.session-workspace-dock')
+      await expect(nav).toBeVisible()
+      await expect(dock).toBeVisible()
+      const [navBox, dockBox] = await Promise.all([nav.boundingBox(), dock.boundingBox()])
+      expect(navBox).not.toBeNull()
+      expect(dockBox).not.toBeNull()
+      expect(navBox!.y + navBox!.height, `collision navigation/suivi à ${width}px`).toBeLessThanOrEqual(dockBox!.y + 1)
+    }
   }
 })
