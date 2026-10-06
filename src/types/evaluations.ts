@@ -183,6 +183,7 @@ export type EvaluationTeam = {
   name: string;
   category: string;
   level: string;
+  season?: string;
 };
 
 export type EvaluationPermissionSet = {
