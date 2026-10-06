@@ -48,6 +48,12 @@ test('le coach sauvegarde, rouvre, versionne puis soumet une séance BCVB', asyn
       expect(navBox).not.toBeNull()
       expect(dockBox).not.toBeNull()
       expect(navBox!.y + navBox!.height, `collision navigation/suivi à ${width}px`).toBeLessThanOrEqual(dockBox!.y + 1)
+
+      await dock.locator('summary').click()
+      await expect(dock).toHaveAttribute('open', '')
+      await expect(nav).toHaveCSS('pointer-events', 'none')
+      await dock.locator('summary').click()
+      await expect(nav).not.toHaveCSS('pointer-events', 'none')
     }
   }
 })
