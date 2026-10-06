@@ -70,6 +70,19 @@ describe('calculs du tableau technique', () => {
     expect(model.schedule.find((slot) => slot.id === 'slot-c')?.hasConflict).toBe(false)
   })
 
+  it('ne signale pas deux créneaux contigus comme un chevauchement', () => {
+    const model = buildTechnicalDashboardModel({
+      ...source,
+      trainingSlots: [
+        { id: 'slot-a', team_id: 'team-a', weekday: 1, start_time: '18:00', end_time: '19:00', location_name: 'Palais', valid_from: '2026-08-01', valid_until: null, is_active: true },
+        { id: 'slot-b', team_id: 'team-b', weekday: 1, start_time: '19:00', end_time: '20:00', location_name: 'Palais', valid_from: '2026-08-01', valid_until: null, is_active: true },
+      ],
+    }, new Date('2026-08-17T12:00:00.000Z'), 'Europe/Paris')
+
+    expect(model.scheduleConflictCount).toBe(0)
+    expect(model.schedule.every((slot) => !slot.hasConflict)).toBe(true)
+  })
+
   it('autorise DT, RT, admin et dirigeant, mais refuse un coach', () => {
     expect(canViewTechnicalDashboard('responsable_technique')).toBe(true)
     expect(canViewTechnicalDashboard('technical_manager')).toBe(true)
