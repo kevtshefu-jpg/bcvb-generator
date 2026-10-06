@@ -68,7 +68,7 @@ export function CourtToolbar({
       <details className="fastdraw-toolbar__group fastdraw-toolbar__group--tools">
         <summary aria-label="Outils objets">Objets</summary>
         <button type="button" className={isObjectActive("player") ? "is-active" : ""} onClick={() => onSelectObjectTool("player")}>Joueur</button>
-        <button type="button" className={isObjectActive("defender") ? "is-active" : ""} onClick={() => onSelectObjectTool("defender")}>Defense</button>
+        <button type="button" className={isObjectActive("defender") ? "is-active" : ""} onClick={() => onSelectObjectTool("defender")}>Défense</button>
         <button type="button" className={isObjectActive("coach") ? "is-active" : ""} onClick={() => onSelectObjectTool("coach")}>Coach</button>
         <button type="button" className={isObjectActive("ball") ? "is-active" : ""} onClick={() => onSelectObjectTool("ball")}>Ballon</button>
         <button type="button" className={isObjectActive("cone") ? "is-active" : ""} onClick={() => onSelectObjectTool("cone")}>Plot</button>
@@ -81,7 +81,7 @@ export function CourtToolbar({
         <button type="button" className={isMotionActive("move") ? "is-active" : ""} onClick={() => onSelectMotionTool("move")}>Course</button>
         <button type="button" className={isMotionActive("pass") ? "is-active" : ""} onClick={() => onSelectMotionTool("pass")}>Passe</button>
         <button type="button" className={isMotionActive("dribble") ? "is-active" : ""} onClick={() => onSelectMotionTool("dribble")}>Dribble</button>
-        <button type="button" className={isMotionActive("screen") ? "is-active" : ""} onClick={() => onSelectMotionTool("screen")}>Ecran</button>
+        <button type="button" className={isMotionActive("screen") ? "is-active" : ""} onClick={() => onSelectMotionTool("screen")}>Écran</button>
         <button type="button" className={activeTool?.type === "zone" ? "is-active" : ""} onClick={onSelectZoneTool}>Zone</button>
         <label className="fastdraw-logo-toggle">
           <input type="checkbox" checked={curvedMode} onChange={(event) => onCurvedModeChange(event.target.checked)} />
@@ -93,7 +93,7 @@ export function CourtToolbar({
         <span>Outil actif</span>
         <strong>{activeLabel}</strong>
         {pendingMotionLabel && <em>{pendingMotionLabel}</em>}
-        <button type="button" onClick={onClearTool}>Selection</button>
+        <button type="button" onClick={onClearTool}>Sélection</button>
       </div>
 
       <details className="fastdraw-toolbar__group fastdraw-toolbar__group--exports">
