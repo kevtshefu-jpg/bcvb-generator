@@ -639,7 +639,17 @@ export default function SessionBuilderPage() {
   function scrollToSessionSection(sectionId: SessionSectionId) {
     const target = document.getElementById(sectionId)
 
-    if (!target) return
+    if (!target) {
+      if (sectionId === 'session-terrain') {
+        setActiveSection('session-situations')
+        setMessage('Ajoutez une situation avant d’ouvrir le terrain.')
+        document.getElementById('session-situations')?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        })
+      }
+      return
+    }
 
     setActiveSection(sectionId)
 
