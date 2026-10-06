@@ -41,10 +41,15 @@ export function AdvancedFibaCourt({ frames, onChange }: AdvancedFibaCourtProps) 
 
   function deleteFrame(frameId: string) {
     if (safeFrames.length <= 1) {
-      onChange([createCourtFrame({ title: framePresets[0], intent: 'Mise en place' })])
+      const blankFrame = createCourtFrame({ title: framePresets[0], intent: 'Mise en place' })
+      onChange([blankFrame])
+      setActiveFrameId(blankFrame.id)
       return
     }
-    onChange(safeFrames.filter((frame) => frame.id !== frameId))
+    const currentIndex = safeFrames.findIndex((frame) => frame.id === frameId)
+    const remainingFrames = safeFrames.filter((frame) => frame.id !== frameId)
+    onChange(remainingFrames)
+    setActiveFrameId(remainingFrames[Math.min(currentIndex, remainingFrames.length - 1)]?.id ?? remainingFrames[0]?.id ?? '')
   }
 
   function addFrame() {
@@ -55,7 +60,11 @@ export function AdvancedFibaCourt({ frames, onChange }: AdvancedFibaCourtProps) 
   }
 
   function resetFrame(frameId: string) {
-    onChange(safeFrames.map((frame) => frame.id === frameId ? createCourtFrame({ title: frame.title, courtType: frame.courtType, intent: frame.intent }) : frame))
+    const currentFrame = safeFrames.find((frame) => frame.id === frameId)
+    if (!currentFrame) return
+    const blankFrame = createCourtFrame({ title: currentFrame.title, courtType: currentFrame.courtType, intent: currentFrame.intent })
+    onChange(safeFrames.map((frame) => frame.id === frameId ? blankFrame : frame))
+    setActiveFrameId(blankFrame.id)
   }
 
   function transformCourtType(frameId: string, courtType: CourtType) {
