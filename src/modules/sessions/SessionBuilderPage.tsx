@@ -952,16 +952,17 @@ export default function SessionBuilderPage() {
       </div>
 
       <nav className="session-step-nav session-workspace-nav" aria-label="Espace de travail de la séance">
-        <button type="button" className={activeSection === 'session-infos' || activeSection === 'session-resume' ? 'is-active' : ''} onClick={() => scrollToSessionSection('session-infos')}>
+        <span className="sr-only" aria-live="polite">Section active : {activeSection === 'session-infos' || activeSection === 'session-resume' ? 'Cadre' : activeSection === 'session-situations' ? 'Séance' : activeSection === 'session-terrain' ? 'Terrain' : 'Vérifier'}</span>
+        <button type="button" className={activeSection === 'session-infos' || activeSection === 'session-resume' ? 'is-active' : ''} aria-current={activeSection === 'session-infos' || activeSection === 'session-resume' ? 'step' : undefined} onClick={() => scrollToSessionSection('session-infos')}>
           <span>1</span>Cadre
         </button>
-        <button type="button" className={activeSection === 'session-situations' ? 'is-active' : ''} onClick={() => scrollToSessionSection('session-situations')}>
+        <button type="button" className={activeSection === 'session-situations' ? 'is-active' : ''} aria-current={activeSection === 'session-situations' ? 'step' : undefined} onClick={() => scrollToSessionSection('session-situations')}>
           <span>2</span>Séance
         </button>
-        <button type="button" className={activeSection === 'session-terrain' ? 'is-active' : ''} onClick={() => scrollToSessionSection('session-terrain')}>
+        <button type="button" className={activeSection === 'session-terrain' ? 'is-active' : ''} aria-current={activeSection === 'session-terrain' ? 'step' : undefined} onClick={() => scrollToSessionSection('session-terrain')}>
           <span>3</span>Terrain
         </button>
-        <button type="button" className={['session-bilan','session-library','session-preview','session-export'].includes(activeSection) ? 'is-active' : ''} onClick={() => scrollToSessionSection('session-preview')}>
+        <button type="button" className={['session-bilan','session-library','session-preview','session-export'].includes(activeSection) ? 'is-active' : ''} aria-current={['session-bilan','session-library','session-preview','session-export'].includes(activeSection) ? 'step' : undefined} onClick={() => scrollToSessionSection('session-preview')}>
           <span>4</span>Vérifier
         </button>
       </nav>
