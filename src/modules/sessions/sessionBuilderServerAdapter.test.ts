@@ -11,6 +11,20 @@ describe('sessionBuilderServerAdapter', () => {
     expect(payload.situations).toEqual([])
   })
 
+
+  it('transmet le score canonique et ses avertissements dans le payload serveur', () => {
+    const source = createSession({
+      qualityScore: 80,
+      qualityWarnings: ['Durée à vérifier'],
+    })
+    const payload = mapBuilderSessionToWritePayload(source)
+
+    expect(payload.session.quality_score).toBe(80)
+    expect(payload.session.content_json).toMatchObject({
+      qualityWarnings: ['Durée à vérifier'],
+    })
+  })
+
   it('attribue une seule fois des UUID persistables aux blocs locaux', () => {
     const source = createSession({ situations: [createSituation({ id: 'situation-locale' })] })
     const once = ensurePersistentSituationIds(source, () => '10000000-0000-4000-8000-000000000001')

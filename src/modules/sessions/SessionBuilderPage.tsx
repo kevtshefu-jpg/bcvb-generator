@@ -365,12 +365,15 @@ export default function SessionBuilderPage() {
     mutationLock.current = true
     setSyncState('saving')
     try {
+      const validation = analyzeSessionQuality(session)
       const persistable = ensurePersistentSituationIds({
         ...session,
         coachId: session.coachId || currentUser.id,
         ownerId: session.ownerId || currentUser.id,
         createdBy: session.createdBy || currentUser.id,
         coachName: session.coachName || profile?.full_name || '',
+        qualityScore: validation.score,
+        qualityWarnings: [...validation.warnings],
       })
       setSession(persistable)
       const payload = mapBuilderSessionToWritePayload(persistable)
