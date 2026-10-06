@@ -11,7 +11,7 @@ describe('AdvancedFibaCourt workspace', () => {
     render(<AdvancedFibaCourt frames={[first]} onChange={onChange} />)
     fireEvent.click(screen.getByRole('button', { name: 'Ajouter frame' }))
 
-    const nextFrames = onChange.mock.calls.at(-1)?.[0]
+    const nextFrames = onChange.mock.calls[onChange.mock.calls.length - 1]?.[0]
     expect(nextFrames).toHaveLength(2)
     expect(nextFrames[1].objects).toEqual([])
     expect(nextFrames[1].arrows).toEqual([])
@@ -29,7 +29,7 @@ describe('AdvancedFibaCourt workspace', () => {
     expect(actionMenu).not.toBeNull()
     fireEvent.click(within(actionMenu as HTMLElement).getByText('Dupliquer'))
 
-    const nextFrames = onChange.mock.calls.at(-1)?.[0]
+    const nextFrames = onChange.mock.calls[onChange.mock.calls.length - 1]?.[0]
     expect(nextFrames).toHaveLength(2)
     expect(nextFrames[1].objects).toEqual(first.objects)
     expect(nextFrames[1].id).not.toBe(first.id)
@@ -64,7 +64,7 @@ describe('AdvancedFibaCourt workspace', () => {
     expect(actionMenu).not.toBeNull()
     fireEvent.click(within(actionMenu as HTMLElement).getByText('Terrain entier'))
 
-    const nextFrames = onChange.mock.calls.at(-1)?.[0]
+    const nextFrames = onChange.mock.calls[onChange.mock.calls.length - 1]?.[0]
     expect(nextFrames[0].courtType).toBe('full')
     expect(nextFrames[0].objects).toEqual(first.objects)
     expect(nextFrames[1]).toEqual(second)
@@ -82,7 +82,7 @@ describe('AdvancedFibaCourt workspace', () => {
     expect(actionMenu).not.toBeNull()
     fireEvent.click(within(actionMenu as HTMLElement).getByText('Réinitialiser terrain'))
 
-    const nextFrames = onChange.mock.calls.at(-1)?.[0]
+    const nextFrames = onChange.mock.calls[onChange.mock.calls.length - 1]?.[0]
     expect(nextFrames[0].title).toBe('Frame test')
     expect(nextFrames[0].objects).toEqual([])
     expect(nextFrames[0].arrows).toEqual([])
