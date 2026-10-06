@@ -25,8 +25,16 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Session timeline tests
         run: npx vitest run src/modules/sessions/SessionTimeline.test.tsx
-      - name: Court workspace tests
-        run: npx vitest run src/components/courts/AdvancedFibaCourt.test.tsx
+      - name: Court add-frame test
+        run: npx vitest run src/components/courts/AdvancedFibaCourt.test.tsx -t "ajoute une frame vierge"
+      - name: Court duplicate-frame test
+        run: npx vitest run src/components/courts/AdvancedFibaCourt.test.tsx -t "duplique le contenu"
+      - name: Court tab-panel test
+        run: npx vitest run src/components/courts/AdvancedFibaCourt.test.tsx -t "relie la frame active"
+      - name: Court orientation test
+        run: npx vitest run src/components/courts/AdvancedFibaCourt.test.tsx -t "changement d’orientation"
+      - name: Court reset test
+        run: npx vitest run src/components/courts/AdvancedFibaCourt.test.tsx -t "réinitialise la frame"
       - name: Full unit suite
         run: npm test
       - name: TypeScript and Vite build
