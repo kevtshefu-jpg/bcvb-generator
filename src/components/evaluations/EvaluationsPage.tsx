@@ -86,7 +86,7 @@ export function EvaluationsPage() {
     setLoading(true)
     loadTeams().then((rows) => {
       if (!active) return
-      const mapped = rows.map((team) => ({ id: team.id, name: team.name, category: team.category, level: team.level }))
+      const mapped = rows.map((team) => ({ id: team.id, name: team.name, category: team.category, level: team.level, season: team.season }))
       setTeams(mapped)
       setTeamId((current) => current || mapped[0]?.id || '')
       if (mapped.length === 0) setLoading(false)
@@ -118,8 +118,8 @@ export function EvaluationsPage() {
     return () => { active = false }
   }, [teamId])
 
-  if (loading) return <main className="evaluations-page"><EmptyState cause="loading" title="Chargement des évaluations" description="Lecture des équipes et joueurs autorisés…" /></main>
-  if (error) return <main className="evaluations-page"><EmptyState cause="error" title="Évaluations indisponibles" description={error} /></main>
+  if (loading) return <main className="evaluations-page"><EmptyState cause="not_loaded" title="Chargement des évaluations" description="Lecture des équipes et joueurs autorisés…" /></main>
+  if (error) return <main className="evaluations-page"><EmptyState cause="not_loaded" title="Évaluations indisponibles" description={error} /></main>
   if (teams.length === 0) return <main className="evaluations-page"><EmptyState cause="no_data" title="Aucune équipe accessible" description="Aucune équipe active n’est disponible pour votre profil." /></main>
   if (players.length === 0) return <main className="evaluations-page"><EmptyState cause="no_data" title="Aucun joueur à évaluer" description="Aucun joueur actif n’est disponible dans cette équipe." action={<a href="/coach/equipes">Voir mes équipes</a>} /></main>
 
@@ -143,7 +143,7 @@ function EvaluationWorkspace({
 }) {
   const currentTeam = teams.find((team) => team.id === teamId) || teams[0]
   const teamPlayers = players.filter((player) => player.teamId === teamId)
-  const [season, setSeason] = useState('2026-2027')
+  const [season, setSeason] = useState(currentTeam.season || '2026-2027')
   const [playerId, setPlayerId] = useState(teamPlayers[0].id)
   const selectedPlayer = players.find((player) => player.id === playerId) || teamPlayers[0]
   const [category, setCategory] = useState(selectedPlayer.category)
