@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../features/auth/context/AuthContext'
-import CoachToolModeGuide from '../../features/coach-tools/mode/CoachToolModeGuide'
 import CoachToolModeToggle from '../../features/coach-tools/mode/CoachToolModeToggle'
 import { useCoachToolMode } from '../../features/coach/hooks/useCoachToolMode'
 import { SessionClassificationPanel } from './SessionClassificationPanel'
@@ -655,10 +654,10 @@ export default function SessionBuilderPage() {
         `session-builder-page--${mode}`,
       ].join(' ')}
     >
-      <section className="session-hero">
+      <section className="session-hero session-workspace-header">
         <div className="session-hero__content">
-          <p className="bcvb-eyebrow">Terrain / coachs</p>
-          <h1>Créateur de séances</h1>
+          <p className="bcvb-eyebrow">Créateur de séances</p>
+          <h1>{session.title || `Séance ${session.category}`}</h1>
           <p>{pageSubtitle}</p>
         </div>
 
@@ -666,45 +665,21 @@ export default function SessionBuilderPage() {
           <div className="session-hero-actions__primary">
             <button
               type="button"
-              className="session-hero-btn session-hero-btn--primary"
+              className="session-hero-btn"
               onClick={newSession}
             >
-              <span className="session-hero-btn__icon" aria-hidden="true">
-                ＋
-              </span>
-              <span>Nouvelle séance</span>
+              <span className="session-hero-btn__icon" aria-hidden="true">＋</span>
+              <span>Nouvelle</span>
             </button>
 
             <button
               type="button"
-              className="session-hero-btn"
-              onClick={() => {
-                setImportMode('full-session')
-                setShowImport((value) => !value)
-              }}
+              className="session-hero-btn session-hero-btn--primary"
+              onClick={() => void saveCurrentSession()}
+              disabled={syncState === 'saving' || syncState === 'loading' || readOnly}
             >
-              <span className="session-hero-btn__icon" aria-hidden="true">
-                📥
-              </span>
-              <span>Importer</span>
-            </button>
-
-            <button
-              type="button"
-              className="session-hero-btn"
-              onClick={() => navigate('/coach/seances/bibliotheque')}
-            >
-              <span className="session-hero-btn__icon" aria-hidden="true">
-                📚
-              </span>
-              <span>Bibliothèques</span>
-            </button>
-
-            <button type="button" className="session-hero-btn" onClick={printSessionPdf}>
-              <span className="session-hero-btn__icon" aria-hidden="true">
-                📄
-              </span>
-              <span>Export PDF</span>
+              <span className="session-hero-btn__icon" aria-hidden="true">✓</span>
+              <span>{syncState === 'saving' ? 'Sauvegarde…' : 'Enregistrer'}</span>
             </button>
 
             <button
@@ -881,7 +856,6 @@ export default function SessionBuilderPage() {
         ].filter(Boolean).join(' ')}
       >
         <CoachToolModeToggle mode={mode} onChange={setMode} />
-        <CoachToolModeGuide mode={mode} context="session" />
       </section>
 
       {showTemplates && (
@@ -959,68 +933,18 @@ export default function SessionBuilderPage() {
         <span>{session.transformedFromSource ? 'Transformée BCVB' : 'Création manuelle'}</span>
       </div>
 
-      <nav className="session-step-nav" aria-label="Navigation rapide dans la séance">
-        <button
-          type="button"
-          className={activeSection === 'session-infos' ? 'is-active' : ''}
-          onClick={() => scrollToSessionSection('session-infos')}
-        >
-          <span>1</span>
-          Infos générales
+      <nav className="session-step-nav session-workspace-nav" aria-label="Espace de travail de la séance">
+        <button type="button" className={activeSection === 'session-infos' || activeSection === 'session-resume' ? 'is-active' : ''} onClick={() => scrollToSessionSection('session-infos')}>
+          <span>1</span>Cadre
         </button>
-
-        <button
-          type="button"
-          className={activeSection === 'session-resume' ? 'is-active' : ''}
-          onClick={() => scrollToSessionSection('session-resume')}
-        >
-          <span>2</span>
-          Résumé coach
+        <button type="button" className={activeSection === 'session-situations' ? 'is-active' : ''} onClick={() => scrollToSessionSection('session-situations')}>
+          <span>2</span>Séance
         </button>
-
-        <button
-          type="button"
-          className={activeSection === 'session-situations' ? 'is-active' : ''}
-          onClick={() => scrollToSessionSection('session-situations')}
-        >
-          <span>3</span>
-          Situations
+        <button type="button" className={activeSection === 'session-situations' ? 'is-active' : ''} onClick={() => scrollToSessionSection('session-situations')}>
+          <span>3</span>Terrain
         </button>
-
-        <button
-          type="button"
-          className={activeSection === 'session-bilan' ? 'is-active' : ''}
-          onClick={() => scrollToSessionSection('session-bilan')}
-        >
-          <span>4</span>
-          Bilan
-        </button>
-
-        <button
-          type="button"
-          className={activeSection === 'session-library' ? 'is-active' : ''}
-          onClick={() => scrollToSessionSection('session-library')}
-        >
-          <span>5</span>
-          Bibliothèque
-        </button>
-
-        <button
-          type="button"
-          className={activeSection === 'session-preview' ? 'is-active' : ''}
-          onClick={() => scrollToSessionSection('session-preview')}
-        >
-          <span>6</span>
-          Prévisualisation
-        </button>
-
-        <button
-          type="button"
-          className={activeSection === 'session-export' ? 'is-active' : ''}
-          onClick={() => scrollToSessionSection('session-export')}
-        >
-          <span>7</span>
-          Export
+        <button type="button" className={['session-bilan','session-library','session-preview','session-export'].includes(activeSection) ? 'is-active' : ''} onClick={() => scrollToSessionSection('session-preview')}>
+          <span>4</span>Vérifier
         </button>
       </nav>
 
@@ -1314,111 +1238,32 @@ export default function SessionBuilderPage() {
       </div>
       </fieldset>
 
-      <aside
-        className="session-fixed-dock"
-        aria-label="Résumé, qualité et actions rapides de la séance"
-      >
-        <div className="session-fixed-dock__inner">
-          <div className="session-fixed-dock__header">
-            <div>
-              <span>Suivi séance</span>
-              <strong>{session.title || `Séance ${session.category}`}</strong>
-            </div>
-
-            <small>Glisser horizontalement →</small>
+      <details className="session-fixed-dock session-workspace-dock">
+        <summary className="session-workspace-dock__summary">
+          <span className="session-workspace-dock__title">Suivi séance</span>
+          <strong>{session.durationMinutes} min · {totalSituations} situation{totalSituations > 1 ? 's' : ''}</strong>
+          <span className={`session-workspace-dock__sync session-workspace-dock__sync--${syncState}`}>
+            {syncState === 'saved' ? 'Sauvegardé' : syncState === 'saving' ? 'Sauvegarde…' : syncState === 'submitted' ? 'Soumise' : 'Brouillon'}
+          </span>
+          <span className="session-workspace-dock__chevron" aria-hidden="true">⌃</span>
+        </summary>
+        <div className="session-workspace-dock__panel">
+          <div>
+            <span className="session-dock-card__label">{restored ? 'Brouillon restauré' : 'Sauvegarde'}</span>
+            <strong>{syncState === 'saved' || syncState === 'submitted' ? formatSavedTime(lastSavedAt) : 'Brouillon navigateur'}</strong>
           </div>
-
-          <div className="session-fixed-dock__scroll">
-            <article className="session-dock-card session-dock-card--save">
-              <span className="session-dock-card__label">
-                {restored ? 'Brouillon restauré' : 'Sauvegarde'}
-              </span>
-              <strong>{syncState === 'saved' || syncState === 'submitted' ? formatSavedTime(lastSavedAt) : 'Brouillon navigateur'}</strong>
-              <div className="session-dock-actions">
-                <button type="button" onClick={() => void saveCurrentSession()} disabled={syncState === 'saving' || syncState === 'loading' || readOnly}>
-                  {syncState === 'saving' ? 'Sauvegarde…' : 'Sauvegarder sur BCVB'}
-                </button>
-                <button type="button" onClick={() => void submitCurrentSession()} disabled={syncState !== 'saved' || session.status !== 'draft'}>
-                  Soumettre
-                </button>
-              </div>
-            </article>
-
-            <article className="session-dock-card">
-              <span className="session-dock-card__label">Durée prévue</span>
-              <strong>{session.durationMinutes} min</strong>
-            </article>
-
-            <article className="session-dock-card">
-              <span className="session-dock-card__label">Déroulé</span>
-              <strong>{session.durationMinutes} min</strong>
-            </article>
-
-            <article className="session-dock-card">
-              <span className="session-dock-card__label">Situations</span>
-              <strong>{totalSituations}</strong>
-            </article>
-
-            <article className="session-dock-card">
-              <span className="session-dock-card__label">Effectif</span>
-              <strong>{session.expectedPlayers || 0}</strong>
-            </article>
-
-            <article className="session-dock-card session-dock-card--quality">
-              <div>
-                <span className="session-dock-card__label">Qualité séance</span>
-                <strong>{qualityLabel}</strong>
-              </div>
-
-              <div className="session-dock-score">{qualityScore}</div>
-            </article>
-
-            <article className="session-dock-card session-dock-card--actions">
-              <span className="session-dock-card__label">Améliorer</span>
-
-              <div className="session-dock-actions">
-                <button type="button" onClick={() => autoFixSimpleMissing('all')}>
-                  Compléter
-                </button>
-
-                <button type="button" onClick={() => autoFixSimpleMissing('bcvb')}>
-                  Valeurs BCVB
-                </button>
-
-                <button type="button" onClick={() => autoFixSimpleMissing('courts')}>
-                  Corriger terrains
-                </button>
-
-                <button type="button" onClick={cleanAllCourtFrames}>
-                  Nettoyer terrains
-                </button>
-
-                <button type="button" onClick={buildUpgradePrompt}>
-                  Consigne
-                </button>
-              </div>
-            </article>
-
-            <article className="session-dock-card session-dock-card--actions">
-              <span className="session-dock-card__label">Exporter</span>
-
-              <div className="session-dock-actions">
-                <button type="button" onClick={printSessionPdf}>
-                  PDF
-                </button>
-
-                <button type="button" onClick={() => exportSessionToJson(session)}>
-                  JSON
-                </button>
-
-                <button type="button" onClick={() => exportSessionToMarkdown(session)}>
-                  Markdown
-                </button>
-              </div>
-            </article>
+          <div>
+            <span className="session-dock-card__label">Qualité</span>
+            <strong>{qualityScore}/100 · {qualityLabel}</strong>
+          </div>
+          <div className="session-dock-actions">
+            <button type="button" onClick={() => void saveCurrentSession()} disabled={syncState === 'saving' || syncState === 'loading' || readOnly}>Sauvegarder</button>
+            <button type="button" onClick={() => void submitCurrentSession()} disabled={syncState !== 'saved' || session.status !== 'draft'}>Soumettre</button>
+            <button type="button" onClick={() => autoFixSimpleMissing('all')}>Compléter</button>
+            <button type="button" onClick={printSessionPdf}>PDF</button>
           </div>
         </div>
-      </aside>
+      </details>
     </main>
   )
 }
