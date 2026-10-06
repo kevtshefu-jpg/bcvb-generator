@@ -1285,7 +1285,10 @@ export default function SessionBuilderPage() {
       </div>
       </fieldset>
 
-      <details className="session-fixed-dock session-workspace-dock">
+      <details className="session-fixed-dock session-workspace-dock" onToggle={(event) => {
+        const open = event.currentTarget.open
+        document.documentElement.classList.toggle('session-dock-open', open)
+      }}>
         <summary className="session-workspace-dock__summary">
           <span className="session-workspace-dock__title">Suivi séance</span>
           <strong>{session.durationMinutes} min · {totalSituations} situation{totalSituations > 1 ? 's' : ''}</strong>
