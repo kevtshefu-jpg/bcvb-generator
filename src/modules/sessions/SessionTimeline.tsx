@@ -42,6 +42,17 @@ export function SessionTimeline({ session, onChange }: SessionTimelineProps) {
     setActiveSituationId(nextSituation.id)
   }
 
+  function selectAdjacentSituation(currentId: string, delta: number) {
+    const index = session.situations.findIndex((situation) => situation.id === currentId)
+    if (index < 0 || session.situations.length === 0) return
+    const nextIndex = (index + delta + session.situations.length) % session.situations.length
+    const nextSituation = session.situations[nextIndex]
+    setActiveSituationId(nextSituation.id)
+    window.requestAnimationFrame(() => {
+      document.getElementById(`session-situation-tab-${nextSituation.id}`)?.focus()
+    })
+  }
+
   const activeSituation =
     session.situations.find((situation) => situation.id === activeSituationId) ??
     session.situations[0]
@@ -69,6 +80,16 @@ export function SessionTimeline({ session, onChange }: SessionTimelineProps) {
               className={situation.id === activeSituation?.id ? 'is-active' : ''}
               key={situation.id}
               onClick={() => setActiveSituationId(situation.id)}
+              onKeyDown={(event) => {
+                if (event.key === 'ArrowRight') {
+                  event.preventDefault()
+                  selectAdjacentSituation(situation.id, 1)
+                }
+                if (event.key === 'ArrowLeft') {
+                  event.preventDefault()
+                  selectAdjacentSituation(situation.id, -1)
+                }
+              }}
             >
               <span>#{situation.order}</span>
               <strong>{situation.title || `Situation ${situation.order}`}</strong>
