@@ -77,15 +77,22 @@ export function AdvancedFibaCourt({ frames, onChange }: AdvancedFibaCourtProps) 
       <CourtFrameTabs frames={safeFrames} activeFrameId={activeFrame.id} onSelect={setActiveFrameId} onAdd={addFrame} />
       {activeFrame && (
         <article className="advanced-court__frame" key={activeFrame.id}>
-          <div className="advanced-court__actions">
-            <button type="button" onClick={addFrame}>Ajouter frame</button>
-            <button type="button" onClick={() => duplicateFrame(activeFrame)}>Dupliquer frame</button>
-            <button type="button" onClick={() => renameFrame(activeFrame)}>Renommer frame</button>
-            <button type="button" onClick={() => transformCourtType(activeFrame.id, 'half-right')}>Attaque droite</button>
-            <button type="button" onClick={() => transformCourtType(activeFrame.id, 'half-left')}>Attaque gauche</button>
-            <button type="button" onClick={() => transformCourtType(activeFrame.id, 'full')}>Transformer en terrain entier</button>
-            <button type="button" onClick={() => resetFrame(activeFrame.id)}>Réinitialiser terrain</button>
-            <button type="button" onClick={() => deleteFrame(activeFrame.id)}>Supprimer frame</button>
+          <div className="advanced-court__toolbar">
+            <button type="button" className="advanced-court__primary-action" onClick={addFrame}>
+              Ajouter frame
+            </button>
+            <details className="advanced-court__more-actions">
+              <summary aria-label="Plus d’actions pour la frame active">••• <span>Actions</span></summary>
+              <div className="advanced-court__action-menu">
+                <button type="button" onClick={() => duplicateFrame(activeFrame)}>Dupliquer</button>
+                <button type="button" onClick={() => renameFrame(activeFrame)}>Renommer</button>
+                <button type="button" onClick={() => transformCourtType(activeFrame.id, 'half-right')}>Attaque droite</button>
+                <button type="button" onClick={() => transformCourtType(activeFrame.id, 'half-left')}>Attaque gauche</button>
+                <button type="button" onClick={() => transformCourtType(activeFrame.id, 'full')}>Terrain entier</button>
+                <button type="button" onClick={() => resetFrame(activeFrame.id)}>Réinitialiser terrain</button>
+                <button type="button" className="advanced-court__danger-action" onClick={() => deleteFrame(activeFrame.id)}>Supprimer frame</button>
+              </div>
+            </details>
           </div>
           <CourtFrameEditor
             frame={activeFrame}
