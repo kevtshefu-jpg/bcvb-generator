@@ -10,6 +10,7 @@ import type {
 import { useAuth } from "../../features/auth/context/AuthContext";
 import { loadTeams } from "../../features/teams/teamManagementService";
 import { rosterReadService } from "../../features/roster/rosterReadService";
+import { playerEvaluationService } from "../../features/coach/playerEvaluationService";
 import { getEvaluationTemplateByCategory } from "../../lib/evaluations/evaluationTemplates";
 import { computePlayerEvaluationSummary, suggestObjectiveFromSummary } from "../../lib/evaluations/evaluationScoring";
 import { buildEvaluationsDashboardData, computeTeamEvaluationSummary } from "../../lib/evaluations/evaluationStats";
@@ -154,6 +155,7 @@ function EvaluationWorkspace({
   const permissions = getEvaluationPermissions(role, teamId)
   const criteria = useMemo(() => getEvaluationTemplateByCategory(category, level), [category, level])
   const [evaluations, setEvaluations] = useState<PlayerEvaluation[]>([])
+  const [serverState, setServerState] = useState<'idle' | 'loading' | 'saving' | 'saved' | 'error'>('loading')
 
   const currentEvaluation = useMemo(() => {
     return evaluations.find((evaluation) =>
@@ -174,6 +176,19 @@ function EvaluationWorkspace({
   )
   const playerHistory = evaluations.filter((evaluation) => evaluation.playerId === selectedPlayer.id)
   const canEdit = permissions.canEdit && !permissions.aggregateOnly
+
+  useEffect(() => {
+    let active = true
+    setServerState('loading')
+    playerEvaluationService.readPlayer(selectedPlayer.id, teamId).then((rows) => {
+      if (!active) return
+      setEvaluations(rows)
+      setServerState('idle')
+    }).catch(() => {
+      if (active) setServerState('error')
+    })
+    return () => { active = false }
+  }, [selectedPlayer.id, teamId])
 
   useEffect(() => {
     const stored = window.localStorage.getItem(draftKey(selectedPlayer.id, period, season))
@@ -224,6 +239,23 @@ function EvaluationWorkspace({
     if (patch.level) setLevel(patch.level)
   }
 
+  async function persistCurrentEvaluation() {
+    if (!canEdit) return
+    setServerState('saving')
+    try {
+      const id = await playerEvaluationService.save(currentEvaluation)
+      setEvaluations((current) => {
+        const persisted = { ...currentEvaluation, id, updatedAt: nowIso() }
+        const exists = current.some((item) => item.playerId === persisted.playerId && item.teamId === persisted.teamId && item.period === persisted.period && item.season === persisted.season)
+        return exists ? current.map((item) => item.playerId === persisted.playerId && item.teamId === persisted.teamId && item.period === persisted.period && item.season === persisted.season ? persisted : item) : [...current, persisted]
+      })
+      window.localStorage.removeItem(draftKey(selectedPlayer.id, period, season))
+      setServerState('saved')
+    } catch {
+      setServerState('error')
+    }
+  }
+
   function updateObjective(objective: IndividualObjective) {
     upsertEvaluation({ ...currentEvaluation, individualObjective: objective, updatedAt: nowIso() })
   }
@@ -258,7 +290,7 @@ function EvaluationWorkspace({
   return (
     <main className="evaluations-page">
       <section className="bcvb-dashboard-hero evaluations-hero">
-        <div><p className="bcvb-eyebrow">Évaluations joueurs</p><h1 className="bcvb-title-xl">Objectiver la progression BCVB</h1><p className="bcvb-subtitle">Effectif canonique Supabase. Les évaluations restent des brouillons locaux tant que la persistance serveur n’est pas activée.</p></div>
+        <div><p className="bcvb-eyebrow">Évaluations joueurs</p><h1 className="bcvb-title-xl">Objectiver la progression BCVB</h1><p className="bcvb-subtitle">Effectif et évaluations canoniques Supabase, limités aux équipes autorisées.</p>{serverState === 'error' ? <p role="alert">La synchronisation serveur a échoué. Le brouillon local reste disponible.</p> : null}{serverState === 'saved' ? <p role="status">Évaluation enregistrée sur le serveur.</p> : null}</div>
         <div className="evaluations-hero-score"><strong>{summary.globalScore}/5</strong><span>joueur</span></div>
       </section>
       <section className="evaluations-metrics">
@@ -290,7 +322,7 @@ function EvaluationWorkspace({
             <EvaluationPlayerGrid criteria={criteria} evaluation={currentEvaluation} disabled={!canEdit} onChange={upsertEvaluation} />
             <EvaluationObjectivesPanel objective={currentEvaluation.individualObjective} playerId={selectedPlayer.id} disabled={!canEdit} onChange={updateObjective} />
             <section className="evaluation-card evaluations-actions">
-              <button className="bcvb-button-primary" type="button" disabled={!canEdit} onClick={() => upsertEvaluation(currentEvaluation)}>Sauvegarder le brouillon</button>
+              <button className="bcvb-button-primary" type="button" disabled={!canEdit || serverState === 'saving'} onClick={() => void persistCurrentEvaluation()}>{serverState === 'saving' ? 'Enregistrement…' : 'Sauvegarder l’évaluation'}</button>
               <button className="bcvb-button-secondary" type="button" disabled={!canEdit} onClick={createSuggestedObjective}>Créer objectif proposé</button>
               <a className="bcvb-button-secondary" href="/coach/seances">Relier à une séance</a><a className="bcvb-button-secondary" href="/coach/planifications">Relier à une planification</a>
             </section>
