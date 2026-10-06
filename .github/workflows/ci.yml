@@ -35,6 +35,20 @@ jobs:
         run: npx vitest run src/components/courts/AdvancedFibaCourt.test.tsx -t "changement d’orientation"
       - name: Court reset test
         run: npx vitest run src/components/courts/AdvancedFibaCourt.test.tsx -t "réinitialise la frame"
+      - name: Session attachment importer tests
+        run: npx vitest run src/modules/sessions/SessionAttachmentImporter.test.tsx
+      - name: Session library tests
+        run: npx vitest run src/modules/sessions/SessionLibraryPage.test.ts
+      - name: Session server adapter tests
+        run: npx vitest run src/modules/sessions/sessionBuilderServerAdapter.test.ts
+      - name: Session mapper tests
+        run: npx vitest run src/modules/sessions/sessionMapper.test.ts
+      - name: Session model tests
+        run: npx vitest run src/modules/sessions/sessionModels.test.ts
+      - name: Session local service tests
+        run: npx vitest run src/modules/sessions/sessionService.local.test.ts
+      - name: Session local write tests
+        run: npx vitest run src/modules/sessions/sessionWriteService.local.test.ts
       - name: Sessions module suite
         run: npx vitest run src/modules/sessions
       - name: Court components suite
