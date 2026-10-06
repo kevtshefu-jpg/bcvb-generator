@@ -14,6 +14,9 @@ export type PlayerProgressionProfile = {
   evaluationStatus: string | null
   objectivesStatus: string | null
   documentsStatus: string | null
+  evaluationCount: number
+  activeObjectiveCount: number
+  lastEvaluationDate: string | null
   summary: Record<string, unknown>
 }
 
@@ -22,6 +25,11 @@ function isRecord(value: unknown): value is UnknownRecord { return typeof value 
 function requiredString(row: UnknownRecord, field: string): string {
   const value = row[field]
   if (typeof value !== 'string' || value.length === 0) throw new Error('MALFORMED_PLAYER_PROGRESSION_RESPONSE')
+  return value
+}
+function requiredNumber(row: UnknownRecord, field: string): number {
+  const value = row[field]
+  if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error('MALFORMED_PLAYER_PROGRESSION_RESPONSE')
   return value
 }
 function optionalString(row: UnknownRecord, field: string): string | null {
@@ -42,6 +50,8 @@ export function mapPlayerProgressionProfile(value: unknown): PlayerProgressionPr
     teamCategory: requiredString(value, 'team_category'), season: requiredString(value, 'season'),
     attendanceStatus: optionalString(value, 'attendance_status'), evaluationStatus: optionalString(value, 'evaluation_status'),
     objectivesStatus: optionalString(value, 'objectives_status'), documentsStatus: optionalString(value, 'documents_status'),
+    evaluationCount: requiredNumber(value, 'evaluation_count'), activeObjectiveCount: requiredNumber(value, 'active_objective_count'),
+    lastEvaluationDate: optionalString(value, 'last_evaluation_date'),
     summary: (summary as Record<string, unknown> | null | undefined) ?? {},
   }
 }
