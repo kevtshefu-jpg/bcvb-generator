@@ -22,8 +22,7 @@ export function SessionSituationBlock({ situation, onChange, onDuplicate, onMove
           <p>{getPhaseLabel(situation.pedagogicalPhase)}</p>
         </div>
         <strong>{situation.durationMinutes} min</strong>
-      </header>
-      <details className="session-situation-menu">
+        <details className="session-situation-menu">
         <summary aria-label="Actions pour la situation active">••• <span>Actions situation</span></summary>
         <div className="session-situation-menu__panel">
           <button type="button" onClick={onDuplicate}>Dupliquer</button>
@@ -32,7 +31,8 @@ export function SessionSituationBlock({ situation, onChange, onDuplicate, onMove
           <button type="button" onClick={onSaveAsTemplate}>Enregistrer comme modèle</button>
           <button type="button" className="session-situation-menu__danger" onClick={onDelete}>Supprimer</button>
         </div>
-      </details>
+        </details>
+      </header>
       <SessionSituationEditor situation={situation} onChange={onChange} />
     </article>
   )
