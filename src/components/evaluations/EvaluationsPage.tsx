@@ -11,6 +11,7 @@ import { useAuth } from "../../features/auth/context/AuthContext";
 import { loadTeams } from "../../features/teams/teamManagementService";
 import { rosterReadService } from "../../features/roster/rosterReadService";
 import { playerEvaluationService } from "../../features/coach/playerEvaluationService";
+import { playerObjectiveService, type StoredPlayerObjective } from "../../features/coach/playerObjectiveService";
 import { getEvaluationTemplateByCategory } from "../../lib/evaluations/evaluationTemplates";
 import { computePlayerEvaluationSummary, suggestObjectiveFromSummary } from "../../lib/evaluations/evaluationScoring";
 import { buildEvaluationsDashboardData, computeTeamEvaluationSummary } from "../../lib/evaluations/evaluationStats";
@@ -156,14 +157,15 @@ function EvaluationWorkspace({
   const criteria = useMemo(() => getEvaluationTemplateByCategory(category, level), [category, level])
   const [evaluations, setEvaluations] = useState<PlayerEvaluation[]>([])
   const [serverState, setServerState] = useState<'idle' | 'loading' | 'saving' | 'saved' | 'error'>('loading')
+  const [latestObjective, setLatestObjective] = useState<StoredPlayerObjective | null>(null)
 
   const currentEvaluation = useMemo(() => {
     return evaluations.find((evaluation) =>
       evaluation.playerId === selectedPlayer.id &&
       evaluation.period === period &&
       evaluation.season === season
-    ) || createEvaluation(selectedPlayer, currentTeam, period, season, level, actorId)
-  }, [actorId, currentTeam, evaluations, level, period, season, selectedPlayer])
+    ) || { ...createEvaluation(selectedPlayer, currentTeam, period, season, level, actorId), individualObjective: latestObjective ?? undefined }
+  }, [actorId, currentTeam, evaluations, latestObjective, level, period, season, selectedPlayer])
 
   const summary = useMemo(() => computePlayerEvaluationSummary(currentEvaluation, criteria), [criteria, currentEvaluation])
   const teamSummary = useMemo(
@@ -180,9 +182,13 @@ function EvaluationWorkspace({
   useEffect(() => {
     let active = true
     setServerState('loading')
-    playerEvaluationService.readPlayer(selectedPlayer.id, teamId).then((rows) => {
+    Promise.all([
+      playerEvaluationService.readPlayer(selectedPlayer.id, teamId),
+      playerObjectiveService.readPlayer(selectedPlayer.id, teamId),
+    ]).then(([rows, objectives]) => {
       if (!active) return
       setEvaluations(rows)
+      setLatestObjective(objectives.find((item) => item.status === 'en_cours' || item.status === 'a_travailler') ?? objectives[0] ?? null)
       setServerState('idle')
     }).catch(() => {
       if (active) setServerState('error')
@@ -244,6 +250,17 @@ function EvaluationWorkspace({
     setServerState('saving')
     try {
       const id = await playerEvaluationService.save(currentEvaluation)
+      if (currentEvaluation.individualObjective) {
+        const objectiveId = await playerObjectiveService.save(currentEvaluation.individualObjective, teamId, season)
+        setLatestObjective((current) => currentEvaluation.individualObjective ? {
+          ...currentEvaluation.individualObjective,
+          id: objectiveId,
+          teamId,
+          season,
+          createdAt: current?.createdAt ?? nowIso(),
+          updatedAt: nowIso(),
+        } : current)
+      }
       setEvaluations((current) => {
         const persisted = { ...currentEvaluation, id, updatedAt: nowIso() }
         const exists = current.some((item) => item.playerId === persisted.playerId && item.teamId === persisted.teamId && item.period === persisted.period && item.season === persisted.season)
@@ -257,6 +274,13 @@ function EvaluationWorkspace({
   }
 
   function updateObjective(objective: IndividualObjective) {
+    setLatestObjective((current) => ({
+      ...objective,
+      teamId,
+      season,
+      createdAt: current?.createdAt ?? nowIso(),
+      updatedAt: nowIso(),
+    }))
     upsertEvaluation({ ...currentEvaluation, individualObjective: objective, updatedAt: nowIso() })
   }
 
