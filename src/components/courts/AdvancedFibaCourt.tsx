@@ -33,7 +33,11 @@ export function AdvancedFibaCourt({ frames, onChange }: AdvancedFibaCourtProps) 
   function duplicateFrame(frame: SessionCourtFrame) {
     const nextFrame = createCourtFrame({
       ...frame,
+      id: '',
       title: `${frame.title} - copie`,
+      objects: frame.objects.map((object) => ({ ...object })),
+      arrows: frame.arrows.map((arrow) => ({ ...arrow })),
+      zones: frame.zones.map((zone) => ({ ...zone })),
     })
     onChange([...safeFrames, nextFrame])
     setActiveFrameId(nextFrame.id)
