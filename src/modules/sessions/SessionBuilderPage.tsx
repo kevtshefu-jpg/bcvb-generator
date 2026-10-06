@@ -910,7 +910,7 @@ export default function SessionBuilderPage() {
         <SessionClassificationPanel session={session} onChange={updateSession} isAdmin={isAdmin} />
       )}
 
-      {message && <p className="session-warning">{message}</p>}
+      {message && <p className="session-warning" role="status" aria-live="polite">{message}</p>}
 
       <section className={`session-sync-state session-sync-state--${syncState}`} aria-live="polite">
         <strong>{({
