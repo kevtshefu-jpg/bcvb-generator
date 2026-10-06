@@ -244,6 +244,12 @@ export default function SessionBuilderPage() {
   }, [session.category, session.durationMinutes, totalSituations])
 
   useEffect(() => {
+    return () => {
+      document.documentElement.classList.remove('session-dock-open')
+    }
+  }, [])
+
+  useEffect(() => {
     saveLastRoute('/coach/seances')
 
     const timer = window.setTimeout(() => {
