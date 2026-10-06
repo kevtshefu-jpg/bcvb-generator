@@ -60,14 +60,14 @@ export default function CoachJoueurProgressionPage() {
 
           <section className="roster-block-grid" aria-label="État du suivi joueur">
             <article className="roster-block-card"><span>Présences</span><h2>{statusLabel(profile.attendanceStatus, 'À relier')}</h2><p>Suivi collectif existant, sans donnée médicale exposée ici.</p></article>
-            <article className="roster-block-card"><span>Évaluations</span><h2>{statusLabel(profile.evaluationStatus, 'À relier')}</h2><p>Le module de mesures détaillées sera branché sur cette identité canonique.</p></article>
-            <article className="roster-block-card"><span>Objectifs</span><h2>{statusLabel(profile.objectivesStatus, 'À construire')}</h2><p>Base du futur plan individuel et du générateur de programme.</p></article>
+            <article className="roster-block-card"><span>Évaluations</span><h2>{profile.evaluationCount}</h2><p>{profile.lastEvaluationDate ? `Dernière évaluation : ${profile.lastEvaluationDate}` : 'Aucune évaluation enregistrée.'}</p></article>
+            <article className="roster-block-card"><span>Objectifs actifs</span><h2>{profile.activeObjectiveCount}</h2><p>{profile.activeObjectiveCount > 0 ? 'Objectifs canoniques à travailler ou en cours.' : 'Aucun objectif actif enregistré.'}</p></article>
             <article className="roster-block-card"><span>Documents</span><h2>{statusLabel(profile.documentsStatus, 'À relier')}</h2><p>Point d’entrée futur des Player Books et exports joueurs.</p></article>
           </section>
 
           <section className="bcvb-tool-card">
             <h2>Performance System</h2>
-            <p>Le profil canonique est prêt à recevoir tests, objectifs, charge, programmes et Player Books. Aucun résultat sportif n’est inventé tant que ces données ne sont pas enregistrées dans une source validée.</p>
+            <p>Les évaluations et objectifs sont maintenant reliés au profil canonique. Tests physiques, charge, prévention et Player Books restent volontairement non affichés tant que leurs sources structurées ne sont pas validées.</p>
           </section>
         </>
       ) : null}
