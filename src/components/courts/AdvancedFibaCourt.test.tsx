@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { createCourtFrame } from '../../modules/sessions/sessionModels'
 import { AdvancedFibaCourt } from './AdvancedFibaCourt'
@@ -25,9 +25,14 @@ describe('AdvancedFibaCourt workspace', () => {
     const onChange = vi.fn()
 
     render(<AdvancedFibaCourt frames={[first]} onChange={onChange} />)
-    fireEvent.click(screen.getByText('Dupliquer'))
+    const actionMenu = document.querySelector('.advanced-court__action-menu')
+    expect(actionMenu).not.toBeNull()
+    fireEvent.click(within(actionMenu as HTMLElement).getByText('Dupliquer'))
 
-    expect(onChange).toHaveBeenCalled()
+    const nextFrames = onChange.mock.calls.at(-1)?.[0]
+    expect(nextFrames).toHaveLength(2)
+    expect(nextFrames[1].objects).toEqual(first.objects)
+    expect(nextFrames[1].id).not.toBe(first.id)
   })
 
   it('relie la frame active à son panneau terrain', () => {
