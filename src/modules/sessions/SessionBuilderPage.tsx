@@ -51,6 +51,7 @@ import {
 import { exportSessionToJson, exportSessionToMarkdown, printSessionPdf } from './sessionExport'
 import { textToList } from './sessionUtils'
 import { buildSessionUpgradePrompt } from './sessionTransformer'
+import { analyzeSessionQuality } from './sessionQuality'
 import '../../styles/sessions.css'
 import '../../styles/courts.css'
 import '../../styles/print-session.css'
@@ -110,47 +111,6 @@ function getVisibilityLabel(visibility: TrainingSessionV2['visibility']) {
   if (visibility === 'public_technicians') return 'Techniciens'
   if (visibility === 'club_reference') return 'Référence BCVB'
   return 'Archivée'
-}
-
-function getQualityScore(session: TrainingSessionV2) {
-  let score = 0
-
-  if (session.title) score += 8
-  if (session.category) score += 6
-  if (session.coachName) score += 6
-  if (session.durationMinutes > 0) score += 6
-  if (session.expectedPlayers > 0) score += 6
-  if (session.objectives.length > 0) score += 8
-  if (session.bcvbObjectives.length > 0) score += 8
-  if (session.equipment.length > 0) score += 6
-  if (session.summary) score += 6
-  if (session.globalOrganization) score += 6
-  if (session.situations.length > 0) score += 10
-
-  const situationsWithCriteria = session.situations.filter(
-    (situation) =>
-      situation.observableCriteria.length > 0 ||
-      situation.measurableCriteria.length > 0
-  ).length
-
-  if (situationsWithCriteria > 0) score += 8
-
-  const situationsWithCourts = session.situations.filter(
-    (situation) => situation.courtFrames.length > 0
-  ).length
-
-  if (situationsWithCourts > 0) score += 8
-
-  if (session.notes || session.observations.groupNotes) score += 4
-
-  return Math.min(100, score)
-}
-
-function getQualityLabel(score: number) {
-  if (score >= 90) return 'excellent'
-  if (score >= 75) return 'publiable'
-  if (score >= 55) return 'à renforcer'
-  return 'à compléter'
 }
 
 /**
@@ -232,8 +192,9 @@ export default function SessionBuilderPage() {
   const readOnly = session.status !== 'draft' || syncState === 'submitted'
 
   const totalSituations = session.situations.length
-  const qualityScore = getQualityScore(session)
-  const qualityLabel = getQualityLabel(qualityScore)
+  const qualityReport = useMemo(() => analyzeSessionQuality(session), [session])
+  const qualityScore = qualityReport.score
+  const qualityLabel = qualityReport.status
 
   const pageSubtitle = useMemo(() => {
     if (totalSituations === 0) {
@@ -1259,6 +1220,32 @@ export default function SessionBuilderPage() {
                 {showPreview ? 'Masquer l’aperçu' : 'Afficher l’aperçu complet'}
               </button>
             </div>
+
+            {(qualityReport.missing.length > 0 || qualityReport.warnings.length > 0) && (
+              <div className="session-verify-findings" aria-label="Points à vérifier avant utilisation">
+                <div>
+                  <span>À compléter</span>
+                  <strong>{qualityReport.missing.length}</strong>
+                </div>
+                <div>
+                  <span>Avertissements</span>
+                  <strong>{qualityReport.warnings.length}</strong>
+                </div>
+                <details>
+                  <summary>Voir les points de contrôle</summary>
+                  {qualityReport.missing.length > 0 && (
+                    <ul>
+                      {qualityReport.missing.map((item) => <li key={`missing-${item}`}>{item}</li>)}
+                    </ul>
+                  )}
+                  {qualityReport.warnings.length > 0 && (
+                    <ul>
+                      {qualityReport.warnings.map((item, index) => <li key={`warning-${index}-${item}`}>{item}</li>)}
+                    </ul>
+                  )}
+                </details>
+              </div>
+            )}
 
             {showPreview && <SessionPreview session={session} mode={previewMode} />}
           </section>
