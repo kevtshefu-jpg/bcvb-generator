@@ -20,6 +20,21 @@ describe('SessionTimeline workspace', () => {
     expect(screen.getByDisplayValue('Situation B')).toBeInTheDocument()
   })
 
+  it('permet la navigation clavier entre situations', () => {
+    const first = createSituation({ order: 1, title: 'Situation A' })
+    const second = createSituation({ order: 2, title: 'Situation B' })
+    const session = createSession({ situations: [first, second] })
+
+    render(<SessionTimeline session={session} onChange={vi.fn()} />)
+
+    const firstTab = screen.getByRole('tab', { name: /Situation A/i })
+    fireEvent.keyDown(firstTab, { key: 'ArrowRight' })
+
+    const secondTab = screen.getByRole('tab', { name: /Situation B/i })
+    expect(secondTab).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByDisplayValue('Situation B')).toBeInTheDocument()
+  })
+
   it('relie le tab actif à son panneau d’édition', () => {
     const situation = createSituation({ order: 1, title: 'Pression porteur' })
     const session = createSession({ situations: [situation] })
