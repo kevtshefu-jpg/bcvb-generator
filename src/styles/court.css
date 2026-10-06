@@ -545,3 +545,36 @@
     display: inline-flex;
   }
 }
+
+
+/* M4.5E — mobile court-first order */
+@media (max-width: 760px) {
+  .fastdraw-editor {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .fastdraw-editor__header {
+    order: 1;
+  }
+
+  .fastdraw-editor__workspace {
+    order: 2;
+  }
+
+  .fastdraw-toolbar {
+    order: 3;
+  }
+
+  .fastdraw-legend {
+    order: 4;
+  }
+
+  .fastdraw-editor__workspace {
+    gap: 8px;
+  }
+
+  .fastdraw-properties:has(.fastdraw-properties__empty) {
+    display: none;
+  }
+}
