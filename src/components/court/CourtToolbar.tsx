@@ -52,8 +52,8 @@ export function CourtToolbar({
 
   return (
     <div className="fastdraw-toolbar" aria-label="Outils terrain">
-      <div className="fastdraw-toolbar__group">
-        <span>Terrain</span>
+      <details className="fastdraw-toolbar__group fastdraw-toolbar__group--settings">
+        <summary>Terrain <strong>{getReadableModeLabel(mode)}</strong></summary>
         <select value={mode} onChange={(event) => onModeChange(event.target.value as CourtMode)} aria-label="Mode terrain">
           <option value="half-right">{getReadableModeLabel("half-right")}</option>
           <option value="half-left">{getReadableModeLabel("half-left")}</option>
@@ -63,10 +63,10 @@ export function CourtToolbar({
           <input type="checkbox" checked={Boolean(showCenterLogo)} onChange={(event) => onLogoChange(event.target.checked)} />
           Logo central : {showCenterLogo ? "ON" : "OFF"}
         </label>
-      </div>
+      </details>
 
-      <div className="fastdraw-toolbar__group">
-        <span>Objets</span>
+      <details className="fastdraw-toolbar__group fastdraw-toolbar__group--tools" open>
+        <summary>Objets</summary>
         <button type="button" className={isObjectActive("player") ? "is-active" : ""} onClick={() => onSelectObjectTool("player")}>Joueur</button>
         <button type="button" className={isObjectActive("defender") ? "is-active" : ""} onClick={() => onSelectObjectTool("defender")}>Defense</button>
         <button type="button" className={isObjectActive("coach") ? "is-active" : ""} onClick={() => onSelectObjectTool("coach")}>Coach</button>
@@ -74,10 +74,10 @@ export function CourtToolbar({
         <button type="button" className={isObjectActive("cone") ? "is-active" : ""} onClick={() => onSelectObjectTool("cone")}>Plot</button>
         <button type="button" className={isObjectActive("hands") ? "is-active" : ""} onClick={() => onSelectObjectTool("hands")}>H</button>
         <button type="button" className={isObjectActive("text") ? "is-active" : ""} onClick={() => onSelectObjectTool("text")}>Texte</button>
-      </div>
+      </details>
 
-      <div className="fastdraw-toolbar__group">
-        <span>Actions</span>
+      <details className="fastdraw-toolbar__group fastdraw-toolbar__group--tools">
+        <summary>Actions</summary>
         <button type="button" className={isMotionActive("move") ? "is-active" : ""} onClick={() => onSelectMotionTool("move")}>Course</button>
         <button type="button" className={isMotionActive("pass") ? "is-active" : ""} onClick={() => onSelectMotionTool("pass")}>Passe</button>
         <button type="button" className={isMotionActive("dribble") ? "is-active" : ""} onClick={() => onSelectMotionTool("dribble")}>Dribble</button>
@@ -87,7 +87,7 @@ export function CourtToolbar({
           <input type="checkbox" checked={curvedMode} onChange={(event) => onCurvedModeChange(event.target.checked)} />
           Courbe : {curvedMode ? "ON" : "OFF"}
         </label>
-      </div>
+      </details>
 
       <div className="fastdraw-toolbar__group fastdraw-toolbar__status">
         <span>Outil actif</span>
@@ -96,12 +96,12 @@ export function CourtToolbar({
         <button type="button" onClick={onClearTool}>Selection</button>
       </div>
 
-      <div className="fastdraw-toolbar__group fastdraw-toolbar__group--exports">
-        <span>Export</span>
+      <details className="fastdraw-toolbar__group fastdraw-toolbar__group--exports">
+        <summary>Export</summary>
         {onDuplicate && <button type="button" onClick={onDuplicate}>Dupliquer</button>}
         <button type="button" onClick={onExportSvg}>SVG</button>
         <button type="button" onClick={onExportPng}>PNG</button>
-      </div>
+      </details>
     </div>
   );
 }
