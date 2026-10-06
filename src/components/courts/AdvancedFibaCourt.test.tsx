@@ -20,7 +20,7 @@ describe('AdvancedFibaCourt workspace', () => {
   it('duplique le contenu de la frame active', () => {
     const first = createCourtFrame({
       title: 'Déclenchement',
-      objects: [{ id: 'player-1', type: 'offense', x: 0.4, y: 0.5, label: '1' }],
+      objects: [{ id: 'player-1', type: 'offense_player', x: 0.4, y: 0.5, label: '1' }],
     })
     const onChange = vi.fn()
 
