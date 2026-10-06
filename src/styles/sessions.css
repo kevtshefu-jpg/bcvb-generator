@@ -1949,3 +1949,74 @@
     padding: 0 12px 12px;
   }
 }
+
+
+/* M4.5B — one active situation workspace */
+.session-builder-page .session-timeline-selector {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 18px;
+  padding: 4px 2px 8px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+.session-builder-page .session-timeline-selector > button {
+  flex: 0 0 min(220px, 72vw);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px 8px;
+  align-items: center;
+  min-height: 58px;
+  padding: 9px 11px;
+  text-align: left;
+  border: 1px solid rgba(20,20,24,.12);
+  border-radius: 12px;
+  background: rgba(255,255,255,.72);
+}
+.session-builder-page .session-timeline-selector > button > span {
+  grid-row: 1 / span 2;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  font-weight: 900;
+  color: #d71920;
+}
+.session-builder-page .session-timeline-selector > button strong,
+.session-builder-page .session-timeline-selector > button small {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.session-builder-page .session-timeline-selector > button small {
+  color: rgba(20,20,24,.62);
+}
+.session-builder-page .session-timeline-selector > button.is-active {
+  border-color: #d71920;
+  box-shadow: 0 0 0 2px rgba(215,25,32,.12);
+  background: #fff;
+}
+.session-builder-page .session-timeline--single {
+  display: block;
+}
+.session-builder-page .session-timeline-empty {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding: 24px;
+  border: 1px dashed rgba(20,20,24,.2);
+  border-radius: 14px;
+}
+.session-builder-page .session-timeline-empty p {
+  margin: 0;
+}
+@media (max-width: 720px) {
+  .session-builder-page .session-timeline-selector {
+    margin-inline: -4px;
+    padding-inline: 4px;
+  }
+  .session-builder-page .session-timeline-selector > button {
+    flex-basis: min(190px, 68vw);
+  }
+}
