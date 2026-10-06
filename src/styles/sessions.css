@@ -2148,3 +2148,46 @@
     grid-column: 1 / -1;
   }
 }
+
+
+/* M4.5D — coach mode stays available without dominating the workspace */
+.session-builder-page .session-mode-help {
+  border: 1px solid rgba(20,20,24,.1);
+  border-radius: 12px;
+  background: #fff;
+}
+.session-builder-page .session-mode-help > summary {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 800;
+}
+.session-builder-page .session-mode-help > .coach-mode-guide {
+  margin: 0 10px 10px;
+}
+@media (max-width: 720px) {
+  .session-builder-page .coach-tool-mode-shell {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .session-builder-page .coach-mode-toggle {
+    gap: 8px;
+    padding: 10px;
+  }
+  .session-builder-page .coach-mode-toggle__copy p:not(.coach-mode-toggle__eyebrow) {
+    display: none;
+  }
+  .session-builder-page .coach-mode-toggle h2 {
+    font-size: 1rem;
+  }
+  .session-builder-page .coach-mode-toggle__actions {
+    gap: 4px;
+    padding: 3px;
+  }
+  .session-builder-page .coach-mode-toggle__button {
+    min-height: 38px;
+    font-size: .78rem;
+  }
+}
