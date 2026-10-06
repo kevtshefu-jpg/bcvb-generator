@@ -42,9 +42,11 @@ describe('SessionTimeline workspace', () => {
     render(<SessionTimeline session={session} onChange={vi.fn()} />)
 
     const tab = screen.getByRole('tab', { name: /Pression porteur/i })
-    const panel = screen.getByRole('tabpanel')
+    const panelId = tab.getAttribute('aria-controls')
+    const panel = panelId ? document.getElementById(panelId) : null
 
-    expect(tab).toHaveAttribute('aria-controls', panel.id)
+    expect(panel).not.toBeNull()
+    expect(panel).toHaveAttribute('role', 'tabpanel')
     expect(panel).toHaveAttribute('aria-labelledby', tab.id)
     expect(tab).toHaveAttribute('aria-selected', 'true')
   })
