@@ -1712,3 +1712,174 @@
 .session-library-card button {
   min-height: 44px;
 }
+
+
+/* M4.5A — compact Session Builder workspace shell */
+.session-builder-page .session-workspace-header {
+  padding: 18px 22px;
+  gap: 18px;
+  align-items: center;
+}
+.session-builder-page .session-workspace-header .session-hero__content {
+  max-width: 720px;
+}
+.session-builder-page .session-workspace-header h1 {
+  font-size: clamp(1.45rem, 3vw, 2.15rem);
+  margin: 2px 0 4px;
+}
+.session-builder-page .session-workspace-header p {
+  margin: 0;
+}
+.session-builder-page .coach-tool-mode-shell {
+  padding-block: 8px;
+  min-height: 0;
+}
+.session-builder-page .session-workspace-nav {
+  position: sticky;
+  top: 8px;
+  z-index: 20;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 760px;
+  margin-inline: auto;
+  backdrop-filter: blur(14px);
+}
+.session-builder-page .session-workspace-dock {
+  position: fixed;
+  z-index: 45;
+  left: 50%;
+  bottom: 14px;
+  width: min(760px, calc(100% - 32px));
+  transform: translateX(-50%);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 16px;
+  background: rgba(18,18,20,.96);
+  box-shadow: 0 16px 48px rgba(0,0,0,.34);
+  color: #fff;
+  overflow: hidden;
+}
+.session-builder-page .session-workspace-dock__summary {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+.session-builder-page .session-workspace-dock__summary::-webkit-details-marker {
+  display: none;
+}
+.session-builder-page .session-workspace-dock__title {
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #d71920;
+}
+.session-builder-page .session-workspace-dock__summary strong {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.session-builder-page .session-workspace-dock__sync {
+  font-size: .78rem;
+  color: rgba(255,255,255,.72);
+}
+.session-builder-page .session-workspace-dock__chevron {
+  transition: transform .2s ease;
+}
+.session-builder-page .session-workspace-dock[open] .session-workspace-dock__chevron {
+  transform: rotate(180deg);
+}
+.session-builder-page .session-workspace-dock__panel {
+  display: grid;
+  grid-template-columns: minmax(150px,1fr) minmax(130px,.7fr) minmax(260px,1.4fr);
+  align-items: center;
+  gap: 16px;
+  padding: 12px 14px 14px;
+  border-top: 1px solid rgba(255,255,255,.1);
+}
+.session-builder-page .session-workspace-dock__panel > div:not(.session-dock-actions) {
+  display: grid;
+  gap: 3px;
+}
+.session-builder-page .session-workspace-dock .session-dock-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.session-builder-page .session-workspace-dock .session-dock-actions button {
+  min-height: 38px;
+  padding: 8px 11px;
+}
+.session-builder-page.session-page--with-fixed-dock {
+  padding-bottom: 96px;
+}
+
+@media (max-width: 720px) {
+  .session-builder-page .session-workspace-header {
+    padding: 14px;
+    align-items: flex-start;
+  }
+  .session-builder-page .session-workspace-header .session-hero-actions {
+    width: 100%;
+  }
+  .session-builder-page .session-workspace-header .session-hero-actions__primary {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    width: 100%;
+  }
+  .session-builder-page .session-workspace-header .session-hero-btn {
+    min-width: 0;
+    padding-inline: 10px;
+  }
+  .session-builder-page .session-workspace-nav {
+    top: 4px;
+    width: 100%;
+    gap: 4px;
+    padding: 5px;
+  }
+  .session-builder-page .session-workspace-nav button {
+    min-width: 0;
+    padding: 8px 4px;
+    font-size: .72rem;
+    gap: 4px;
+  }
+  .session-builder-page .session-workspace-nav button span {
+    width: 22px;
+    height: 22px;
+  }
+  .session-builder-page .session-workspace-dock {
+    bottom: 8px;
+    width: calc(100% - 16px);
+    border-radius: 14px;
+  }
+  .session-builder-page .session-workspace-dock__summary {
+    min-height: 52px;
+    grid-template-columns: 1fr auto auto;
+    gap: 8px;
+    padding: 8px 11px;
+  }
+  .session-builder-page .session-workspace-dock__title {
+    display: none;
+  }
+  .session-builder-page .session-workspace-dock__summary strong {
+    font-size: .86rem;
+  }
+  .session-builder-page .session-workspace-dock__sync {
+    font-size: .7rem;
+  }
+  .session-builder-page .session-workspace-dock__panel {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    max-height: min(44vh, 330px);
+    overflow-y: auto;
+  }
+  .session-builder-page .session-workspace-dock .session-dock-actions {
+    grid-column: 1 / -1;
+  }
+  .session-builder-page.session-page--with-fixed-dock {
+    padding-bottom: 76px;
+  }
+}
