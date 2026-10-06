@@ -160,11 +160,13 @@ function EvaluationWorkspace({
   const [latestObjective, setLatestObjective] = useState<StoredPlayerObjective | null>(null)
 
   const currentEvaluation = useMemo(() => {
-    return evaluations.find((evaluation) =>
+    const stored = evaluations.find((evaluation) =>
       evaluation.playerId === selectedPlayer.id &&
       evaluation.period === period &&
       evaluation.season === season
-    ) || { ...createEvaluation(selectedPlayer, currentTeam, period, season, level, actorId), individualObjective: latestObjective ?? undefined }
+    )
+    const base = stored || createEvaluation(selectedPlayer, currentTeam, period, season, level, actorId)
+    return { ...base, individualObjective: latestObjective ?? base.individualObjective }
   }, [actorId, currentTeam, evaluations, latestObjective, level, period, season, selectedPlayer])
 
   const summary = useMemo(() => computePlayerEvaluationSummary(currentEvaluation, criteria), [criteria, currentEvaluation])
