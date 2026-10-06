@@ -2191,3 +2191,58 @@
     font-size: .78rem;
   }
 }
+
+
+/* M4.5D — contextual actions for the active situation */
+.session-builder-page .session-situation {
+  position: relative;
+}
+.session-builder-page .session-situation-menu {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  margin: 8px 0 12px;
+}
+.session-builder-page .session-situation-menu > summary {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px;
+  border: 1px solid rgba(20,20,24,.12);
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 800;
+}
+.session-builder-page .session-situation-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.session-builder-page .session-situation-menu__panel {
+  position: absolute;
+  z-index: 35;
+  top: calc(100% + 6px);
+  right: 0;
+  width: min(250px, calc(100vw - 32px));
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid rgba(20,20,24,.12);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 14px 36px rgba(20,20,24,.18);
+}
+.session-builder-page .session-situation-menu__panel button {
+  min-height: 40px;
+  width: 100%;
+  text-align: left;
+}
+.session-builder-page .session-situation-menu__panel .session-situation-menu__danger {
+  color: #a32035;
+}
+@media (max-width: 720px) {
+  .session-builder-page .session-situation-menu > summary span {
+    display: none;
+  }
+}
