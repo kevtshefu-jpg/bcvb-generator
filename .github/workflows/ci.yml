@@ -33,8 +33,10 @@ jobs:
         run: npx vitest run src/components/court src/components/courts
       - name: Navigation components suite
         run: npx vitest run src/components/navigation
-      - name: Team and UI components suite
-        run: npx vitest run src/components/teams src/components/ui
+      - name: Team components suite
+        run: npx vitest run src/components/teams
+      - name: UI components suite
+        run: npx vitest run src/components/ui
       - name: Features suite
         run: npx vitest run src/features
       - name: Core source suite
