@@ -35,6 +35,10 @@ jobs:
         run: npx vitest run src/components/courts/AdvancedFibaCourt.test.tsx -t "changement d’orientation"
       - name: Court reset test
         run: npx vitest run src/components/courts/AdvancedFibaCourt.test.tsx -t "réinitialise la frame"
+      - name: Sessions module suite
+        run: npx vitest run src/modules/sessions
+      - name: Court components suite
+        run: npx vitest run src/components/court src/components/courts
       - name: Source unit suite
         run: npx vitest run src
       - name: Repository test suite
