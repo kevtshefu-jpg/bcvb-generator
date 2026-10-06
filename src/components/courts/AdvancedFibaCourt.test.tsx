@@ -34,6 +34,17 @@ describe('AdvancedFibaCourt workspace', () => {
     expect(nextFrames[1].id).not.toBe(first.id)
   })
 
+  it('relie la frame active à son panneau terrain', () => {
+    const first = createCourtFrame({ title: 'Mise en place' })
+
+    render(<AdvancedFibaCourt frames={[first]} onChange={vi.fn()} />)
+
+    const tab = screen.getByRole('tab', { name: /Mise en place/i })
+    const panel = screen.getByRole('tabpanel')
+    expect(tab).toHaveAttribute('aria-controls', panel.id)
+    expect(panel).toHaveAttribute('aria-labelledby', tab.id)
+  })
+
   it('réinitialise la frame sans réintroduire d’objets', () => {
     const first = createCourtFrame({
       title: 'Frame test',
