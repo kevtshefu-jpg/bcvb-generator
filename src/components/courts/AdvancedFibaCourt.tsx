@@ -76,7 +76,13 @@ export function AdvancedFibaCourt({ frames, onChange }: AdvancedFibaCourtProps) 
       </div>
       <CourtFrameTabs frames={safeFrames} activeFrameId={activeFrame.id} onSelect={setActiveFrameId} onAdd={addFrame} />
       {activeFrame && (
-        <article className="advanced-court__frame" key={activeFrame.id}>
+        <article
+          className="advanced-court__frame"
+          key={activeFrame.id}
+          role="tabpanel"
+          id={`court-frame-panel-${activeFrame.id}`}
+          aria-labelledby={`court-frame-tab-${activeFrame.id}`}
+        >
           <div className="advanced-court__toolbar">
             <button type="button" className="advanced-court__primary-action" onClick={addFrame}>
               Ajouter frame
