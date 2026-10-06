@@ -1441,39 +1441,6 @@
   box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.16);
 }
 /* =========================================================
-   BCVB — NAVIGATION RAPIDE ACTIVE
-   ========================================================= */
-
-.session-step-nav button.is-active {
-  background: linear-gradient(135deg, #c1121f, #8f0d17);
-  color: #ffffff;
-  border-color: rgba(193, 18, 31, 0.38);
-  box-shadow:
-    0 10px 22px rgba(193, 18, 31, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
-}
-
-.session-step-nav button.is-active span {
-  background: #ffffff;
-  color: #8f0d17;
-  box-shadow: 0 4px 12px rgba(17, 17, 17, 0.16);
-}
-
-.session-step-nav button.is-active:hover {
-  color: #ffffff;
-  transform: translateY(-1px);
-}
-
-.session-step-nav button.is-active::after {
-  content: "";
-  width: 7px;
-  height: 7px;
-  margin-left: 2px;
-  border-radius: 999px;
-  background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.16);
-}
-/* =========================================================
    BCVB — RÉSUMÉ COACH PREMIUM
    ========================================================= */
 
