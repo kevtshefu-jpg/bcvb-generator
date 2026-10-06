@@ -2261,3 +2261,32 @@
     flex: 0 0 auto;
   }
 }
+
+
+/* M4.5D — final small-screen overrides over legacy session rules */
+@media (max-width: 760px) {
+  .session-builder-page .session-situation-header {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .session-builder-page .session-situation-header > div {
+    flex: 1 1 180px;
+    min-width: 0;
+  }
+  .session-builder-page .session-situation-header > strong {
+    flex: 0 0 auto;
+  }
+  .session-builder-page .session-situation-header .session-situation-menu {
+    flex: 0 0 auto;
+    margin-left: 0;
+  }
+}
+@media (max-width: 520px) {
+  .session-builder-page.session-page--with-fixed-dock {
+    padding-bottom: calc(132px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .session-builder-page .session-workspace-header h1 {
+    font-size: clamp(1.5rem, 8vw, 2.15rem);
+  }
+}
