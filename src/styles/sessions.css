@@ -2290,3 +2290,16 @@
     font-size: clamp(1.5rem, 8vw, 2.15rem);
   }
 }
+
+
+/* M4.5D — an expanded session dock must never cover the mobile workspace nav */
+@media (max-width: 720px) {
+  html.session-dock-open .session-builder-page .session-workspace-nav {
+    transform: translateY(calc(100% + 16px));
+    opacity: 0;
+    pointer-events: none;
+  }
+  .session-builder-page .session-workspace-nav {
+    transition: transform .18s ease, opacity .18s ease;
+  }
+}
