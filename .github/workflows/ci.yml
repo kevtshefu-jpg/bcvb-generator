@@ -29,5 +29,7 @@ jobs:
         run: npx vitest run src/modules/sessions --exclude "**/*.local.test.*"
       - name: Court component suite
         run: npx vitest run src/components/court src/components/courts
-      - name: TypeScript and Vite build
-        run: npm run build
+      - name: TypeScript check
+        run: npx tsc --noEmit
+      - name: Vite production build
+        run: npx vite build
