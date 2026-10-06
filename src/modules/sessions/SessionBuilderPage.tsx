@@ -223,6 +223,7 @@ export default function SessionBuilderPage() {
   const [showLibrary, setShowLibrary] = useState(false)
   const [showMoreActions, setShowMoreActions] = useState(false)
   const [previewMode, setPreviewMode] = useState<PreviewMode>('coach')
+  const [showPreview, setShowPreview] = useState(false)
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(session.updatedAt || null)
   const [restored] = useState(Boolean(loadSessionDraft()))
   const [message, setMessage] = useState('')
@@ -1209,7 +1210,25 @@ export default function SessionBuilderPage() {
               </div>
             </header>
 
-            <SessionPreview session={session} mode={previewMode} />
+            <div className="session-verify-summary">
+              <div>
+                <span>Qualité</span>
+                <strong>{qualityScore}/100 · {qualityLabel}</strong>
+              </div>
+              <div>
+                <span>Durée</span>
+                <strong>{session.durationMinutes} min</strong>
+              </div>
+              <div>
+                <span>Situations</span>
+                <strong>{totalSituations}</strong>
+              </div>
+              <button type="button" onClick={() => setShowPreview((value) => !value)} aria-expanded={showPreview}>
+                {showPreview ? 'Masquer l’aperçu' : 'Afficher l’aperçu complet'}
+              </button>
+            </div>
+
+            {showPreview && <SessionPreview session={session} mode={previewMode} />}
           </section>
 
           <section id="session-export" className="session-card session-anchor-block">
