@@ -1221,6 +1221,32 @@ export default function SessionBuilderPage() {
               </button>
             </div>
 
+            {(qualityReport.missing.length > 0 || qualityReport.warnings.length > 0) && (
+              <div className="session-verify-findings" aria-label="Points à vérifier avant utilisation">
+                <div>
+                  <span>À compléter</span>
+                  <strong>{qualityReport.missing.length}</strong>
+                </div>
+                <div>
+                  <span>Avertissements</span>
+                  <strong>{qualityReport.warnings.length}</strong>
+                </div>
+                <details>
+                  <summary>Voir les points de contrôle</summary>
+                  {qualityReport.missing.length > 0 && (
+                    <ul>
+                      {qualityReport.missing.map((item) => <li key={`missing-${item}`}>{item}</li>)}
+                    </ul>
+                  )}
+                  {qualityReport.warnings.length > 0 && (
+                    <ul>
+                      {qualityReport.warnings.map((item, index) => <li key={`warning-${index}-${item}`}>{item}</li>)}
+                    </ul>
+                  )}
+                </details>
+              </div>
+            )}
+
             {showPreview && <SessionPreview session={session} mode={previewMode} />}
           </section>
 
