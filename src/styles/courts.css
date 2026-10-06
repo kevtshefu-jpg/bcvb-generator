@@ -306,3 +306,30 @@
     padding: 0;
   }
 }
+
+
+/* M4.5D — final mobile court editor containment */
+@media (max-width: 720px) {
+  .court-editor,
+  .court-editor__top,
+  .court-toolbar,
+  .court-legend,
+  .court-object-row {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .court-editor__top input,
+  .court-editor textarea {
+    min-width: 0;
+    width: 100%;
+  }
+  .advanced-court__frame {
+    padding: 8px;
+    border-radius: 14px;
+  }
+  .court-toolbar button,
+  .court-object-row button,
+  .court-editor__top button {
+    min-height: 42px;
+  }
+}
