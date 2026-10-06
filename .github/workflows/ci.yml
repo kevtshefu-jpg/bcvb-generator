@@ -25,8 +25,14 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Session workspace regression tests
         run: npx vitest run src/modules/sessions/SessionTimeline.test.tsx src/components/courts/AdvancedFibaCourt.test.tsx
-      - name: Source unit suite
-        run: npx vitest run src --exclude "**/*.local.test.*"
+      - name: Sessions portable suite
+        run: npx vitest run src/modules/sessions --exclude "**/*.local.test.*"
+      - name: Components suite
+        run: npx vitest run src/components
+      - name: Features suite
+        run: npx vitest run src/features
+      - name: Core source suite
+        run: npx vitest run src/config src/lib src/styles
       - name: Repository test suite
         run: npx vitest run tests
       - name: TypeScript and Vite build
