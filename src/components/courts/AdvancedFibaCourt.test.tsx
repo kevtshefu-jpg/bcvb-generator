@@ -25,8 +25,7 @@ describe('AdvancedFibaCourt workspace', () => {
     const onChange = vi.fn()
 
     render(<AdvancedFibaCourt frames={[first]} onChange={onChange} />)
-    fireEvent.click(screen.getByLabelText('Plus d’actions pour la frame active'))
-    fireEvent.click(screen.getByRole('button', { name: 'Dupliquer' }))
+    fireEvent.click(screen.getByText('Dupliquer'))
 
     const nextFrames = onChange.mock.calls[0][0]
     expect(nextFrames).toHaveLength(2)
@@ -59,8 +58,7 @@ describe('AdvancedFibaCourt workspace', () => {
     const onChange = vi.fn()
 
     render(<AdvancedFibaCourt frames={[first, second]} onChange={onChange} />)
-    fireEvent.click(screen.getByLabelText('Plus d’actions pour la frame active'))
-    fireEvent.click(screen.getByRole('button', { name: 'Terrain entier' }))
+    fireEvent.click(screen.getByText('Terrain entier'))
 
     const nextFrames = onChange.mock.calls[0][0]
     expect(nextFrames[0].courtType).toBe('full')
@@ -76,8 +74,7 @@ describe('AdvancedFibaCourt workspace', () => {
     const onChange = vi.fn()
 
     render(<AdvancedFibaCourt frames={[first]} onChange={onChange} />)
-    fireEvent.click(screen.getByLabelText('Plus d’actions pour la frame active'))
-    fireEvent.click(screen.getByRole('button', { name: 'Réinitialiser terrain' }))
+    fireEvent.click(screen.getByText('Réinitialiser terrain'))
 
     const nextFrames = onChange.mock.calls[0][0]
     expect(nextFrames[0].title).toBe('Frame test')
