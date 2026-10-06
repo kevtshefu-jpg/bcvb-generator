@@ -45,6 +45,29 @@ describe('AdvancedFibaCourt workspace', () => {
     expect(panel).toHaveAttribute('aria-labelledby', tab.id)
   })
 
+  it('n’altère pas les autres frames lors d’un changement d’orientation', () => {
+    const first = createCourtFrame({
+      title: 'Frame 1',
+      courtType: 'half-right',
+      objects: [{ id: 'player-1', type: 'offense_player', x: 0.4, y: 0.5, label: '1' }],
+    })
+    const second = createCourtFrame({
+      title: 'Frame 2',
+      courtType: 'half-left',
+      objects: [{ id: 'ball-2', type: 'ball', x: 0.6, y: 0.4, label: '' }],
+    })
+    const onChange = vi.fn()
+
+    render(<AdvancedFibaCourt frames={[first, second]} onChange={onChange} />)
+    fireEvent.click(screen.getByLabelText('Plus d’actions pour la frame active'))
+    fireEvent.click(screen.getByRole('button', { name: 'Terrain entier' }))
+
+    const nextFrames = onChange.mock.calls[0][0]
+    expect(nextFrames[0].courtType).toBe('full')
+    expect(nextFrames[0].objects).toEqual(first.objects)
+    expect(nextFrames[1]).toEqual(second)
+  })
+
   it('réinitialise la frame sans réintroduire d’objets', () => {
     const first = createCourtFrame({
       title: 'Frame test',
