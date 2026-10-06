@@ -89,6 +89,22 @@ export function SessionTimeline({ session, onChange }: SessionTimelineProps) {
                   event.preventDefault()
                   selectAdjacentSituation(situation.id, -1)
                 }
+                if (event.key === 'Home') {
+                  event.preventDefault()
+                  const firstSituation = session.situations[0]
+                  setActiveSituationId(firstSituation.id)
+                  window.requestAnimationFrame(() => {
+                    document.getElementById(`session-situation-tab-${firstSituation.id}`)?.focus()
+                  })
+                }
+                if (event.key === 'End') {
+                  event.preventDefault()
+                  const lastSituation = session.situations[session.situations.length - 1]
+                  setActiveSituationId(lastSituation.id)
+                  window.requestAnimationFrame(() => {
+                    document.getElementById(`session-situation-tab-${lastSituation.id}`)?.focus()
+                  })
+                }
               }}
             >
               <span>#{situation.order}</span>
