@@ -23,7 +23,11 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-      - name: Unit tests
+      - name: Session timeline tests
+        run: npx vitest run src/modules/sessions/SessionTimeline.test.tsx
+      - name: Court workspace tests
+        run: npx vitest run src/components/courts/AdvancedFibaCourt.test.tsx
+      - name: Full unit suite
         run: npm test
       - name: TypeScript and Vite build
         run: npm run build
