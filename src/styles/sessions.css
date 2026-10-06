@@ -2303,3 +2303,37 @@
     transition: transform .18s ease, opacity .18s ease;
   }
 }
+
+
+/* M4.5E — mobile physical QA: keep the session follow-up compact and off the court */
+@media (max-width: 720px) {
+  .session-builder-page .session-workspace-dock {
+    z-index: 110;
+  }
+
+  .session-builder-page .session-workspace-dock:not([open]) {
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .session-builder-page .session-workspace-dock[open] {
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    left: 8px;
+    max-height: min(46dvh, 360px);
+    overflow: auto;
+  }
+
+  .session-builder-page .session-workspace-dock__panel {
+    grid-template-columns: minmax(0, 1fr);
+    max-height: none;
+    overflow: visible;
+  }
+
+  .session-builder-page .session-workspace-dock .session-dock-actions {
+    grid-column: 1;
+  }
+
+  .session-builder-page .session-workspace-dock .session-dock-actions button {
+    min-height: 44px;
+  }
+}
