@@ -531,11 +531,17 @@
 
 
 @media (min-width: 761px) {
-  .fastdraw-toolbar details.fastdraw-toolbar__group:not([open]) > :not(summary) {
+  .fastdraw-toolbar details.fastdraw-toolbar__group:not([open]) {
     display: flex;
   }
 
-  .fastdraw-toolbar details.fastdraw-toolbar__group:not([open]) {
-    display: flex;
+  .fastdraw-toolbar details.fastdraw-toolbar__group:not([open]) > summary {
+    display: none;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group:not([open]) > button,
+  .fastdraw-toolbar details.fastdraw-toolbar__group:not([open]) > select,
+  .fastdraw-toolbar details.fastdraw-toolbar__group:not([open]) > label {
+    display: inline-flex;
   }
 }
