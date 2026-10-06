@@ -39,12 +39,21 @@ export function buildTechnicalDashboardModel(source: TechnicalDashboardSource, i
   const isoDate = localDay.date
   const todayWeekday = localDay.weekday
   const activeSlots = source.trainingSlots.filter(slot => slot.is_active && slot.valid_from <= isoDate && (!slot.valid_until || slot.valid_until >= isoDate))
+  const locationKey = (value: string | null) => value?.trim().toLocaleLowerCase('fr-FR') || ''
+  const slotsConflict = (slot: (typeof activeSlots)[number], other: (typeof activeSlots)[number]) =>
+    other.id !== slot.id &&
+    other.weekday === slot.weekday &&
+    Boolean(locationKey(slot.location_name)) &&
+    locationKey(slot.location_name) === locationKey(other.location_name) &&
+    slot.start_time < other.end_time &&
+    slot.end_time > other.start_time
   const schedule = activeSlots.map(slot => {
     const team = source.teams.find(item => item.id === slot.team_id)
-    const hasConflict = activeSlots.some(other => other.id !== slot.id && other.weekday === slot.weekday && Boolean(slot.location_name?.trim()) && slot.location_name?.trim().toLowerCase() === other.location_name?.trim().toLowerCase() && slot.start_time < other.end_time && slot.end_time > other.start_time)
+    const hasConflict = activeSlots.some(other => slotsConflict(slot, other))
     return { ...slot, teamName: team?.name || 'Équipe', category: team?.category || '', isToday: slot.weekday === todayWeekday, hasConflict }
   }).sort((a,b)=>Number(b.isToday)-Number(a.isToday)||a.weekday-b.weekday||a.start_time.localeCompare(b.start_time))
   const teamsWithoutActiveSlot = source.teams.filter(team => !activeSlots.some(slot => slot.team_id === team.id)).length
+  const scheduleConflictCount = activeSlots.filter(slot => activeSlots.some(other => slotsConflict(slot, other))).length
 
   return {
     teams,
@@ -56,5 +65,6 @@ export function buildTechnicalDashboardModel(source: TechnicalDashboardSource, i
     alerts,
     schedule,
     teamsWithoutActiveSlot,
+    scheduleConflictCount,
   }
 }
