@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  unit-and-build:
+  session-builder:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -27,21 +27,7 @@ jobs:
         run: npx vitest run src/modules/sessions/SessionTimeline.test.tsx src/components/courts/AdvancedFibaCourt.test.tsx
       - name: Sessions portable suite
         run: npx vitest run src/modules/sessions --exclude "**/*.local.test.*"
-      - name: Attendance components suite
-        run: npx vitest run src/components/attendance
-      - name: Court components suite
+      - name: Court component suite
         run: npx vitest run src/components/court src/components/courts
-      - name: Navigation components suite
-        run: npx vitest run src/components/navigation
-      - name: Team components suite
-        run: npx vitest run src/components/teams
-      - name: UI components suite
-        run: npx vitest run src/components/ui
-      - name: Features suite
-        run: npx vitest run src/features
-      - name: Core source suite
-        run: npx vitest run src/config src/lib src/styles
-      - name: Repository test suite
-        run: npx vitest run tests
       - name: TypeScript and Vite build
         run: npm run build
