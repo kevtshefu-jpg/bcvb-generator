@@ -53,7 +53,7 @@ export function CourtToolbar({
   return (
     <div className="fastdraw-toolbar" aria-label="Outils terrain">
       <details className="fastdraw-toolbar__group fastdraw-toolbar__group--settings">
-        <summary>Terrain <strong>{getReadableModeLabel(mode)}</strong></summary>
+        <summary aria-label={`Réglages du terrain, ${getReadableModeLabel(mode)}`}>Terrain <strong>{getReadableModeLabel(mode)}</strong></summary>
         <select value={mode} onChange={(event) => onModeChange(event.target.value as CourtMode)} aria-label="Mode terrain">
           <option value="half-right">{getReadableModeLabel("half-right")}</option>
           <option value="half-left">{getReadableModeLabel("half-left")}</option>
@@ -66,7 +66,7 @@ export function CourtToolbar({
       </details>
 
       <details className="fastdraw-toolbar__group fastdraw-toolbar__group--tools">
-        <summary>Objets</summary>
+        <summary aria-label="Outils objets">Objets</summary>
         <button type="button" className={isObjectActive("player") ? "is-active" : ""} onClick={() => onSelectObjectTool("player")}>Joueur</button>
         <button type="button" className={isObjectActive("defender") ? "is-active" : ""} onClick={() => onSelectObjectTool("defender")}>Defense</button>
         <button type="button" className={isObjectActive("coach") ? "is-active" : ""} onClick={() => onSelectObjectTool("coach")}>Coach</button>
@@ -77,7 +77,7 @@ export function CourtToolbar({
       </details>
 
       <details className="fastdraw-toolbar__group fastdraw-toolbar__group--tools">
-        <summary>Actions</summary>
+        <summary aria-label="Outils de déplacement et zones">Actions</summary>
         <button type="button" className={isMotionActive("move") ? "is-active" : ""} onClick={() => onSelectMotionTool("move")}>Course</button>
         <button type="button" className={isMotionActive("pass") ? "is-active" : ""} onClick={() => onSelectMotionTool("pass")}>Passe</button>
         <button type="button" className={isMotionActive("dribble") ? "is-active" : ""} onClick={() => onSelectMotionTool("dribble")}>Dribble</button>
@@ -97,7 +97,7 @@ export function CourtToolbar({
       </div>
 
       <details className="fastdraw-toolbar__group fastdraw-toolbar__group--exports">
-        <summary>Export</summary>
+        <summary aria-label="Actions d’export du terrain">Export</summary>
         {onDuplicate && <button type="button" onClick={onDuplicate}>Dupliquer</button>}
         <button type="button" onClick={onExportSvg}>SVG</button>
         <button type="button" onClick={onExportPng}>PNG</button>
