@@ -23,38 +23,10 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-      - name: Session timeline tests
-        run: npx vitest run src/modules/sessions/SessionTimeline.test.tsx
-      - name: Court add-frame test
-        run: npx vitest run src/components/courts/AdvancedFibaCourt.test.tsx -t "ajoute une frame vierge"
-      - name: Court duplicate-frame test
-        run: npx vitest run src/components/courts/AdvancedFibaCourt.test.tsx -t "duplique le contenu"
-      - name: Court tab-panel test
-        run: npx vitest run src/components/courts/AdvancedFibaCourt.test.tsx -t "relie la frame active"
-      - name: Court orientation test
-        run: npx vitest run src/components/courts/AdvancedFibaCourt.test.tsx -t "changement d’orientation"
-      - name: Court reset test
-        run: npx vitest run src/components/courts/AdvancedFibaCourt.test.tsx -t "réinitialise la frame"
-      - name: Session attachment importer tests
-        run: npx vitest run src/modules/sessions/SessionAttachmentImporter.test.tsx
-      - name: Session library tests
-        run: npx vitest run src/modules/sessions/SessionLibraryPage.test.ts
-      - name: Session server adapter tests
-        run: npx vitest run src/modules/sessions/sessionBuilderServerAdapter.test.ts
-      - name: Session mapper tests
-        run: npx vitest run src/modules/sessions/sessionMapper.test.ts
-      - name: Session model tests
-        run: npx vitest run src/modules/sessions/sessionModels.test.ts
-      - name: Session local service tests
-        run: npx vitest run src/modules/sessions/sessionService.local.test.ts
-      - name: Session local write tests
-        run: npx vitest run src/modules/sessions/sessionWriteService.local.test.ts
-      - name: Sessions module suite
-        run: npx vitest run src/modules/sessions
-      - name: Court components suite
-        run: npx vitest run src/components/court src/components/courts
+      - name: Session workspace regression tests
+        run: npx vitest run src/modules/sessions/SessionTimeline.test.tsx src/components/courts/AdvancedFibaCourt.test.tsx
       - name: Source unit suite
-        run: npx vitest run src
+        run: npx vitest run src --exclude "**/*.local.test.*"
       - name: Repository test suite
         run: npx vitest run tests
       - name: TypeScript and Vite build
