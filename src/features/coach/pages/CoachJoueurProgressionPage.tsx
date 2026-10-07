@@ -23,7 +23,7 @@ export default function CoachJoueurProgressionPage() {
     setState('loading')
     setProfile(null)
     if (!id) { setState('error'); return () => { active = false } }
-    void playerProgressionService.readProfile(id).then((next) => {
+    void playerProgressionService.readProfile(id).then(async (next) => {
       if (!active) return
       const [nextTests, nextMonitoring, nextPrograms] = await Promise.all([
         performanceTestService.readPlayer(next.playerId, next.teamId),
