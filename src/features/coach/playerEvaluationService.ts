@@ -50,7 +50,6 @@ export function createPlayerEvaluationService(client: SupabaseClient) {
         coachComment: evaluation.coachComment,
         playerFeedback: evaluation.playerFeedback ?? '',
         parentFeedback: evaluation.parentFeedback ?? '',
-        individualObjective: evaluation.individualObjective ?? null,
         visibleToPlayer: Boolean(evaluation.visibleToPlayer),
         visibleToFamily: Boolean(evaluation.visibleToFamily),
       }
