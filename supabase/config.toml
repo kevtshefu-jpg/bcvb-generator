@@ -1,3 +1,4 @@
+project_id = "bcvb-generator"
 
 [functions.generate-ai-document]
 enabled = true

@@ -38,3 +38,21 @@ jobs:
         run: npx tsc --noEmit
       - name: Vite production build
         run: npx vite build
+
+  database-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start local Supabase and apply migrations
+        run: supabase start
+      - name: Verify migration state
+        run: supabase migration list --local
+      - name: Stop local Supabase
+        if: always()
+        run: supabase stop --no-backup
