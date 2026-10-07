@@ -46,13 +46,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Supabase CLI
+        id: supabase-cli
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.48.3
       - name: Start local Supabase and apply migrations
         run: supabase start
       - name: Verify migration state
         run: supabase migration list --local
       - name: Stop local Supabase
-        if: always()
+        if: always() && steps.supabase-cli.outcome == 'success'
         run: supabase stop --no-backup
