@@ -1,6 +1,6 @@
 import type { PlayerProgressionProfile } from './playerProgressionService'
 import type { PlayerProgram } from './playerProgramService'
-import type { PlayerMonitoringEntry } from './playerMonitoringService'
+import type { MonitoringEntry } from './playerMonitoringService'
 import type { PerformanceTestResult } from './performanceTestService'
 
 export type PlayerBookSnapshot={
