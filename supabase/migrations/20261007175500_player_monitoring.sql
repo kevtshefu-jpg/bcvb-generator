@@ -1,0 +1,59 @@
+-- P4 — canonical player monitoring. No diagnosis; raw observations only.
+begin;
+
+create table if not exists public.player_monitoring_entries (
+ id uuid primary key default gen_random_uuid(),
+ player_id uuid not null references public.players(id) on delete cascade,
+ team_id uuid not null references public.teams(id) on delete cascade,
+ season text not null,
+ monitored_on date not null,
+ session_rpe smallint null check (session_rpe between 0 and 10),
+ session_duration_minutes smallint null check (session_duration_minutes between 0 and 600),
+ fatigue smallint null check (fatigue between 0 and 10),
+ soreness smallint null check (soreness between 0 and 10),
+ sleep_quality smallint null check (sleep_quality between 0 and 10),
+ pain smallint null check (pain between 0 and 10),
+ availability text not null default 'normal' check (availability in ('normal','adaptee','arret')),
+ note text null,
+ created_by uuid not null references auth.users(id),
+ updated_by uuid not null references auth.users(id),
+ created_at timestamptz not null default now(),
+ updated_at timestamptz not null default now(),
+ unique(player_id,team_id,season,monitored_on)
+);
+create index if not exists player_monitoring_entries_player_idx on public.player_monitoring_entries(player_id,season,monitored_on desc);
+alter table public.player_monitoring_entries enable row level security;
+alter table public.player_monitoring_entries force row level security;
+revoke all privileges on table public.player_monitoring_entries from public,anon,authenticated;
+
+create or replace function public.read_player_monitoring(target_player_id uuid,target_team_id uuid default null)
+returns table(entry_id uuid,player_id uuid,team_id uuid,season text,monitored_on date,session_rpe smallint,session_duration_minutes smallint,fatigue smallint,soreness smallint,sleep_quality smallint,pain smallint,availability text,note text,created_at timestamptz,updated_at timestamptz)
+language plpgsql stable security definer set search_path=public,pg_temp as $$
+begin
+ if auth.uid() is null then raise exception 'Authentification requise.' using errcode='42501'; end if;
+ if not public.is_current_user_admin() and public.current_user_role()<>'responsable_technique' and not public.can_access_current_player(target_player_id) then raise exception 'Lecture monitoring interdite.' using errcode='42501'; end if;
+ return query select m.id,m.player_id,m.team_id,m.season,m.monitored_on,m.session_rpe,m.session_duration_minutes,m.fatigue,m.soreness,m.sleep_quality,m.pain,m.availability,m.note,m.created_at,m.updated_at
+ from public.player_monitoring_entries m where m.player_id=target_player_id and (target_team_id is null or m.team_id=target_team_id)
+ and (public.is_current_user_admin() or public.current_user_role()='responsable_technique' or public.can_access_team(m.team_id))
+ order by m.monitored_on desc;
+end $$;
+alter function public.read_player_monitoring(uuid,uuid) owner to postgres;
+revoke all on function public.read_player_monitoring(uuid,uuid) from public,anon,authenticated,service_role;
+grant execute on function public.read_player_monitoring(uuid,uuid) to authenticated;
+
+create or replace function public.save_player_monitoring(target_player_id uuid,target_team_id uuid,target_season text,target_monitored_on date,target_session_rpe smallint,target_session_duration_minutes smallint,target_fatigue smallint,target_soreness smallint,target_sleep_quality smallint,target_pain smallint,target_availability text,target_note text default null)
+returns uuid language plpgsql security definer set search_path=public,pg_temp as $$
+declare result_id uuid;
+begin
+ if not public.can_manage_player_evaluation(target_player_id,target_team_id) then raise exception 'Modification monitoring interdite.' using errcode='42501'; end if;
+ if coalesce(trim(target_season),'')='' or target_monitored_on is null or target_availability not in ('normal','adaptee','arret') then raise exception 'Monitoring incomplet.' using errcode='22023'; end if;
+ insert into public.player_monitoring_entries(player_id,team_id,season,monitored_on,session_rpe,session_duration_minutes,fatigue,soreness,sleep_quality,pain,availability,note,created_by,updated_by)
+ values(target_player_id,target_team_id,trim(target_season),target_monitored_on,target_session_rpe,target_session_duration_minutes,target_fatigue,target_soreness,target_sleep_quality,target_pain,target_availability,nullif(trim(target_note),''),auth.uid(),auth.uid())
+ on conflict(player_id,team_id,season,monitored_on) do update set session_rpe=excluded.session_rpe,session_duration_minutes=excluded.session_duration_minutes,fatigue=excluded.fatigue,soreness=excluded.soreness,sleep_quality=excluded.sleep_quality,pain=excluded.pain,availability=excluded.availability,note=excluded.note,updated_by=auth.uid(),updated_at=now()
+ returning id into result_id; return result_id;
+end $$;
+alter function public.save_player_monitoring(uuid,uuid,text,date,smallint,smallint,smallint,smallint,smallint,smallint,text,text) owner to postgres;
+revoke all on function public.save_player_monitoring(uuid,uuid,text,date,smallint,smallint,smallint,smallint,smallint,smallint,text,text) from public,anon,authenticated,service_role;
+grant execute on function public.save_player_monitoring(uuid,uuid,text,date,smallint,smallint,smallint,smallint,smallint,smallint,text,text) to authenticated;
+
+commit;
