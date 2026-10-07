@@ -1,0 +1,2 @@
+import{describe,expect,it}from'vitest';import{buildPlayerBookExportModel}from'./playerBookExportModel'
+describe('Player Book export contract',()=>{it('signale les sections sans source au lieu de les inventer',()=>{const s={player:{id:'p',firstName:'Élisa',lastName:'Test',teamName:'SF1',season:'2026-2027'},evaluationCount:0,activeObjectiveCount:0,tests:[],monitoring:[],programs:[],generatedAt:'x'};const x=buildPlayerBookExportModel(s,'joueur','pdf');expect(x.sections.filter(v=>v.available).map(v=>v.id)).toEqual(['profil']);expect(x.filenameBase).toContain('elisa-test')})})
