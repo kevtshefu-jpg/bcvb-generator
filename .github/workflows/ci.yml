@@ -30,6 +30,9 @@ jobs:
       - name: Court component suite
         run: npx vitest run src/components/court src/components/courts
       - name: Performance canonical services
+        env:
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_ANON_KEY: ci-placeholder-anon-key
         run: npx vitest run src/features/coach/playerProgressionService.test.ts src/features/coach/playerEvaluationService.test.ts src/features/coach/playerObjectiveService.test.ts
       - name: TypeScript check
         run: npx tsc --noEmit
