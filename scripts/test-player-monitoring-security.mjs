@@ -36,16 +36,19 @@ for (const name of ['admin', 'technicalManager', 'coachA', 'coachSameTeam']) {
   check(!saved.error && typeof saved.data === 'string', `${name}: write allowed`)
   const read = await clients[name].rpc('read_player_monitoring', readArgs)
   check(!read.error && read.data.some(r => r.note === input.target_note), `${name}: read allowed`)
+  const summary = await clients[name].rpc('read_player_monitoring_summary', readArgs)
+  check(!summary.error && summary.data.length === 1 && summary.data[0].entry_count === read.data.length && summary.data[0].last_monitored_on === input.target_monitored_on, `${name}: factual summary allowed`)
+  check(Object.keys(summary.data[0]).sort().join(',') === 'entry_count,last_monitored_on', `${name}: summary contains no sensitive observations`)
 }
 for (const name of ['coachB', 'coachParentOnly', 'coachTeamStaffOnly', 'teamStaff', 'parentReferent', 'dirigeant', 'member', 'inactive', 'authenticatedWithoutProfile']) {
-  for (const [rpc, args] of [['read_player_monitoring', readArgs], ['save_player_monitoring', input]]) {
+  for (const [rpc, args] of [['read_player_monitoring_summary', readArgs], ['read_player_monitoring', readArgs], ['save_player_monitoring', input]]) {
     const result = await clients[name].rpc(rpc, args)
     check(result.error?.code === '42501', `${name}: ${rpc} denied`)
   }
   const helper = await clients[name].rpc('can_access_player_monitoring', readArgs)
   check(!helper.error && helper.data === false, `${name}: helper returns false`)
 }
-for (const [rpc, args] of [['read_player_monitoring', readArgs], ['save_player_monitoring', input], ['can_access_player_monitoring', readArgs]]) {
+for (const [rpc, args] of [['read_player_monitoring_summary', readArgs], ['read_player_monitoring', readArgs], ['save_player_monitoring', input], ['can_access_player_monitoring', readArgs]]) {
   check((await anon.rpc(rpc, args)).error?.code === '42501', `anonymous: ${rpc} denied`)
 }
 for (const name of ['admin', 'coachA', 'parentReferent']) {
@@ -67,6 +70,7 @@ const changed = await clients.admin.rpc('deactivate_team_membership', { target_m
 assert.equal(changed.error, null)
 try {
   check((await clients.coachA.rpc('read_player_monitoring', readArgs)).error?.code === '42501', 'inactive membership: read denied')
+  check((await clients.coachA.rpc('read_player_monitoring_summary', readArgs)).error?.code === '42501', 'inactive membership: summary denied')
   check((await clients.coachA.rpc('save_player_monitoring', input)).error?.code === '42501', 'inactive membership: write denied')
 } finally {
   const restored = await clients.admin.rpc('add_or_reactivate_team_membership', { target_player_id: playerA, target_team_id: teamA, target_season: team.season })
@@ -76,7 +80,7 @@ const container = execFileSync('docker', ['ps', '--filter', 'name=supabase_db_',
 assert.ok(container)
 function sql(query) { return execFileSync('docker', ['exec', container, 'psql', '-U', 'postgres', '-d', 'postgres', '-X', '-A', '-t', '-v', 'ON_ERROR_STOP=1', '-c', query], { encoding: 'utf8' }).trim() }
 for (const signature of [
- 'public.can_access_player_monitoring(uuid,uuid)', 'public.read_player_monitoring(uuid,uuid)',
+ 'public.read_player_monitoring_summary(uuid,uuid)', 'public.can_access_player_monitoring(uuid,uuid)', 'public.read_player_monitoring(uuid,uuid)',
  'public.save_player_monitoring(uuid,uuid,text,date,smallint,smallint,smallint,smallint,smallint,smallint,text,text)',
 ]) {
   check(sql(`select p.prosecdef and p.proowner=(select oid from pg_roles where rolname='postgres')
