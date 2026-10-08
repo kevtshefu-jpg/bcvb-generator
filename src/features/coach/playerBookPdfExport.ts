@@ -1,3 +1,4 @@
+import { normalizePlayerBookPdfText, registerPlayerBookPdfFonts } from './playerBookPdfFont'
 import { objectiveStatusLabel, type PlayerBookSnapshot } from './playerBookAggregation'
 import { buildPlayerBookExportModel, canExportPlayerMonitoring, type PlayerBookAudience } from './playerBookExportModel'
 
@@ -20,20 +21,20 @@ export function playerBookToText(snapshot:PlayerBookSnapshot,audience:PlayerBook
 export async function buildPlayerBookPdf(snapshot:PlayerBookSnapshot,audience:PlayerBookAudience){
  const {model,text}=playerBookToText(snapshot,audience)
  const {jsPDF}=await import('jspdf')
+ const printableText=normalizePlayerBookPdfText(text)
  const pdf=new jsPDF({unit:'pt',format:'a4'})
+ registerPlayerBookPdfFonts(pdf)
  const margin=48,width=pdf.internal.pageSize.getWidth(),height=pdf.internal.pageSize.getHeight(),maxWidth=width-2*margin,bottom=height-64
  pdf.setProperties({title:model.title,subject:'BCVB Performance System',creator:'BCVB Référentiel'})
  let y=margin
- const sectionTitles=new Set(model.sections.filter(s=>s.available).map(s=>s.title))
- const objectiveTitles=new Set((snapshot.objectives??[]).map(o=>`${o.title} — ${o.domain} — ${objectiveStatusLabel(o.status)}`))
+ const sectionTitles=new Set(model.sections.filter(s=>s.available).map(s=>s.title.normalize('NFC')))
+ const objectiveTitles=new Set((snapshot.objectives??[]).map(o=>`${o.title} — ${o.domain} — ${objectiveStatusLabel(o.status)}`.normalize('NFC')))
  const nextPage=()=>{pdf.addPage();y=margin}
  const writeLine=(value:string,kind:'title'|'section'|'item'|'body')=>{
   const size=kind==='title'?18:kind==='section'?12:10
   const step=kind==='title'?24:kind==='section'?18:14
-  pdf.setFont('helvetica',kind==='body'?'normal':'bold');pdf.setFontSize(size)
-  // Standard Helvetica supports French WinAnsi text, but not Unicode arrows.
-  const printable=value.replace(/→/g,' au ').replace(/←/g,' vers ').replace(/\u00a0|\u202f/g,' ')
-  const wrapped=pdf.splitTextToSize(printable,maxWidth) as string[]
+  pdf.setFont('BCVB',kind==='body'?'normal':'bold');pdf.setFontSize(size)
+  const wrapped=pdf.splitTextToSize(value,maxWidth) as string[]
   // Keep a section heading with at least two following body lines.
   const required=wrapped.length*step+(kind==='section'||kind==='item'?28:0)
   if(y+required>bottom&&y>margin)nextPage()
@@ -41,7 +42,7 @@ export async function buildPlayerBookPdf(snapshot:PlayerBookSnapshot,audience:Pl
   for(const line of wrapped){if(y+step>bottom)nextPage();pdf.text(line,margin,y);y+=step}
   if(kind==='title')y+=8
  }
- for(const [index,line] of text.split('\n').entries()){
+ for(const [index,line] of printableText.split('\n').entries()){
   if(!line){y+=10;continue}
   // The profile is already present in the document title/team/season fields.
   if(line==='Profil')continue
@@ -51,7 +52,7 @@ export async function buildPlayerBookPdf(snapshot:PlayerBookSnapshot,audience:Pl
  const total=pdf.getNumberOfPages()
  for(let page=1;page<=total;page++){
   pdf.setPage(page);pdf.setDrawColor(180,25,35);pdf.line(margin,height-46,width-margin,height-46)
-  pdf.setFont('helvetica','normal');pdf.setFontSize(8);pdf.setTextColor(70,70,70)
+  pdf.setFont('BCVB','normal');pdf.setFontSize(8);pdf.setTextColor(70,70,70)
   pdf.text(`BCVB - Player Book - ${audience==='staff'?'Usage interne':audience}`,margin,height-30)
   pdf.text(`${page} / ${total}`,width-margin,height-30,{align:'right'})
  }

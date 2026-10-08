@@ -39,6 +39,9 @@ describe('internal book page',()=>{
   mocks.read.mockResolvedValue({...book(),evaluations:[{id:'e1',date:'2026-10-08',period:'Bilan de rentrée',category:'U15F',coachComment:'PRIVATE',scores:[1]}]})
   render(view());await screen.findByText('2026-10-08 · Bilan de rentrée · U15F');expect(screen.queryByText('PRIVATE')).not.toBeInTheDocument()
  })
+ it('offers XLSX when PDF characters are unsupported',async()=>{
+  mocks.pdf.mockRejectedValue(new Error('PLAYER_BOOK_PDF_UNSUPPORTED_CHARACTER'));render(view());await screen.findByText('U15F · 2026-2027');fireEvent.click(screen.getByText('Exporter PDF'));expect(await screen.findByRole('alert')).toHaveTextContent('Utilisez l’export XLSX');expect(mocks.save).not.toHaveBeenCalled()
+ })
  it('cancels an export when the player changes',async()=>{
   let resolve!:(value:ReturnType<typeof book>)=>void
   mocks.read.mockResolvedValueOnce(book()).mockImplementationOnce(()=>new Promise(r=>{resolve=r})).mockResolvedValueOnce(book('p2'))
