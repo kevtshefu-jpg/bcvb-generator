@@ -17,21 +17,32 @@ export default function CoachJoueurProgressionPage() {
   const [tests, setTests] = useState<PerformanceTestResult[]>([])
   const [monitoring, setMonitoring] = useState<MonitoringEntry[]>([])
   const [programs, setPrograms] = useState<PlayerProgram[]>([])
+  const [sourceErrors, setSourceErrors] = useState<string[]>([])
 
   useEffect(() => {
     let active = true
     setState('loading')
     setProfile(null)
+    setSourceErrors([])
+    setTests([]); setMonitoring([]); setPrograms([])
     if (!id) { setState('error'); return () => { active = false } }
     void playerProgressionService.readProfile(id).then(async (next) => {
       if (!active) return
-      const [nextTests, nextMonitoring, nextPrograms] = await Promise.all([
+      const [nextTests, nextMonitoring, nextPrograms] = await Promise.allSettled([
         performanceTestService.readPlayer(next.playerId, next.teamId),
         playerMonitoringService.readPlayer(next.playerId, next.teamId),
         playerProgramService.readPlayer(next.playerId, next.teamId),
       ])
       if (!active) return
-      setProfile(next); setTests(nextTests); setMonitoring(nextMonitoring); setPrograms(nextPrograms)
+      const errors: string[] = []
+      if (nextTests.status === 'rejected') errors.push('tests physiques')
+      if (nextMonitoring.status === 'rejected') errors.push('suivi charge / disponibilité')
+      if (nextPrograms.status === 'rejected') errors.push('programmes')
+      setSourceErrors(errors)
+      setProfile(next)
+      setTests(nextTests.status === 'fulfilled' ? nextTests.value : [])
+      setMonitoring(nextMonitoring.status === 'fulfilled' ? nextMonitoring.value : [])
+      setPrograms(nextPrograms.status === 'fulfilled' ? nextPrograms.value : [])
       setState('ready')
     }).catch(() => {
       if (active) setState('error')
@@ -82,7 +93,8 @@ export default function CoachJoueurProgressionPage() {
 
           <section className="bcvb-tool-card">
             <h2>Performance System</h2>
-            {performance ? <dl className="roster-profile-list"><div><dt>Tests physiques</dt><dd>{performance.testCount}{performance.lastTestDate ? ` · dernier : ${performance.lastTestDate}` : ''}</dd></div><div><dt>Suivis charge / disponibilité</dt><dd>{performance.monitoringCount}{performance.lastMonitoringDate ? ` · dernier : ${performance.lastMonitoringDate}` : ''}</dd></div><div><dt>Programmes</dt><dd>{performance.activeProgramCount} actif(s) · {performance.programCount} total</dd></div></dl> : null}<p>Les indicateurs ci-dessus sont factuels. Aucun score de performance, diagnostic ou norme physique n’est déduit automatiquement.</p>
+            {sourceErrors.length > 0 ? <p role="alert">Sources indisponibles : {sourceErrors.join(', ')}. Les valeurs correspondantes ne sont pas disponibles.</p> : null}
+            {performance ? <dl className="roster-profile-list"><div><dt>Tests physiques</dt><dd>{sourceErrors.includes('tests physiques') ? 'Indisponible' : performance.testCount}{!sourceErrors.includes('tests physiques') && performance.lastTestDate ? ` · dernier : ${performance.lastTestDate}` : ''}</dd></div><div><dt>Suivis charge / disponibilité</dt><dd>{sourceErrors.includes('suivi charge / disponibilité') ? 'Indisponible' : performance.monitoringCount}{!sourceErrors.includes('suivi charge / disponibilité') && performance.lastMonitoringDate ? ` · dernier : ${performance.lastMonitoringDate}` : ''}</dd></div><div><dt>Programmes</dt><dd>{sourceErrors.includes('programmes') ? 'Indisponible' : `${performance.activeProgramCount} actif(s) · ${performance.programCount} total`}</dd></div></dl> : null}<p>Les indicateurs ci-dessus sont factuels. Aucun score de performance, diagnostic ou norme physique n’est déduit automatiquement.</p>
           </section>
         </>
       ) : null}
