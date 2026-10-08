@@ -1,4 +1,4 @@
-import type { PlayerBookSnapshot } from './playerBookAggregation'
+import { objectiveStatusLabel, type PlayerBookSnapshot } from './playerBookAggregation'
 import { buildPlayerBookExportModel, canExportPlayerMonitoring, type PlayerBookAudience } from './playerBookExportModel'
 
 export function playerBookToText(snapshot:PlayerBookSnapshot,audience:PlayerBookAudience){
@@ -8,6 +8,7 @@ export function playerBookToText(snapshot:PlayerBookSnapshot,audience:PlayerBook
   if(!section.available)continue
   lines.push('',section.title)
   if(section.id==='evaluations-objectifs')lines.push(`Évaluations : ${snapshot.evaluationCount}`,`Objectifs actifs : ${snapshot.activeObjectiveCount}`)
+  if(section.id==='objectifs')for(const o of snapshot.objectives??[]){lines.push(`${o.title} — ${o.domain} — ${objectiveStatusLabel(o.status)}`,`Objectif : ${o.targetDescription}`,`Critère observable : ${o.observableCriterion}`);if(o.quantifiableCriterion)lines.push(`Critère quantifiable : ${o.quantifiableCriterion}`);if(o.deadline)lines.push(`Échéance : ${o.deadline}`)}
   if(section.id==='tests')lines.push(...snapshot.tests.map(t=>`${t.testName} — ${t.value} ${t.unit} — ${t.measuredAt}`))
   if(section.id==='monitoring' && canExportPlayerMonitoring(audience))lines.push(...snapshot.monitoring.map(m=>`${m.monitoredOn} — disponibilité : ${m.availability}`))
   if(section.id==='programmes')lines.push(...snapshot.programs.map(p=>`${p.title} — ${p.startDate} → ${p.endDate} — niveau ${p.level}`))

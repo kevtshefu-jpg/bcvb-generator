@@ -38,7 +38,7 @@ jobs:
         env:
           VITE_SUPABASE_URL: https://example.supabase.co
           VITE_SUPABASE_ANON_KEY: ci-placeholder-anon-key
-        run: npx vitest run src/features/coach/playerStaffBookService.test.ts src/features/coach/pages/CoachPlayerBookPage.test.tsx
+        run: npx vitest run src/features/coach/playerStaffBookService.test.ts src/features/coach/playerBookObjectives.test.ts src/features/coach/pages/CoachPlayerBookPage.test.tsx
       - name: TypeScript check
         run: npx tsc --noEmit
       - name: Vite production build
