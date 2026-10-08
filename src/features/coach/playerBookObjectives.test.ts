@@ -6,7 +6,7 @@ import {buildPlayerBookPdf,playerBookToText} from './playerBookPdfExport'
 import {buildPlayerBookXlsx} from './playerBookXlsxExport'
 import type {PlayerBookAudience} from './playerBookExportModel'
 const objective:PlayerBookObjective={id:'o1',playerId:'p1',teamId:'t1',season:'2026-2027',title:'PEDAGOGICAL_OBJECTIVE',domain:'skills',targetDescription:'Créer un avantage',observableCriterion:'Déborder le défenseur',quantifiableCriterion:'Réussir 4 essais sur 5',deadline:'Dans 4 semaines',status:'en_cours'}
-const book:PlayerBookSnapshot={player:{id:'p1',teamId:'t1',season:'2026-2027',firstName:'Alice',lastName:'Test',teamName:'U15F'},evaluationCount:0,activeObjectiveCount:1,objectives:[objective],monitoring:[],tests:[],programs:[],generatedAt:'2026-10-08T00:00:00Z'}
+const book:PlayerBookSnapshot={player:{id:'p1',teamId:'t1',season:'2026-2027',firstName:'Alice',lastName:'Test',teamName:'U15F'},evaluationCount:0,evaluations:[],activeObjectiveCount:1,objectives:[objective],monitoring:[],tests:[],programs:[],generatedAt:'2026-10-08T00:00:00Z'}
 describe('internal pedagogical objectives',()=>{
  it('maps canonical content and strips unrelated fields',()=>{
   const result=mapStaffBook({...book,objectives:[{...objective,linkedSessionIds:['PRIVATE_SESSION'],note:'PRIVATE_NOTE'}]},'p1')
