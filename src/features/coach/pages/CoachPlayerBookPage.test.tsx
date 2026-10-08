@@ -35,6 +35,10 @@ describe('internal book page',()=>{
   render(view());await screen.findByText('Premier pas · En cours')
   expect(screen.getByText('Critère observable : Déborder')).toBeInTheDocument();expect(screen.getByText('Critère quantifiable : 4 sur 5')).toBeInTheDocument();expect(screen.getByText('Échéance : 4 semaines')).toBeInTheDocument()
  })
+ it('renders evaluation metadata without scores or comments',async()=>{
+  mocks.read.mockResolvedValue({...book(),evaluations:[{id:'e1',date:'2026-10-08',period:'Bilan de rentrée',category:'U15F',coachComment:'PRIVATE',scores:[1]}]})
+  render(view());await screen.findByText('2026-10-08 · Bilan de rentrée · U15F');expect(screen.queryByText('PRIVATE')).not.toBeInTheDocument()
+ })
  it('cancels an export when the player changes',async()=>{
   let resolve!:(value:ReturnType<typeof book>)=>void
   mocks.read.mockResolvedValueOnce(book()).mockImplementationOnce(()=>new Promise(r=>{resolve=r})).mockResolvedValueOnce(book('p2'))

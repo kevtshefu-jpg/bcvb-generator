@@ -1,6 +1,7 @@
 import { assertPlayerBookScope, type PlayerBookSnapshot } from './playerBookAggregation'
 // Sensitive monitoring is excluded from every downloadable audience until explicit, audited authorization exists.
 export const canExportPlayerMonitoring=(_audience:PlayerBookAudience):boolean=>false
+export const canExportBookEvaluations=(audience:PlayerBookAudience):boolean=>audience==='staff'
 export const canExportBookObjectives=(audience:PlayerBookAudience):boolean=>audience==='staff'
 export type PlayerBookAudience='joueur'|'staff'|'parent'
 export type PlayerBookExportFormat='pdf'|'docx'|'xlsx'
@@ -14,6 +15,7 @@ export function buildPlayerBookExportModel(snapshot:PlayerBookSnapshot,audience:
  return{title:`BCVB — Player Book — ${name}`,filenameBase:`bcvb-player-book-${safe(name)}-${safe(snapshot.player.season)}-${audience}`,audience,format,sections:[
  {id:'profil',title:'Profil',available:true},
  {id:'evaluations-objectifs',title:'Évaluations et objectifs',available:snapshot.evaluationCount>0||snapshot.activeObjectiveCount>0},
+ {id:'evaluations',title:'Registre des évaluations',available:canExportBookEvaluations(audience)&&Boolean(snapshot.evaluations?.length)},
  {id:'objectifs',title:'Objectifs pédagogiques',available:canExportBookObjectives(audience)&&Boolean(snapshot.objectives?.length)},
  {id:'tests',title:'Tests physiques',available:snapshot.tests.length>0},
  {id:'monitoring',title:'Suivi et charge',available:canExportPlayerMonitoring(audience)&&snapshot.monitoring.length>0},
