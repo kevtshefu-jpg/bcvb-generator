@@ -39,8 +39,16 @@ left join pg_proc p on p.oid = to_regprocedure(signature);
 select
   relrowsecurity as rls_enabled,
   relforcerowsecurity as rls_forced,
-  has_table_privilege('authenticated', oid, 'SELECT,INSERT,UPDATE,DELETE') as authenticated_raw_access,
-  has_table_privilege('anon', oid, 'SELECT,INSERT,UPDATE,DELETE') as anon_raw_access
+  -- Check each privilege independently: a comma-separated list tests whether
+  -- ANY listed privilege is held, not whether ALL are held.
+  (has_table_privilege('authenticated', oid, 'SELECT')
+    or has_table_privilege('authenticated', oid, 'INSERT')
+    or has_table_privilege('authenticated', oid, 'UPDATE')
+    or has_table_privilege('authenticated', oid, 'DELETE')) as authenticated_raw_access,
+  (has_table_privilege('anon', oid, 'SELECT')
+    or has_table_privilege('anon', oid, 'INSERT')
+    or has_table_privilege('anon', oid, 'UPDATE')
+    or has_table_privilege('anon', oid, 'DELETE')) as anon_raw_access
 from pg_class
 where oid = to_regclass('public.player_monitoring_entries');
 
