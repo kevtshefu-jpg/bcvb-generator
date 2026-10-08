@@ -1,6 +1,6 @@
 import type { RosterMember, RosterTeam } from '../rosterModels'
 
-export function RosterList({ team, members, canDeactivate = false, onRequestDeactivate }: { team: RosterTeam; members: RosterMember[]; canDeactivate?: boolean; onRequestDeactivate?: (member: RosterMember) => void }) {
+export function RosterList({ team, members, canOpenBook = false, canDeactivate = false, onRequestDeactivate }: { team: RosterTeam; members: RosterMember[]; canOpenBook?: boolean; canDeactivate?: boolean; onRequestDeactivate?: (member: RosterMember) => void }) {
   return (
     <section className="roster-read-card" aria-labelledby="roster-list-heading">
       <div className="roster-read-section-heading">
@@ -18,7 +18,7 @@ export function RosterList({ team, members, canDeactivate = false, onRequestDeac
           <tbody>
             {members.map((member) => (
               <tr key={member.membershipId}>
-                <td data-label="Joueur"><strong>{member.firstName} {member.lastName}</strong></td>
+                <td data-label="Joueur"><strong>{member.firstName} {member.lastName}</strong>{canOpenBook ? <p><a href={`/coach/joueurs/${encodeURIComponent(member.playerId)}/player-book`}>Player Book interne</a></p> : null}</td>
                 <td data-label="Catégorie">{member.playerCategory ?? '—'}</td>
                 <td data-label="Statut"><span className="roster-read-status">{member.membershipStatus}</span></td>
                 {canDeactivate ? <td data-label="Action"><button type="button" onClick={() => onRequestDeactivate?.(member)}>Retirer de l’effectif</button></td> : null}

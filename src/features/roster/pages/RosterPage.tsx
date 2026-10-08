@@ -426,7 +426,7 @@ export default function RosterPage({
       {searchOpen && membershipSuccess ? <p className="roster-read-card" role="status">{membershipSuccess}</p> : null}
       {deactivateCandidate && selectedTeam ? <RosterMembershipDeactivatePanel member={deactivateCandidate} team={selectedTeam} submitting={deactivateSubmitting} errorMessage={deactivateError} onConfirm={confirmDeactivate} onCancel={() => { deactivateRequestId.current += 1; setDeactivateCandidate(null); setDeactivateSubmitting(false); setDeactivateError(null) }} /> : null}
       {deactivateSuccess ? <p className="roster-read-card" role="status">{deactivateSuccess}</p> : null}
-      {status === 'READY' && selectedTeam ? <RosterList team={selectedTeam} members={members} canDeactivate={Boolean(capabilities?.canDeactivateMembership)} onRequestDeactivate={(member) => { setDeactivateSuccess(null); setDeactivateError(null); setDeactivateCandidate(member) }} /> : null}
+      {status === 'READY' && selectedTeam ? <RosterList team={selectedTeam} members={members} canOpenBook={['admin','responsable_technique','coach','team_staff'].includes(profile?.role ?? '')} canDeactivate={Boolean(capabilities?.canDeactivateMembership)} onRequestDeactivate={(member) => { setDeactivateSuccess(null); setDeactivateError(null); setDeactivateCandidate(member) }} /> : null}
       {status !== 'READY' ? <RosterStatePanel status={status} team={selectedTeam} onRetry={status === 'ERROR' ? refresh : undefined} /> : null}
       {capabilities?.canManageRoster ? <p className="sr-only">Votre profil dispose de capacités de gestion serveur.</p> : null}
     </main>

@@ -2,7 +2,7 @@
 
 ## État vérifié dans le code
 
-Les fonctions d’agrégation et de génération PDF/XLSX existent. Aucun appel à ces générateurs n’est actuellement raccordé à une page routée. Leurs tests ne prouvent donc pas un parcours de téléchargement connecté en production.
+Les fonctions d’agrégation et de génération PDF/XLSX existent. P11.1 les raccorde à `/coach/joueurs/:id/player-book`, réservé aux rôles admin, responsable technique, coach et team_staff. L’accès est également contrôlé par la RPC dédiée `read_player_staff_book`, qui vérifie les droits existants sur le joueur et son équipe. Le lien est disponible depuis le profil de progression. Les tests ne prouvent pas un parcours connecté en production.
 
 Le snapshot conserve désormais l’identifiant canonique de l’équipe. Chaque test, observation de monitoring et programme doit correspondre exactement au joueur, à l’équipe et à la saison du livre. L’agrégation refuse un mélange ; les deux générateurs contrôlent de nouveau ce périmètre avant de produire le document, y compris pour un snapshot construit directement ou modifié après agrégation.
 
@@ -19,6 +19,12 @@ Le monitoring reste exclu des exports pour les trois destinataires. P10.6 n’ac
 Avant de raccorder une distribution à un joueur ou parent, il reste à établir le lien canonique entre compte, joueur et destinataire, vérifier les droits côté serveur et arrêter les règles métier/juridiques de diffusion. Le rôle `parent_referent` d’une équipe ne suffit pas à prouver une relation parent-enfant.
 
 Le contrat de format mentionne DOCX, mais aucun générateur DOCX n’est implémenté. PDF/XLSX seuls sont testés ici.
+
+## Parcours interne autorisé (P11.1)
+
+Kevin a retenu le parcours interne coach/staff, sans diffusion familiale. La RPC retourne un snapshot cohérent de la saison canonique du profil : identité, compteurs d’évaluations/objectifs, résultats de tests et informations de programmes nécessaires aux exports existants. Elle ne lit pas le monitoring et n’inclut ni notes de tests, ni contenu des évaluations, ni sécurité détaillée/semaines/séances des programmes. Aucun destinataire familial n’est sélectionnable.
+
+Le téléchargement recharge le snapshot depuis le serveur afin de vérifier à nouveau les droits. Une erreur de lecture interdit l’export ; aucun fallback vers des sources détaillées. Un changement de joueur ou la fermeture de la page annule les téléchargements en préparation. PDF/XLSX sont générés localement, sans sauvegarde persistante ni envoi à un tiers. Les autorisations sont vérifiées lors de la lecture ; cela ne permet pas de reprendre un fichier déjà téléchargé si les droits sont retirés ultérieurement.
 
 ## Audit des sources et destinataires (P10.7)
 
