@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { playerProgressionService, type PlayerProgressionProfile } from '../playerProgressionService'
+import { performanceTestService, type PerformanceTestResult } from '../performanceTestService'
+import { playerMonitoringService, type MonitoringEntry } from '../playerMonitoringService'
+import { playerProgramService, type PlayerProgram } from '../playerProgramService'
+import { buildPlayerPerformanceDashboard } from '../playerPerformanceDashboard'
 
 function statusLabel(value: string | null, fallback: string) {
   return value?.trim() || fallback
@@ -10,21 +14,32 @@ export default function CoachJoueurProgressionPage() {
   const { id = '' } = useParams()
   const [profile, setProfile] = useState<PlayerProgressionProfile | null>(null)
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [tests, setTests] = useState<PerformanceTestResult[]>([])
+  const [monitoring, setMonitoring] = useState<MonitoringEntry[]>([])
+  const [programs, setPrograms] = useState<PlayerProgram[]>([])
 
   useEffect(() => {
     let active = true
     setState('loading')
     setProfile(null)
     if (!id) { setState('error'); return () => { active = false } }
-    void playerProgressionService.readProfile(id).then((next) => {
+    void playerProgressionService.readProfile(id).then(async (next) => {
       if (!active) return
-      setProfile(next)
+      const [nextTests, nextMonitoring, nextPrograms] = await Promise.all([
+        performanceTestService.readPlayer(next.playerId, next.teamId),
+        playerMonitoringService.readPlayer(next.playerId, next.teamId),
+        playerProgramService.readPlayer(next.playerId, next.teamId),
+      ])
+      if (!active) return
+      setProfile(next); setTests(nextTests); setMonitoring(nextMonitoring); setPrograms(nextPrograms)
       setState('ready')
     }).catch(() => {
       if (active) setState('error')
     })
     return () => { active = false }
   }, [id])
+
+  const performance = profile ? buildPlayerPerformanceDashboard(profile, tests, monitoring, programs) : null
 
   return (
     <main className="bcvb-page coach-tool-page" aria-busy={state === 'loading'}>
@@ -67,7 +82,7 @@ export default function CoachJoueurProgressionPage() {
 
           <section className="bcvb-tool-card">
             <h2>Performance System</h2>
-            <p>Les évaluations et objectifs sont maintenant reliés au profil canonique. Tests physiques, charge, prévention et Player Books restent volontairement non affichés tant que leurs sources structurées ne sont pas validées.</p>
+            {performance ? <dl className="roster-profile-list"><div><dt>Tests physiques</dt><dd>{performance.testCount}{performance.lastTestDate ? ` · dernier : ${performance.lastTestDate}` : ''}</dd></div><div><dt>Suivis charge / disponibilité</dt><dd>{performance.monitoringCount}{performance.lastMonitoringDate ? ` · dernier : ${performance.lastMonitoringDate}` : ''}</dd></div><div><dt>Programmes</dt><dd>{performance.activeProgramCount} actif(s) · {performance.programCount} total</dd></div></dl> : null}<p>Les indicateurs ci-dessus sont factuels. Aucun score de performance, diagnostic ou norme physique n’est déduit automatiquement.</p>
           </section>
         </>
       ) : null}
