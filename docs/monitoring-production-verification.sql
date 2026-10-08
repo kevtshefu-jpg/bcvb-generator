@@ -2,7 +2,7 @@
 -- Returns catalog/migration metadata only; never reads player observations.
 select version
 from supabase_migrations.schema_migrations
-where version in ('20261008090000', '20261008093000')
+where version in ('20261008090000', '20261008093000', '20261008100000')
 order by version;
 
 select
@@ -20,6 +20,10 @@ select
   ) as public_execute,
   pg_get_function_result(p.oid) as result_contract
 from (values
+  ('public.can_read_player_performance_scope(uuid,uuid)'),
+  ('public.read_player_performance_tests(uuid,uuid)'),
+  ('public.read_player_programs(uuid,uuid)'),
+  ('public.save_player_performance_test(uuid,uuid,text,text,text,date,numeric,text,text,text)'),
   ('public.can_access_player_monitoring(uuid,uuid)'),
   ('public.read_player_monitoring(uuid,uuid)'),
   ('public.read_player_monitoring_summary(uuid,uuid)'),
@@ -35,7 +39,7 @@ select
 from pg_class
 where oid = to_regclass('public.player_monitoring_entries');
 
--- Expected: both migration versions; installed/definer/owner/search_path true;
+-- Expected: all three migration versions; installed/definer/owner/search_path true;
 -- authenticated execute true; anon/service_role/public execute false;
 -- summary result only entry_count bigint and last_monitored_on date;
 -- RLS true/true and raw access false/false.
