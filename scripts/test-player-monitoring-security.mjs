@@ -37,7 +37,7 @@ for (const name of ['admin', 'technicalManager', 'coachA', 'coachSameTeam']) {
   const read = await clients[name].rpc('read_player_monitoring', readArgs)
   check(!read.error && read.data.some(r => r.note === input.target_note), `${name}: read allowed`)
 }
-for (const name of ['coachB', 'teamStaff', 'parentReferent', 'dirigeant', 'member', 'inactive', 'authenticatedWithoutProfile']) {
+for (const name of ['coachB', 'coachParentOnly', 'coachTeamStaffOnly', 'teamStaff', 'parentReferent', 'dirigeant', 'member', 'inactive', 'authenticatedWithoutProfile']) {
   for (const [rpc, args] of [['read_player_monitoring', readArgs], ['save_player_monitoring', input]]) {
     const result = await clients[name].rpc(rpc, args)
     check(result.error?.code === '42501', `${name}: ${rpc} denied`)
