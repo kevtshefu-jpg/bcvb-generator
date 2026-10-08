@@ -10,7 +10,8 @@ set search_path = public, pg_temp as $$
    and target_player_id is not null
    and target_team_id is not null
    and public.current_user_role() in ('admin', 'responsable_technique', 'coach')
-   and public.can_manage_player_evaluation(target_player_id, target_team_id),
+   and public.can_manage_player_evaluation(target_player_id, target_team_id)
+   and public.can_manage_attendance_team(target_team_id),
    false
  );
 $$;
