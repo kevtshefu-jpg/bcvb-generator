@@ -27,7 +27,7 @@ sql(`insert into public.player_programs(player_id,team_id,season,title,start_dat
 const readRpcs=['read_player_performance_tests','read_player_programs','read_player_performance_test_summary','read_player_program_summary','read_player_evaluations','read_player_objectives']
 const evaluation=await clients.admin.rpc('save_player_evaluation',{...scope,target_season:'2026-2027',target_period:'LOCAL_READ_SCOPE',target_category:'U13',target_evaluation_date:'2026-10-08',target_content_json:{marker:'LOCAL_PRIVATE_EVALUATION'}})
 assert.equal(evaluation.error,null)
-const objective=await clients.admin.rpc('save_player_objective',{...scope,target_objective_id:null,target_season:'2026-2027',target_title:'LOCAL_PRIVATE_OBJECTIVE',target_domain:'skills',target_description:'Local fixture',target_observable_criterion:'Local fixture',target_quantifiable_criterion:null,target_deadline:null,target_status:'a_travailler',target_linked_session_ids:[]})
+const objective=await clients.admin.rpc('save_player_objective',{...scope,target_objective_id:null,target_season:'2026-2027',target_title:'LOCAL_PRIVATE_OBJECTIVE',target_domain:'skills',target_description:'Local fixture',target_observable_criterion:'Local fixture',target_quantifiable_criterion:'4 of 5',target_deadline:'4 weeks',target_status:'a_travailler',target_linked_session_ids:[]})
 assert.equal(objective.error,null)
 let checks=0
 function check(value,label){assert.ok(value,label);checks++;console.log(`PASS ${label}`)}
@@ -81,17 +81,22 @@ const after=await clients.admin.rpc('read_player_performance_tests',scope)
 check(!after.error&&after.data.find(r=>r.test_code===input.target_test_code)?.value===1,'denied writes leave test unchanged')
 // Internal book is a distinct, minimized endpoint, restricted to staff roles.
 assert.equal((await clients.admin.rpc('save_player_performance_test',{...input,target_season:'2025-2026',target_measured_at:'2025-10-08',target_test_name:'OLD_SEASON_TEST'})).error,null)
+const extraObjective={...scope,target_objective_id:null,target_season:'2026-2027',target_title:'CLOSED_OBJECTIVE',target_domain:'skills',target_description:'Local closed objective',target_observable_criterion:'Local criterion',target_quantifiable_criterion:null,target_deadline:null,target_status:'valide',target_linked_session_ids:[]}
+assert.equal((await clients.admin.rpc('save_player_objective',extraObjective)).error,null)
+assert.equal((await clients.admin.rpc('save_player_objective',{...extraObjective,target_season:'2025-2026',target_title:'OLD_SEASON_OBJECTIVE'})).error,null)
 for(const name of ['admin','technicalManager','coachA','coachSameTeam','teamStaff','coachParentOnly','coachTeamStaffOnly']){
  const book=await clients[name].rpc('read_player_staff_book',{target_player_id:playerA})
  check(!book.error&&book.data.player.id===playerA&&book.data.player.teamId===teamA&&book.data.player.season==='2026-2027'&&book.data.tests.length===1&&book.data.programs.length===4&&book.data.evaluationCount===1&&book.data.activeObjectiveCount===1,`${name}: internal book canonical season allowed`)
+ const o=book.data.objectives.find(o=>o.id===objective.data)
+ check(book.data.objectives.length===2&&o?.title==='LOCAL_PRIVATE_OBJECTIVE'&&o.playerId===playerA&&o.teamId===teamA&&o.season==='2026-2027'&&o.observableCriterion==='Local fixture'&&o.quantifiableCriterion==='4 of 5'&&o.deadline==='4 weeks'&&o.status==='a_travailler'&&Object.keys(o).sort().join(',')===['id','playerId','teamId','season','title','domain','targetDescription','observableCriterion','quantifiableCriterion','deadline','status'].sort().join(','),`${name}: canonical objective content and exact fields`)
  const serialized=JSON.stringify(book.data)
- check(book.data.monitoring.length===0&&!serialized.includes('contextNote')&&!serialized.includes('safetyState')&&!serialized.includes('weeks')&&!serialized.includes('LOCAL_PRIVATE_CONTEXT')&&!serialized.includes('LOCAL_PRIVATE_EVALUATION')&&!serialized.includes('OLD_SEASON_TEST'),`${name}: internal book minimizes private content`)
+ check(book.data.monitoring.length===0&&!serialized.includes('contextNote')&&!serialized.includes('safetyState')&&!serialized.includes('"weeks"')&&!serialized.includes('linkedSessionIds')&&!serialized.includes('LOCAL_PRIVATE_CONTEXT')&&!serialized.includes('LOCAL_PRIVATE_EVALUATION')&&!serialized.includes('OLD_SEASON_TEST')&&!serialized.includes('OLD_SEASON_OBJECTIVE'),`${name}: internal book minimizes private content`)
 }
 for(const name of ['coachB','dirigeant','member','inactive','authenticatedWithoutProfile','parentReferent'])check((await clients[name].rpc('read_player_staff_book',{target_player_id:playerA})).error?.code==='42501',`${name}: internal book denied`)
 check((await anon.rpc('read_player_staff_book',{target_player_id:playerA})).error?.code==='42501','anonymous: internal book denied')
 check((await clients.coachA.rpc('read_player_staff_book',{target_player_id:null})).error?.code==='42501','internal book: missing player denied')
 const emptyBook=await clients.coachB.rpc('read_player_staff_book',{target_player_id:playerB})
-check(!emptyBook.error&&emptyBook.data.tests.length===0&&emptyBook.data.programs.length===0,'internal book: authorized empty player allowed')
+check(!emptyBook.error&&emptyBook.data.tests.length===0&&emptyBook.data.programs.length===0&&emptyBook.data.objectives.length===0&&emptyBook.data.activeObjectiveCount===0,'internal book: authorized empty player allowed')
 assert.equal((await clients.admin.rpc('deactivate_team_membership',{target_membership_id:membership.data[0].membership_id})).error,null)
 try{check((await clients.coachA.rpc('read_player_staff_book',{target_player_id:playerA})).error?.code==='42501','internal book: inactive membership denied')}
 finally{assert.equal((await clients.admin.rpc('add_or_reactivate_team_membership',{...scope,target_season:'2026-2027'})).error,null)}

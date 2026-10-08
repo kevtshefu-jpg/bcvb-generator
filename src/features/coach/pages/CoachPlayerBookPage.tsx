@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { playerStaffBookService } from '../playerStaffBookService'
-import type { PlayerBookSnapshot } from '../playerBookAggregation'
+import { objectiveStatusLabel, type PlayerBookSnapshot } from '../playerBookAggregation'
 
 export default function CoachPlayerBookPage(){
  const {id=''}=useParams()
@@ -54,6 +54,7 @@ export default function CoachPlayerBookPage(){
    </section>
    <section className="bcvb-tool-card"><h2>Tests physiques</h2>{ready.tests.length?<ul>{ready.tests.map((t,i)=><li key={i}>{t.testName} — {t.value} {t.unit} · {t.measuredAt}</li>)}</ul>:<p>Aucun test enregistré pour cette saison.</p>}</section>
    <section className="bcvb-tool-card"><h2>Programmes</h2>{ready.programs.length?<ul>{ready.programs.map((p,i)=><li key={i}>{p.title} · {p.startDate} → {p.endDate} · Niveau {p.level}</li>)}</ul>:<p>Aucun programme enregistré pour cette saison.</p>}</section>
+   <section className="bcvb-tool-card"><h2>Objectifs pédagogiques</h2>{ready.objectives?.length?<ul>{ready.objectives.map(o=><li key={o.id}><h3>{o.title} · {objectiveStatusLabel(o.status)}</h3><p>{o.targetDescription}</p><p>Critère observable : {o.observableCriterion}</p>{o.quantifiableCriterion?<p>Critère quantifiable : {o.quantifiableCriterion}</p>:null}{o.deadline?<p>Échéance : {o.deadline}</p>:null}</li>)}</ul>:<p>Aucun objectif enregistré pour cette saison.</p>}</section>
   </>:null}
   <Link className="bcvb-button-secondary" to="/dashboard">Retour au tableau de bord</Link>
  </main>

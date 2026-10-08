@@ -30,6 +30,11 @@ describe('internal book page',()=>{
  it('hides export controls when the source fails',async()=>{
   mocks.read.mockRejectedValue({code:'PGRST202'});render(view());await screen.findByText('Player Book indisponible');expect(screen.queryByText('Exporter PDF')).not.toBeInTheDocument()
  })
+ it('renders the saved pedagogical criteria and deadline',async()=>{
+  mocks.read.mockResolvedValue({...book(),objectives:[{id:'o1',title:'Premier pas',status:'en_cours',targetDescription:'Créer un avantage',observableCriterion:'Déborder',quantifiableCriterion:'4 sur 5',deadline:'4 semaines'}]})
+  render(view());await screen.findByText('Premier pas · En cours')
+  expect(screen.getByText('Critère observable : Déborder')).toBeInTheDocument();expect(screen.getByText('Critère quantifiable : 4 sur 5')).toBeInTheDocument();expect(screen.getByText('Échéance : 4 semaines')).toBeInTheDocument()
+ })
  it('cancels an export when the player changes',async()=>{
   let resolve!:(value:ReturnType<typeof book>)=>void
   mocks.read.mockResolvedValueOnce(book()).mockImplementationOnce(()=>new Promise(r=>{resolve=r})).mockResolvedValueOnce(book('p2'))

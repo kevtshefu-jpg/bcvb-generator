@@ -1,6 +1,6 @@
 import {describe,it,expect,vi} from 'vitest'
 import {createPlayerStaffBookService,mapStaffBook} from './playerStaffBookService'
-export const book={player:{id:'p1',teamId:'t1',firstName:'Alice',lastName:'Test',teamName:'U15F',season:'2026-2027'},evaluationCount:2,activeObjectiveCount:1,generatedAt:'2026-10-08T00:00:00Z',tests:[{playerId:'p1',teamId:'t1',season:'2026-2027',testName:'Sprint',value:2,unit:'s',measuredAt:'2026-10-08',protocolVersion:'v1',contextNote:'PRIVATE'}],programs:[],monitoring:[]}
+export const book={player:{id:'p1',teamId:'t1',firstName:'Alice',lastName:'Test',teamName:'U15F',season:'2026-2027'},evaluationCount:2,activeObjectiveCount:0,objectives:[],generatedAt:'2026-10-08T00:00:00Z',tests:[{playerId:'p1',teamId:'t1',season:'2026-2027',testName:'Sprint',value:2,unit:'s',measuredAt:'2026-10-08',protocolVersion:'v1',contextNote:'PRIVATE'}],programs:[],monitoring:[]}
 describe('internal book service',()=>{
  it('uses only the staff RPC and strips private fields',async()=>{
   const rpc=vi.fn().mockResolvedValue({data:book,error:null});const result=await createPlayerStaffBookService({rpc} as never).read('p1')

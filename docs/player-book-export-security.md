@@ -36,4 +36,8 @@ Les rôles déjà autorisés dans un périmètre valide restent inchangés. Cela
 
 ## Validation
 
+P11.2 ajoute les objectifs pédagogiques canoniques de la saison courante : titre, domaine, description, critères observable/quantifiable, échéance et statut. Les objectifs clos sont conservés ; seuls `a_travailler` et `en_cours` contribuent au compteur actif. Aucun objectif, résultat ni dosage n’est généré automatiquement. Les références aux séances et les champs techniques d’audit ne sont pas transmis.
+
+Ces détails sont affichés et exportés uniquement dans le parcours interne staff. Les générateurs génériques excluent cette nouvelle section pour les destinataires joueur/parent. Le service exige la liste d’objectifs et vérifie la cohérence du compteur ; une ancienne version de la RPC sans ce contrat rend le livre indisponible. La migration `20261008130000` est donc nécessaire avant de valider ce parcours. Les anciens snapshots génériques sans objectifs restent compatibles ; leur absence ne constitue pas un fallback pour la RPC interne.
+
 `playerBookScopeIntegrity.test.ts` vérifie les mélanges joueur/équipe/saison dans chaque source, les trois destinataires, les deux entrées PDF/XLSX, les périmètres manquants, les sources malformées et les modifications après agrégation. Les cas autorisés vérifient le texte PDF source et le classeur XLSX relu. Les tests de confidentialité monitoring restent exécutés dans la CI.
