@@ -2,7 +2,7 @@
 -- Returns catalog/migration metadata only; never reads player observations.
 select version
 from supabase_migrations.schema_migrations
-where version in ('20261008090000', '20261008093000', '20261008100000', '20261008103000')
+where version in ('20261008090000', '20261008093000', '20261008100000', '20261008103000', '20261008110000')
 order by version;
 
 select
@@ -25,6 +25,8 @@ from (values
   ('public.read_player_programs(uuid,uuid)'),
   ('public.read_player_performance_test_summary(uuid,uuid)'),
   ('public.read_player_program_summary(uuid,uuid)'),
+  ('public.read_player_evaluations(uuid,uuid)'),
+  ('public.read_player_objectives(uuid,uuid)'),
   ('public.save_player_performance_test(uuid,uuid,text,text,text,date,numeric,text,text,text)'),
   ('public.can_access_player_monitoring(uuid,uuid)'),
   ('public.read_player_monitoring(uuid,uuid)'),
@@ -41,7 +43,7 @@ select
 from pg_class
 where oid = to_regclass('public.player_monitoring_entries');
 
--- Expected: all four migration versions; installed/definer/owner/search_path true;
+-- Expected: all five migration versions; installed/definer/owner/search_path true;
 -- authenticated execute true; anon/service_role/public execute false;
 -- monitoring summary only entry_count/last_monitored_on;
 -- test summary only test_count/last_measured_at; programs only program_count/active_program_count;

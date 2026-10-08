@@ -24,7 +24,11 @@ for(const id of [playerA,teamA,state.accounts.admin.id])assert.match(id,/^[0-9a-
 // Synthetic local program only; no program save RPC exists in the current foundation.
 sql(`insert into public.player_programs(player_id,team_id,season,title,start_date,end_date,level,status,safety_state,created_by,updated_by) values('${playerA}','${teamA}','2026-2027','LOCAL_PRIVATE_PROGRAM','2026-10-08','2026-10-15',1,'active','rouge','${state.accounts.admin.id}','${state.accounts.admin.id}')`)
 sql(`insert into public.player_programs(player_id,team_id,season,title,start_date,end_date,level,status,safety_state,created_by,updated_by) select '${playerA}','${teamA}','2026-2027','LOCAL_PRIVATE_PROGRAM_OTHER','2026-10-08','2026-10-15',1,s,'vert','${state.accounts.admin.id}','${state.accounts.admin.id}' from unnest(array['draft','completed','cancelled']) s`)
-const readRpcs=['read_player_performance_tests','read_player_programs','read_player_performance_test_summary','read_player_program_summary']
+const readRpcs=['read_player_performance_tests','read_player_programs','read_player_performance_test_summary','read_player_program_summary','read_player_evaluations','read_player_objectives']
+const evaluation=await clients.admin.rpc('save_player_evaluation',{...scope,target_season:'2026-2027',target_period:'LOCAL_READ_SCOPE',target_category:'U13',target_evaluation_date:'2026-10-08',target_content_json:{marker:'LOCAL_PRIVATE_EVALUATION'}})
+assert.equal(evaluation.error,null)
+const objective=await clients.admin.rpc('save_player_objective',{...scope,target_objective_id:null,target_season:'2026-2027',target_title:'LOCAL_PRIVATE_OBJECTIVE',target_domain:'skills',target_description:'Local fixture',target_observable_criterion:'Local fixture',target_quantifiable_criterion:null,target_deadline:null,target_status:'a_travailler',target_linked_session_ids:[]})
+assert.equal(objective.error,null)
 let checks=0
 function check(value,label){assert.ok(value,label);checks++;console.log(`PASS ${label}`)}
 for(const name of ['admin','technicalManager','coachA','coachSameTeam'])check(!(await clients[name].rpc('save_player_performance_test',input)).error,`${name}: test write allowed`)
@@ -37,12 +41,21 @@ for(const name of ['admin','technicalManager','coachA','coachSameTeam','teamStaf
  check(!testSummary.error&&JSON.stringify(testSummary.data)===JSON.stringify([{test_count:1,last_measured_at:'2026-10-08'}]),`${name}: tests summary contains only count/date`)
  const programSummary=await clients[name].rpc('read_player_program_summary',scope)
  check(!programSummary.error&&JSON.stringify(programSummary.data)===JSON.stringify([{program_count:4,active_program_count:1}]),`${name}: programs summary contains only counts`)
+ const evaluations=await clients[name].rpc('read_player_evaluations',scope)
+ check(!evaluations.error&&evaluations.data.some(r=>r.evaluation_id===evaluation.data&&r.player_id===playerA&&r.team_id===teamA&&r.content_json.marker==='LOCAL_PRIVATE_EVALUATION'),`${name}: scoped evaluation content allowed`)
+ const objectives=await clients[name].rpc('read_player_objectives',scope)
+ check(!objectives.error&&objectives.data.some(r=>r.objective_id===objective.data&&r.player_id===playerA&&r.team_id===teamA&&r.title==='LOCAL_PRIVATE_OBJECTIVE'),`${name}: scoped objective content allowed`)
 }
 const emptyScope={target_player_id:playerB,target_team_id:teamB}
 const emptyTests=await clients.coachB.rpc('read_player_performance_test_summary',emptyScope)
 check(!emptyTests.error&&JSON.stringify(emptyTests.data)===JSON.stringify([{test_count:0,last_measured_at:null}]),'authorized empty test scope returns zero/null')
 const emptyPrograms=await clients.coachB.rpc('read_player_program_summary',emptyScope)
 check(!emptyPrograms.error&&JSON.stringify(emptyPrograms.data)===JSON.stringify([{program_count:0,active_program_count:0}]),'authorized empty program scope returns zeros')
+for(const rpc of ['read_player_evaluations','read_player_objectives']){
+ const empty=await clients.coachB.rpc(rpc,emptyScope)
+ check(!empty.error&&Array.isArray(empty.data)&&empty.data.length===0,`${rpc}: authorized empty scope returns an empty list`)
+ check((await clients.coachA.rpc(rpc,{target_player_id:playerA})).error?.code==='42501',`${rpc}: omitted team denied`)
+}
 for(const name of ['coachB','dirigeant','member','inactive','authenticatedWithoutProfile']){
  for(const rpc of readRpcs)check((await clients[name].rpc(rpc,scope)).error?.code==='42501',`${name}: ${rpc} denied`)
  const helper=await clients[name].rpc('can_read_player_performance_scope',scope)
@@ -66,7 +79,7 @@ try{
 }finally{assert.equal((await clients.admin.rpc('add_or_reactivate_team_membership',{...scope,target_season:'2026-2027'})).error,null)}
 const after=await clients.admin.rpc('read_player_performance_tests',scope)
 check(!after.error&&after.data.find(r=>r.test_code===input.target_test_code)?.value===1,'denied writes leave test unchanged')
-for(const signature of ['public.can_manage_player_evaluation(uuid,uuid)','public.can_read_player_performance_scope(uuid,uuid)','public.read_player_performance_tests(uuid,uuid)','public.read_player_programs(uuid,uuid)','public.read_player_performance_test_summary(uuid,uuid)','public.read_player_program_summary(uuid,uuid)','public.save_player_performance_test(uuid,uuid,text,text,text,date,numeric,text,text,text)']){
+for(const signature of ['public.can_manage_player_evaluation(uuid,uuid)','public.can_read_player_performance_scope(uuid,uuid)','public.read_player_performance_tests(uuid,uuid)','public.read_player_programs(uuid,uuid)','public.read_player_performance_test_summary(uuid,uuid)','public.read_player_program_summary(uuid,uuid)','public.read_player_evaluations(uuid,uuid)','public.read_player_objectives(uuid,uuid)','public.save_player_performance_test(uuid,uuid,text,text,text,date,numeric,text,text,text)']){
  check(sql(`select p.prosecdef and p.proowner=(select oid from pg_roles where rolname='postgres') and p.proconfig @> array['search_path=public, pg_temp'] and has_function_privilege('authenticated',p.oid,'EXECUTE') and not has_function_privilege('anon',p.oid,'EXECUTE') and not has_function_privilege('service_role',p.oid,'EXECUTE') and not exists(select 1 from aclexplode(p.proacl) a where a.grantee=0 and a.privilege_type='EXECUTE') from pg_proc p where p.oid='${signature}'::regprocedure`) === 't',`ACL/definer: ${signature}`)
 }
 console.log(`${checks} performance RPC security checks passed`)

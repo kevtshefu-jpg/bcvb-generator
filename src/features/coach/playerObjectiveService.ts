@@ -26,7 +26,8 @@ export function createPlayerObjectiveService(client: SupabaseClient) {
     async readPlayer(playerId:string, teamId:string):Promise<StoredPlayerObjective[]> {
       const {data,error}=await client.rpc('read_player_objectives',{target_player_id:playerId,target_team_id:teamId})
       if(error) throw error
-      return (Array.isArray(data)?data:[]).map(mapPlayerObjective)
+      if(!Array.isArray(data)) throw new Error('MALFORMED_PLAYER_OBJECTIVE_RESPONSE')
+      return data.map(mapPlayerObjective)
     },
     async save(objective:IndividualObjective, teamId:string, season:string):Promise<string> {
       const {data,error}=await client.rpc('save_player_objective',{
