@@ -1,7 +1,11 @@
 import type { PlayerProgressionProfile } from './playerProgressionService'
-import type { PerformanceTestResult } from './performanceTestService'
+import type { PerformanceTestSummary } from './performanceTestService'
 import type { MonitoringSummary } from './playerMonitoringService'
-import type { PlayerProgram } from './playerProgramService'
-export type PlayerPerformanceDashboardModel={evaluationCount:number;activeObjectiveCount:number;testCount:number;lastTestDate:string|null;monitoringCount:number|null;lastMonitoringDate:string|null;programCount:number;activeProgramCount:number}
-const latest=(values:string[])=>{if(!values.length)return null;const sorted=[...values].sort();return sorted[sorted.length-1]??null}
-export function buildPlayerPerformanceDashboard(profile:PlayerProgressionProfile,tests:PerformanceTestResult[],monitoring:MonitoringSummary|null,programs:PlayerProgram[]):PlayerPerformanceDashboardModel{return{evaluationCount:profile.evaluationCount,activeObjectiveCount:profile.activeObjectiveCount,testCount:tests.length,lastTestDate:latest(tests.map(v=>v.measuredAt)),monitoringCount:monitoring?.entryCount??null,lastMonitoringDate:monitoring?.lastMonitoredOn??null,programCount:programs.length,activeProgramCount:programs.filter(v=>v.status==='active').length}}
+import type { PlayerProgramSummary } from './playerProgramService'
+export type PlayerPerformanceDashboardModel={evaluationCount:number;activeObjectiveCount:number;testCount:number|null;lastTestDate:string|null;monitoringCount:number|null;lastMonitoringDate:string|null;programCount:number|null;activeProgramCount:number|null}
+export function buildPlayerPerformanceDashboard(profile:PlayerProgressionProfile,tests:PerformanceTestSummary|null,monitoring:MonitoringSummary|null,programs:PlayerProgramSummary|null):PlayerPerformanceDashboardModel {
+ return {evaluationCount:profile.evaluationCount,activeObjectiveCount:profile.activeObjectiveCount,
+  testCount:tests?.testCount??null,lastTestDate:tests?.lastTestDate??null,
+  monitoringCount:monitoring?.entryCount??null,lastMonitoringDate:monitoring?.lastMonitoredOn??null,
+  programCount:programs?.programCount??null,activeProgramCount:programs?.activeProgramCount??null}
+}
