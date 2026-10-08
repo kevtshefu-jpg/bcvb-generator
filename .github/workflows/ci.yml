@@ -52,6 +52,15 @@ jobs:
           version: 2.48.3
       - name: Start local Supabase and apply migrations
         run: supabase start
+      - name: Setup Node for security integration
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install security test dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Monitoring authorization integration
+        run: node scripts/run-monitoring-security-ci.mjs
       - name: Verify migration state
         run: supabase migration list --local
       - name: Stop local Supabase
