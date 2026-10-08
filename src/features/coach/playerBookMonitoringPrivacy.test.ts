@@ -6,11 +6,11 @@ import { buildPlayerBookXlsx } from './playerBookXlsxExport'
 import type { PlayerBookSnapshot } from './playerBookAggregation'
 
 const snapshot = {
-  player: { id: 'player', firstName: 'A', lastName: 'B', teamName: 'U15F', season: '2026-2027' },
+  player: { id: 'player', teamId: 'team', firstName: 'A', lastName: 'B', teamName: 'U15F', season: '2026-2027' },
   evaluationCount: 0,
   activeObjectiveCount: 0,
   tests: [],
-  monitoring: [{ monitoredOn: '2026-10-08', availability: 'arret', pain: 9, fatigue: 8, sleepQuality: 2, note: 'CONFIDENTIAL_MONITORING_MARKER' }],
+  monitoring: [{ playerId: 'player', teamId: 'team', season: '2026-2027', monitoredOn: '2026-10-08', availability: 'arret', pain: 9, fatigue: 8, sleepQuality: 2, note: 'CONFIDENTIAL_MONITORING_MARKER' }],
   programs: [],
   generatedAt: '2026-10-08T00:00:00Z',
 } as unknown as PlayerBookSnapshot
