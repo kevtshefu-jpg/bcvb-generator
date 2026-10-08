@@ -7,13 +7,13 @@ export default function CoachPlayerBookPage(){
  const {id=''}=useParams()
  const [book,setBook]=useState<PlayerBookSnapshot|null>(null)
  const [error,setError]=useState(false)
- const [exportError,setExportError]=useState(false)
+ const [exportError,setExportError]=useState<string|null>(null)
  const [busy,setBusy]=useState(false)
  const generation=useRef(0)
  const currentId=useRef(id);currentId.current=id
  useEffect(()=>{
   const token=++generation.current
-  setBook(null);setError(false);setExportError(false);setBusy(false)
+  setBook(null);setError(false);setExportError(null);setBusy(false)
   void playerStaffBookService.read(id).then(value=>{if(generation.current===token)setBook(value)}).catch(()=>{if(generation.current===token)setError(true)})
   return()=>{generation.current++}
  },[id])
@@ -22,7 +22,7 @@ export default function CoachPlayerBookPage(){
   if(!ready||busy)return
   const token=generation.current
   const valid=()=>generation.current===token&&currentId.current===id
-  setBusy(true);setExportError(false)
+  setBusy(true);setExportError(null)
   try{
    const fresh=await playerStaffBookService.read(id)
    if(!valid())return
@@ -41,7 +41,7 @@ export default function CoachPlayerBookPage(){
     try{const link=document.createElement('a');link.href=url;link.download=result.filename;link.click()}finally{URL.revokeObjectURL(url)}
    }
    if(valid())setBook(fresh)
-  }catch{if(valid())setExportError(true)}finally{if(valid())setBusy(false)}
+  }catch(error){if(valid())setExportError(error instanceof Error&&error.message==='PLAYER_BOOK_PDF_UNSUPPORTED_CHARACTER'?'Certains caractères ne sont pas pris en charge dans le PDF. Utilisez l’export XLSX.':'Export impossible. Les données ou les droits n’ont pas pu être confirmés.')}finally{if(valid())setBusy(false)}
  }
  return <main className="bcvb-page coach-tool-page" aria-busy={!ready&&!error}>
   <section className="bcvb-dashboard-hero"><div><p className="bcvb-eyebrow">Suivi interne</p><h1 className="bcvb-title-xl">Player Book{ready?` — ${ready.player.firstName} ${ready.player.lastName}`:''}</h1><p>Version coach/staff · usage interne BCVB. Le suivi de santé et de charge est exclu.</p></div></section>
@@ -50,7 +50,7 @@ export default function CoachPlayerBookPage(){
   {ready?<>
    <section className="bcvb-tool-card"><h2>{ready.player.teamName} · {ready.player.season}</h2><p>Évaluations : {ready.evaluationCount} · Objectifs actifs : {ready.activeObjectiveCount}</p>
     <div className="bcvb-actions"><button className="bcvb-button" disabled={busy} onClick={()=>void download('pdf')}>Exporter PDF</button><button className="bcvb-button-secondary" disabled={busy} onClick={()=>void download('xlsx')}>Exporter XLSX</button></div>
-    {busy?<p role="status">Préparation de l’export…</p>:null}{exportError?<p role="alert">Export impossible. Les données ou les droits n’ont pas pu être confirmés.</p>:null}
+    {busy?<p role="status">Préparation de l’export…</p>:null}{exportError?<p role="alert">{exportError}</p>:null}
    </section>
    <section className="bcvb-tool-card"><h2>Registre des évaluations</h2><p>Dates, périodes et catégories enregistrées. Les commentaires et les scores ne figurent pas dans ce livre.</p>{ready.evaluations?.length?<ul>{ready.evaluations.map(e=><li key={e.id}>{e.date} · {e.period}{e.category?` · ${e.category}`:''}</li>)}</ul>:<p>Aucune évaluation enregistrée pour cette saison.</p>}</section>
    <section className="bcvb-tool-card"><h2>Tests physiques</h2>{ready.tests.length?<ul>{ready.tests.map((t,i)=><li key={i}>{t.testName} — {t.value} {t.unit} · {t.measuredAt}</li>)}</ul>:<p>Aucun test enregistré pour cette saison.</p>}</section>
