@@ -1,5 +1,5 @@
 import type { PlayerBookSnapshot } from './playerBookAggregation'
-import { buildPlayerBookExportModel, type PlayerBookAudience } from './playerBookExportModel'
+import { buildPlayerBookExportModel, canExportPlayerMonitoring, type PlayerBookAudience } from './playerBookExportModel'
 
 export function playerBookToText(snapshot:PlayerBookSnapshot,audience:PlayerBookAudience){
  const model=buildPlayerBookExportModel(snapshot,audience,'pdf')
@@ -9,7 +9,7 @@ export function playerBookToText(snapshot:PlayerBookSnapshot,audience:PlayerBook
   lines.push('',section.title)
   if(section.id==='evaluations-objectifs')lines.push(`Évaluations : ${snapshot.evaluationCount}`,`Objectifs actifs : ${snapshot.activeObjectiveCount}`)
   if(section.id==='tests')lines.push(...snapshot.tests.map(t=>`${t.testName} — ${t.value} ${t.unit} — ${t.measuredAt}`))
-  if(section.id==='monitoring')lines.push(...snapshot.monitoring.map(m=>`${m.monitoredOn} — disponibilité : ${m.availability}`))
+  if(section.id==='monitoring' && canExportPlayerMonitoring(audience))lines.push(...snapshot.monitoring.map(m=>`${m.monitoredOn} — disponibilité : ${m.availability}`))
   if(section.id==='programmes')lines.push(...snapshot.programs.map(p=>`${p.title} — ${p.startDate} → ${p.endDate} — niveau ${p.level}`))
  }
  return{model,text:lines.join('\n')}
