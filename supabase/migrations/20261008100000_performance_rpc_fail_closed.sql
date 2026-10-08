@@ -1,5 +1,32 @@
 -- P10.4: fail-closed guards; no new actor rights or business policy.
 begin;
+create or replace function public.can_manage_player_evaluation(target_player_id uuid, target_team_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select coalesce(auth.uid() is not null and (
+    public.is_current_user_admin()
+    or public.current_user_role() = 'responsable_technique'
+    or (
+      public.current_user_role() = 'coach'
+      and public.can_access_team(target_team_id)
+      and exists (
+        select 1 from public.team_memberships tm
+        where tm.player_id = target_player_id
+          and tm.team_id = target_team_id
+          and tm.status = 'active'
+      )
+    )
+  ),false)
+$$;
+
+alter function public.can_manage_player_evaluation(uuid, uuid) owner to postgres;
+revoke all on function public.can_manage_player_evaluation(uuid, uuid) from public, anon, authenticated, service_role;
+grant execute on function public.can_manage_player_evaluation(uuid, uuid) to authenticated;
+
 create or replace function public.can_read_player_performance_scope(target_player_id uuid,target_team_id uuid)
 returns boolean language sql stable security definer set search_path=public,pg_temp as $$
  select coalesce(

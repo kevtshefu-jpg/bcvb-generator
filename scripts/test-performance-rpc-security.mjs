@@ -38,6 +38,11 @@ for(const name of ['coachB','dirigeant','member','inactive','authenticatedWithou
  check(!helper.error&&helper.data===false,`${name}: helper false`)
 }
 for(const name of ['coachB','dirigeant','member','inactive','authenticatedWithoutProfile','teamStaff','parentReferent'])check((await clients[name].rpc('save_player_performance_test',{...input,target_value:99})).error?.code==='42501',`${name}: test write denied`)
+const noProfile=clients.authenticatedWithoutProfile
+const writer=await noProfile.rpc('can_manage_player_evaluation',scope)
+check(!writer.error&&writer.data===false,'profileless: shared writer permission is false, never NULL')
+check((await noProfile.rpc('save_player_evaluation',{...scope,target_season:'2026-2027',target_period:'LOCAL_SECURITY',target_category:'U13',target_evaluation_date:'2026-10-08',target_content_json:{local:true}})).error?.code==='42501','profileless: evaluation write denied')
+check((await noProfile.rpc('save_player_objective',{...scope,target_objective_id:null,target_season:'2026-2027',target_title:'Local security',target_domain:'skills',target_description:'Local security',target_observable_criterion:'Local security',target_quantifiable_criterion:null,target_deadline:null,target_status:'a_travailler',target_linked_session_ids:[]})).error?.code==='42501','profileless: objective write denied')
 for(const rpc of ['read_player_performance_tests','read_player_programs','can_read_player_performance_scope'])check((await anon.rpc(rpc,scope)).error?.code==='42501',`anonymous: ${rpc} denied`)
 check((await anon.rpc('save_player_performance_test',input)).error?.code==='42501','anonymous: test write denied')
 for(const args of [{...scope,target_player_id:null},{...scope,target_team_id:null},{...scope,target_team_id:teamB},{...scope,target_player_id:playerB}]){
@@ -50,7 +55,7 @@ try{
 }finally{assert.equal((await clients.admin.rpc('add_or_reactivate_team_membership',{...scope,target_season:'2026-2027'})).error,null)}
 const after=await clients.admin.rpc('read_player_performance_tests',scope)
 check(!after.error&&after.data.find(r=>r.test_code===input.target_test_code)?.value===1,'denied writes leave test unchanged')
-for(const signature of ['public.can_read_player_performance_scope(uuid,uuid)','public.read_player_performance_tests(uuid,uuid)','public.read_player_programs(uuid,uuid)','public.save_player_performance_test(uuid,uuid,text,text,text,date,numeric,text,text,text)']){
+for(const signature of ['public.can_manage_player_evaluation(uuid,uuid)','public.can_read_player_performance_scope(uuid,uuid)','public.read_player_performance_tests(uuid,uuid)','public.read_player_programs(uuid,uuid)','public.save_player_performance_test(uuid,uuid,text,text,text,date,numeric,text,text,text)']){
  check(sql(`select p.prosecdef and p.proowner=(select oid from pg_roles where rolname='postgres') and p.proconfig @> array['search_path=public, pg_temp'] and has_function_privilege('authenticated',p.oid,'EXECUTE') and not has_function_privilege('anon',p.oid,'EXECUTE') and not has_function_privilege('service_role',p.oid,'EXECUTE') and not exists(select 1 from aclexplode(p.proacl) a where a.grantee=0 and a.privilege_type='EXECUTE') from pg_proc p where p.oid='${signature}'::regprocedure`) === 't',`ACL/definer: ${signature}`)
 }
 console.log(`${checks} performance RPC security checks passed`)
