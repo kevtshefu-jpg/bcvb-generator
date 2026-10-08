@@ -20,6 +20,14 @@ Avant de raccorder une distribution à un joueur ou parent, il reste à établir
 
 Le contrat de format mentionne DOCX, mais aucun générateur DOCX n’est implémenté. PDF/XLSX seuls sont testés ici.
 
+## Audit des sources et destinataires (P10.7)
+
+La table `player_contacts` contient des noms, téléphones et e-mails familiaux, sans relation canonique vers un compte parent. `players.owner_id` et les affectations d’équipe ne prouvent pas non plus une relation parent-enfant. Aucun modèle explicite de lien compte–parent–joueur n’a été trouvé dans les migrations et services inspectés. Cette absence bloque la diffusion parent/joueur, pas les correctifs de sécurité des sources existantes.
+
+Les lectures d’évaluations et d’objectifs réutilisent désormais `can_read_player_performance_scope` et refusent toute permission différente de `true`. Joueur et équipe sont obligatoires à l’exécution (le paramètre SQL par défaut est conservé pour compatibilité de signature, mais `null` est refusé). Les appels applicatifs existants transmettent déjà les deux identifiants. Les sources disponibles mais vides restent des listes vides ; une réponse RPC malformée ou un refus d’accès n’est plus converti en absence de données. Le contenu et les écritures existants ne sont pas modifiés.
+
+Les rôles déjà autorisés dans un périmètre valide restent inchangés. Cela ne transforme pas leur droit de lecture interne en droit d’envoi à une famille. L’activation d’une distribution nécessite encore une décision métier/juridique et un lien de destinataire vérifiable.
+
 ## Validation
 
 `playerBookScopeIntegrity.test.ts` vérifie les mélanges joueur/équipe/saison dans chaque source, les trois destinataires, les deux entrées PDF/XLSX, les périmètres manquants, les sources malformées et les modifications après agrégation. Les cas autorisés vérifient le texte PDF source et le classeur XLSX relu. Les tests de confidentialité monitoring restent exécutés dans la CI.

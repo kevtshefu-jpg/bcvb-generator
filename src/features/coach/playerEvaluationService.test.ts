@@ -9,6 +9,19 @@ const row = {
 }
 
 describe('playerEvaluationService', () => {
+  it.each([null, undefined, {}, 'invalid'])('refuse une liste malformée %j', async (data) => {
+    const rpc = vi.fn().mockResolvedValue({ data, error: null })
+    await expect(createPlayerEvaluationService({rpc} as never).readPlayer('p','t')).rejects.toThrow('MALFORMED_PLAYER_EVALUATION_RESPONSE')
+  })
+  it('préserve une vraie liste vide', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: [], error: null })
+    await expect(createPlayerEvaluationService({rpc} as never).readPlayer('p','t')).resolves.toEqual([])
+  })
+  it('propage un refus sans autre lecture', async () => {
+    const error = {code:'42501'}; const rpc = vi.fn().mockResolvedValue({data:null,error})
+    await expect(createPlayerEvaluationService({rpc} as never).readPlayer('p','t')).rejects.toBe(error)
+    expect(rpc).toHaveBeenCalledTimes(1)
+  })
   it('mappe une évaluation serveur sur son identité canonique', () => {
     expect(mapStoredEvaluation(row)).toMatchObject({ id: 'eval-1', playerId: 'player-1', teamId: 'team-1', period: 'trimestre_1' })
   })

@@ -35,7 +35,8 @@ export function createPlayerEvaluationService(client: SupabaseClient) {
     async readPlayer(playerId: string, teamId: string): Promise<PlayerEvaluation[]> {
       const { data, error } = await client.rpc('read_player_evaluations', { target_player_id: playerId, target_team_id: teamId })
       if (error) throw error
-      return (Array.isArray(data) ? data : []).map(mapStoredEvaluation)
+      if (!Array.isArray(data)) throw new Error('MALFORMED_PLAYER_EVALUATION_RESPONSE')
+      return data.map(mapStoredEvaluation)
     },
     async save(evaluation: PlayerEvaluation): Promise<string> {
       const content = {
