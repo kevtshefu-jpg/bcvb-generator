@@ -93,6 +93,7 @@ export default function CoachJoueurProgressionPage() {
 
           <section className="bcvb-tool-card">
             <h2>Performance System</h2>
+            <Link className="bcvb-button-secondary" to={`/coach/joueurs/${encodeURIComponent(profile.playerId)}/player-book`}>Ouvrir le Player Book interne</Link>
             {sourceErrors.length > 0 ? <p role="alert">Sources indisponibles : {sourceErrors.join(', ')}. Les valeurs correspondantes ne sont pas disponibles.</p> : null}
             {performance ? <dl className="roster-profile-list"><div><dt>Tests physiques</dt><dd>{sourceErrors.includes('tests physiques') ? 'Indisponible' : performance.testCount}{!sourceErrors.includes('tests physiques') && performance.lastTestDate ? ` · dernier : ${performance.lastTestDate}` : ''}</dd></div><div><dt>Suivis charge / disponibilité</dt><dd>{sourceErrors.includes('suivi charge / disponibilité') ? 'Indisponible' : performance.monitoringCount}{!sourceErrors.includes('suivi charge / disponibilité') && performance.lastMonitoringDate ? ` · dernier : ${performance.lastMonitoringDate}` : ''}</dd></div><div><dt>Programmes</dt><dd>{sourceErrors.includes('programmes') ? 'Indisponible' : `${performance.activeProgramCount} actif(s) · ${performance.programCount} total`}</dd></div></dl> : null}<p>Les indicateurs ci-dessus sont factuels. Aucun score de performance, diagnostic ou norme physique n’est déduit automatiquement.</p>
           </section>

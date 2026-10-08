@@ -7,9 +7,9 @@ export type PlayerBookSnapshot={
  player:{id:string;firstName:string;lastName:string;teamId:string;teamName:string;season:string}
  evaluationCount:number
  activeObjectiveCount:number
- tests:PerformanceTestResult[]
+ tests:(Pick<PerformanceTestResult,'playerId'|'teamId'|'season'|'testName'|'value'|'unit'|'measuredAt'|'protocolVersion'> & Partial<PerformanceTestResult>)[]
  monitoring:MonitoringEntry[]
- programs:PlayerProgram[]
+ programs:(Pick<PlayerProgram,'playerId'|'teamId'|'season'|'title'|'startDate'|'endDate'|'level'|'status'> & Partial<PlayerProgram>)[]
  generatedAt:string
 }
 // Integrity guard, not an access grant: source reads must already be authorized.
@@ -27,7 +27,7 @@ export function assertPlayerBookScope(snapshot:PlayerBookSnapshot):void {
   }
  }
 }
-export function buildPlayerBookSnapshot(input:{profile:PlayerProgressionProfile;tests:PerformanceTestResult[];monitoring:MonitoringEntry[];programs:PlayerProgram[];generatedAt?:string}):PlayerBookSnapshot{
+export function buildPlayerBookSnapshot(input:{profile:PlayerProgressionProfile;tests:PlayerBookSnapshot['tests'];monitoring:MonitoringEntry[];programs:PlayerBookSnapshot['programs'];generatedAt?:string}):PlayerBookSnapshot{
  const {profile}=input
  const snapshot:PlayerBookSnapshot={player:{id:profile.playerId,teamId:profile.teamId,firstName:profile.firstName,lastName:profile.lastName,teamName:profile.teamName,season:profile.season},evaluationCount:profile.evaluationCount,activeObjectiveCount:profile.activeObjectiveCount,tests:[...input.tests],monitoring:[...input.monitoring],programs:[...input.programs],generatedAt:input.generatedAt??new Date().toISOString()}
  assertPlayerBookScope(snapshot)

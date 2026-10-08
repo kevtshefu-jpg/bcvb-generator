@@ -95,6 +95,7 @@ const ParentProjetClubPage = lazy(() => import('../features/parent/pages/ParentP
 // COACH
 // =========================
 const CoachJoueurProgressionPage = lazy(() => import('../features/coach/pages/CoachJoueurProgressionPage'))
+const CoachPlayerBookPage = lazy(() => import('../features/coach/pages/CoachPlayerBookPage'))
 const CoachDashboardPage = lazy(() => import('../pages/coach/CoachDashboardPage'))
 const CoachTeamsPage = lazy(() => import('../pages/coach/CoachTeamsPage'))
 const CoachPlayersPage = lazy(() => import('../pages/coach/CoachPlayersPage'))
@@ -347,6 +348,11 @@ export const router = createBrowserRouter([
       },
 
       // =========================
+      // Player Books internes : permissions serveur également obligatoires.
+      {
+        element: <RequireAuth allowedRoles={['admin','responsable_technique','coach','team_staff']} />,
+        children: [{path:'coach/joueurs/:id/player-book',element:<CoachPlayerBookPage />}],
+      },
       // COACH + ADMIN + RESPONSABLE TECHNIQUE
       // =========================
       {
