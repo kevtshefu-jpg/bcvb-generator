@@ -1,6 +1,15 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { supabase } from '../../lib/supabase'
 
+export type PerformanceTestSummary = { testCount:number; lastTestDate:string|null }
+export function mapPerformanceTestSummary(value:unknown):PerformanceTestSummary {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('MALFORMED_PERFORMANCE_TEST_SUMMARY_RESPONSE')
+  const r=value as Record<string,unknown>; const count=r.test_count; const date=r.last_measured_at
+  if (typeof count !== 'number' || !Number.isSafeInteger(count) || count<0 ||
+      (date!==null && (typeof date!=='string' || !/^\d{4}-\d{2}-\d{2}$/.test(date))) ||
+      (count===0)!==(date===null)) throw new Error('MALFORMED_PERFORMANCE_TEST_SUMMARY_RESPONSE')
+  return {testCount:count,lastTestDate:date as string|null}
+}
 export type PerformanceTestResult = {
   id:string; playerId:string; teamId:string; season:string; testCode:string; testName:string;
   measuredAt:string; value:number; unit:string; protocolVersion:string; contextNote:string|null;
@@ -19,6 +28,12 @@ export function mapPerformanceTestResult(value:unknown):PerformanceTestResult{
 }
 export function createPerformanceTestService(client:SupabaseClient){
  return {
+  async readSummary(playerId:string,teamId:string):Promise<PerformanceTestSummary>{
+    const {data,error}=await client.rpc('read_player_performance_test_summary',{target_player_id:playerId,target_team_id:teamId})
+    if(error)throw error
+    if(!Array.isArray(data)||data.length!==1)throw new Error('MALFORMED_PERFORMANCE_TEST_SUMMARY_RESPONSE')
+    return mapPerformanceTestSummary(data[0])
+  },
   async readPlayer(playerId:string,teamId:string){
     const {data,error}=await client.rpc('read_player_performance_tests',{target_player_id:playerId,target_team_id:teamId})
     if(error)throw error

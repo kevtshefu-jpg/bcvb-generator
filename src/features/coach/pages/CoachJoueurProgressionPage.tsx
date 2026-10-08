@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { playerProgressionService, type PlayerProgressionProfile } from '../playerProgressionService'
-import { performanceTestService, type PerformanceTestResult } from '../performanceTestService'
+import { performanceTestService, type PerformanceTestSummary } from '../performanceTestService'
 import { playerMonitoringService, type MonitoringSummary } from '../playerMonitoringService'
-import { playerProgramService, type PlayerProgram } from '../playerProgramService'
+import { playerProgramService, type PlayerProgramSummary } from '../playerProgramService'
 import { buildPlayerPerformanceDashboard } from '../playerPerformanceDashboard'
 
 function statusLabel(value: string | null, fallback: string) {
@@ -14,9 +14,9 @@ export default function CoachJoueurProgressionPage() {
   const { id = '' } = useParams()
   const [profile, setProfile] = useState<PlayerProgressionProfile | null>(null)
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
-  const [tests, setTests] = useState<PerformanceTestResult[]>([])
+  const [tests, setTests] = useState<PerformanceTestSummary|null>(null)
   const [monitoring, setMonitoring] = useState<MonitoringSummary|null>(null)
-  const [programs, setPrograms] = useState<PlayerProgram[]>([])
+  const [programs, setPrograms] = useState<PlayerProgramSummary|null>(null)
   const [sourceErrors, setSourceErrors] = useState<string[]>([])
 
   useEffect(() => {
@@ -24,14 +24,14 @@ export default function CoachJoueurProgressionPage() {
     setState('loading')
     setProfile(null)
     setSourceErrors([])
-    setTests([]); setMonitoring(null); setPrograms([])
+    setTests(null); setMonitoring(null); setPrograms(null)
     if (!id) { setState('error'); return () => { active = false } }
     void playerProgressionService.readProfile(id).then(async (next) => {
       if (!active) return
       const [nextTests, nextMonitoring, nextPrograms] = await Promise.allSettled([
-        performanceTestService.readPlayer(next.playerId, next.teamId),
+        performanceTestService.readSummary(next.playerId, next.teamId),
         playerMonitoringService.readSummary(next.playerId, next.teamId),
-        playerProgramService.readPlayer(next.playerId, next.teamId),
+        playerProgramService.readSummary(next.playerId, next.teamId),
       ])
       if (!active) return
       const errors: string[] = []
@@ -40,9 +40,9 @@ export default function CoachJoueurProgressionPage() {
       if (nextPrograms.status === 'rejected') errors.push('programmes')
       setSourceErrors(errors)
       setProfile(next)
-      setTests(nextTests.status === 'fulfilled' ? nextTests.value : [])
+      setTests(nextTests.status === 'fulfilled' ? nextTests.value : null)
       setMonitoring(nextMonitoring.status === 'fulfilled' ? nextMonitoring.value : null)
-      setPrograms(nextPrograms.status === 'fulfilled' ? nextPrograms.value : [])
+      setPrograms(nextPrograms.status === 'fulfilled' ? nextPrograms.value : null)
       setState('ready')
     }).catch(() => {
       if (active) setState('error')
