@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { playerProgressionService, type PlayerProgressionProfile } from '../playerProgressionService'
 import { performanceTestService, type PerformanceTestResult } from '../performanceTestService'
-import { playerMonitoringService, type MonitoringEntry } from '../playerMonitoringService'
+import { playerMonitoringService, type MonitoringSummary } from '../playerMonitoringService'
 import { playerProgramService, type PlayerProgram } from '../playerProgramService'
 import { buildPlayerPerformanceDashboard } from '../playerPerformanceDashboard'
 
@@ -15,7 +15,7 @@ export default function CoachJoueurProgressionPage() {
   const [profile, setProfile] = useState<PlayerProgressionProfile | null>(null)
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [tests, setTests] = useState<PerformanceTestResult[]>([])
-  const [monitoring, setMonitoring] = useState<MonitoringEntry[]>([])
+  const [monitoring, setMonitoring] = useState<MonitoringSummary|null>(null)
   const [programs, setPrograms] = useState<PlayerProgram[]>([])
   const [sourceErrors, setSourceErrors] = useState<string[]>([])
 
@@ -24,13 +24,13 @@ export default function CoachJoueurProgressionPage() {
     setState('loading')
     setProfile(null)
     setSourceErrors([])
-    setTests([]); setMonitoring([]); setPrograms([])
+    setTests([]); setMonitoring(null); setPrograms([])
     if (!id) { setState('error'); return () => { active = false } }
     void playerProgressionService.readProfile(id).then(async (next) => {
       if (!active) return
       const [nextTests, nextMonitoring, nextPrograms] = await Promise.allSettled([
         performanceTestService.readPlayer(next.playerId, next.teamId),
-        playerMonitoringService.readPlayer(next.playerId, next.teamId),
+        playerMonitoringService.readSummary(next.playerId, next.teamId),
         playerProgramService.readPlayer(next.playerId, next.teamId),
       ])
       if (!active) return
@@ -41,7 +41,7 @@ export default function CoachJoueurProgressionPage() {
       setSourceErrors(errors)
       setProfile(next)
       setTests(nextTests.status === 'fulfilled' ? nextTests.value : [])
-      setMonitoring(nextMonitoring.status === 'fulfilled' ? nextMonitoring.value : [])
+      setMonitoring(nextMonitoring.status === 'fulfilled' ? nextMonitoring.value : null)
       setPrograms(nextPrograms.status === 'fulfilled' ? nextPrograms.value : [])
       setState('ready')
     }).catch(() => {
