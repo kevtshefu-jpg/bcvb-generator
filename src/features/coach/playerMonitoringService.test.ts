@@ -7,4 +7,7 @@ describe('playerMonitoringService',()=>{
  it('ne fabrique pas une charge incomplète',()=>expect(sessionLoad(null,90)).toBeNull())
  it('mappe sans interprétation médicale',()=>expect(mapMonitoringEntry(row)).toMatchObject({pain:0,availability:'normal'}))
  it('lit via la RPC canonique',async()=>{const rpc=vi.fn().mockResolvedValue({data:[row],error:null});const service=createPlayerMonitoringService({rpc} as never);await expect(service.readPlayer('p1','t1')).resolves.toHaveLength(1)})
+ it('propage un refus RPC au lieu de simuler un suivi vide',async()=>{const error={code:'42501',message:'Lecture monitoring interdite.'};const service=createPlayerMonitoringService({rpc:vi.fn().mockResolvedValue({data:null,error})} as never);await expect(service.readPlayer('p1','t1')).rejects.toEqual(error)})
+ it('refuse une réponse malformée',async()=>{const service=createPlayerMonitoringService({rpc:vi.fn().mockResolvedValue({data:null,error:null})} as never);await expect(service.readPlayer('p1','t1')).rejects.toThrow('MALFORMED_MONITORING_RESPONSE')})
+ it('propage un refus de sauvegarde',async()=>{const error={code:'42501'};const service=createPlayerMonitoringService({rpc:vi.fn().mockResolvedValue({data:null,error})} as never);await expect(service.save(mapMonitoringEntry(row))).rejects.toEqual(error)})
 })
