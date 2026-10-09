@@ -50,6 +50,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Verify complete migration manifest
+        run: node scripts/preprod-migration-manifest.mjs
       - name: Verify audited October migration sequence
         run: node scripts/check-october-migration-sequence.mjs
       - name: Setup Supabase CLI
