@@ -50,6 +50,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Verify preproduction dry-run safety gate
+        run: node scripts/check-preprod-dry-run-guard.mjs
       - name: Verify complete migration manifest
         run: node scripts/preprod-migration-manifest.mjs
       - name: Verify audited October migration sequence
