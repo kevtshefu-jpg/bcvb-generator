@@ -21,13 +21,15 @@ function call(binary, args) {
 try {
   call('node', ['scripts/preprod-migration-manifest.mjs'])
   call('node', ['scripts/check-october-migration-sequence.mjs'])
-  const linked = call('supabase', ['link', '--project-ref', PREPROD_REF])
-  // Supabase CLI takes the DB password from SUPABASE_DB_PASSWORD; no password argument is logged.
-  if (linked.includes(PROD_REF)) throw Error('Unexpected production project ref in link output')
+  call('supabase', ['link', '--project-ref', PREPROD_REF])
+  // Verify the actual persisted CLI target, not the command's own arguments.
+  const linkedRef = readFileSync(resolve('supabase/.temp/project-ref'), 'utf8').trim()
+  if (linkedRef !== PREPROD_REF || linkedRef === PROD_REF) throw Error('STOP: linked Supabase target is not BCVB preproduction')
   const history = call('supabase', ['migration', 'list', '--linked'])
   console.log('Migration history checked (contents omitted to avoid leaking connection details).')
   if (!history.includes('Local')) throw Error('Unexpected migration-list output; inspect CLI version')
   const preview = call('supabase', ['db', 'push', '--dry-run', '--linked'])
+  // Migration filenames only; never print environment variables or connection strings.
   console.log(preview)
   console.log('Completed PREVIEW ONLY for', PREPROD_REF, '- no migrations applied')
 } catch (e) {
