@@ -2384,3 +2384,62 @@
     grid-column: 1 / -1;
   }
 }
+
+/* P12.20 — small-screen controls: avoid overlap and obscured court actions. */
+@media (max-width: 720px) {
+  .session-builder-page .session-workspace-header {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .session-builder-page .session-workspace-header .session-hero__content,
+  .session-builder-page .session-workspace-header .session-hero-actions {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .session-builder-page .session-workspace-header .session-hero-actions__primary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .session-builder-page .session-workspace-header .session-hero-btn--more {
+    grid-column: 1 / -1;
+  }
+  .session-builder-page .session-workspace-header .session-hero-btn {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+    line-height: 1.2;
+    min-height: 48px;
+    padding: 8px;
+  }
+  .session-builder-page .session-workspace-nav {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    min-width: 0;
+    gap: 3px;
+  }
+  .session-builder-page .session-workspace-nav button {
+    min-width: 0;
+    white-space: normal;
+    font-size: clamp(.65rem, 2.7vw, .82rem);
+  }
+  .session-builder-page.session-page--with-fixed-dock {
+    padding-bottom: calc(180px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .session-builder-page .session-terrain-workspace,
+  .session-builder-page .advanced-court,
+  .session-builder-page .court-editor {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .session-builder-page .court-editor__top input,
+  .session-builder-page .court-editor__top select {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .session-builder-page .advanced-court__frame input {
+    min-width: 0;
+    max-width: 100%;
+    text-overflow: ellipsis;
+  }
+}
