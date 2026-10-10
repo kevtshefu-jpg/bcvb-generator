@@ -477,10 +477,16 @@ export function createCourtFrame(input: Partial<SessionCourtFrame> = {}): Sessio
     id: frameId,
     title: input.title || 'Terrain principal',
     intent: input.intent || 'Mise en place',
-    // New frames start blank. Explicit objects/arrows from saved sessions,
-    // templates or imports are preserved without destructive normalization.
-    objects: input.objects ?? [],
-    arrows: input.arrows ?? [],
+    // BCVB starter frame: one attacker, defender, ball and movement arrow.
+    // Explicit arrays (including []) from saved sessions/imports are preserved.
+    objects: input.objects ?? [
+      { id: createId('attacker'), type: 'offense_player', x: 4, y: 6, label: '1' },
+      { id: createId('defender'), type: 'defense_player', x: 6, y: 6, label: '1' },
+      { id: createId('ball'), type: 'ball', x: 4, y: 7.5, label: 'Ballon' },
+    ],
+    arrows: input.arrows ?? [
+      { id: createId('arrow'), type: 'arrow_move', fromX: 4, fromY: 6, toX: 4, toY: 10 },
+    ],
     zones: input.zones ?? [],
   }
 }
