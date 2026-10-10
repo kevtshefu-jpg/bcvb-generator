@@ -333,3 +333,22 @@
     min-height: 42px;
   }
 }
+
+/* P12.19 — Court action contrast: never inherit white lettering on a white control. */
+.session-page .advanced-court__primary-action,
+.session-page .advanced-court__more-actions > summary,
+.session-page .advanced-court__action-menu button,
+.session-page .court-toolbar button,
+.session-page .court-object-row button,
+.session-page .court-editor__top button,
+.session-page .court-frame-tabs button,
+.session-page .fastdraw-toolbar button,
+.session-page .fastdraw-toolbar summary {
+  color: #14181f;
+}
+.session-page .court-frame-tabs button.is-active,
+.session-page .fastdraw-toolbar button.is-active {
+  background-color: #a32035;
+  border-color: #a32035;
+  color: #ffffff;
+}

@@ -18,12 +18,13 @@ import { SESSION_TEMPLATES } from './sessionTemplates'
 import { getTotalSituationDuration, validateSessionDuration } from './sessionUtils'
 
 describe('createCourtFrame', () => {
-  it('crée un terrain BCVB vierge par défaut', () => {
+  it('crée un terrain BCVB avec le kit de départ', () => {
     const frame = createCourtFrame()
 
     expect(frame.id).toBeTruthy()
-    expect(frame.objects).toEqual([])
-    expect(frame.arrows).toEqual([])
+    expect(frame.objects.map((object) => object.type)).toEqual(['offense_player', 'defense_player', 'ball'])
+    expect(frame.arrows).toHaveLength(1)
+    expect(frame.arrows[0].type).toBe('arrow_move')
     expect(frame.zones).toEqual([])
   })
 
