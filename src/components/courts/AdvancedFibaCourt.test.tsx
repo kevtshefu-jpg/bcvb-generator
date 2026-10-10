@@ -4,7 +4,7 @@ import { createCourtFrame } from '../../modules/sessions/sessionModels'
 import { AdvancedFibaCourt } from './AdvancedFibaCourt'
 
 describe('AdvancedFibaCourt workspace', () => {
-  it('ajoute une frame vierge et la sélectionne', () => {
+  it('ajoute une frame équipée BCVB et la sélectionne', () => {
     const first = createCourtFrame({ title: 'Mise en place' })
     const onChange = vi.fn()
 
@@ -13,8 +13,8 @@ describe('AdvancedFibaCourt workspace', () => {
 
     const nextFrames = onChange.mock.calls[onChange.mock.calls.length - 1]?.[0]
     expect(nextFrames).toHaveLength(2)
-    expect(nextFrames[1].objects).toEqual([])
-    expect(nextFrames[1].arrows).toEqual([])
+    expect(nextFrames[1].objects.map((object: { type: string }) => object.type)).toEqual(['offense_player', 'defense_player', 'ball'])
+    expect(nextFrames[1].arrows).toHaveLength(1)
   })
 
   it('duplique le contenu de la frame active', () => {

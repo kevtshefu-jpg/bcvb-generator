@@ -66,7 +66,7 @@ export function AdvancedFibaCourt({ frames, onChange }: AdvancedFibaCourtProps) 
   function resetFrame(frameId: string) {
     const currentFrame = safeFrames.find((frame) => frame.id === frameId)
     if (!currentFrame) return
-    const blankFrame = createCourtFrame({ title: currentFrame.title, courtType: currentFrame.courtType, intent: currentFrame.intent })
+    const blankFrame = createCourtFrame({ title: currentFrame.title, courtType: currentFrame.courtType, intent: currentFrame.intent, objects: [], arrows: [], zones: [] })
     onChange(safeFrames.map((frame) => frame.id === frameId ? blankFrame : frame))
     setActiveFrameId(blankFrame.id)
   }
