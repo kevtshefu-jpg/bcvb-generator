@@ -2443,3 +2443,53 @@
     text-overflow: ellipsis;
   }
 }
+
+/* P12.20 — desktop and mobile coach situation readability. */
+.session-builder-page .session-timeline-selector > button {
+  color: #14181f;
+}
+.session-builder-page .session-timeline-selector > button strong {
+  display: block;
+  min-width: 0;
+  color: #14181f;
+  font-weight: 850;
+}
+.session-builder-page .session-timeline-selector > button small {
+  display: block;
+  min-width: 0;
+  color: #475569;
+}
+.session-builder-page .session-situation-header .session-situation-menu > summary {
+  background: #ffffff;
+  color: #14181f;
+  border: 1px solid rgba(20,24,31,.2);
+}
+.session-builder-page .session-situation-header .session-situation-menu > summary span {
+  color: #14181f;
+}
+.session-builder-page .session-situation-menu__panel button {
+  color: #14181f;
+  background: #ffffff;
+}
+.session-builder-page .session-workspace-dock:not([open]) {
+  max-width: min(760px, calc(100% - 16px));
+}
+@media (min-width: 721px) {
+  .session-builder-page.session-page--with-fixed-dock {
+    padding-bottom: 150px !important;
+  }
+}
+@media (max-width: 720px) {
+  .session-builder-page .session-timeline-selector > button {
+    flex-basis: min(225px, 78vw);
+  }
+  .session-builder-page .session-timeline-selector > button strong {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.25;
+  }
+  .session-builder-page .session-situation-header .session-situation-menu > summary {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
