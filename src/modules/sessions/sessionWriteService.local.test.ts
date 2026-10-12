@@ -43,8 +43,12 @@ describe('sessionWriteService contre Supabase local', () => {
     const created = await serviceA.createSessionDraft({ teamId: builder.teamId, coachId: fixture.accounts.coachA.id, ...initial })
     expect(created).toMatchObject({ title: 'Builder réel', version: 1, objectives: ['Créer un avantage'], equipment: ['Ballons'] })
     expect(created.situations[0].id).toBe(builder.situations[0].id)
-    expect(created.situations[0].courtFrames[0].objects).toEqual([])
-    expect(created.situations[0].courtFrames[0].arrows).toEqual([])
+    expect(created.situations[0].courtFrames[0].objects).toEqual(
+      builder.situations[0].courtFrames[0].objects,
+    )
+    expect(created.situations[0].courtFrames[0].arrows).toEqual(
+      builder.situations[0].courtFrames[0].arrows,
+    )
 
     const changed = { ...created, title: 'Builder modifié', situations: created.situations.map((item) => ({ ...item, notes: 'Terrain modifié' })) }
     const saved = await serviceA.saveSessionDraft({ sessionId: created.id, expectedVersion: 1, ...mapBuilderSessionToWritePayload(changed) })
