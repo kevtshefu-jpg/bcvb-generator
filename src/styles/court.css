@@ -578,3 +578,46 @@
     display: none;
   }
 }
+
+/* P12.18 — Menus tactiques accessibles sur ordinateur */
+@media (min-width: 761px) {
+  .fastdraw-toolbar details.fastdraw-toolbar__group > summary,
+  .fastdraw-toolbar details.fastdraw-toolbar__group:not([open]) > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    padding: 8px 12px;
+    color: #101827;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group--exports > summary {
+    color: #ffffff;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group:not([open]) > :not(summary) {
+    display: none;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group[open] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group[open] > summary {
+    flex: 1 0 100%;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group > summary::after {
+    content: '+';
+    margin-left: auto;
+  }
+
+  .fastdraw-toolbar details.fastdraw-toolbar__group[open] > summary::after {
+    content: '−';
+  }
+}
