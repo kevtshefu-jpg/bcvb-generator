@@ -3,6 +3,7 @@
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { assertPreprodMigrationHistory, assertPreprodDryRun } from './preprod-preview-contract.mjs'
 
 const PREPROD_REF = 'rghbzbwmvvnoqwymqyjn'
 const PROD_REF = 'leziahqmqyuewpzjmzxf'
@@ -27,10 +28,12 @@ try {
   if (linkedRef !== PREPROD_REF || linkedRef === PROD_REF) throw Error('STOP: linked Supabase target is not BCVB preproduction')
   const history = call('supabase', ['migration', 'list', '--linked'])
   console.log('Migration history checked (contents omitted to avoid leaking connection details).')
-  if (!history.includes('Local')) throw Error('Unexpected migration-list output; inspect CLI version')
+  const verifiedHistory = assertPreprodMigrationHistory(history)
+  console.log('Preproduction migration registry verified:', verifiedHistory.local, 'local /', verifiedHistory.remote, 'remote')
   const preview = call('supabase', ['db', 'push', '--dry-run', '--linked'])
   // Migration filenames only; never print environment variables or connection strings.
-  console.log(preview)
+  const verifiedPreview = assertPreprodDryRun(preview)
+  console.log('Dry-run pending migrations verified:', verifiedPreview.migrations.join(', '))
   console.log('Completed PREVIEW ONLY for', PREPROD_REF, '- no migrations applied')
 } catch (e) {
   console.error('STOP: preproduction preview failed:', e.message)
