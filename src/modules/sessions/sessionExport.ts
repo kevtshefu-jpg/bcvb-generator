@@ -1,6 +1,7 @@
 import type { SessionCourtFrame, SessionSituation, TrainingSessionV2 } from './sessionModels'
 import { exportCourtPng, exportCourtSvg } from '../../components/courts/courtExport'
 import { getPhaseLabel, getTotalSituationDuration, validateSessionDuration } from './sessionUtils'
+import { buildRelativeSessionTimeline } from './sessionTimelineSchedule'
 
 function slugify(value: string) {
   return value
@@ -25,6 +26,7 @@ export function exportSessionToJson(session: TrainingSessionV2) {
 }
 
 export function exportSessionToMarkdown(session: TrainingSessionV2) {
+  const timeline = buildRelativeSessionTimeline(session.situations)
   const markdown = [
     `# ${session.title}`,
     '',
@@ -43,9 +45,9 @@ export function exportSessionToMarkdown(session: TrainingSessionV2) {
     '## Objectifs',
     ...session.objectives.map((item) => `- ${item}`),
     '',
-    '## Déroulé',
-    ...session.situations.map((situation) => [
-      `### ${situation.order}. ${situation.title} - ${situation.durationMinutes} min`,
+    '## Déroulé (temps écoulé depuis le début)',
+    ...session.situations.map((situation, index) => [
+      `### ${situation.order}. ${situation.title} - ${situation.durationMinutes} min (${timeline[index].label})`,
       `Phase : ${getPhaseLabel(situation.pedagogicalPhase)}`,
       `Objectif : ${situation.objective}`,
       `Objectif BCVB : ${situation.bcvbObjective}`,

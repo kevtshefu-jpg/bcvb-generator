@@ -2,6 +2,7 @@ import { FibaCourtFull } from '../../components/courts/FibaCourtFull'
 import { FibaCourtHalf } from '../../components/courts/FibaCourtHalf'
 import type { TrainingSessionV2 } from './sessionModels'
 import { getPhaseLabel, validateSessionDuration } from './sessionUtils'
+import { buildRelativeSessionTimeline } from './sessionTimelineSchedule'
 
 type SessionPreviewProps = {
   session: TrainingSessionV2
@@ -9,6 +10,8 @@ type SessionPreviewProps = {
 }
 
 export function SessionPreview({ session, mode }: SessionPreviewProps) {
+  const timeline = buildRelativeSessionTimeline(session.situations)
+
   return (
     <section className={`session-preview session-preview--${mode}`}>
       <header>
@@ -29,15 +32,15 @@ export function SessionPreview({ session, mode }: SessionPreviewProps) {
           <p>{session.equipment.join(', ') || 'À renseigner'}</p>
         </div>
         <div>
-          <h3>Déroulé synthétique</h3>
-          <ol>{session.situations.map((situation) => <li key={situation.id}>{situation.title} - {situation.durationMinutes} min</li>)}</ol>
+          <h3>Déroulé synthétique (temps écoulé depuis le début)</h3>
+          <ol>{session.situations.map((situation, index) => <li key={situation.id}>{timeline[index].label} · {situation.title} - {situation.durationMinutes} min</li>)}</ol>
         </div>
       </article>
-      {session.situations.map((situation) => (
+      {session.situations.map((situation, index) => (
         <article className="session-print-page" key={situation.id}>
           <div>
             <h3>{situation.order}. {situation.title}</h3>
-            <strong>{situation.durationMinutes} min · {getPhaseLabel(situation.pedagogicalPhase)}</strong>
+            <strong>{timeline[index].label} · {situation.durationMinutes} min · {getPhaseLabel(situation.pedagogicalPhase)}</strong>
             <p>{situation.objective}</p>
             <p><b>Organisation :</b> {situation.organization}</p>
             <p><b>Consignes :</b> {situation.instructions}</p>
