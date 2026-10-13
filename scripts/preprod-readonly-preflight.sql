@@ -29,6 +29,6 @@ select 'rpc_state',
        jsonb_build_object('function', proname, 'arguments', arguments,
          'security_definer', security_definer, 'has_duration_gate', has_duration_gate,
          'has_row_lock', has_row_lock, 'authenticated_can_execute', authenticated_can_execute,
-         'anon_can_execute', anon_can_execute, 'public_can_execute')
+         'anon_can_execute', anon_can_execute, 'public_can_execute', public_can_execute)
 from rpc_state
 order by section;
