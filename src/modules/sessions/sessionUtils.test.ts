@@ -30,4 +30,22 @@ describe('duplicateSituation — isolement des schémas tactiques', () => {
     expect(copy.courtFrames[0].arrows[0].control).not.toBe(frame.arrows[0].control)
     expect(copy.courtFrames[0].zones[0].points).not.toBe(frame.zones[0].points)
   })
+  it('isole les métriques, les critères et les adaptations de la situation source', () => {
+    const source = createSituation({
+      title: 'Lecture 1c1',
+      metrics: [{ id: 'metric-1', label: 'Réussites', type: 'count', target: '7', observed: '', unit: '/10', notes: '' }],
+      adaptationsByLevel: { easier: 'Sans pression', standard: '1c1', harder: 'Aide défensive' },
+      observableCriteria: ['Décision juste'],
+    })
+    const copy = duplicateSituation(source)
+
+    expect(copy.metrics).toEqual(source.metrics)
+    expect(copy.metrics).not.toBe(source.metrics)
+    expect(copy.metrics[0]).not.toBe(source.metrics[0])
+    expect(copy.adaptationsByLevel).toEqual(source.adaptationsByLevel)
+    expect(copy.adaptationsByLevel).not.toBe(source.adaptationsByLevel)
+    expect(copy.observableCriteria).toEqual(source.observableCriteria)
+    expect(copy.observableCriteria).not.toBe(source.observableCriteria)
+  })
+
 })
