@@ -190,8 +190,13 @@ describe('duplication de séance — intégrité Supabase locale', () => {
       teamId: fixture.fixtures.teamA, coachId: fixture.accounts.coachA.id,
       ...mapBuilderSessionToWritePayload(draft),
     })
+    const rejectedSubmission = await client.rpc('submit_session_for_review', {
+      target_session_id: saved.id, expected_version: 1,
+    })
+    expect(rejectedSubmission.error?.code).toBe('22023')
+    expect(rejectedSubmission.error?.message).toContain('Durée de séance incohérente')
     await expect(service.submitSessionForReview({ sessionId: saved.id, expectedVersion: 1 }))
-      .rejects.toThrow()
+      .rejects.toThrow(/somme des blocs correspond exactement/)
     const unchanged = await client.from('sessions').select('status,version').eq('id', saved.id).single()
     expect(unchanged.error).toBeNull()
     expect(unchanged.data).toMatchObject({ status: 'draft', version: 1 })
@@ -244,9 +249,14 @@ describe('duplication de séance — intégrité Supabase locale', () => {
     const tampered = await privileged.from('session_situations')
       .update({ duration_minutes: 20 }).eq('session_id', draft.id)
     expect(tampered.error).toBeNull()
+    const rejectedPublication = await adminClient.rpc('publish_session', {
+      target_session_id: draft.id, expected_version: 2, target_visibility: 'club',
+    })
+    expect(rejectedPublication.error?.code).toBe('22023')
+    expect(rejectedPublication.error?.message).toContain('Durée de séance incohérente')
     await expect(admin.publishSession({
       sessionId: draft.id, expectedVersion: 2, visibility: 'club',
-    })).rejects.toThrow()
+    })).rejects.toThrow(/somme des blocs correspond exactement/)
     const afterReject = await privileged.from('sessions')
       .select('status,version,visibility').eq('id', draft.id).single()
     expect(afterReject.error).toBeNull()
