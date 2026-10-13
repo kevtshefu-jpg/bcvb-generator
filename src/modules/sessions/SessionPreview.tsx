@@ -1,7 +1,7 @@
 import { FibaCourtFull } from '../../components/courts/FibaCourtFull'
 import { FibaCourtHalf } from '../../components/courts/FibaCourtHalf'
 import type { TrainingSessionV2 } from './sessionModels'
-import { getPhaseLabel } from './sessionUtils'
+import { getPhaseLabel, validateSessionDuration } from './sessionUtils'
 
 type SessionPreviewProps = {
   session: TrainingSessionV2
@@ -15,6 +15,9 @@ export function SessionPreview({ session, mode }: SessionPreviewProps) {
         <p className="bcvb-eyebrow">{mode === 'coach' ? 'Vue coach terrain' : mode === 'print' ? 'Vue impression PDF' : 'Vue édition'}</p>
         <h2>{session.title}</h2>
         <p>{session.category} · {session.theme} · {session.subTheme} · {session.durationMinutes} min · {session.expectedPlayers} joueurs</p>
+        {!validateSessionDuration(session).valid && (
+          <p role="alert">Durée à corriger : {Math.abs(validateSessionDuration(session).differenceMinutes)} min {validateSessionDuration(session).differenceMinutes < 0 ? 'non planifiées' : 'au-delà de la durée annoncée'}. Vérifier le déroulé avant utilisation.</p>
+        )}
       </header>
       <article className="session-print-cover">
         <div>
