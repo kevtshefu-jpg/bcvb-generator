@@ -169,4 +169,43 @@ describe('duplication de séance — intégrité Supabase locale', () => {
     expect(result.data).toMatchObject({ id: copy.id, title: copy.title, version: 1 })
   }, 20_000)
 
+  it('refuse une soumission à durée incohérente et accepte la version équilibrée', async () => {
+    const env = localEnvironment()
+    const fixture = JSON.parse(readFileSync(`${process.cwd()}/.rls-test-fixtures.json`, 'utf8')) as {
+      accounts: { coachA: { id: string; email: string; password: string } }
+      fixtures: { teamA: string }
+    }
+    const client = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+    expect((await client.auth.signInWithPassword(fixture.accounts.coachA)).error).toBeNull()
+    const service = createSessionWriteService(client)
+    const draft = ensurePersistentSituationIds(createSession({
+      title: 'Contrôle de durée serveur', teamId: fixture.fixtures.teamA,
+      coachId: fixture.accounts.coachA.id, visibility: 'private',
+      durationMinutes: 30,
+      situations: [createSituation({ title: 'Bloc partiel', durationMinutes: 20 })],
+    }), randomUUID)
+    const saved = await service.createSessionDraft({
+      teamId: fixture.fixtures.teamA, coachId: fixture.accounts.coachA.id,
+      ...mapBuilderSessionToWritePayload(draft),
+    })
+    await expect(service.submitSessionForReview({ sessionId: saved.id, expectedVersion: 1 }))
+      .rejects.toThrow()
+    const unchanged = await client.from('sessions').select('status,version').eq('id', saved.id).single()
+    expect(unchanged.error).toBeNull()
+    expect(unchanged.data).toMatchObject({ status: 'draft', version: 1 })
+
+    const corrected = await service.saveSessionDraft({
+      sessionId: saved.id, expectedVersion: 1,
+      ...mapBuilderSessionToWritePayload({
+        ...saved,
+        situations: saved.situations.map((item) => ({ ...item, durationMinutes: 30 })),
+      }),
+    })
+    expect(corrected.version).toBe(2)
+    const submitted = await service.submitSessionForReview({ sessionId: saved.id, expectedVersion: 2 })
+    expect(submitted).toMatchObject({ status: 'to_review', version: 3 })
+  }, 20_000)
+
 })
