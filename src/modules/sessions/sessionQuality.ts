@@ -1,5 +1,5 @@
 import type { SessionSituation, TrainingSessionV2 } from './sessionModels'
-import { getTotalSituationDuration, hasBcvbLink } from './sessionUtils'
+import { getTotalSituationDuration, hasBcvbLink, validateSessionDuration } from './sessionUtils'
 
 export type SessionQualityReport = {
   score: number
@@ -36,11 +36,12 @@ export function analyzeSessionQuality(session: TrainingSessionV2): SessionQualit
   const actions: string[] = []
   const warnings: string[] = []
   const totalDuration = getTotalSituationDuration(session)
+  const durationValidation = validateSessionDuration(session)
 
   const checks = [
     addCheck(Boolean(complete(session.title) && session.category && session.durationMinutes > 0 && session.expectedPlayers > 0), 'infos générales complètes', missing, actions),
     addCheck(session.objectives.some((objective) => complete(objective, 8)), 'objectif de séance clair', missing, actions),
-    addCheck(session.situations.length > 0 && totalDuration === session.durationMinutes, 'déroulé cohérent', missing, actions),
+    addCheck(durationValidation.valid, 'déroulé cohérent', missing, actions),
     addCheck(allSituations(session, (situation) => situation.durationMinutes > 0), 'chaque situation a une durée', missing, actions),
     addCheck(allSituations(session, (situation) => complete(situation.objective, 8) && complete(situation.organization, 8)), 'chaque situation a objectif + organisation', missing, actions),
     addCheck(allSituations(session, (situation) => complete(situation.instructions, 8) && (situation.coachCues.length > 0 || complete(situation.coachingPoints, 8))), 'chaque situation a consignes + points coach', missing, actions),
@@ -55,6 +56,10 @@ export function analyzeSessionQuality(session: TrainingSessionV2): SessionQualit
   if (totalDuration > session.durationMinutes) warnings.push(`Le déroulé dépasse la durée prévue de ${totalDuration - session.durationMinutes} min.`)
   if (totalDuration < session.durationMinutes) warnings.push(`Il manque ${session.durationMinutes - totalDuration} min dans le déroulé.`)
   if (session.situations.length === 0) warnings.push('Aucune situation pédagogique n’est créée.')
+  if (!Number.isSafeInteger(session.durationMinutes) || session.durationMinutes <= 0) warnings.push('La durée annoncée doit être un nombre entier de minutes strictement positif.')
+  if (session.situations.some((situation) => !Number.isSafeInteger(situation.durationMinutes) || situation.durationMinutes <= 0)) {
+    warnings.push('Chaque situation doit durer un nombre entier de minutes strictement positif.')
+  }
 
   session.situations.forEach((situation) => {
     const prefix = `Situation ${situation.order} - ${situation.title || 'sans titre'}`
@@ -70,7 +75,7 @@ export function analyzeSessionQuality(session: TrainingSessionV2): SessionQualit
     if (!hasUsableCourt(situation)) warnings.push(`${prefix} : Terrain non exploitable : reconstruire le schéma.`)
   })
 
-  const status = totalDuration !== session.durationMinutes ? 'brouillon' : score >= 90 ? 'excellent' : score >= 80 ? 'prêt PDF' : score >= 70 ? 'prêt terrain' : 'brouillon'
+  const status = !durationValidation.valid ? 'brouillon' : score >= 90 ? 'excellent' : score >= 80 ? 'prêt PDF' : score >= 70 ? 'prêt terrain' : 'brouillon'
 
   return {
     score,

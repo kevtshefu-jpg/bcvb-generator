@@ -27,7 +27,12 @@ export function validateSessionDuration(session: TrainingSessionV2): SessionDura
     announcedMinutes,
     calculatedMinutes,
     differenceMinutes: calculatedMinutes - announcedMinutes,
-    valid: announcedMinutes === calculatedMinutes,
+    // Match the server transition gate: at least one block and strictly positive minute counts.
+    // Non-integer and non-finite values cannot be persisted as database minutes.
+    valid: Number.isSafeInteger(announcedMinutes) && announcedMinutes > 0
+      && session.situations.length > 0
+      && session.situations.every((situation) => Number.isSafeInteger(situation.durationMinutes) && situation.durationMinutes > 0)
+      && announcedMinutes === calculatedMinutes,
   }
 }
 
