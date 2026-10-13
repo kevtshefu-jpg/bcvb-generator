@@ -44,6 +44,24 @@ describe('SessionDurationReconciliation', () => {
     expect((screen.getByRole('button', { name: 'Retenir 0 min comme durée de séance' }) as HTMLButtonElement).disabled).toBe(true)
   })
 
+  it('ne propose pas une correction artificielle quand les blocs sont invalides mais que la somme est juste', () => {
+    const onChange = vi.fn()
+    const invalid = createSession({
+      durationMinutes: 20,
+      situations: [
+        createSituation({ durationMinutes: 30 }),
+        createSituation({ durationMinutes: -10 }),
+      ],
+    })
+    render(<SessionDurationReconciliation session={invalid} readOnly={false} onChange={onChange} />)
+    expect(screen.getByRole('alert').textContent).toContain('Chaque situation doit durer un nombre entier')
+    expect(screen.getByRole('alert').textContent).not.toContain('0 min au-delà')
+    const button = screen.getByRole('button', { name: 'Retenir 20 min comme durée de séance' })
+    expect((button as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.click(button)
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
   it('confirme une séance déjà cohérente sans afficher de commande', () => {
     const onChange = vi.fn()
     render(<SessionDurationReconciliation session={createSession({ durationMinutes: 45, situations: session.situations })} readOnly={false} onChange={onChange} />)
