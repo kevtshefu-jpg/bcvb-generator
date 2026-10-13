@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { describe, expect, it } from 'vitest'
-import { createSessionWriteService } from './sessionWriteService'
+import { createSessionWriteService, SessionWriteConflictError } from './sessionWriteService'
 import { createSession, createSituation } from './sessionModels'
 import { duplicateSession } from './sessionStorage'
 import { ensurePersistentSituationIds, mapBuilderSessionToWritePayload } from './sessionBuilderServerAdapter'
@@ -85,4 +85,88 @@ describe('duplication de séance — intégrité Supabase locale', () => {
     expect((sourceAfter.data?.session_situations || []).map((s: { id: string }) => s.id))
       .toContain(snapshot.situations[0].id)
   }, 20_000)
+  it('refuse une version obsolète de la copie sans altérer source et copie', async () => {
+    const env = localEnvironment()
+    const fixture = JSON.parse(readFileSync(`${process.cwd()}/.rls-test-fixtures.json`, 'utf8')) as {
+      accounts: { coachA: { id: string; email: string; password: string } }
+      fixtures: { teamA: string }
+    }
+    const client = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+    expect((await client.auth.signInWithPassword(fixture.accounts.coachA)).error).toBeNull()
+    const service = createSessionWriteService(client)
+    const source = await service.createSessionDraft({
+      teamId: fixture.fixtures.teamA,
+      coachId: fixture.accounts.coachA.id,
+      ...mapBuilderSessionToWritePayload(ensurePersistentSituationIds(createSession({
+        title: 'Source protégée conflit', teamId: fixture.fixtures.teamA,
+        visibility: 'private', durationMinutes: 15,
+        situations: [createSituation({ title: 'Test conflit', durationMinutes: 15 })],
+      }), randomUUID)),
+    })
+    const copyDraft = ensurePersistentSituationIds(duplicateSession(source), randomUUID)
+    const copy = await service.createSessionDraft({
+      teamId: fixture.fixtures.teamA, coachId: fixture.accounts.coachA.id,
+      ...mapBuilderSessionToWritePayload(copyDraft),
+    })
+    const updated = await service.saveSessionDraft({
+      sessionId: copy.id, expectedVersion: 1,
+      ...mapBuilderSessionToWritePayload({ ...copy, title: 'Copie version actuelle' }),
+    })
+    expect(updated.version).toBe(2)
+    await expect(service.saveSessionDraft({
+      sessionId: copy.id, expectedVersion: 1,
+      ...mapBuilderSessionToWritePayload({ ...copy, title: 'Écrasement obsolète refusé' }),
+    })).rejects.toBeInstanceOf(SessionWriteConflictError)
+
+    const result = await client.from('sessions').select('id,title,version')
+      .in('id', [source.id, copy.id])
+    expect(result.error).toBeNull()
+    expect(result.data).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: source.id, title: source.title, version: source.version }),
+      expect.objectContaining({ id: copy.id, title: 'Copie version actuelle', version: 2 }),
+    ]))
+  }, 20_000)
+
+  it('refuse à un coach extérieur la modification d’une copie privée', async () => {
+    const env = localEnvironment()
+    const fixture = JSON.parse(readFileSync(`${process.cwd()}/.rls-test-fixtures.json`, 'utf8')) as {
+      accounts: {
+        coachA: { id: string; email: string; password: string }
+        coachB: { id: string; email: string; password: string }
+      }
+      fixtures: { teamA: string }
+    }
+    const clientA = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+    const clientB = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+    expect((await clientA.auth.signInWithPassword(fixture.accounts.coachA)).error).toBeNull()
+    expect((await clientB.auth.signInWithPassword(fixture.accounts.coachB)).error).toBeNull()
+    const serviceA = createSessionWriteService(clientA)
+    const serviceB = createSessionWriteService(clientB)
+    const source = await serviceA.createSessionDraft({
+      teamId: fixture.fixtures.teamA, coachId: fixture.accounts.coachA.id,
+      ...mapBuilderSessionToWritePayload(ensurePersistentSituationIds(createSession({
+        title: 'Source privée autorisation', teamId: fixture.fixtures.teamA,
+        visibility: 'private', durationMinutes: 10,
+        situations: [createSituation({ title: 'Bloc privé', durationMinutes: 10 })],
+      }), randomUUID)),
+    })
+    const copy = await serviceA.createSessionDraft({
+      teamId: fixture.fixtures.teamA, coachId: fixture.accounts.coachA.id,
+      ...mapBuilderSessionToWritePayload(ensurePersistentSituationIds(duplicateSession(source), randomUUID)),
+    })
+    await expect(serviceB.saveSessionDraft({
+      sessionId: copy.id, expectedVersion: 1,
+      ...mapBuilderSessionToWritePayload({ ...copy, title: 'Modification extérieure refusée' }),
+    })).rejects.toThrow()
+    const result = await clientA.from('sessions').select('id,title,version').eq('id', copy.id).single()
+    expect(result.error).toBeNull()
+    expect(result.data).toMatchObject({ id: copy.id, title: copy.title, version: 1 })
+  }, 20_000)
+
 })
