@@ -36,6 +36,31 @@ export function validateSessionDuration(session: TrainingSessionV2): SessionDura
   }
 }
 
+
+/**
+ * One human-readable source for duration failures across editor, template picker,
+ * coach preview and exports. An equal sum is not sufficient when a block is invalid.
+ */
+export function getSessionDurationProblem(session: TrainingSessionV2): string | null {
+  const duration = validateSessionDuration(session)
+  if (!Number.isSafeInteger(duration.announcedMinutes) || duration.announcedMinutes <= 0) {
+    return 'La durée annoncée doit être un nombre entier de minutes strictement positif.'
+  }
+  if (session.situations.length === 0) {
+    return 'Aucune situation planifiée : ajoutez au moins un bloc avant utilisation.'
+  }
+  if (session.situations.some((situation) => !Number.isSafeInteger(situation.durationMinutes) || situation.durationMinutes <= 0)) {
+    return 'Chaque situation doit durer un nombre entier de minutes strictement positif.'
+  }
+  if (duration.differenceMinutes < 0) {
+    return `${Math.abs(duration.differenceMinutes)} min non planifiées (déroulé : ${duration.calculatedMinutes} min).`
+  }
+  if (duration.differenceMinutes > 0) {
+    return `${duration.differenceMinutes} min au-delà de la durée annoncée (déroulé : ${duration.calculatedMinutes} min).`
+  }
+  return null
+}
+
 export function reorderSituations(situations: SessionSituation[]) {
   return situations.map((situation, index) => ({ ...situation, order: index + 1 }))
 }
