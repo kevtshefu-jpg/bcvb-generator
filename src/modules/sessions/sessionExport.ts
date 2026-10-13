@@ -1,6 +1,6 @@
 import type { SessionCourtFrame, SessionSituation, TrainingSessionV2 } from './sessionModels'
 import { exportCourtPng, exportCourtSvg } from '../../components/courts/courtExport'
-import { getPhaseLabel, getTotalSituationDuration } from './sessionUtils'
+import { getPhaseLabel, getTotalSituationDuration, validateSessionDuration } from './sessionUtils'
 
 function slugify(value: string) {
   return value
@@ -36,6 +36,9 @@ export function exportSessionToMarkdown(session: TrainingSessionV2) {
     `- Visibilité : ${session.visibility}`,
     `- Statut : ${session.status}`,
     `- Total déroulé : ${getTotalSituationDuration(session)} minutes`,
+    ...(!validateSessionDuration(session).valid ? [
+      `- **ATTENTION — Durées incohérentes : ${Math.abs(validateSessionDuration(session).differenceMinutes)} min ${validateSessionDuration(session).differenceMinutes < 0 ? 'non planifiées' : 'au-delà de la durée annoncée'}. Adapter avant utilisation.**`,
+    ] : []),
     '',
     '## Objectifs',
     ...session.objectives.map((item) => `- ${item}`),
