@@ -18,8 +18,9 @@ function localEnvironment() {
         return [[value.slice(0, index), value.slice(index + 1).replace(/^['"]|['"]$/g, '')]]
       }))
   expect(env.RLS_TEST_ENVIRONMENT).toBe('local')
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) throw new Error('Clés Supabase local manquantes')
   expect(new URL(env.SUPABASE_URL).hostname).toMatch(/^(localhost|127\.0\.0\.1)$/)
-  return env
+  return { SUPABASE_URL: env.SUPABASE_URL, SUPABASE_ANON_KEY: env.SUPABASE_ANON_KEY }
 }
 
 describe('duplication de séance — intégrité Supabase locale', () => {
