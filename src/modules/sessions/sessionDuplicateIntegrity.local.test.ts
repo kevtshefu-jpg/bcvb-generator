@@ -8,13 +8,15 @@ import { duplicateSession } from './sessionStorage'
 import { ensurePersistentSituationIds, mapBuilderSessionToWritePayload } from './sessionBuilderServerAdapter'
 
 function localEnvironment() {
-  const env = Object.fromEntries(readFileSync(`${process.cwd()}/.env.rls.local`, 'utf8')
-    .split(/\r?\n/).flatMap((line) => {
-      const value = line.trim()
-      if (!value || value.startsWith('#') || !value.includes('=')) return []
-      const index = value.indexOf('=')
-      return [[value.slice(0, index), value.slice(index + 1).replace(/^['"]|['"]$/g, '')]]
-    }))
+  const env = process.env.RLS_TEST_ENVIRONMENT === 'local' && process.env.SUPABASE_URL
+    ? process.env
+    : Object.fromEntries(readFileSync(`${process.cwd()}/.env.rls.local`, 'utf8')
+      .split(/\r?\n/).flatMap((line) => {
+        const value = line.trim()
+        if (!value || value.startsWith('#') || !value.includes('=')) return []
+        const index = value.indexOf('=')
+        return [[value.slice(0, index), value.slice(index + 1).replace(/^['"]|['"]$/g, '')]]
+      }))
   expect(env.RLS_TEST_ENVIRONMENT).toBe('local')
   expect(new URL(env.SUPABASE_URL).hostname).toMatch(/^(localhost|127\.0\.0\.1)$/)
   return env
