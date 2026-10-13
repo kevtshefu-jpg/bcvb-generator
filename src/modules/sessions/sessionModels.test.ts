@@ -1,3 +1,4 @@
+import { getBasketSeasonLabel } from '../../lib/basketSeason'
 import { describe, expect, it } from 'vitest'
 import {
   createCourtFrame,
@@ -14,7 +15,7 @@ import {
 } from './sessionModels'
 import { transformRawTextToSession } from './sessionTransformer'
 import { transformRawTextToSituation } from './importedSituationParser'
-import { SESSION_TEMPLATES } from './sessionTemplates'
+import { SESSION_TEMPLATES, getSessionTemplate } from './sessionTemplates'
 import { getTotalSituationDuration, validateSessionDuration } from './sessionUtils'
 
 describe('createCourtFrame', () => {
@@ -136,13 +137,25 @@ describe('normalizeSession', () => {
       category: 'U13',
       durationMinutes: 90,
       expectedPlayers: 12,
-      season: '2025-2026',
+      season: getBasketSeasonLabel(),
       intensityLevel: 'medium',
       status: 'draft',
       visibility: 'private',
     })
     expect(emptySituation.durationMinutes).toBe(10)
     expect(emptySession.durationMinutes).toBe(90)
+  })
+})
+
+describe('saison des nouvelles séances', () => {
+  it('aligne brouillons et modèles sur la saison courante sans réécrire l’historique', () => {
+    const currentSeason = getBasketSeasonLabel()
+    expect(createSession().season).toBe(currentSeason)
+    expect(getSessionTemplate('U13').season).toBe(currentSeason)
+    expect(SESSION_TEMPLATES.every((template) => template.season === currentSeason)).toBe(true)
+
+    const historical = createSession({ season: '2025-2026' })
+    expect(normalizeSession(historical).season).toBe('2025-2026')
   })
 })
 
