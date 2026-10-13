@@ -40,7 +40,7 @@ export function duplicateSituation(situation: SessionSituation) {
   void id
 
   return createSituation({
-    ...copy,
+    ...structuredClone(copy),
     title: `${situation.title} - copie`,
     order: (situation.order ?? 0) + 1,
     courtFrames: courtFrames.map((frame, index) => ({
