@@ -56,6 +56,8 @@ jobs:
         run: node scripts/preprod-migration-manifest.mjs
       - name: Verify audited October migration sequence
         run: node scripts/check-october-migration-sequence.mjs
+      - name: Verify preproduction SQL preflight is read-only
+        run: node scripts/check-preprod-readonly-preflight.mjs
       - name: Verify session duration RPC gates (offline)
         run: node scripts/check-session-duration-rpc-gates.mjs
       - name: Test strict preproduction dry-run parser (offline)

@@ -34,6 +34,19 @@ Consultation du registre des migrations via Supabase, **sans SQL ni écriture** 
 - `scripts/preprod-migration-manifest.mjs` et `scripts/check-october-migration-sequence.mjs` vérifient la séquence locale ; `scripts/check-session-duration-rpc-gates.mjs` vérifie hors ligne la présence des deux contrôles de durée, des droits et leur ordre avant mutation.
 - Les tests Supabase de GitHub Actions utilisent une **base locale jetable** ; leur succès ne prouve ni la synchronisation de préproduction ni celle de production.
 
+## Préflight SQL vérifié en lecture seule (P12.42)
+
+Le fichier `scripts/preprod-readonly-preflight.sql` interroge **uniquement les métadonnées** : registre des migrations, définition des deux RPC, présence du verrou `FOR UPDATE`, présence des barrières de durée, droits d'exécution et statut `SECURITY DEFINER`. Il ne lit aucun profil de joueur, aucune blessure et aucune charge.
+
+Exécuté en lecture seule sur la préproduction le 13 octobre 2026, il a confirmé :
+
+- 51 migrations, dernière `20261008140000` ; aucune des deux migrations de durée enregistrée.
+- Les deux RPC existent, sont `SECURITY DEFINER`, disposent d'un verrou de ligne et autorisent `authenticated`.
+- Les rôles `anon` et `PUBLIC` ne disposent pas d'EXECUTE sur ces RPC.
+- Les deux RPC ne disposent **pas encore** des nouvelles barrières de durée.
+
+La CI contrôle statiquement que ce préflight ne contient aucune instruction SQL de mutation. Cette vérification statique ne remplace pas l'examen humain du SQL, et l'exécution en préproduction ne vaut pas dry-run de migration.
+
 ## Conditions préalables au GO de préproduction
 
 1. **État distant récent prouvé** : 51 versions enregistrées en préproduction le 13 octobre ; confirmer de nouveau le registre et le projet cible au moment du dry-run. Ne pas exécuter de reconstruction « base vide ».
