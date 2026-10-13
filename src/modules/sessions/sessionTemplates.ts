@@ -1,3 +1,4 @@
+import { getBasketSeasonLabel } from '../../lib/basketSeason'
 import { createCourtFrame, createMetric, createSession, createSituation, sessionCategories, type SessionCategory, type TrainingSessionV2 } from './sessionModels'
 
 function templateCourtFrames(title: string) {
@@ -176,7 +177,7 @@ export const SESSION_TEMPLATES = Object.values(templateData).map((template) =>
     coachName: '',
     location: '',
     date: '',
-    season: '2025-2026',
+    season: getBasketSeasonLabel(),
     sessionType: 'development',
     status: 'draft',
   })
@@ -189,7 +190,7 @@ export function getSessionTemplate(category: SessionCategory, type = 'developmen
   return createSession({
     ...template,
     sessionType: type as TrainingSessionV2['sessionType'],
-    season: '2025-2026',
+    season: getBasketSeasonLabel(),
     status: 'draft',
   })
 }
