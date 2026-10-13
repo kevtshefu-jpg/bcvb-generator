@@ -31,4 +31,4 @@ select 'rpc_state',
          'has_row_lock', has_row_lock, 'authenticated_can_execute', authenticated_can_execute,
          'anon_can_execute', anon_can_execute, 'public_can_execute')
 from rpc_state
-order by section, details->>'function';
+order by section;
