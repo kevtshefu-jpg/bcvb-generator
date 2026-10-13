@@ -80,7 +80,7 @@ begin
     'published_at', saved.published_at
   );
 end;
-$$
+$;
 alter function public.publish_session(uuid,bigint,text) owner to postgres;
 revoke all on function public.publish_session(uuid,bigint,text) from public,anon;
 grant execute on function public.publish_session(uuid,bigint,text) to authenticated,service_role;
