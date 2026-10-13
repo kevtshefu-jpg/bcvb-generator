@@ -20,7 +20,13 @@ export function SessionTemplatePicker({ onPick }: SessionTemplatePickerProps) {
             <p>{template.theme}</p>
             <span>{template.durationMinutes} min · {template.situations.length} situations</span>
             {!validateSessionDuration(template).valid && (
-              <p role="status">Durée à compléter : {Math.abs(validateSessionDuration(template).differenceMinutes)} min non planifiées. Modèle à adapter avant utilisation.</p>
+              <p role="status">
+                Durée à corriger : {Math.abs(validateSessionDuration(template).differenceMinutes)} min{' '}
+                {validateSessionDuration(template).differenceMinutes < 0
+                  ? 'non planifiées'
+                  : 'au-delà de la durée annoncée'}.
+                {' '}Déroulé : {validateSessionDuration(template).calculatedMinutes} min. Modèle à adapter avant utilisation.
+              </p>
             )}
             <button type="button" onClick={() => onPick(getSessionTemplate(template.category as SessionCategory))}>Charger modèle</button>
           </article>
