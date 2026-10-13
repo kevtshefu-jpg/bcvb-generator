@@ -45,6 +45,9 @@ export function duplicateSituation(situation: SessionSituation) {
     order: (situation.order ?? 0) + 1,
     courtFrames: courtFrames.map((frame, index) => ({
       ...frame,
+      objects: structuredClone(frame.objects),
+      arrows: structuredClone(frame.arrows),
+      zones: structuredClone(frame.zones),
       id: '',
       title: index === 0 ? `${frame.title} - copie` : frame.title,
     })),
