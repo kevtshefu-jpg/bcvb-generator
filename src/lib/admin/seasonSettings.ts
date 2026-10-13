@@ -1,23 +1,22 @@
 import type { SeasonConfig } from "../../types/admin";
 
-export const defaultSeasons: SeasonConfig[] = [
-  {
-    id: "season-2025-2026",
-    label: "Saison 2025-2026",
-    startDate: "2025-08-01",
-    endDate: "2026-07-31",
-    active: true,
-    archived: false,
-  },
-  {
-    id: "season-2024-2025",
-    label: "Saison 2024-2025",
-    startDate: "2024-08-01",
-    endDate: "2025-07-31",
-    active: false,
-    archived: true,
-  },
-];
+// August–July is the club's existing season boundary. This only supplies
+// defaults for a new local configuration; saved administrator choices win.
+export function buildDefaultSeasons(today: Date = new Date()): SeasonConfig[] {
+  const year = today.getMonth() >= 7 ? today.getFullYear() : today.getFullYear() - 1;
+  const years = [...new Set([year, year - 1, 2024])].filter((value) => value <= year);
+
+  return years.map((startYear) => ({
+    id: `season-${startYear}-${startYear + 1}`,
+    label: `Saison ${startYear}-${startYear + 1}`,
+    startDate: `${startYear}-08-01`,
+    endDate: `${startYear + 1}-07-31`,
+    active: startYear === year,
+    archived: startYear < year,
+  }));
+}
+
+export const defaultSeasons: SeasonConfig[] = buildDefaultSeasons();
 
 export function setActiveSeason(seasons: SeasonConfig[], seasonId: string) {
   return seasons.map((season) => ({
