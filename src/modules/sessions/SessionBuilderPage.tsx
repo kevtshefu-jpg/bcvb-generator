@@ -49,7 +49,7 @@ import {
   type SessionBuilderSyncState,
 } from './sessionBuilderServerAdapter'
 import { exportSessionToJson, exportSessionToMarkdown, printSessionPdf } from './sessionExport'
-import { textToList } from './sessionUtils'
+import { textToList, validateSessionDuration } from './sessionUtils'
 import { buildSessionUpgradePrompt } from './sessionTransformer'
 import { analyzeSessionQuality } from './sessionQuality'
 import '../../styles/sessions.css'
@@ -423,9 +423,9 @@ export default function SessionBuilderPage() {
 
   async function submitCurrentSession() {
     if (mutationLock.current || !serverSessionId || serverVersion === null || syncState !== 'saved' || session.status !== 'draft') return
-    const plannedMinutes = session.situations.reduce((total, situation) => total + Number(situation.durationMinutes || 0), 0)
-    if (session.situations.length === 0 || session.durationMinutes <= 0 || plannedMinutes !== session.durationMinutes) {
-      setMessage(`Soumission impossible : durée annoncée ${session.durationMinutes} min, déroulé ${plannedMinutes} min. Corrigez les blocs puis sauvegardez.`)
+    const duration = validateSessionDuration(session)
+    if (session.situations.length === 0 || duration.announcedMinutes <= 0 || !duration.valid) {
+      setMessage(`Soumission impossible : durée annoncée ${duration.announcedMinutes} min, déroulé ${duration.calculatedMinutes} min. Corrigez les blocs puis sauvegardez.`)
       return
     }
     mutationLock.current = true
