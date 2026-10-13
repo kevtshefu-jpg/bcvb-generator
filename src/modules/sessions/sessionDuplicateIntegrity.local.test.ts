@@ -252,6 +252,17 @@ describe('duplication de séance — intégrité Supabase locale', () => {
     expect(afterReject.error).toBeNull()
     expect(afterReject.data).toMatchObject({ status: 'to_review', version: 2, visibility: 'team' })
 
+    const invalidBlock = await privileged.from('session_situations')
+      .update({ duration_minutes: 0 }).eq('session_id', draft.id)
+    expect(invalidBlock.error).toBeNull()
+    await expect(admin.publishSession({
+      sessionId: draft.id, expectedVersion: 2, visibility: 'club',
+    })).rejects.toThrow()
+    const zeroRejected = await privileged.from('sessions')
+      .select('status,version,visibility').eq('id', draft.id).single()
+    expect(zeroRejected.error).toBeNull()
+    expect(zeroRejected.data).toMatchObject({ status: 'to_review', version: 2, visibility: 'team' })
+
     const corrected = await privileged.from('session_situations')
       .update({ duration_minutes: 30 }).eq('session_id', draft.id)
     expect(corrected.error).toBeNull()
