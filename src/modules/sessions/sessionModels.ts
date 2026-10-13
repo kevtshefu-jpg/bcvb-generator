@@ -1,3 +1,5 @@
+import { getBasketSeasonLabel } from '../../lib/basketSeason'
+
 export const sessionVisibilityOptions = [
   'private',
   'team',
@@ -432,7 +434,7 @@ export const emptySession: TrainingSessionV2 = {
   durationMinutes: 90,
   theme: '',
   cycle: '',
-  season: '2025-2026',
+  season: getBasketSeasonLabel(),
   sessionType: 'development',
   intensityLevel: 'medium',
   objectives: [],
