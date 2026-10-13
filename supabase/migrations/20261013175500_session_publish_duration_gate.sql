@@ -9,7 +9,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $$
+as $bcvb$
 declare
   current_row public.sessions;
   saved public.sessions;
@@ -80,7 +80,7 @@ begin
     'published_at', saved.published_at
   );
 end;
-$;
+$bcvb$;
 alter function public.publish_session(uuid,bigint,text) owner to postgres;
 revoke all on function public.publish_session(uuid,bigint,text) from public,anon;
 grant execute on function public.publish_session(uuid,bigint,text) to authenticated,service_role;
