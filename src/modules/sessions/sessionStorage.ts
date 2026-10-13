@@ -63,9 +63,24 @@ export function duplicateSession(session: TrainingSessionV2) {
   void createdAt
   void updatedAt
 
+  const detached = structuredClone(copy)
   return createSession({
-    ...structuredClone(copy),
+    ...detached,
     title: `${session.title} - copie`,
+    status: 'draft',
+    publishedAt: '',
+    archivedAt: '',
+    deletedAt: '',
+    deletedBy: '',
+    situations: detached.situations.map((situation) => ({
+      ...situation,
+      id: createId('situation'),
+      status: 'draft',
+      publishedAt: '',
+      archivedAt: '',
+      deletedAt: '',
+      courtFrames: situation.courtFrames.map((frame) => ({ ...frame, id: createId('court') })),
+    })),
   })
 }
 
