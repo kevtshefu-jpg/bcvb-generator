@@ -12,6 +12,7 @@ import { SessionLibraryPicker } from './SessionLibraryPicker'
 import { SessionPreview } from './SessionPreview'
 import { SingleSituationImportPanel } from './SingleSituationImportPanel'
 import { SessionTemplatePicker } from './SessionTemplatePicker'
+import { SessionDurationReconciliation } from './SessionDurationReconciliation'
 import { SessionTimeline } from './SessionTimeline'
 import {
   createCourtFrame,
@@ -1262,6 +1263,8 @@ export default function SessionBuilderPage() {
                 </details>
               </div>
             )}
+
+            <SessionDurationReconciliation session={session} readOnly={readOnly || syncState === 'saving' || syncState === 'loading'} onChange={updateSession} />
 
             {showPreview && <SessionPreview session={session} mode={previewMode} />}
           </section>
