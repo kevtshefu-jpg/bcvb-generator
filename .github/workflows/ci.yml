@@ -25,6 +25,8 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Session workspace regression tests
         run: npx vitest run src/modules/sessions/SessionTimeline.test.tsx src/components/courts/AdvancedFibaCourt.test.tsx
+      - name: Admin season boundary tests
+        run: npx vitest run src/lib/admin/seasonSettings.test.ts
       - name: Sessions portable suite
         run: npx vitest run src/modules/sessions --exclude "**/*.local.test.*"
       - name: Court component suite
