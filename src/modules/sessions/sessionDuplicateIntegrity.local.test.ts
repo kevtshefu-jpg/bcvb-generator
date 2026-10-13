@@ -208,4 +208,57 @@ describe('duplication de séance — intégrité Supabase locale', () => {
     expect(submitted).toMatchObject({ status: 'to_review', version: 3 })
   }, 20_000)
 
+  it('empêche la publication d’une séance héritée incohérente sans altérer son statut', async () => {
+    const env = localEnvironment()
+    const privilegedKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!privilegedKey) throw new Error('Clé service-role Supabase local manquante')
+    const fixture = JSON.parse(readFileSync(`${process.cwd()}/.rls-test-fixtures.json`, 'utf8')) as {
+      accounts: {
+        coachA: { id: string; email: string; password: string }
+        admin: { email: string; password: string }
+      }
+      fixtures: { teamA: string }
+    }
+    const client = (key: string) => createClient(env.SUPABASE_URL, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+    const coachClient = client(env.SUPABASE_ANON_KEY)
+    const adminClient = client(env.SUPABASE_ANON_KEY)
+    const privileged = client(privilegedKey)
+    expect((await coachClient.auth.signInWithPassword(fixture.accounts.coachA)).error).toBeNull()
+    expect((await adminClient.auth.signInWithPassword(fixture.accounts.admin)).error).toBeNull()
+    const coach = createSessionWriteService(coachClient)
+    const admin = createSessionWriteService(adminClient)
+    const builder = ensurePersistentSituationIds(createSession({
+      title: 'Publication héritée contrôle durée', teamId: fixture.fixtures.teamA,
+      coachId: fixture.accounts.coachA.id, visibility: 'team', durationMinutes: 30,
+      situations: [createSituation({ title: 'Bloc conforme', durationMinutes: 30 })],
+    }), randomUUID)
+    const draft = await coach.createSessionDraft({
+      teamId: fixture.fixtures.teamA, coachId: fixture.accounts.coachA.id,
+      ...mapBuilderSessionToWritePayload(builder),
+    })
+    const review = await coach.submitSessionForReview({ sessionId: draft.id, expectedVersion: 1 })
+    expect(review).toMatchObject({ status: 'to_review', version: 2 })
+    // Simule un ancien enregistrement à relire, déjà incohérent lors de son import historique.
+    const tampered = await privileged.from('session_situations')
+      .update({ duration_minutes: 20 }).eq('session_id', draft.id)
+    expect(tampered.error).toBeNull()
+    await expect(admin.publishSession({
+      sessionId: draft.id, expectedVersion: 2, visibility: 'club',
+    })).rejects.toThrow()
+    const afterReject = await privileged.from('sessions')
+      .select('status,version,visibility').eq('id', draft.id).single()
+    expect(afterReject.error).toBeNull()
+    expect(afterReject.data).toMatchObject({ status: 'to_review', version: 2, visibility: 'team' })
+
+    const corrected = await privileged.from('session_situations')
+      .update({ duration_minutes: 30 }).eq('session_id', draft.id)
+    expect(corrected.error).toBeNull()
+    const published = await admin.publishSession({
+      sessionId: draft.id, expectedVersion: 2, visibility: 'club',
+    })
+    expect(published).toMatchObject({ status: 'published', version: 3, visibility: 'club' })
+  }, 20_000)
+
 })
