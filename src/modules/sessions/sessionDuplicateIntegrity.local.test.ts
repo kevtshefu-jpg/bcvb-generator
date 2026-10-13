@@ -282,4 +282,36 @@ describe('duplication de séance — intégrité Supabase locale', () => {
     expect(published).toMatchObject({ status: 'published', version: 3, visibility: 'club' })
   }, 20_000)
 
+  it('conserve le brouillon sans situations et refuse sa soumission côté serveur', async () => {
+    const env = localEnvironment()
+    const fixture = JSON.parse(readFileSync(`${process.cwd()}/.rls-test-fixtures.json`, 'utf8')) as {
+      accounts: { coachA: { id: string; email: string; password: string } }
+      fixtures: { teamA: string }
+    }
+    const client = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+    expect((await client.auth.signInWithPassword(fixture.accounts.coachA)).error).toBeNull()
+    const service = createSessionWriteService(client)
+    const emptyDraft = createSession({
+      title: 'Brouillon sans situations', teamId: fixture.fixtures.teamA,
+      coachId: fixture.accounts.coachA.id, visibility: 'private',
+      durationMinutes: 30, situations: [],
+    })
+    const saved = await service.createSessionDraft({
+      teamId: fixture.fixtures.teamA, coachId: fixture.accounts.coachA.id,
+      ...mapBuilderSessionToWritePayload(emptyDraft),
+    })
+    expect(saved.situations).toHaveLength(0)
+    const rejection = await client.rpc('submit_session_for_review', {
+      target_session_id: saved.id, expected_version: 1,
+    })
+    expect(rejection.error?.code).toBe('22023')
+    expect(rejection.error?.message).toContain('Durée de séance incohérente')
+    const unchanged = await client.from('sessions')
+      .select('status,version').eq('id', saved.id).single()
+    expect(unchanged.error).toBeNull()
+    expect(unchanged.data).toMatchObject({ status: 'draft', version: 1 })
+  }, 20_000)
+
 })
