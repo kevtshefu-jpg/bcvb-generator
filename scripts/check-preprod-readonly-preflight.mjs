@@ -10,6 +10,7 @@ assert.match(withoutComments, /has_function_privilege/)
 assert.match(withoutComments, /public_can_execute/)
 assert.match(withoutComments, /has_duration_gate/)
 assert.match(withoutComments, /security_definer/)
-assert.doesNotMatch(withoutComments, /\b(insert|update|delete|truncate|alter|drop|create|grant|revoke|call|execute|do|copy)\b/i,
+const sqlWithoutLiterals = withoutComments.replace(/'(?:''|[^'])*'/g, "''")
+assert.doesNotMatch(sqlWithoutLiterals, /\b(insert|update|delete|truncate|alter|drop|create|grant|revoke|call|execute|do|copy)\b/i,
   'Preflight must contain no SQL mutation or dynamic execution commands')
 console.log('P12.42 preproduction SQL preflight is read-only by static contract')
