@@ -1,5 +1,6 @@
 import { SESSION_TEMPLATES, getSessionTemplate } from './sessionTemplates'
 import type { SessionCategory, TrainingSessionV2 } from './sessionModels'
+import { validateSessionDuration } from './sessionUtils'
 
 type SessionTemplatePickerProps = {
   onPick: (session: TrainingSessionV2) => void
@@ -18,6 +19,9 @@ export function SessionTemplatePicker({ onPick }: SessionTemplatePickerProps) {
             <h3>{template.category}</h3>
             <p>{template.theme}</p>
             <span>{template.durationMinutes} min · {template.situations.length} situations</span>
+            {!validateSessionDuration(template).valid && (
+              <p role="status">Durée à compléter : {Math.abs(validateSessionDuration(template).differenceMinutes)} min non planifiées. Modèle à adapter avant utilisation.</p>
+            )}
             <button type="button" onClick={() => onPick(getSessionTemplate(template.category as SessionCategory))}>Charger modèle</button>
           </article>
         ))}
