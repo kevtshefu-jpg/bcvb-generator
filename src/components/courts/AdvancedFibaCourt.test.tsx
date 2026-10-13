@@ -87,4 +87,36 @@ describe('AdvancedFibaCourt workspace', () => {
     expect(nextFrames[0].objects).toEqual([])
     expect(nextFrames[0].arrows).toEqual([])
   })
+  it('supprime seulement la frame active et conserve intégralement les autres', () => {
+    const first = createCourtFrame({ title: 'Avant', objects: [], arrows: [] })
+    const second = createCourtFrame({ title: 'Après' })
+    const onChange = vi.fn()
+
+    render(<AdvancedFibaCourt frames={[first, second]} onChange={onChange} />)
+    const actions = document.querySelector('.advanced-court__action-menu')
+    expect(actions).not.toBeNull()
+    fireEvent.click(within(actions as HTMLElement).getByText('Supprimer frame'))
+
+    const remaining = onChange.mock.lastCall?.[0]
+    expect(remaining).toEqual([second])
+  })
+
+  it('recrée le kit BCVB lors de la suppression de la dernière frame', () => {
+    const onlyFrame = createCourtFrame({ title: 'Terrain unique', objects: [], arrows: [] })
+    const onChange = vi.fn()
+
+    render(<AdvancedFibaCourt frames={[onlyFrame]} onChange={onChange} />)
+    const actions = document.querySelector('.advanced-court__action-menu')
+    expect(actions).not.toBeNull()
+    fireEvent.click(within(actions as HTMLElement).getByText('Supprimer frame'))
+
+    const remaining = onChange.mock.lastCall?.[0]
+    expect(remaining).toHaveLength(1)
+    expect(remaining[0].id).not.toBe(onlyFrame.id)
+    expect(remaining[0].objects.map((object: { type: string }) => object.type)).toEqual([
+      'offense_player', 'defense_player', 'ball',
+    ])
+    expect(remaining[0].arrows).toHaveLength(1)
+  })
+
 })
