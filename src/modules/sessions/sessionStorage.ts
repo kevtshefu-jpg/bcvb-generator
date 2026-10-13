@@ -1,4 +1,4 @@
-import { createSession, normalizeSession, normalizeSituation, type SessionSituation, type SessionVisibility, type TrainingSessionV2 } from './sessionModels'
+import { createId, createSession, normalizeSession, normalizeSituation, type SessionSituation, type SessionVisibility, type TrainingSessionV2 } from './sessionModels'
 
 const DRAFT_KEY = 'bcvb-session-draft-v2'
 const LIBRARY_KEY = 'bcvb-session-library-v2'
