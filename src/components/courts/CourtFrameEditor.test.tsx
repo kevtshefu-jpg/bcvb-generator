@@ -34,8 +34,9 @@ describe('CourtFrameEditor legacy round-trip', () => {
     expect(saved.arrows).toHaveLength(1)
     expect(saved.arrows[0]).toMatchObject({
       id: 'pass', type: 'arrow_pass', label: 'Passe historique',
-      fromX: 11.2, fromY: 7.5, control: { x: 10.5, y: 7.5 },
+      fromY: 7.5, control: { x: 10.5, y: 7.5 },
     })
+    expect(saved.arrows[0].fromX).toBeCloseTo(11.2, 8)
     expect(saved.zones).toHaveLength(1)
     expect(saved.zones[0]).toMatchObject({ id: 'help', label: 'Aide' })
   })
