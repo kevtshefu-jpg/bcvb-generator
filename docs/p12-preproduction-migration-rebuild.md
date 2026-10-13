@@ -55,9 +55,9 @@ L'action générique `apply_migration(name, query)` ne permet pas de transmettre
 
 1. Vérifier la cible préproduction `rghbzbwmvvnoqwymqyjn`, son statut et les **51 migrations déjà enregistrées** ; vérifier les objets SQL et l'absence de données réelles à risque. Si divergence, **STOP**.
 2. Vérifier le dépôt GitHub à jour, les 53 fichiers, le manifeste et les contrôles de sécurité ; utiliser une base locale jetable pour rejouer les migrations et les tests.
-3. Lancer **uniquement** `scripts/preprod-dry-run.mjs` avec identifiants fournis de manière sécurisée par l'opérateur habilité ; le script vérifie la cible et exécute `supabase db push --dry-run --linked`.
-4. Attendu au dry-run : **deux migrations et seulement deux**, dans l'ordre : `20261013161800_session_submit_duration_gate.sql` puis `20261013175500_session_publish_duration_gate.sql`. Toute autre proposition de modification est un **NO-GO**.
-5. Revoir les droits de publication/soumission, l'absence de données sensibles, les tests de durée et la stratégie de sauvegarde/restauration. Aucun déploiement ne découle automatiquement de cette vérification.
+3. Lancer **uniquement** `scripts/preprod-dry-run.mjs` avec identifiants fournis de manière sécurisée par l'opérateur habilité ; le script vérifie la cible, compare strictement **53 versions locales / 51 distantes**, puis exécute `supabase db push --dry-run --linked`. Le parseur est testé hors ligne par `node --test scripts/preprod-preview-contract.test.mjs`.
+4. Attendu au dry-run : **deux migrations et seulement deux**, contrôlées automatiquement dans l'ordre : `20261013161800_session_submit_duration_gate.sql` puis `20261013175500_session_publish_duration_gate.sql`. Toute autre proposition de modification est un **NO-GO**.
+5. Si la CLI change son format de tableau ou de sortie du dry-run, le contrôle échoue par précaution : examiner et adapter le parseur avant toute autre opération. Revoir les droits de publication/soumission, l'absence de données sensibles, les tests de durée et la stratégie de sauvegarde/restauration. Aucun déploiement ne découle automatiquement de cette vérification.
 6. L'application effective sur préproduction exige une décision **GO distincte**, une fenêtre de changement et une vérification post-déploiement des 53 versions et des parcours synthétiques.
 7. **Production interdite dans cette procédure** : les 18 migrations non enregistrées et les différences potentielles de schéma exigent un plan de migration de production séparé, un audit des données et un test de restauration.
 
