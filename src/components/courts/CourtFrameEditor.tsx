@@ -94,7 +94,7 @@ function toMotion(arrow: CourtArrow, mode: CourtMode): MotionPath {
     kind: arrowKind(arrow.type),
     from: legacyPointToCourt({ x: arrow.fromX, y: arrow.fromY }, mode),
     to: legacyPointToCourt({ x: arrow.toX, y: arrow.toY }, mode),
-    control: arrow.control || null,
+    control: arrow.control ? legacyPointToCourt(arrow.control, mode) : null,
     color: arrow.color,
     strokeWidth: arrow.strokeWidth,
     curved: arrow.curved ?? arrow.type !== "arrow_move",
@@ -117,7 +117,7 @@ function toCourtFrame(frame: SessionFrameWithLogo): CourtFrame {
   };
 }
 
-function toSessionObject(object: CourtObject, frameId: string): SessionCourtObject | null {
+function toSessionObject(object: CourtObject, frameId: string, previous?: SessionCourtObject): SessionCourtObject | null {
   if (object.kind === "zone") return null;
   const label = object.kind === "text"
     ? object.text
@@ -133,9 +133,12 @@ function toSessionObject(object: CourtObject, frameId: string): SessionCourtObje
             : object.kind === "hands" ? "hands"
               : "offense_player";
 
+  // Keep historical aliases (and their metadata) when the visual kind did not change.
+  const unchangedKind = previous && sessionObjectKind(previous.type) === object.kind;
   return {
+    ...(unchangedKind ? previous : {}),
     id: object.id,
-    type,
+    type: unchangedKind ? previous.type : type,
     x: object.x,
     y: object.y,
     label,
@@ -147,8 +150,9 @@ function toSessionObject(object: CourtObject, frameId: string): SessionCourtObje
   };
 }
 
-function toSessionZone(zone: ZoneObject): CourtZone {
+function toSessionZone(zone: ZoneObject, previous?: CourtZone): CourtZone {
   return {
+    ...previous,
     id: zone.id,
     x: zone.x,
     y: zone.y,
@@ -164,10 +168,11 @@ function toSessionZone(zone: ZoneObject): CourtZone {
   };
 }
 
-function toSessionArrow(motion: MotionPath): CourtArrow {
+function toSessionArrow(motion: MotionPath, previous?: CourtArrow): CourtArrow {
   return {
+    ...previous,
     id: motion.id,
-    type: motionType(motion.kind),
+    type: previous && arrowKind(previous.type) === motion.kind ? previous.type : motionType(motion.kind),
     fromX: motion.from.x,
     fromY: motion.from.y,
     toX: motion.to.x,
@@ -180,12 +185,15 @@ function toSessionArrow(motion: MotionPath): CourtArrow {
 }
 
 function toSessionFrame(source: SessionFrameWithLogo, frame: CourtFrame): SessionFrameWithLogo {
+  const previousObjects = new Map(source.objects.map((object) => [object.id, object]));
+  const previousZones = new Map(source.zones.map((zone) => [zone.id, zone]));
+  const previousArrows = new Map(source.arrows.map((arrow) => [arrow.id, arrow]));
   const objects = frame.objects
-    .map((object) => toSessionObject(object, source.id))
+    .map((object) => toSessionObject(object, source.id, previousObjects.get(object.id)))
     .filter(Boolean) as SessionCourtObject[];
   const zones = frame.objects
     .filter((object): object is ZoneObject => object.kind === "zone")
-    .map(toSessionZone);
+    .map((zone) => toSessionZone(zone, previousZones.get(zone.id)));
 
   return {
     ...source,
@@ -195,7 +203,7 @@ function toSessionFrame(source: SessionFrameWithLogo, frame: CourtFrame): Sessio
     showCenterLogo: frame.mode === "full" ? Boolean(frame.showCenterLogo) : false,
     objects,
     zones,
-    arrows: frame.motions.map(toSessionArrow),
+    arrows: frame.motions.map((motion) => toSessionArrow(motion, previousArrows.get(motion.id))),
   };
 }
 
