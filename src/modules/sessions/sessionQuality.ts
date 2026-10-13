@@ -56,6 +56,10 @@ export function analyzeSessionQuality(session: TrainingSessionV2): SessionQualit
   if (totalDuration > session.durationMinutes) warnings.push(`Le déroulé dépasse la durée prévue de ${totalDuration - session.durationMinutes} min.`)
   if (totalDuration < session.durationMinutes) warnings.push(`Il manque ${session.durationMinutes - totalDuration} min dans le déroulé.`)
   if (session.situations.length === 0) warnings.push('Aucune situation pédagogique n’est créée.')
+  if (!Number.isSafeInteger(session.durationMinutes) || session.durationMinutes <= 0) warnings.push('La durée annoncée doit être un nombre entier de minutes strictement positif.')
+  if (session.situations.some((situation) => !Number.isSafeInteger(situation.durationMinutes) || situation.durationMinutes <= 0)) {
+    warnings.push('Chaque situation doit durer un nombre entier de minutes strictement positif.')
+  }
 
   session.situations.forEach((situation) => {
     const prefix = `Situation ${situation.order} - ${situation.title || 'sans titre'}`
