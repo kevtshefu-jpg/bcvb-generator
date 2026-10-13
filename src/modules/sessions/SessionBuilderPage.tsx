@@ -441,6 +441,10 @@ export default function SessionBuilderPage() {
   }
 
   function duplicateCurrentSession() {
+    if (mutationLock.current || syncState === 'saving' || syncState === 'loading') {
+      setMessage('Attendez la fin de la sauvegarde ou du chargement avant de dupliquer la séance.')
+      return
+    }
     updateSession(duplicateSession(session))
     setServerSessionId(null)
     setServerVersion(null)
