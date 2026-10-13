@@ -13,10 +13,11 @@ const versions = files.map(file => file.slice(0, 14))
 assert.equal(new Set(versions).size, versions.length, 'Duplicate migration version')
 assert.equal(files[0], '20260604072700_sessions_studio.sql', 'Unexpected first migration')
 assert.equal(files[50], '20261008140000_internal_book_evaluation_register.sql', 'Audited 51-migration baseline must remain unchanged')
-assert.equal(files.at(-1), '20261013161800_session_submit_duration_gate.sql', 'Unexpected final appended migration')
-assert.equal(files.length, 52, 'Expected 51 audited migrations plus one duration gate migration')
+assert.equal(files[51], '20261013161800_session_submit_duration_gate.sql', 'Submission duration gate must remain in sequence')
+assert.equal(files.at(-1), '20261013175500_session_publish_duration_gate.sql', 'Unexpected final appended migration')
+assert.equal(files.length, 53, 'Expected 51 audited migrations plus two duration gate migrations')
 const oct = versions.filter(version => version >= '20261007000000')
-assert.equal(oct.length, 17, 'Expected 16 audited October migrations plus the duration gate')
+assert.equal(oct.length, 18, 'Expected 16 audited October migrations plus two duration gates')
 const result = { mode: 'offline-read-only', project: 'NOT_CONNECTED', migration_count: files.length,
   first: files[0], last: files.at(-1), pending_october_baseline: oct.length,
   note: 'Does not verify remote database or execute SQL' }
