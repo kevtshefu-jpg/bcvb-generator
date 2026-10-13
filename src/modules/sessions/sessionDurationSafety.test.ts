@@ -29,6 +29,7 @@ describe('duration safety contract', () => {
     expect(validateSessionDuration(session).differenceMinutes).toBe(0)
     expect(validateSessionDuration(session).valid).toBe(false)
     expect(analyzeSessionQuality(session).status).toBe('brouillon')
+    expect(analyzeSessionQuality(session).warnings).toContain('Chaque situation doit durer un nombre entier de minutes strictement positif.')
     expect(session).toEqual(before)
   })
 
