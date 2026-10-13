@@ -73,6 +73,22 @@ describe('analyzeSessionQuality', () => {
     const report = analyzeSessionQuality(session)
 
     expect(report.missing).toContain('déroulé cohérent')
-    expect(report.warnings).toContain('Le déroulé dépasse fortement la durée prévue.')
+    expect(report.warnings).toContain('Le déroulé dépasse la durée prévue de 20 min.')
   })
+  it('refuse une séance avec un déficit même de une minute', () => {
+    const session = createSession({
+      title: 'Séance U13',
+      durationMinutes: 21,
+      expectedPlayers: 12,
+      objectives: ['Jouer ensemble et rechercher la bonne décision.'],
+      situations: [buildCompleteSituation(1, 20)],
+    })
+
+    const report = analyzeSessionQuality(session)
+
+    expect(report.missing).toContain('déroulé cohérent')
+    expect(report.warnings).toContain('Il manque 1 min dans le déroulé.')
+    expect(report.status).toBe('brouillon')
+  })
+
 })
