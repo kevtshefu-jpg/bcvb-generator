@@ -53,10 +53,10 @@ export function getSessionDurationProblem(session: TrainingSessionV2): string | 
     return 'Chaque situation doit durer un nombre entier de minutes strictement positif.'
   }
   if (duration.differenceMinutes < 0) {
-    return `${Math.abs(duration.differenceMinutes)} min non planifiées (déroulé : ${duration.calculatedMinutes} min).`
+    return `${Math.abs(duration.differenceMinutes)} min non planifiées (Déroulé : ${duration.calculatedMinutes} min).`
   }
   if (duration.differenceMinutes > 0) {
-    return `${duration.differenceMinutes} min au-delà de la durée annoncée (déroulé : ${duration.calculatedMinutes} min).`
+    return `${duration.differenceMinutes} min au-delà de la durée annoncée (Déroulé : ${duration.calculatedMinutes} min).`
   }
   return null
 }
