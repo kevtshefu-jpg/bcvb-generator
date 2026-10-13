@@ -10,3 +10,6 @@ const env = { ...process.env, SUPABASE_URL: values.API_URL, SUPABASE_ANON_KEY: v
 for (const script of ['scripts/create-test-users.mjs', 'scripts/test-player-monitoring-security.mjs', 'scripts/test-performance-rpc-security.mjs']) {
   execFileSync(process.execPath, [script], { env, stdio: 'inherit' })
 }
+
+// Run session-copy integrity against the same isolated Supabase and synthetic fixtures.
+execFileSync('node', ['node_modules/vitest/vitest.mjs', 'run', 'src/modules/sessions/sessionDuplicateIntegrity.local.test.ts'], { env, stdio: 'inherit' })
