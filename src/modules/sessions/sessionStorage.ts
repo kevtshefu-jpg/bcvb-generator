@@ -1,4 +1,4 @@
-import { createSession, normalizeSession, normalizeSituation, type SessionSituation, type SessionVisibility, type TrainingSessionV2 } from './sessionModels'
+import { createId, createSession, normalizeSession, normalizeSituation, type SessionSituation, type SessionVisibility, type TrainingSessionV2 } from './sessionModels'
 
 const DRAFT_KEY = 'bcvb-session-draft-v2'
 const LIBRARY_KEY = 'bcvb-session-library-v2'
@@ -63,9 +63,24 @@ export function duplicateSession(session: TrainingSessionV2) {
   void createdAt
   void updatedAt
 
+  const detached = structuredClone(copy)
   return createSession({
-    ...structuredClone(copy),
+    ...detached,
     title: `${session.title} - copie`,
+    status: 'draft',
+    publishedAt: '',
+    archivedAt: '',
+    deletedAt: '',
+    deletedBy: '',
+    situations: detached.situations.map((situation) => ({
+      ...situation,
+      id: createId('situation'),
+      status: 'draft',
+      publishedAt: '',
+      archivedAt: '',
+      deletedAt: '',
+      courtFrames: situation.courtFrames.map((frame) => ({ ...frame, id: createId('court') })),
+    })),
   })
 }
 

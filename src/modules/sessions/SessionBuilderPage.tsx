@@ -441,8 +441,16 @@ export default function SessionBuilderPage() {
   }
 
   function duplicateCurrentSession() {
+    if (mutationLock.current || syncState === 'saving' || syncState === 'loading') {
+      setMessage('Attendez la fin de la sauvegarde ou du chargement avant de dupliquer la séance.')
+      return
+    }
     updateSession(duplicateSession(session))
-    setMessage('Séance dupliquée.')
+    setServerSessionId(null)
+    setServerVersion(null)
+    setSearchParams({}, { replace: true })
+    setSyncState('local_only')
+    setMessage('Copie créée comme brouillon local indépendant. Sauvegardez-la pour créer une nouvelle séance BCVB.')
   }
 
   function autoFixSimpleMissing(mode: AutoFixMode = 'all') {
