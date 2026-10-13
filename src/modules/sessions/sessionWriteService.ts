@@ -38,6 +38,9 @@ export function createSessionWriteService(client: SupabaseClient) {
     if (error?.code === 'PT409') throw new SessionWriteConflictError(error.message)
     if (error && transition) {
       if (error.code === '42501') throw new SessionTransitionError("Vous n'êtes pas autorisé à effectuer cette transition.")
+      if (error.code === '22023' && error.message.includes('Durée de séance incohérente')) {
+        throw new SessionTransitionError('Durée de séance incohérente : vérifiez que la somme des blocs correspond exactement à la durée annoncée avant de soumettre ou publier.')
+      }
       if (error.code === '22023') throw new SessionTransitionError("Cette transition n'est pas autorisée dans l'état actuel de la séance.")
       throw new SessionTransitionError('La transition serveur de la séance a échoué.')
     }
