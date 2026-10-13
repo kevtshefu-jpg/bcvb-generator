@@ -14,7 +14,7 @@ rpc_state as (
          pg_get_functiondef(p.oid) ilike '%for update%' as has_row_lock,
          has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated_can_execute,
          has_function_privilege('anon', p.oid, 'EXECUTE') as anon_can_execute,
-         has_function_privilege('public', p.oid, 'EXECUTE') as public_can_execute
+         coalesce((select bool_or(grantee = 0) from aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) where privilege_type = 'EXECUTE'), false) as public_can_execute
   from pg_proc p
   join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public'
