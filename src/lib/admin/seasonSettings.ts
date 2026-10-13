@@ -1,9 +1,10 @@
 import type { SeasonConfig } from "../../types/admin";
+import { getBasketSeasonStartYear } from "../basketSeason";
 
 // August–July is the club's existing season boundary. This only supplies
 // defaults for a new local configuration; saved administrator choices win.
 export function buildDefaultSeasons(today: Date = new Date()): SeasonConfig[] {
-  const year = today.getMonth() >= 7 ? today.getFullYear() : today.getFullYear() - 1;
+  const year = getBasketSeasonStartYear(today);
   const years = [...new Set([year, year - 1, 2024])].filter((value) => value <= year);
 
   return years.map((startYear) => ({
