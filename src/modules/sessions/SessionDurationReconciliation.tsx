@@ -1,5 +1,5 @@
 import type { TrainingSessionV2 } from './sessionModels'
-import { validateSessionDuration } from './sessionUtils'
+import { getSessionDurationProblem, validateSessionDuration } from './sessionUtils'
 
 type SessionDurationReconciliationProps = {
   session: TrainingSessionV2
@@ -22,15 +22,18 @@ export function SessionDurationReconciliation({
     return <p role="status">Durées cohérentes : {duration.announcedMinutes} min planifiées.</p>
   }
 
-  const missing = duration.differenceMinutes < 0
-  const gap = Math.abs(duration.differenceMinutes)
+  const durationProblem = getSessionDurationProblem(session)
+  const canAdoptPlannedDuration = duration.calculatedMinutes > 0
+    && Number.isSafeInteger(duration.calculatedMinutes)
+    && session.situations.length > 0
+    && session.situations.every((situation) => Number.isSafeInteger(situation.durationMinutes) && situation.durationMinutes > 0)
 
   return (
     <section className="session-warning" aria-label="Réconciliation des durées de séance">
       <h3>Durée de séance à réconcilier</h3>
       <p role="alert">
         {duration.announcedMinutes} min annoncées, {duration.calculatedMinutes} min détaillées :
-        {' '}{gap} min {missing ? 'non planifiées' : 'au-delà de la durée annoncée'}.
+        {' '}{durationProblem}
       </p>
       <p>
         Deux possibilités : adapter les situations dans le déroulé pour atteindre
@@ -41,7 +44,7 @@ export function SessionDurationReconciliation({
         <a href="#session-situations">Compléter ou ajuster les situations</a>
         <button
           type="button"
-          disabled={readOnly || duration.calculatedMinutes <= 0}
+          disabled={readOnly || !canAdoptPlannedDuration}
           onClick={() => onChange({ ...session, durationMinutes: duration.calculatedMinutes })}
         >
           Retenir {duration.calculatedMinutes} min comme durée de séance
