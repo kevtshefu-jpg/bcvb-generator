@@ -58,6 +58,8 @@ jobs:
         run: node scripts/check-october-migration-sequence.mjs
       - name: Verify session duration RPC gates (offline)
         run: node scripts/check-session-duration-rpc-gates.mjs
+      - name: Test strict preproduction dry-run parser (offline)
+        run: node --test scripts/preprod-preview-contract.test.mjs
       - name: Setup Supabase CLI
         id: supabase-cli
         uses: supabase/setup-cli@v1
