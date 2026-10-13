@@ -64,7 +64,7 @@ export function duplicateSession(session: TrainingSessionV2) {
   void updatedAt
 
   return createSession({
-    ...copy,
+    ...structuredClone(copy),
     title: `${session.title} - copie`,
   })
 }
