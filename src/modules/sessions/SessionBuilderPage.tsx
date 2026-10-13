@@ -442,7 +442,11 @@ export default function SessionBuilderPage() {
 
   function duplicateCurrentSession() {
     updateSession(duplicateSession(session))
-    setMessage('Séance dupliquée.')
+    setServerSessionId(null)
+    setServerVersion(null)
+    setSearchParams({}, { replace: true })
+    setSyncState('local_only')
+    setMessage('Copie créée comme brouillon local indépendant. Sauvegardez-la pour créer une nouvelle séance BCVB.')
   }
 
   function autoFixSimpleMissing(mode: AutoFixMode = 'all') {
