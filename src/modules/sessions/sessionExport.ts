@@ -1,6 +1,6 @@
 import type { SessionCourtFrame, SessionSituation, TrainingSessionV2 } from './sessionModels'
 import { exportCourtPng, exportCourtSvg } from '../../components/courts/courtExport'
-import { getPhaseLabel, getTotalSituationDuration, validateSessionDuration } from './sessionUtils'
+import { getPhaseLabel, getTotalSituationDuration, getSessionDurationProblem } from './sessionUtils'
 import { buildRelativeSessionTimeline } from './sessionTimelineSchedule'
 
 function slugify(value: string) {
@@ -27,6 +27,7 @@ export function exportSessionToJson(session: TrainingSessionV2) {
 
 export function exportSessionToMarkdown(session: TrainingSessionV2) {
   const timeline = buildRelativeSessionTimeline(session.situations)
+  const durationProblem = getSessionDurationProblem(session)
   const markdown = [
     `# ${session.title}`,
     '',
@@ -38,9 +39,7 @@ export function exportSessionToMarkdown(session: TrainingSessionV2) {
     `- Visibilité : ${session.visibility}`,
     `- Statut : ${session.status}`,
     `- Total déroulé : ${getTotalSituationDuration(session)} minutes`,
-    ...(!validateSessionDuration(session).valid ? [
-      `- **ATTENTION — Durées incohérentes : ${Math.abs(validateSessionDuration(session).differenceMinutes)} min ${validateSessionDuration(session).differenceMinutes < 0 ? 'non planifiées' : 'au-delà de la durée annoncée'}. Adapter avant utilisation.**`,
-    ] : []),
+    ...(durationProblem ? [`- **ATTENTION — Durées incohérentes : ${durationProblem} Adapter avant utilisation.**`] : []),
     '',
     '## Objectifs',
     ...session.objectives.map((item) => `- ${item}`),

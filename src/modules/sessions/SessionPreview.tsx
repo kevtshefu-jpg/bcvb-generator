@@ -1,7 +1,7 @@
 import { FibaCourtFull } from '../../components/courts/FibaCourtFull'
 import { FibaCourtHalf } from '../../components/courts/FibaCourtHalf'
 import type { TrainingSessionV2 } from './sessionModels'
-import { getPhaseLabel, validateSessionDuration } from './sessionUtils'
+import { getPhaseLabel, getSessionDurationProblem } from './sessionUtils'
 import { buildRelativeSessionTimeline } from './sessionTimelineSchedule'
 
 type SessionPreviewProps = {
@@ -11,6 +11,7 @@ type SessionPreviewProps = {
 
 export function SessionPreview({ session, mode }: SessionPreviewProps) {
   const timeline = buildRelativeSessionTimeline(session.situations)
+  const durationProblem = getSessionDurationProblem(session)
 
   return (
     <section className={`session-preview session-preview--${mode}`}>
@@ -18,9 +19,7 @@ export function SessionPreview({ session, mode }: SessionPreviewProps) {
         <p className="bcvb-eyebrow">{mode === 'coach' ? 'Vue coach terrain' : mode === 'print' ? 'Vue impression PDF' : 'Vue édition'}</p>
         <h2>{session.title}</h2>
         <p>{session.category} · {session.theme} · {session.subTheme} · {session.durationMinutes} min · {session.expectedPlayers} joueurs</p>
-        {!validateSessionDuration(session).valid && (
-          <p role="alert">Durée à corriger : {Math.abs(validateSessionDuration(session).differenceMinutes)} min {validateSessionDuration(session).differenceMinutes < 0 ? 'non planifiées' : 'au-delà de la durée annoncée'}. Vérifier le déroulé avant utilisation.</p>
-        )}
+        {durationProblem && <p role="alert">Durée à corriger : {durationProblem} Vérifier le déroulé avant utilisation.</p>}
       </header>
       <article className="session-print-cover">
         <div>
