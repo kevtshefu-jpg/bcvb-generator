@@ -27,6 +27,8 @@ jobs:
         run: npx vitest run src/modules/sessions/SessionTimeline.test.tsx src/components/courts/AdvancedFibaCourt.test.tsx
       - name: Admin season boundary tests
         run: npx vitest run src/lib/admin/seasonSettings.test.ts
+      - name: Verify staged production RLS plan (offline)
+        run: npx vitest run tests/security/production-rls-remediation-contract.test.ts
       - name: Sessions portable suite
         run: npx vitest run src/modules/sessions --exclude "**/*.local.test.*"
       - name: Court component suite
@@ -78,8 +80,6 @@ jobs:
           cache: npm
       - name: Install security test dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
-      - name: Verify staged production RLS plan (offline)
-        run: npx vitest run tests/security/production-rls-remediation-contract.test.ts
       - name: Monitoring authorization integration
         run: node scripts/run-monitoring-security-ci.mjs
       - name: Verify migration state
