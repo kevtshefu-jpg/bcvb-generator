@@ -80,9 +80,10 @@ create policy bcvb_rls_20261014_library_authenticated_read
 on public.library_documents for select to authenticated
 using (
   public.current_user_role() in ('admin', 'responsable_technique', 'dirigeant', 'coach')
-  or uploaded_by = auth.uid()
+  or (uploaded_by = auth.uid() and public.current_user_role() not in ('inactive'))
   or (
-    is_active is true and deleted_at is null and status = 'published'
+    public.current_user_role() not in ('inactive')
+    and is_active is true and deleted_at is null and status = 'published'
     and (
       audience in ('public', 'member')
       or (audience = 'parent' and public.current_user_role() in ('parent', 'parent_referent'))
