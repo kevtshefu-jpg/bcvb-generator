@@ -38,9 +38,8 @@ begin
   if exists (
     select 1 from pg_policies
     where schemaname = 'public' and tablename = 'library_documents'
-      and policyname like 'bcvb_rls_20261014_%'
   ) then
-    raise exception 'Politiques BCVB de ce lot déjà présentes : arrêter et auditer';
+    raise exception 'Politiques bibliothèque inattendues : arrêter et auditer';
   end if;
 
   if (
