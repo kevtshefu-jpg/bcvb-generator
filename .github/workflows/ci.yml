@@ -78,6 +78,8 @@ jobs:
           cache: npm
       - name: Install security test dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Verify staged production RLS plan (offline)
+        run: npx vitest run tests/security/production-rls-remediation-contract.test.ts
       - name: Monitoring authorization integration
         run: node scripts/run-monitoring-security-ci.mjs
       - name: Verify migration state
