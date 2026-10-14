@@ -24,6 +24,7 @@ describe('manual production RLS remediation — NOT a deployment', () => {
     expect(sql).toContain('revoke all on public.player_content_unlocks, public.player_fundamental_progress from anon;')
     expect(sql).toContain('public.current_user_role()')
     expect(sql).toContain('uploaded_by = auth.uid()')
+    expect(sql).toContain("public.current_user_role() not in ('inactive')")
     expect(sql).toContain("status = 'published' and audience = 'public'")
     expect(sql).toContain('Politiques bibliothèque inattendues')
     expect(sql).toContain('protect_profile_security_fields_trigger')
