@@ -8,7 +8,7 @@
 - Préproduction : `rghbzbwmvvnoqwymqyjn`. Les trois tables ciblées y sont **absentes** : cette instance ne peut pas servir de clone de validation fonctionnelle.
 - Production : `public.library_documents`, `public.player_content_unlocks`, `public.player_fundamental_progress` existent avec RLS désactivée et des droits SQL directs pour `anon` et `authenticated`.
 - Deux tables joueur possèdent trois policies chacune, mais inopérantes tant que RLS est désactivée.
-- La bibliothèque n'a aucune policy, avec 22 documents agrégés au 14/10 : 19 `uploaded` et 3 autres? **Ne pas utiliser ce chiffre sans recontrôle**. Les catégories observées sont `uploaded` et `published`, et les audiences `Interne club`, `Coachs`, `parent`, `member`.
+- La bibliothèque n'a aucune policy, avec 22 documents agrégés au 14/10 : 20 `uploaded` et 2 `published` (chiffres à recontrôler avant intervention). Les catégories observées sont `uploaded` et `published`, et les audiences `Interne club`, `Coachs`, `parent`, `member`.
 - Le profil est déjà protégé contre la modification non autorisée des rôles par le trigger actif `protect_profile_security_fields_trigger`; sa présence a été confirmée. Ne pas qualifier l'auto-promotion de vulnérabilité démontrée.
 
 ## Blocage absolu : sauvegarde hors base vérifiable
