@@ -40,6 +40,18 @@ sh ops/manual/local-restore-readiness-2026-10-21.sh
 
 Si le dépôt local n'est pas synchronisé, récupérer le fichier depuis un **commit GitHub épinglé** et vérifier son contenu avant de l'exécuter. Ne jamais remplacer ce contrôle par une commande `curl | sh` non vérifiée. La réussite de ce contrôle **ne vaut pas** sauvegarde complète restaurable.
 
+## Résultat opérateur — contrôle local du 21 octobre 2026
+
+**PASS, limité à la préparation technique** : exécution sur Mac du script épinglé au commit `df21d22f`, avec contrôle de son empreinte Git `5f5391c635b757116f54ce2d4b22d6b327091ece` avant lancement. Sortie fournie : conteneur `bcvb-restore-test` en fonctionnement, réseau `none`, aucun port publié, clients `pg_dump`/`pg_restore`/`psql` présents, PostgreSQL 17.11 et 39 tables `public`. Le script a indiqué `OK : environnement isole accessible en lecture seule`.
+
+**Limite** : aucun test de restauration de sauvegarde complète n'a été réalisé, et aucune preuve de couverture Auth/Storage ou de restauration des octets des objets n'a été produite. Ne pas qualifier ce contrôle de « sauvegarde validée ».
+
+## Source officielle et vérification de couverture
+
+La [documentation Supabase des sauvegardes](https://supabase.com/docs/guides/platform/backups) indique que les sauvegardes de base **ne contiennent pas les octets des objets Storage**, seulement leurs métadonnées. Les sauvegardes automatiques quotidiennes dépendent de l'offre et de la configuration du projet. Avant toute exportation manuelle, l'opérateur doit vérifier dans **Dashboard → Database → Backups** l'existence d'une sauvegarde récente et la méthode de restauration disponible, **sans cliquer sur Restore**. Une sauvegarde automatique de base, même disponible, ne satisfait pas seule le périmètre Storage.
+
+Le [guide officiel de migration et restauration](https://supabase.com/docs/guides/self-hosting/restore-from-platform) précise également que les dumps CLI peuvent appliquer des exclusions internes : vérifier **effectivement** la présence des données Auth nécessaires dans les fichiers produits et après restauration. Ne pas inférer leur couverture du seul succès d'une commande de dump.
+
 ## Vérifications non destructives possibles sur un export local
 
 Exemples à adapter **sur le fichier déjà créé**, sans connexion à la production :
