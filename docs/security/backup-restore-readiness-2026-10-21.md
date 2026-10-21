@@ -154,6 +154,12 @@ Contrôle indépendant via l'outil SQL Supabase (requête `SELECT` uniquement) :
 
 **Décision provisoire :** suspendre les essais `psql` directs, ne pas réinitialiser les identifiants, ne pas acheter d'add-on et ne pas modifier le réseau de production. Demander une capture du panneau `Connect` du projet Supabase, sans mot de passe/chaîne de connexion, afin de vérifier si `Session pooler` IPv4 est disponible. À défaut, diagnostiquer le réseau local/FAI IPv6 ou tester un autre accès réseau explicitement choisi par l'opérateur. Toute sauvegarde reste **NO-GO** tant que l'accès et les droits ne sont pas vérifiés.
 
+## Session pooler IPv4 — test réseau Mac réussi le 21 octobre 2026
+
+La capture du panneau `Connect > Session pooler > PSQL` identifie le `host=aws-0-eu-west-1.pooler.supabase.com`, `port=5432`, `dbname=postgres`, `user=postgres.leziahqmqyuewpzjmzxf`. Test Mac sans secret : DNS A retourne des IPv4, `nc -4 -G 6 -z ... 5432` confirme `succeeded`. **TCP IPv4 accessible**, mais **authentification, certificat TLS de bout en bout, privilèges, export et restauration non vérifiés**.
+
+Étape humaine suivante : un test `psql` avec mot de passe saisi uniquement à l'invite locale, `sslmode=verify-full`, `sslrootcert` vers le certificat Supabase local, `PGPASSFILE=/dev/null`, délai de connexion, et transaction `BEGIN READ ONLY` contenant uniquement des vérifications agrégées de privilèges. Ne pas copier ni journaliser le secret. En cas d'erreur TLS, **ne pas dégrader vers `require` ou `disable`**. Le Session pooler permet l'accès IPv4, mais son aptitude à effectuer une sauvegarde complète avec `pg_dump` (dont schémas gérés) reste à vérifier.
+
 ## Vérifications non destructives possibles sur un export local
 
 Exemples à adapter **sur le fichier déjà créé**, sans connexion à la production :
