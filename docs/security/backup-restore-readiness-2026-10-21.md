@@ -112,6 +112,24 @@ D'après la [documentation officielle Supabase sur les connexions](https://supab
 - Si **inaccessible**, interrompre la préparation d'export direct et rechercher un accès pooler en session IPv4 ou un réseau IPv6 compatible. Ne pas tester de mode transaction pour une sauvegarde `pg_dump` sans validation spécifique.
 - **Limite** : la réussite du TCP ne prouve pas que les identifiants, les droits d'export Auth/Storage ou la restauration fonctionnent.
 
+## Résultat réseau IPv6 — 21 octobre 2026
+
+L'opérateur a exécuté `ops/manual/local-direct-ipv6-preflight-2026-10-21.sh` après vérification de son empreinte Git. Résultat : **DNS IPv6 disponible, TCP IPv6 port 5432 accessible** pour `db.leziahqmqyuewpzjmzxf.supabase.co`. Aucun mot de passe ni SQL n'a été utilisé.
+
+### Étape suivante : authentification interactive chiffrée et contrôlée
+
+Le script `ops/manual/local-direct-auth-readonly-2026-10-21.sh` :
+
+- exige un **certificat racine CA Supabase** téléchargé depuis les paramètres SSL du projet de production et enregistré dans `$HOME/BCVB_SAUVEGARDES_PRIVEES/supabase-production-ca.crt` (ou indiqué par `BCVB_SSL_ROOT_CERT`) ;
+- impose `PGSSLMODE=verify-full` et `PGSSLROOTCERT` pour vérifier le certificat du serveur, pas seulement chiffrer le transport ;
+- demande le mot de passe **interactivement dans psql**, sans l'inscrire dans les arguments ni dans l'historique shell, avec `PGPASSFILE=/dev/null` ;
+- force `default_transaction_read_only=on` et exécute une transaction `BEGIN READ ONLY` contenant **uniquement trois requêtes SELECT** de version, de droits de lecture par schéma et de privilèges ciblés `auth.users`, `storage.objects` et `storage.buckets` ;
+- ne réalise ni export ni mutation de données ; un test Vitest `tests/security/local-direct-auth-readonly-contract.test.ts` est ajouté à la CI.
+
+Le certificat racine n'est pas une clé secrète, mais le conserver hors dépôt évite de le confondre avec d'autres environnements. **Ne jamais transmettre le mot de passe ni la chaîne de connexion.** Si `verify-full` échoue, **ne pas rétrograder en `sslmode=require`** sans investigation du certificat. Voir [documentation officielle Supabase — Connecting with PSQL](https://supabase.com/docs/guides/database/psql).
+
+Une authentification réussie **ne prouve pas** encore la couverture de `pg_dump` ni la restauration des données Auth et des octets Storage.
+
 ## Vérifications non destructives possibles sur un export local
 
 Exemples à adapter **sur le fichier déjà créé**, sans connexion à la production :
