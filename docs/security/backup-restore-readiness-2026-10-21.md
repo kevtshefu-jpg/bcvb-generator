@@ -98,6 +98,20 @@ La [documentation Storage](https://supabase.com/docs/guides/storage/management/d
 
 **NO-GO** tant que la connexion de sauvegarde et la restauration complète n'ont pas été validées.
 
+## Connexion source : retour opérateur du 21 octobre 2026
+
+L'opérateur confirme que l'interface Supabase lui propose **uniquement une connexion directe** et que le **mot de passe PostgreSQL est disponible localement**, non communiqué. Il n'a pas fourni de chaîne de connexion ni de secret.
+
+D'après la [documentation officielle Supabase sur les connexions](https://supabase.com/docs/guides/database/connecting-to-postgres), la connexion directe des projets gratuits utilise **IPv6**, port **5432**. Les modes de pooler en session peuvent fournir une alternative IPv4, mais leur disponibilité doit être vérifiée dans le projet ; **ne pas acheter d'add-on IPv4 ni modifier la configuration** pour cette étape.
+
+### Diagnostic suivant : résolution DNS AAAA et accès TCP IPv6 sans mot de passe
+
+- Script `ops/manual/local-direct-ipv6-preflight-2026-10-21.sh` : vérifie seulement la résolution DNS IPv6 et la possibilité d'ouvrir une connexion **TCP** sur le port 5432 depuis le Mac, sans authentification, sans commande SQL et sans divulguer l'adresse IP.
+- Test `tests/security/local-direct-ipv6-preflight-contract.test.ts` exécuté en CI : interdit l'envoi de données ou l'utilisation de secrets dans le diagnostic.
+- Si **accessible**, préparer ensuite une authentification PostgreSQL **interactive** (mot de passe saisi uniquement dans le terminal, jamais dans un argument de commande, dans GitHub ou dans une conversation) et une requête de validation strictement en lecture seule.
+- Si **inaccessible**, interrompre la préparation d'export direct et rechercher un accès pooler en session IPv4 ou un réseau IPv6 compatible. Ne pas tester de mode transaction pour une sauvegarde `pg_dump` sans validation spécifique.
+- **Limite** : la réussite du TCP ne prouve pas que les identifiants, les droits d'export Auth/Storage ou la restauration fonctionnent.
+
 ## Vérifications non destructives possibles sur un export local
 
 Exemples à adapter **sur le fichier déjà créé**, sans connexion à la production :
