@@ -52,6 +52,25 @@ begin
     raise exception 'Politiques joueur différentes du préflight : arrêter et auditer';
   end if;
 
+  -- Fail closed if the six legacy player policies differ from the audited set.
+  if (
+    select count(*) from pg_policies
+    where schemaname = 'public'
+      and (tablename, policyname, cmd) in (
+        values
+          ('player_content_unlocks', 'player_unlocks_select_own_or_staff', 'SELECT'),
+          ('player_content_unlocks', 'staff_can_insert_player_unlocks', 'INSERT'),
+          ('player_content_unlocks', 'staff_can_delete_player_unlocks', 'DELETE'),
+          ('player_fundamental_progress', 'player_progress_select_own_or_staff', 'SELECT'),
+          ('player_fundamental_progress', 'staff_can_insert_player_progress', 'INSERT'),
+          ('player_fundamental_progress', 'staff_can_update_player_progress', 'UPDATE')
+      )
+      and roles = array['authenticated']::name[]
+      and permissive = 'PERMISSIVE'
+  ) <> 6 then
+    raise exception 'Politiques joueur inattendues : arreter et auditer';
+  end if;
+
   if exists (
     select 1 from pg_class c
     where c.oid in (
@@ -110,9 +129,54 @@ create policy bcvb_rls_20261014_library_admin_delete
 on public.library_documents for delete to authenticated
 using (public.current_user_role() in ('admin', 'responsable_technique'));
 
+-- Harden existing player policies: preserve the audited staff roles, but require
+-- an active profile. Owner reads must also reject inactive accounts.
+-- Team scoping is NOT introduced here: progress rows reference profiles.id,
+-- whereas team memberships reference players.id (no verified canonical link).
+alter policy player_unlocks_select_own_or_staff
+on public.player_content_unlocks
+using (
+  (player_id = auth.uid()
+   and public.current_user_role() is not null
+   and public.current_user_role() <> 'inactive')
+  or public.current_user_role() in ('admin', 'coach', 'dirigeant')
+);
+
+alter policy player_progress_select_own_or_staff
+on public.player_fundamental_progress
+using (
+  (player_id = auth.uid()
+   and public.current_user_role() is not null
+   and public.current_user_role() <> 'inactive')
+  or public.current_user_role() in ('admin', 'coach', 'dirigeant')
+);
+
+alter policy staff_can_insert_player_unlocks
+on public.player_content_unlocks
+with check (public.current_user_role() in ('admin', 'coach', 'dirigeant'));
+
+alter policy staff_can_delete_player_unlocks
+on public.player_content_unlocks
+using (public.current_user_role() in ('admin', 'coach', 'dirigeant'));
+
+alter policy staff_can_insert_player_progress
+on public.player_fundamental_progress
+with check (public.current_user_role() in ('admin', 'coach', 'dirigeant'));
+
+alter policy staff_can_update_player_progress
+on public.player_fundamental_progress
+using (public.current_user_role() in ('admin', 'coach', 'dirigeant'))
+with check (public.current_user_role() in ('admin', 'coach', 'dirigeant'));
+
 -- Remove direct anonymous writes even if future policies drift.
 revoke insert, update, delete on public.library_documents from anon;
 revoke all on public.player_content_unlocks, public.player_fundamental_progress from anon;
+-- TRUNCATE bypasses row-level security. Neither API role may retain these
+-- table-level privileges, even if future grants or policies change.
+revoke truncate, trigger, references
+on public.library_documents, public.player_content_unlocks,
+   public.player_fundamental_progress
+from anon, authenticated;
 
 alter table public.library_documents enable row level security;
 alter table public.player_content_unlocks enable row level security;
@@ -147,6 +211,17 @@ begin
     or has_table_privilege('anon', 'public.player_fundamental_progress', 'SELECT')
   then
     raise exception 'Privilèges anonymes non révoqués';
+  end if;
+  if exists (
+    select 1
+    from unnest(array[
+      'library_documents', 'player_content_unlocks', 'player_fundamental_progress'
+    ]) as target(table_name)
+    cross join unnest(array['TRUNCATE', 'TRIGGER', 'REFERENCES']) as perm(privilege)
+    where has_table_privilege('anon', 'public.' || target.table_name, perm.privilege)
+       or has_table_privilege('authenticated', 'public.' || target.table_name, perm.privilege)
+  ) then
+    raise exception 'Privileges dangereux non revoques pour les roles API';
   end if;
 end;
 $verify$;
