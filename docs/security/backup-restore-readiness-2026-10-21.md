@@ -146,6 +146,14 @@ FATAL: password authentication failed for user "postgres"
 
 Lors d'une nouvelle exécution du contrôle PostgreSQL direct, l'opérateur a obtenu `timeout expired` après l'invite de mot de passe, au lieu du refus d'authentification précédent. **Ce délai ne valide ni n'invalide le mot de passe.** Aucun SELECT du script n'a été exécuté. Le diagnostic recommandé est de refaire uniquement le test IPv6 TCP sans secret (`ops/manual/local-direct-ipv6-preflight-2026-10-21.sh`), sans répétition de tentatives d'authentification. Si le réseau est inaccessible, suspendre l'accès direct et diagnostiquer la connectivité. Si le TCP est accessible, examiner séparément le délai de négociation/authentification et la validité des identifiants ; ne pas réinitialiser le mot de passe sans autorisation.
 
+## Diagnostic direct IPv6 ultérieur — réseau Mac inaccessible
+
+Après un `psql` terminé par `timeout expired`, l'opérateur a relancé le diagnostic réseau **sans mot de passe**. Résultat : `DNS IPv6 : disponible`, mais `TCP IPv6 port 5432 : INACCESSIBLE depuis ce Mac/reseau`. Ce résultat est différent du premier diagnostic TCP accessible. **Aucune conclusion nouvelle sur la validité du mot de passe.**
+
+Contrôle indépendant via l'outil SQL Supabase (requête `SELECT` uniquement) : la base de production `postgres` répond toujours. Cela indique que le serveur n'est pas globalement indisponible ; **cela ne démontre pas** la santé du chemin direct IPv6 depuis le Mac.
+
+**Décision provisoire :** suspendre les essais `psql` directs, ne pas réinitialiser les identifiants, ne pas acheter d'add-on et ne pas modifier le réseau de production. Demander une capture du panneau `Connect` du projet Supabase, sans mot de passe/chaîne de connexion, afin de vérifier si `Session pooler` IPv4 est disponible. À défaut, diagnostiquer le réseau local/FAI IPv6 ou tester un autre accès réseau explicitement choisi par l'opérateur. Toute sauvegarde reste **NO-GO** tant que l'accès et les droits ne sont pas vérifiés.
+
 ## Vérifications non destructives possibles sur un export local
 
 Exemples à adapter **sur le fichier déjà créé**, sans connexion à la production :
