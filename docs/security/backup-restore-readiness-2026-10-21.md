@@ -142,6 +142,10 @@ FATAL: password authentication failed for user "postgres"
 
 **Prochaine action humaine, sans divulguer de secret :** confirmer que le mot de passe utilisé est celui de **Database password** du projet de production (et non celui du compte Supabase, d'une autre base ou d'un ancien environnement), vérifier localement la saisie/clavier, puis autoriser au maximum une nouvelle tentative interactive avec le script existant. Ne pas copier de chaîne de connexion avec mot de passe dans le terminal, GitHub ou la conversation. Si le mot de passe ne peut pas être confirmé, **arrêt de la procédure directe** et étude des accès légitimes disponibles ; **ne pas réinitialiser le mot de passe** sans inventaire des consommateurs de la connexion et accord explicite.
 
+## Deuxième tentative d'authentification — délai expiré
+
+Lors d'une nouvelle exécution du contrôle PostgreSQL direct, l'opérateur a obtenu `timeout expired` après l'invite de mot de passe, au lieu du refus d'authentification précédent. **Ce délai ne valide ni n'invalide le mot de passe.** Aucun SELECT du script n'a été exécuté. Le diagnostic recommandé est de refaire uniquement le test IPv6 TCP sans secret (`ops/manual/local-direct-ipv6-preflight-2026-10-21.sh`), sans répétition de tentatives d'authentification. Si le réseau est inaccessible, suspendre l'accès direct et diagnostiquer la connectivité. Si le TCP est accessible, examiner séparément le délai de négociation/authentification et la validité des identifiants ; ne pas réinitialiser le mot de passe sans autorisation.
+
 ## Vérifications non destructives possibles sur un export local
 
 Exemples à adapter **sur le fichier déjà créé**, sans connexion à la production :
