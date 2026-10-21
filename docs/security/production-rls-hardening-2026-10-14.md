@@ -33,6 +33,12 @@ Sans confirmation du contrôle de restauration, **ne pas exécuter** `ops/manual
 - La sauvegarde restaurée contient 7 fiches `players`, 6 profils, 7 appartenances d'équipe actives et une affectation staff active, mais aucune correspondance `players.id = profiles.id` et aucun `players.owner_id` renseigné. Les tables de progression référencent `profiles.id`, les appartenances référencent `players.id`. Ne pas inventer de jointure canonique ; le cloisonnement des progressions par équipe est un chantier séparé.
 - Les 22 documents de bibliothèque restaurés sont tous marqués `deleted_at IS NOT NULL`. La politique actuelle de lecture staff n'exclut pas les documents supprimés logiquement ni les brouillons : **décision métier et test fonctionnel requis** avant production.
 
+## Blocages applicatifs et Storage détectés le 21 octobre 2026
+
+- **[Issue #111 — Déblocages joueur](https://github.com/kevtshefu-jpg/bcvb-generator/issues/111)** : le client exécute un `upsert` avec `ON CONFLICT DO UPDATE` sur `player_content_unlocks`, alors que les politiques RLS ne prévoient aucun `UPDATE`. Le scénario de conflit risque d'échouer après activation RLS ; vérifier le comportement sur une fixture PostgREST avant déploiement. Ne pas élargir les permissions sans décision et test.
+- **[Issue #112 — Storage bibliothèque](https://github.com/kevtshefu-jpg/bcvb-generator/issues/112)** : le bucket réel `Bcvb-library` est privé (8 objets), mais une policy `storage.objects` permet à tout `authenticated` de lire les objets du bucket sans contrôle de profil actif, de propriétaire ou d'audience. RLS sur les métadonnées `library_documents` ne protège donc pas à lui seul les fichiers. Deux policies visent une casse différente (`bcvb-library`) et `manualGeneratedDocuments.ts` utilise cette casse dans ses écritures. Aucune lecture de fichier réel n'a été effectuée.
+- **Décision** : ces deux sujets sont des contrôles bloquants pour le **déploiement**, à traiter sans modifications de production ni élargissement improvisé des droits. Le correctif SQL de la PR #110 reste limité aux trois tables publiques.
+
 ## Séquence technique
 
 1. Confirmer les schémas, politiques et grants en lecture seule, ainsi que les dépendances UI/API et stockage.
