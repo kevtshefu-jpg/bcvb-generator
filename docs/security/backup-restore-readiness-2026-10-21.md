@@ -130,6 +130,18 @@ Le certificat racine n'est pas une clé secrète, mais le conserver hors dépôt
 
 Une authentification réussie **ne prouve pas** encore la couverture de `pg_dump` ni la restauration des données Auth et des octets Storage.
 
+## Résultat authentification directe — 21 octobre 2026
+
+L'opérateur a déplacé le certificat `supabase-production-ca.crt` au chemin local attendu ; OpenSSL reconnaît un certificat X.509 avec `CN=Supabase Root 2021 CA` (date de fin 26/04/2031). Le script de contrôle interactif s'est exécuté avec `PGSSLMODE=verify-full`, sans erreur TLS apparente, mais **l'authentification a échoué** :
+
+```text
+FATAL: password authentication failed for user "postgres"
+```
+
+**Conséquence :** aucune requête SQL du script n'a été exécutée, aucun export n'a commencé et aucun droit `public/auth/storage` n'a été vérifié par cette connexion. La présence du certificat et l'accès TCP ne prouvent pas une sauvegarde exploitable.
+
+**Prochaine action humaine, sans divulguer de secret :** confirmer que le mot de passe utilisé est celui de **Database password** du projet de production (et non celui du compte Supabase, d'une autre base ou d'un ancien environnement), vérifier localement la saisie/clavier, puis autoriser au maximum une nouvelle tentative interactive avec le script existant. Ne pas copier de chaîne de connexion avec mot de passe dans le terminal, GitHub ou la conversation. Si le mot de passe ne peut pas être confirmé, **arrêt de la procédure directe** et étude des accès légitimes disponibles ; **ne pas réinitialiser le mot de passe** sans inventaire des consommateurs de la connexion et accord explicite.
+
 ## Vérifications non destructives possibles sur un export local
 
 Exemples à adapter **sur le fichier déjà créé**, sans connexion à la production :
