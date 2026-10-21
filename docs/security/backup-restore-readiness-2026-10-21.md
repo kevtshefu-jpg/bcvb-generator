@@ -28,6 +28,18 @@ Un `pg_dump` PostgreSQL peut contenir schémas, données et métadonnées de `au
 7. Réaliser des scénarios de lecture/écriture sur **fixtures dédiées** (anonyme, joueur actif/inactif, parent, coach, admin), et un exercice documenté de retour arrière.
 8. Faire valider la couverture du périmètre et la fenêtre d'intervention par le responsable technique avant toute migration de production.
 
+## Contrôle préalable du Mac et du conteneur isolé
+
+Le fichier `ops/manual/local-restore-readiness-2026-10-21.sh` effectue **uniquement** les contrôles suivants sur le Mac de l'opérateur : présence de Docker, existence et fonctionnement du conteneur `bcvb-restore-test`, réseau `none`, absence de ports publiés, disponibilité des clients PostgreSQL et requête SQL de comptage/version sans données personnelles. Il ne contacte pas Supabase, ne demande aucun mot de passe et ne restaure aucune sauvegarde.
+
+L'exécuter localement après lecture du fichier, depuis le dépôt synchronisé :
+
+```sh
+sh ops/manual/local-restore-readiness-2026-10-21.sh
+```
+
+Si le dépôt local n'est pas synchronisé, récupérer le fichier depuis un **commit GitHub épinglé** et vérifier son contenu avant de l'exécuter. Ne jamais remplacer ce contrôle par une commande `curl | sh` non vérifiée. La réussite de ce contrôle **ne vaut pas** sauvegarde complète restaurable.
+
 ## Vérifications non destructives possibles sur un export local
 
 Exemples à adapter **sur le fichier déjà créé**, sans connexion à la production :
