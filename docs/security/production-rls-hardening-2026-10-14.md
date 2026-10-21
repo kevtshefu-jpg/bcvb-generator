@@ -48,6 +48,12 @@ Sans confirmation du contrôle de restauration, **ne pas exécuter** `ops/manual
 - Un test de contrat dédié `tests/security/production-rls-storage-readonly-audit-contract.test.ts` vérifie qu'il ne comporte que quatre requêtes `SELECT`. Ce contrôle statique ne remplace pas un audit SQL manuel ni des tests d'autorisation.
 - L'exécution sur production est réservée à un opérateur autorisé ; **ne pas lancer** le script de remédiation manuelle tant que tous les blocages ne sont pas levés.
 
+## Protection des traces navigateur
+
+- L'ancien `saveManualGeneratedDocument()` journalisait le **payload complet** de la fiche, y compris `content`, dans la console du navigateur. Ce comportement est supprimé sur la branche de PR, sans modifier la logique d'enregistrement ni les données existantes.
+- Un test `tests/security/library-document-privacy-contract.test.ts` vérifie l'absence de `console.log/debug/info` dans ce service ; le workflow CI exécute ce contrôle.
+- Ce correctif **n'efface pas d'éventuels journaux historiques** et ne constitue pas un audit exhaustif de toutes les traces de l'application.
+
 ## Séquence technique
 
 1. Confirmer les schémas, politiques et grants en lecture seule, ainsi que les dépendances UI/API et stockage.
