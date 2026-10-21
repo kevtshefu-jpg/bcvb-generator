@@ -35,6 +35,8 @@ jobs:
         run: npx vitest run tests/security/library-document-privacy-contract.test.ts
       - name: Verify local Docker readiness helper is non-destructive
         run: npx vitest run tests/security/local-restore-readiness-contract.test.ts
+      - name: Verify Mac backup preflight is local-only
+        run: npx vitest run tests/security/local-backup-preflight-contract.test.ts
       - name: Player unlock RLS compatibility regression
         run: npx vitest run src/features/joueur/services/unlocksService.test.ts
       - name: Sessions portable suite
