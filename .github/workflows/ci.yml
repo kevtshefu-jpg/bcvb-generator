@@ -29,6 +29,8 @@ jobs:
         run: npx vitest run src/lib/admin/seasonSettings.test.ts
       - name: Verify staged production RLS plan (offline)
         run: npx vitest run tests/security/production-rls-remediation-contract.test.ts
+      - name: Player unlock RLS compatibility regression
+        run: npx vitest run src/features/joueur/services/unlocksService.test.ts
       - name: Sessions portable suite
         run: npx vitest run src/modules/sessions --exclude "**/*.local.test.*"
       - name: Court component suite
