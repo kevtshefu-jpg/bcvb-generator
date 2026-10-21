@@ -35,6 +35,10 @@ select
   count(*) filter (where deleted_at is not null)::integer as documents_soft_deleted,
   count(*) filter (where is_active is true and deleted_at is not null)::integer
     as documents_active_and_soft_deleted,
+  count(*) filter (where content is not null and length(btrim(content)) > 0)::integer
+    as documents_with_inline_content,
+  count(*) filter (where content is null or length(btrim(content)) = 0)::integer
+    as documents_without_inline_content,
   count(*) filter (
     where status = 'published' and deleted_at is not null
   )::integer as published_but_soft_deleted
