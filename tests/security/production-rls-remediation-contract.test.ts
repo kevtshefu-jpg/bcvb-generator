@@ -49,7 +49,7 @@ describe('manual production RLS remediation — NOT a deployment', () => {
 
   it('removes table privileges that can bypass or undermine RLS', async () => {
     const sql = await readFile(script, 'utf8')
-    expect(sql).toMatch(/revoke truncate, trigger, references[\\s\\S]*?from anon, authenticated;/i)
+    expect(sql).toMatch(/revoke truncate, trigger, references[\s\S]*?from anon, authenticated;/i)
     for (const privilege of ['TRUNCATE', 'TRIGGER', 'REFERENCES']) {
       expect(sql).toContain(`'${privilege}'`)
     }
