@@ -64,6 +64,40 @@ Le script `ops/manual/local-backup-preflight-2026-10-21.sh` vérifie localement,
 
 Ce préflight **n'effectue aucun export**. Après résultat, établir la procédure de sauvegarde compatible avec la version CLI, le chiffrement du disque et les capacités réelles de l'environnement. En cas de FileVault désactivé ou d'espace insuffisant, arrêter avant toute exportation de données personnelles.
 
+## Résultat opérateur — préflight Mac complet (21 octobre 2026)
+
+Exécution locale du script épinglé au commit `4cc8b29e` et vérifié par son empreinte Git `6c45a52f1440f8a1d9162db67c171df7763235ba` :
+
+| Indicateur | Observation |
+| --- | --- |
+| Supabase CLI | 2.120.0 (2.121.0 proposée, mise à jour non obligatoire avant ce diagnostic) |
+| Clients `pg_dump`, `pg_restore`, `psql` | PostgreSQL 17.11 Homebrew |
+| Espace libre sur le volume utilisateur | 18,7 Gio |
+| FileVault | Activé |
+| Dossier privé | Présent |
+| Exports existants | 2,4 Mio au total |
+
+**PASS pour la préparation du poste**. Les 2,4 Mio existants ne prouvent pas la présence des schémas Auth/Storage, des octets Storage ni la restauration effective. Les versions des clients et du serveur sont compatibles au niveau majeur PostgreSQL 17.
+
+### Taille et couverture de la source de production — agrégats en lecture seule
+
+Au 21/10/2026, la base de production indique : **PostgreSQL 17.6, taille totale 16 MB, 27 tables `auth`, 8 tables `storage`, 6 utilisateurs Auth, 8 objets Storage et 1 bucket**. La taille de 16 MB est une taille PostgreSQL, **pas la taille des octets des 8 objets**. Aucun contenu, identifiant d'utilisateur ou chemin de fichier n'a été interrogé.
+
+### Attention — les exports Supabase CLI ne sont pas une sauvegarde Auth/Storage exhaustive
+
+La [référence officielle `supabase db dump`](https://supabase.com/docs/reference/cli/supabase-db-dump) précise que l'outil **exclut les schémas gérés `auth` et `storage`** par défaut. Le trio standard `--role-only`, schéma et `--data-only` ne prouve donc **pas** la couverture de ces données. Une extraction séparée et vérifiée de ces schémas avec `pg_dump` brut peut être nécessaire, en fonction des privilèges de connexion ; sa restauration doit être testée sur une installation compatible, et non présumée à partir d'un conteneur PostgreSQL vide.
+
+La [documentation Storage](https://supabase.com/docs/guides/storage/management/download-objects) confirme qu'il faut récupérer séparément les octets des fichiers (Dashboard, CLI Storage ou client S3 compatible). Le bucket réel est `Bcvb-library` ; respecter sa casse exacte. **Aucune copie des objets ne doit être rendue publique ni versée dans GitHub.**
+
+### Prochaine étape opérateur — sans transmettre de secret
+
+1. Dans le projet de production, ouvrir **Connect** et relever le mode de connexion proposé (**Session pooler**, idéalement port 5432 ; ou connexion directe si IPv6 disponible). Ne pas copier l'URL complète dans une conversation.
+2. Confirmer uniquement que le **mot de passe de base de données est disponible** dans le coffre de mots de passe ; **ne pas le transmettre**, ne pas le réinitialiser sans raison et ne pas saisir une URL contenant ce mot de passe dans une commande conservée par l'historique du terminal.
+3. Préparer une extraction PostgreSQL en lecture seule vers un dossier chiffré et restreint, puis un export séparé des huit objets Storage ; valider les codes de sortie et les manifestes **sans divulguer les fichiers**.
+4. Préparer un **nouvel environnement de restauration isolé**, distinct de `bcvb-restore-test`, et une méthode de restauration adaptée aux schémas Supabase gérés.
+
+**NO-GO** tant que la connexion de sauvegarde et la restauration complète n'ont pas été validées.
+
 ## Vérifications non destructives possibles sur un export local
 
 Exemples à adapter **sur le fichier déjà créé**, sans connexion à la production :
