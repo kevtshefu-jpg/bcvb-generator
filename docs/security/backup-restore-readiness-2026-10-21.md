@@ -52,6 +52,18 @@ La [documentation Supabase des sauvegardes](https://supabase.com/docs/guides/pla
 
 Le [guide officiel de migration et restauration](https://supabase.com/docs/guides/self-hosting/restore-from-platform) précise également que les dumps CLI peuvent appliquer des exclusions internes : vérifier **effectivement** la présence des données Auth nécessaires dans les fichiers produits et après restauration. Ne pas inférer leur couverture du seul succès d'une commande de dump.
 
+## Contrôle du Dashboard de production — forfait gratuit
+
+Le responsable technique a consulté **Database → Backups → Sauvegardes planifiées** du projet `leziahqmqyuewpzjmzxf` le **21 octobre 2026**. Le tableau de bord indique **GRATUIT** et le message « Le forfait gratuit n'inclut pas les sauvegardes de projet ». **Aucune sauvegarde automatique planifiée n'est disponible via cette fonctionnalité.**
+
+**Décision de sécurité : NO-GO production** tant qu'une sauvegarde manuelle privée, complète, contrôlée et effectivement restaurée n'a pas été démontrée. Ne pas activer une offre payante ni déclencher de restauration sur production sans approbation explicite. Le stockage d'objets doit être sauvegardé séparément ; les métadonnées SQL ne sont pas les octets des fichiers.
+
+### Préflight Mac suivant (inspection uniquement)
+
+Le script `ops/manual/local-backup-preflight-2026-10-21.sh` vérifie localement, **sans réseau ni accès à la production**, les versions de Supabase CLI et des clients PostgreSQL, l'espace disque disponible, l'état FileVault et l'existence/taille globale du dossier de sauvegarde. Aucun chemin de fichier individuel, mot de passe, jeton ou contenu de base n'est affiché. Le test `tests/security/local-backup-preflight-contract.test.ts` est exécuté en CI.
+
+Ce préflight **n'effectue aucun export**. Après résultat, établir la procédure de sauvegarde compatible avec la version CLI, le chiffrement du disque et les capacités réelles de l'environnement. En cas de FileVault désactivé ou d'espace insuffisant, arrêter avant toute exportation de données personnelles.
+
 ## Vérifications non destructives possibles sur un export local
 
 Exemples à adapter **sur le fichier déjà créé**, sans connexion à la production :
