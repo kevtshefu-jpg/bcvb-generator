@@ -39,3 +39,7 @@ Diagnostic du conteneur `bcvb-restore-test` : bases connectables `postgres` et `
 ## Base dédiée créée dans le conteneur isolé
 
 L'opérateur a confirmé la création locale `CREATE DATABASE bcvb_restore_validation WITH TEMPLATE template0 OWNER postgres` dans `bcvb-restore-test`. La nouvelle base est connectable et son inventaire de tables utilisateur retourne **0**. Le contrôle de l'espace affichait 184,0 Go libres, mais `df` indique `/etc/hostname` comme point de montage : ne pas en déduire sans réserve la capacité du volume PostgreSQL. Le conteneur avait été vérifié `NetworkMode=none`, ports publiés `{}`. Aucune archive n'a encore été restaurée ; vérifier les dépendances, extensions et schémas de la nouvelle base avant toute importation. Préserver la base `postgres` existante.
+
+## Dépendances de la base dédiée installées avec succès
+
+L'opérateur a exécuté, uniquement dans la base locale isolée `bcvb_restore_validation`, une transaction `CREATE SCHEMA extensions`, `CREATE SCHEMA vault`, puis `CREATE EXTENSION` pour `pg_stat_statements`, `pgcrypto`, `uuid-ossp` et `supabase_vault`. La transaction s'est terminée par `COMMIT`. Requête de vérification : les cinq extensions (avec `plpgsql` déjà présente), versions et schémas correspondent à la production. **Aucune archive encore restaurée.** Avant l'import, inspecter hors ligne les instructions `CREATE SCHEMA`, en particulier `public` déjà présent dans la base créée depuis `template0`, et éviter `--clean` sans justification et validation.
