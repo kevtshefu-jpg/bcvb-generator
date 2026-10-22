@@ -27,3 +27,7 @@ L'opérateur a exécuté `pg_restore --file=/dev/null` sur les deux archives pri
 ## Diagnostic local du conteneur et des permissions
 
 Le 22/10/2026, diagnostic manuel : `age` absent ; conteneur `bcvb-restore-test` actif et déclaré `healthy` (`public.ecr.aws/supabase/postgres:17.11.0.004`) ; archives de structure et de données protégées en mode `-rw-------`. Ce résultat ne prouve ni le mode réseau du conteneur ni l'état de sa base, et ne constitue pas un test de restauration. Prochaine action : inspection locale en lecture seule des paramètres réseau, de l'état PostgreSQL et des objets présents, avant toute tentative de restauration. Ne pas installer de logiciel, monter de volume sensible ou exécuter de restauration sans validation préalable du plan.
+
+## Isolation du conteneur et inventaire local (lecture seule)
+
+Le conteneur `bcvb-restore-test` a `HostConfig.NetworkMode=none`, `PortBindings={}` et `pg_isready` répond « accepting connections ». Inventaire de la base locale `postgres` : `public` 39 tables, `auth` 5 tables, `storage` 0 table (44 au total). Les archives distantes contiennent respectivement 39, 27 et 8 tables (74 au total). **Ne pas restaurer dans la base locale `postgres` existante** ; préparer une base distincte après inspection de l'espace, des rôles, des bases et des dépendances. Aucune restauration effectuée. Les comptes de tables ne prouvent pas que les données locales sont vides.
