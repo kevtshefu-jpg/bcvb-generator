@@ -23,3 +23,7 @@ Exécution manuelle de `pg_dump --data-only --schema=public --schema=auth --sche
 ## Lecture intégrale des archives vérifiée localement
 
 L'opérateur a exécuté `pg_restore --file=/dev/null` sur les deux archives privées ; les deux commandes ont réussi sans erreur. Fichiers contrôlés : `bcvb-schema-preflight.AHNA6C2P` (562 011 octets), SHA-256 `35fdb41a245349718f4ff125f8f5f1e30c65db855cbfe55b80d3b517d50ca044` ; `bcvb-data-20261022-105648.dump` (343 116 octets), SHA-256 `754bdedda8ae6cca4210c2b199977c9602dffb94665334fb17c9e238eb7137af`. Les empreintes ne sont pas des preuves de restauration ni d'exhaustivité. Les exports de structure et de données sont séparés dans le temps et ne constituent pas une capture atomique. Restent à vérifier : restauration isolée, rôles et dépendances, objets binaires Storage, chiffrement indépendant et stratégie de cohérence.
+
+## Diagnostic local du conteneur et des permissions
+
+Le 22/10/2026, diagnostic manuel : `age` absent ; conteneur `bcvb-restore-test` actif et déclaré `healthy` (`public.ecr.aws/supabase/postgres:17.11.0.004`) ; archives de structure et de données protégées en mode `-rw-------`. Ce résultat ne prouve ni le mode réseau du conteneur ni l'état de sa base, et ne constitue pas un test de restauration. Prochaine action : inspection locale en lecture seule des paramètres réseau, de l'état PostgreSQL et des objets présents, avant toute tentative de restauration. Ne pas installer de logiciel, monter de volume sensible ou exécuter de restauration sans validation préalable du plan.
