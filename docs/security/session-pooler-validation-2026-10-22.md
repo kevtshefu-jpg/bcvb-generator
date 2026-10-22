@@ -79,3 +79,7 @@ Comparaison lecture seule via session pooler TLS `verify-full`, 74 tables de `au
 ## Comparaison des identifiants de notifications (22/10/2026)
 
 Lecture seule sur la base locale restaurée et sur la production, en comparant les MD5 d'UUID triés de `public.admin_notifications`, sans exposer les messages : **34 notifications locales, 24 en production, 10 identifiants présents uniquement dans la restauration, 0 identifiant présent uniquement en production**. Les 24 identifiants de production sont donc tous dans la restauration. Ce résultat est compatible avec une purge ou suppression après l'instant du dump, sans en établir la cause. Il ne prouve pas l'identité du contenu des enregistrements. Ne pas supprimer les dix notifications locales. Restauration structurelle depuis base vierge et octets Storage toujours non validés. Aucun changement de production.
+
+## Nouvelle base vierge isolée (22/10/2026)
+
+La base locale `bcvb_restore_fresh_20261022` existe déjà dans le conteneur Docker isolé. Son audit initial en lecture seule confirme propriétaire `postgres`, **0 table dans `public`/`auth`/`storage`**, seule extension `plpgsql` 1.0 et taille de base `7502 kB`. Le script de création précédent s'était arrêté sans mutation parce que le nom existait ; aucun écrasement. La restauration structurelle complète depuis archive n'est pas encore effectuée. Prochaine étape : installer les extensions nécessaires avec contrôles avant/après et rollback transactionnel en cas d'anomalie, puis restaurer le schéma. Production inchangée.
