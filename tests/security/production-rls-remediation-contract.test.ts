@@ -27,8 +27,11 @@ describe('manual production RLS remediation — NOT a deployment', () => {
     expect(sql).toContain("public.current_user_role() not in ('inactive')")
     expect(sql).toContain("status = 'published' and audience = 'public'")
     expect(sql).toContain('Politiques bibliothèque inattendues')
-    expect(sql).toContain('GO05: documents actifs avec deleted_at non nul')
-    expect(sql).toMatch(/d\.is_active is true and d\.deleted_at is not null/i)
+    expect(sql).toContain('GO05: mandatory for ALL ordinary reads, including staff and owners.')
+    expect(sql).not.toContain('GO05: documents actifs avec deleted_at non nul')
+    const authenticated = sql.split('create policy bcvb_rls_20261014_library_authenticated_read')[1]?.split('create policy bcvb_rls_20261014_library_staff_insert')[0] ?? ''
+    expect(authenticated).toMatch(/using\s*\(\s*-- GO05:[^\n]*\n\s*is_active is true and deleted_at is null/i)
+    expect(authenticated).toContain("public.current_user_role() <> 'inactive'")
     expect(sql).toContain('protect_profile_security_fields_trigger')
   })
 
