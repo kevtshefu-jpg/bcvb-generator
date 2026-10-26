@@ -35,16 +35,9 @@ begin
     raise exception 'Helper de rôle courant absent';
   end if;
 
-  -- GO05 (2026-10-26): historical rows can be simultaneously active and
-  -- soft-deleted. Enabling the read policies below would hide those rows,
-  -- and their intended publication state has not been reconciled.
-  -- Stop instead of silently changing visibility or modifying user data.
-  if exists (
-    select 1 from public.library_documents d
-    where d.is_active is true and d.deleted_at is not null
-  ) then
-    raise exception 'GO05: documents actifs avec deleted_at non nul : reconciliation metier et tests sur clone requis';
-  end if;
+  -- GO05: deleted_at is authoritative for ordinary visibility.
+  -- Historical active+deleted rows are preserved; never clear deleted_at.
+  -- Review and test the policy and Storage access on an isolated clone first.
 
   if exists (
     select 1 from pg_policies
@@ -109,14 +102,19 @@ using (
 create policy bcvb_rls_20261014_library_authenticated_read
 on public.library_documents for select to authenticated
 using (
-  public.current_user_role() in ('admin', 'responsable_technique', 'dirigeant', 'coach')
-  or (uploaded_by = auth.uid() and public.current_user_role() not in ('inactive'))
-  or (
-    public.current_user_role() not in ('inactive')
-    and is_active is true and deleted_at is null and status = 'published'
-    and (
-      audience in ('public', 'member')
-      or (audience = 'parent' and public.current_user_role() in ('parent', 'parent_referent'))
+  -- GO05: mandatory for ALL ordinary reads, including staff and owners.
+  is_active is true and deleted_at is null
+  and public.current_user_role() is not null
+  and public.current_user_role() <> 'inactive'
+  and (
+    public.current_user_role() in ('admin', 'responsable_technique', 'dirigeant', 'coach')
+    or uploaded_by = auth.uid()
+    or (
+      status = 'published'
+      and (
+        audience in ('public', 'member')
+        or (audience = 'parent' and public.current_user_role() in ('parent', 'parent_referent'))
+      )
     )
   )
 );
