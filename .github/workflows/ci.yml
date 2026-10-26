@@ -29,6 +29,9 @@ jobs:
         run: npx vitest run src/lib/admin/seasonSettings.test.ts
       - name: Verify staged production RLS plan (offline)
         run: npx vitest run tests/security/production-rls-remediation-contract.test.ts
+
+      - name: Verify GO05 soft-delete contract (offline)
+        run: npx vitest run tests/security/go05-soft-delete-contract.test.ts
       - name: Verify production RLS and Storage audit remains read-only
         run: npx vitest run tests/security/production-rls-storage-readonly-audit-contract.test.ts
       - name: Prevent sensitive library document console logging
