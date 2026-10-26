@@ -27,6 +27,8 @@ describe('manual production RLS remediation — NOT a deployment', () => {
     expect(sql).toContain("public.current_user_role() not in ('inactive')")
     expect(sql).toContain("status = 'published' and audience = 'public'")
     expect(sql).toContain('Politiques bibliothèque inattendues')
+    expect(sql).toContain('GO05: documents actifs avec deleted_at non nul')
+    expect(sql).toMatch(/d\.is_active is true and d\.deleted_at is not null/i)
     expect(sql).toContain('protect_profile_security_fields_trigger')
   })
 
