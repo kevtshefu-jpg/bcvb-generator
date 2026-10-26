@@ -43,6 +43,15 @@ describe('GO05 — soft deletion security contract (static, NOT an authorization
     expect(body).toContain("status = 'published' and audience = 'public'")
   })
 
+  it('checks both SELECT policies after applying the manual SQL', async () => {
+    const sql = await readFile(sqlPath, 'utf8')
+    expect(sql).toContain('GO05: filtre suppression logique absent d une policy SELECT')
+    expect(sql).toContain("and lower(qual) like '%deleted_at is null%'")
+    expect(sql).toContain("and lower(qual) like '%is_active is true%'")
+    expect(sql).toContain("'bcvb_rls_20261014_library_public_read'")
+    expect(sql).toContain("'bcvb_rls_20261014_library_authenticated_read'")
+  })
+
   it('does not rewrite historic deleted_at values as a preflight workaround', async () => {
     const sql = await readFile(sqlPath, 'utf8')
     expect(sql).not.toMatch(/update\s+(?:public\.)?library_documents\s+set\s+deleted_at\s*=\s*null/i)
