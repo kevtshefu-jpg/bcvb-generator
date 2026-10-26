@@ -35,6 +35,17 @@ begin
     raise exception 'Helper de rôle courant absent';
   end if;
 
+  -- GO05 (2026-10-26): historical rows can be simultaneously active and
+  -- soft-deleted. Enabling the read policies below would hide those rows,
+  -- and their intended publication state has not been reconciled.
+  -- Stop instead of silently changing visibility or modifying user data.
+  if exists (
+    select 1 from public.library_documents d
+    where d.is_active is true and d.deleted_at is not null
+  ) then
+    raise exception 'GO05: documents actifs avec deleted_at non nul : reconciliation metier et tests sur clone requis';
+  end if;
+
   if exists (
     select 1 from pg_policies
     where schemaname = 'public' and tablename = 'library_documents'
