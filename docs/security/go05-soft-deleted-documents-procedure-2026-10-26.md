@@ -10,8 +10,8 @@ Date : 26 octobre 2026. Décision métier : `deleted_at IS NOT NULL` interdit to
 - Les objets du bucket privé `Bcvb-library` ne sont jamais rendus publics du seul fait de leur existence. Les sept objets sans fiche restent intacts et en attente de qualification.
 - Aucune copie de contenu, chemin Storage, identité de mineur ou jeton dans GitHub, CI ou les rapports.
 
-## Écart dans le SQL actuel
-La policy `bcvb_rls_20261014_library_authenticated_read` comporte des branches `staff` et `uploaded_by=auth.uid()` qui ne vérifient pas `deleted_at IS NULL` : une fiche supprimée serait lisible par ces branches. Corriger la policy avant tout déploiement.
+## Correction SQL préparatoire (branche PR #110)
+La policy `bcvb_rls_20261014_library_authenticated_read` a été corrigée dans le SQL manuel : le filtre `is_active IS TRUE AND deleted_at IS NULL` précède toutes les branches de lecture. La garde qui bloquait les 22 fiches historiques a été retirée. **Aucune exécution SQL ni validation fonctionnelle sur clone n'a eu lieu** ; contrôler aussi les accès Storage, RPC et liens signés avant déploiement.
 
 ### Patron de politique à adapter et tester sur clone isolé (NE PAS EXÉCUTER EN PRODUCTION)
 ```sql
@@ -39,7 +39,7 @@ AND (
 Ce patron ne résout pas à lui seul la sécurité Storage, les liens signés, les droits SQL, ni les règles métier du staff. Contrôler également les fonctions `SECURITY DEFINER`, les accès directs et les autres chemins de lecture.
 
 ## Traitement de la garde GO05
-La garde actuelle bloque toute migration si `is_active=true AND deleted_at IS NOT NULL`. Puisque la décision métier est de **conserver** les suppressions logiques, ne jamais réinitialiser `deleted_at` pour faire passer le préflight. Remplacer la garde seulement après revue du modèle et tests automatisés prouvant que chaque branche de lecture ordinaire impose `deleted_at IS NULL`. Conserver un échec explicite si la policy diverge ou si une voie alternative expose ces lignes.
+La garde historique `is_active=true AND deleted_at IS NOT NULL` a été supprimée du SQL préparatoire, car la décision métier est de **conserver** les suppressions logiques. Ne jamais réinitialiser `deleted_at` pour faire passer le préflight. Le test statique a été adapté, mais son exécution CI et les tests sur clone restent à confirmer. Conserver un échec explicite si une voie alternative expose ces lignes.
 
 ## Ordre d'exécution futur, sous validation séparée
 1. Vérifier la récupération indépendante de la sauvegarde hors site et la restauration des octets Storage sur environnement isolé ; documenter les limites de reprise Auth/config.
@@ -59,3 +59,6 @@ La garde actuelle bloque toute migration si `is_active=true AND deleted_at IS NO
 - Audit documenté et réversible ; aucune suppression physique automatique.
 
 **État : procédure proposée uniquement. NO-GO migration et fusion maintenu.**
+
+## Anomalie applicative à traiter séparément
+Le service `src/services/manualGeneratedDocuments.ts` écrit `bucket_name='bcvb-library'` et un `storage_path` sans téléversement ; le bucket réel documenté est `Bcvb-library`. Ne pas déduire l'existence d'un fichier de ces seules colonnes. Définir explicitement le modèle « contenu inline » avant toute correction applicative, et éviter toute migration automatique des 22 fiches historiques.
