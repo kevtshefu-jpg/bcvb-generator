@@ -213,6 +213,23 @@ begin
     raise exception 'Politiques bibliothèque incomplètes';
   end if;
 
+  -- GO05 postcondition: both ordinary SELECT policies must retain the
+  -- global soft-delete guard. This textual check is defense-in-depth only;
+  -- real authorization tests on an isolated clone are still mandatory.
+  if (
+    select count(*) from pg_policies
+    where schemaname = 'public' and tablename = 'library_documents'
+      and cmd = 'SELECT'
+      and policyname in (
+        'bcvb_rls_20261014_library_public_read',
+        'bcvb_rls_20261014_library_authenticated_read'
+      )
+      and lower(qual) like '%deleted_at is null%'
+      and lower(qual) like '%is_active is true%'
+  ) <> 2 then
+    raise exception 'GO05: filtre suppression logique absent d une policy SELECT';
+  end if;
+
   if has_table_privilege('anon', 'public.library_documents', 'INSERT')
     or has_table_privilege('anon', 'public.library_documents', 'UPDATE')
     or has_table_privilege('anon', 'public.library_documents', 'DELETE')
