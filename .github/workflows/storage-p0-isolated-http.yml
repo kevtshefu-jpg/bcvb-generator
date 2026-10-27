@@ -1,0 +1,39 @@
+name: Storage P0 isolated HTTP verification
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: 'Current isolated SQL state'
+        required: true
+        type: choice
+        options: [baseline, confined, restored]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify required test credentials exist
+        env:
+          TEST_ANON: ${{ secrets.BCVB_TEST_ANON_KEY }}
+          TEST_JWT: ${{ secrets.BCVB_TEST_USER_JWT }}
+        run: |
+          test -n "$TEST_ANON" || { echo "::error::Missing BCVB_TEST_ANON_KEY"; exit 1; }
+          test -n "$TEST_JWT" || { echo "::error::Missing BCVB_TEST_USER_JWT"; exit 1; }
+      - name: Probe isolated Supabase Storage
+        env:
+          BCVB_TEST_URL: https://ahqrrqgebtfzssmeizfu.supabase.co
+          BCVB_TEST_ANON_KEY: ${{ secrets.BCVB_TEST_ANON_KEY }}
+          BCVB_TEST_USER_JWT: ${{ secrets.BCVB_TEST_USER_JWT }}
+          BCVB_TEST_BUCKET: Bcvb-library
+          BCVB_TEST_OBJECT: p0-test/fixture.txt
+          BCVB_TEST_SIGNED_URL: ${{ secrets.BCVB_TEST_SIGNED_URL }}
+          PHASE: ${{ inputs.phase }}
+        run: python tests/security/storage_p0_http_probe.py "$PHASE" > storage-p0-result.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: storage-p0-${{ inputs.phase }}
+          path: storage-p0-result.json
+          retention-days: 7
