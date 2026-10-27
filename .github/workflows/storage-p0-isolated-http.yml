@@ -30,6 +30,9 @@ jobs:
           BCVB_TEST_BUCKET: Bcvb-library
           BCVB_TEST_OBJECT: p0-test/fixture.txt
           BCVB_TEST_SIGNED_URL: ${{ secrets.BCVB_TEST_SIGNED_URL }}
+          BCVB_TEST_PARENT_JWT: ${{ secrets.BCVB_TEST_PARENT_JWT }}
+          BCVB_TEST_PLAYER_JWT: ${{ secrets.BCVB_TEST_PLAYER_JWT }}
+          BCVB_TEST_COACH_JWT: ${{ secrets.BCVB_TEST_COACH_JWT }}
           PHASE: ${{ inputs.phase }}
         run: python tests/security/storage_p0_http_probe.py "$PHASE" > storage-p0-result.json
       - uses: actions/upload-artifact@v4
