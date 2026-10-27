@@ -3,7 +3,7 @@
 Required env:
   BCVB_TEST_URL, BCVB_TEST_ANON_KEY, BCVB_TEST_USER_JWT,
   BCVB_TEST_BUCKET, BCVB_TEST_OBJECT
-Optional: BCVB_TEST_SIGNED_URL (pre-minted URL, kept secret).
+Optional: BCVB_TEST_SIGNED_URL (pre-minted URL, kept secret).\n  BCVB_TEST_PARENT_JWT, BCVB_TEST_PLAYER_JWT, BCVB_TEST_COACH_JWT.
 Run once per phase (baseline / confined / restored). No upload or SQL mutations.
 Never point at the production project. Never print tokens or signed URLs.
 """
@@ -62,9 +62,21 @@ results = [
     probe("authenticated_download", "GET", root + "authenticated/" + target, jwt),
     probe("signed_url_creation", "POST", root + "sign/" + target, jwt, b'{"expiresIn":60}'),
 ]
+for role in ("PARENT", "PLAYER", "COACH"):
+    role_jwt = os.environ.get("BCVB_TEST_" + role + "_JWT")
+    if role_jwt:
+        results.append(probe(role.lower() + "_download", "GET", root + "authenticated/" + target, role_jwt))
+        results.append(probe(role.lower() + "_sign", "POST", root + "sign/" + target, role_jwt, b'{"expiresIn":60}'))
 signed = os.environ.get("BCVB_TEST_SIGNED_URL")
 if signed:
     if urllib.parse.urlparse(signed).hostname != EXPECTED_PROJECT + ".supabase.co":
         raise SystemExit("REFUSED: signed URL points outside disposable project")
     results.append(probe("existing_signed_url_download", "GET", signed))
 print(json.dumps({"phase": phase, "project": EXPECTED_PROJECT, "results": results}, indent=2))
+
+if any("error" in result for result in results):
+    raise SystemExit("FAIL: transport errors; HTTP matrix incomplete")
+if phase == "baseline" and not any(r.get("status") == 200 for r in results if r["test"] == "authenticated_download"):
+    raise SystemExit("FAIL: baseline fixture not readable; subsequent denials are inconclusive")
+if phase == "confined" and any(r.get("status") in (200, 201) for r in results if r["test"].endswith(("_download", "_sign")) and r["test"] != "existing_signed_url_download"):
+    raise SystemExit("FAIL: direct read or new signed URL remains available under confinement")
