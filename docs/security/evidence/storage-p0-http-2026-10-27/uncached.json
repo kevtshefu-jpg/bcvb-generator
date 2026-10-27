@@ -1,0 +1,37 @@
+[
+  {
+    "persona": "authenticated",
+    "http": 400,
+    "denied": true
+  },
+  {
+    "persona": "player_a",
+    "http": 400,
+    "denied": true
+  },
+  {
+    "persona": "player_b",
+    "http": 400,
+    "denied": true
+  },
+  {
+    "persona": "parent",
+    "http": 400,
+    "denied": true
+  },
+  {
+    "persona": "coach",
+    "http": 400,
+    "denied": true
+  },
+  {
+    "persona": "admin",
+    "http": 400,
+    "denied": true
+  },
+  {
+    "persona": "inactive",
+    "http": 400,
+    "denied": true
+  }
+]

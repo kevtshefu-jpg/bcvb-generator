@@ -1,0 +1,197 @@
+{
+  "project": "ahqrrqgebtfzssmeizfu",
+  "phase": "confined",
+  "sha256": "8c4741b12e587ef0ee37648d2da5f518b1000daf0b49483a528b1b4f0e37edf7",
+  "results": [
+    {
+      "test": "anon_download",
+      "http": 400,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:50Z"
+    },
+    {
+      "test": "anon_list",
+      "http": 400,
+      "pass": false,
+      "time_utc": "2026-10-27T15:27:51Z"
+    },
+    {
+      "test": "anon_sign",
+      "http": 400,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:51Z"
+    },
+    {
+      "test": "authenticated_download",
+      "http": 200,
+      "pass": false,
+      "time_utc": "2026-10-27T15:27:51Z",
+      "sha256": "8c4741b12e587ef0ee37648d2da5f518b1000daf0b49483a528b1b4f0e37edf7"
+    },
+    {
+      "test": "authenticated_list",
+      "http": 200,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:51Z"
+    },
+    {
+      "test": "authenticated_sign",
+      "http": 400,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:51Z"
+    },
+    {
+      "test": "player_a_download",
+      "http": 200,
+      "pass": false,
+      "time_utc": "2026-10-27T15:27:51Z",
+      "sha256": "8c4741b12e587ef0ee37648d2da5f518b1000daf0b49483a528b1b4f0e37edf7"
+    },
+    {
+      "test": "player_a_list",
+      "http": 200,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:52Z"
+    },
+    {
+      "test": "player_a_sign",
+      "http": 400,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:52Z"
+    },
+    {
+      "test": "player_b_download",
+      "http": 200,
+      "pass": false,
+      "time_utc": "2026-10-27T15:27:52Z",
+      "sha256": "8c4741b12e587ef0ee37648d2da5f518b1000daf0b49483a528b1b4f0e37edf7"
+    },
+    {
+      "test": "player_b_list",
+      "http": 200,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:52Z"
+    },
+    {
+      "test": "player_b_sign",
+      "http": 400,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:52Z"
+    },
+    {
+      "test": "parent_download",
+      "http": 200,
+      "pass": false,
+      "time_utc": "2026-10-27T15:27:53Z",
+      "sha256": "8c4741b12e587ef0ee37648d2da5f518b1000daf0b49483a528b1b4f0e37edf7"
+    },
+    {
+      "test": "parent_list",
+      "http": 200,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:53Z"
+    },
+    {
+      "test": "parent_sign",
+      "http": 400,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:53Z"
+    },
+    {
+      "test": "coach_download",
+      "http": 200,
+      "pass": false,
+      "time_utc": "2026-10-27T15:27:53Z",
+      "sha256": "8c4741b12e587ef0ee37648d2da5f518b1000daf0b49483a528b1b4f0e37edf7"
+    },
+    {
+      "test": "coach_list",
+      "http": 200,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:53Z"
+    },
+    {
+      "test": "coach_sign",
+      "http": 400,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:53Z"
+    },
+    {
+      "test": "admin_download",
+      "http": 200,
+      "pass": false,
+      "time_utc": "2026-10-27T15:27:54Z",
+      "sha256": "8c4741b12e587ef0ee37648d2da5f518b1000daf0b49483a528b1b4f0e37edf7"
+    },
+    {
+      "test": "admin_list",
+      "http": 200,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:54Z"
+    },
+    {
+      "test": "admin_sign",
+      "http": 400,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:54Z"
+    },
+    {
+      "test": "inactive_download",
+      "http": 200,
+      "pass": false,
+      "time_utc": "2026-10-27T15:27:54Z",
+      "sha256": "8c4741b12e587ef0ee37648d2da5f518b1000daf0b49483a528b1b4f0e37edf7"
+    },
+    {
+      "test": "inactive_list",
+      "http": 200,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:54Z"
+    },
+    {
+      "test": "inactive_sign",
+      "http": 400,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:54Z"
+    },
+    {
+      "test": "service_role_download",
+      "http": 200,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:55Z",
+      "sha256": "8c4741b12e587ef0ee37648d2da5f518b1000daf0b49483a528b1b4f0e37edf7"
+    },
+    {
+      "test": "service_role_list",
+      "http": 200,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:55Z"
+    },
+    {
+      "test": "service_role_sign",
+      "http": 200,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:55Z"
+    },
+    {
+      "test": "service_role_new_signed_download",
+      "http": 200,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:55Z",
+      "sha256": "8c4741b12e587ef0ee37648d2da5f518b1000daf0b49483a528b1b4f0e37edf7"
+    },
+    {
+      "test": "public_download",
+      "http": 400,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:56Z"
+    },
+    {
+      "test": "baseline_existing_signed_download",
+      "http": 200,
+      "pass": true,
+      "time_utc": "2026-10-27T15:27:56Z",
+      "sha256": "8c4741b12e587ef0ee37648d2da5f518b1000daf0b49483a528b1b4f0e37edf7"
+    }
+  ]
+}

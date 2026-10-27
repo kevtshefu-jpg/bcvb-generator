@@ -1,0 +1,21 @@
+name: Storage P0 static safety contract
+
+on:
+  pull_request:
+    paths:
+      - 'ops/manual/storage-p0-*.sql'
+      - 'tests/security/test_storage_p0_contract.py'
+      - '.github/workflows/storage-p0-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check static SQL safety contract (no database or secrets)
+        run: python3 -m unittest discover -s tests/security -p 'test_storage_p0_contract.py' -v

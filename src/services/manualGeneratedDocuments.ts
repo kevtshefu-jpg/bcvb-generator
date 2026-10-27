@@ -37,8 +37,6 @@ export async function saveManualGeneratedDocument({
   sourceDocumentId = null,
   generationType = 'manual_chatgpt',
 }: SaveManualGeneratedDocumentInput) {
-  console.log('Début enregistrement manuel du document')
-
   const cleanTitle = title?.trim()
   const cleanContent = content?.trim()
   const cleanDocumentType = documentType?.trim()
@@ -105,8 +103,6 @@ export async function saveManualGeneratedDocument({
     updated_at: now,
   }
 
-  console.log('Payload envoyé à Supabase :', payload)
-
   const { data, error } = await supabase
     .from('library_documents')
     .insert(payload)
@@ -117,8 +113,6 @@ export async function saveManualGeneratedDocument({
     console.error('Erreur Supabase insertion :', error)
     throw new Error(error.message)
   }
-
-  console.log('Document enregistré :', data)
 
   return data
 }
