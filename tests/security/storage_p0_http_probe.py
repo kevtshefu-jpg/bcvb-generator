@@ -78,5 +78,10 @@ if any("error" in result for result in results):
     raise SystemExit("FAIL: transport errors; HTTP matrix incomplete")
 if phase == "baseline" and not any(r.get("status") == 200 for r in results if r["test"] == "authenticated_download"):
     raise SystemExit("FAIL: baseline fixture not readable; subsequent denials are inconclusive")
-if phase == "confined" and any(r.get("status") in (200, 201) for r in results if r["test"].endswith(("_download", "_sign")) and r["test"] != "existing_signed_url_download"):
+if phase == "confined" and any(r.get("status") in (200, 201) for r in results if r["test"] in ("authenticated_download", "signed_url_creation", "parent_download", "parent_sign", "player_download", "player_sign", "coach_download", "coach_sign")):
     raise SystemExit("FAIL: direct read or new signed URL remains available under confinement")
+
+if phase == "restored" and not any(r.get("status") == 200 for r in results if r["test"] == "authenticated_download"):
+    raise SystemExit("FAIL: restored fixture not readable")
+if phase == "confined" and not all(r.get("status") not in (200, 201) for r in results if r["test"] in ("authenticated_download", "signed_url_creation")):
+    raise SystemExit("FAIL: confined state not verified")
